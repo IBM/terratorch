@@ -1,5 +1,5 @@
 [![Build Status](https://v3.travis.ibm.com/GeoFM-Finetuning/terratorch.svg?token=tGjexp9kUqxxz24pGxYt&branch=main)](https://v3.travis.ibm.com/GeoFM-Finetuning/terratorch)
-# Terratorch
+# TerraTorch
 
 :book: [Documentation](https://IBM.github.io/terratorch/)
 
