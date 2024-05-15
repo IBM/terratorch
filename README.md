@@ -34,8 +34,8 @@ It is also possible to restore a conda environment with the same dependencies fr
 
 ## Quick start
 
-To get started, check out the [quick start guide](https://pages.github.ibm.com/GeoFM-Finetuning/terratorch/quick_start)
+To get started, check out the [quick start guide](https://ibm.github.io/terratorch/quick_start)
 
 ## For developers
 
-Check out the [architecture overview](https://pages.github.ibm.com/GeoFM-Finetuning/terratorch/quick_start/architecture)
+Check out the [architecture overview](https://ibm.github.io/terratorch/architecture)
