@@ -1,0 +1,37 @@
+site_name: Terratorch
+theme:
+  name: material
+  palette:
+    scheme: slate
+  features:
+    - content.code.copy
+    - content.code.select
+plugins:
+  - autorefs
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src] # search packages in the src folde
+          options:
+            show_root_heading: true
+
+repo_url: https://github.ibm.com/GeoFM-Finetuning/terratorch
+nav:
+  - index.md
+  - quick_start.md
+  - data.md
+  - tasks.md
+  - models.md
+  - architecture.md
+  - examples.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+  - pymdownx.details

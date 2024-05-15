@@ -1,0 +1,96 @@
+# lightning.pytorch==2.1.1
+seed_everything: 0
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  # precision: 16-mixed
+  logger:
+    class_path: TensorBoardLogger
+    init_args:
+      save_dir: <your_path_here>/torchgeo_eurosat
+      name: rgb_only
+  callbacks:
+    - class_path: RichProgressBar
+    - class_path: LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+
+    - class_path: EarlyStopping
+      init_args:
+        monitor: val/loss
+        patience: 20
+
+  max_epochs: 200
+  check_val_every_n_epoch: 1
+  log_every_n_steps: 50
+  enable_checkpointing: true
+  default_root_dir: <your_path_here>/torchgeo_eurosat
+
+data:
+  class_path: terratorch.datamodules.TorchNonGeoDataModule
+  init_args:
+    transforms:
+      # a possible way to select bands:
+      # - class_path: SelectBands
+      #   init_args:
+      #     band_indices:
+      #       - 2
+      #       - 1
+      #       - 0
+      - class_path: albumentations.augmentations.geometric.resize.Resize
+        init_args:
+          height: 224
+          width: 224
+      - class_path: ToTensorV2
+    cls: torchgeo.datamodules.EuroSATDataModule
+    batch_size: 32
+    num_workers: 8
+  dict_kwargs:
+    root: /dccstor/geofm-pre/EuroSat
+    download: True
+    bands:
+      - B02
+      - B03
+      - B04
+      - B08A
+      - B11
+      - B12
+
+model:
+  class_path: ClassificationTask
+  init_args:
+    model_args:
+      decoder: IdentityDecoder
+      pretrained: true
+      backbone: prithvi_swin_B
+      backbone_drop_path_rate: 0.3
+      # backbone_window_size: 8
+      head_dim_list:
+        - 384
+        - 128
+      in_channels: 6
+      bands:
+        - BLUE
+        - GREEN
+        - RED
+        - NIR_NARROW
+        - SWIR_1
+        - SWIR_2
+      num_frames: 1
+      num_classes: 10
+      head_dropout: 0.1
+    loss: ce
+    freeze_backbone: false
+    freeze_decoder: false
+    model_factory: PrithviModelFactory
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 1.e-4
+    weight_decay: 0.05
+lr_scheduler:
+  class_path: ReduceLROnPlateau
+  init_args:
+    monitor: val/loss

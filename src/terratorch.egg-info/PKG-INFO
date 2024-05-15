@@ -1,0 +1,87 @@
+Metadata-Version: 2.1
+Name: terratorch
+Version: 0.0.0
+Summary: TerraTorch - A model training toolkit for geospatial tasks
+Author-email: Carlos Gomes <carlos.gomes@ibm.com>, Joao Lucas de Sousa Almeida <joao.lucas.sousa.almeida@ibm.com>
+Project-URL: Documentation, https://github.com/IBM/terratorch#readme
+Project-URL: Issues, https://github.com/IBM/terratorch/issues
+Project-URL: Source, https://github.com/IBM/terratorch
+Classifier: Development Status :: 2 - Pre-Alpha
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Programming Language :: Python :: Implementation :: PyPy
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: coverage
+Requires-Dist: pytest
+Requires-Dist: torch>=2.1.0
+Requires-Dist: torchvision>=0.16.0
+Requires-Dist: torchgeo>=0.5.1
+Requires-Dist: rioxarray>=0.15.0
+Requires-Dist: albumentations>=1.3.1
+Requires-Dist: rasterio>=1.3.9
+Requires-Dist: torchmetrics<=1.3.1
+Requires-Dist: geopandas>=0.14.2
+Requires-Dist: lightly>=1.4.25
+Requires-Dist: h5py>=3.10.0
+Requires-Dist: geobench>=1.0.0
+Requires-Dist: mlflow>=2.11.1
+Provides-Extra: dev
+Requires-Dist: black; extra == "dev"
+Requires-Dist: mkdocs-material; extra == "dev"
+Requires-Dist: mkdocstrings[python]; extra == "dev"
+
+[![Build Status](https://v3.travis.ibm.com/GeoFM-Finetuning/terratorch.svg?token=tGjexp9kUqxxz24pGxYt&branch=main)](https://v3.travis.ibm.com/GeoFM-Finetuning/terratorch)
+# Terratorch
+
+:book: [Documentation](https://pages.github.ibm.com/GeoFM-Finetuning/terratorch/)
+
+## Overview
+
+The purpose of this library is twofold:
+
+1. To integrate prithvi backbones into the TorchGeo framework
+2. To provide generic LightningDataModules that can be built at runtime
+3. To build a flexible fine-tuning framework based on TorchGeo which can be interacted with at different abstraction levels.
+
+This library provides:
+
+- All the functionality in TorchGeo
+- Easy access to prithvi backbones
+- Flexible trainers for Image Segmentation and Pixel Wise Regression (more in progress)
+- Launching of fine-tuning tasks through powerful configuration files
+
+A good starting place is familiarization with [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/), which this project is built on, and to a certain extent [TorchGeo](https://torchgeo.readthedocs.io/en/stable/)
+
+## Install
+### Install on CCC
+1. Install [conda](https://docs.conda.io/en/latest/) by following official instructions
+2. Clone this repo to your home directory or shared storage on CCC using: `git clone git@github.ibm.com:GeoFM-Finetuning/terratorch.git` after activting your CCC ssh keys for git
+3. Create a new python environment located in a shared directory on CCC due to your CCC account quota: `conda create --prefix /dccstor/geofm-finetuning/envs/TERRATORCH_ENV_NAME python=3.10`
+4. Activate your new python environment for terratorch: `conda activate /dccstor/geofm-finetuning/envs/TERRATORCH_ENV_NAME`
+5. Go to the directory terratorch using: `cd terratorch`
+6. Run `pip install -e .`
+
+### Pip
+In order to use th file `pyproject.toml` it is necessary to guarantee `pip>=21.8`. If necessary upgrade `pip` using `python -m pip install --upgrade pip`. 
+
+Install the library with `pip install git+ssh://git@github.ibm.com:GeoFM-Finetuning/terratorch.git`
+
+To install as a developer (e.g. to extend the library) clone this repo, install dependencies using `pip install -r requirements.txt` and run `pip install -e .`
+
+### Conda
+It is also possible to restore a conda environment with the same dependencies from `terratorch_env.yaml`:
+`conda env create -f <file_name>.yml -n <environment_name>`
+
+## Quick start
+
+To get started, check out the [quick start guide](https://pages.github.ibm.com/GeoFM-Finetuning/terratorch/quick_start)
+
+## For developers
+
+Check out the [architecture overview](https://pages.github.ibm.com/GeoFM-Finetuning/terratorch/quick_start/architecture)

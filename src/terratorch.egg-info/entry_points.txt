@@ -1,0 +1,2 @@
+[console_scripts]
+terratorch = terratorch.__main__:main
