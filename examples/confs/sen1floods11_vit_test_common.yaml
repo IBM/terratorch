@@ -4,7 +4,7 @@ trainer:
   accelerator: auto
   strategy: auto
   devices: auto
-  num_nodes: 20
+  num_nodes: 1 
   precision: 16-mixed
   logger: True # will use tensorboardlogger
   callbacks:

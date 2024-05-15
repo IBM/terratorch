@@ -1,3 +1,4 @@
+LICENSE
 README.md
 pyproject.toml
 src/terratorch/__about__.py
