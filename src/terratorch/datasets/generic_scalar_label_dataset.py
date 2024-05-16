@@ -31,7 +31,6 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
     """
     This is a generic dataset class to be used for instantiating datasets from arguments.
     Ideally, one would create a dataset class specific to a dataset.
-    For studio usage, this is more practical.
     """
 
     def __init__(

@@ -157,8 +157,8 @@ def clean_config_for_deployment_and_dump(config: dict[str, Any]):
 
 
 class StudioDeploySaveConfigCallback(SaveConfigCallback):
-    """Subclass of the SaveConfigCallback to save configs for studio use.
-    Besides saving the usual config, will also save a modified config ready to be uploaded for studio use.
+    """Subclass of the SaveConfigCallback to save configs.
+    Besides saving the usual config, will also save a modified config ready to be uploaded.
     Handles things like disabling the pretrained flag, removing loggers, ...
     """
 

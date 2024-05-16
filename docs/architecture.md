@@ -78,6 +78,4 @@ For convenience, we provide a loss handler that can be used to compute the full 
 Refer to the section on [data](data.md)
 
 ## Exporting models
-For running models for inference e.g. on studio, we currently require a config file and checkpoint file to be present.
-
 A future feature would be the possibility to save models in ONNX format, and export them that way. This would bring all the benefits of onnx.
