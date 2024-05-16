@@ -73,7 +73,7 @@ data:
     num_classes: 2
 
 model:
-  class_path: SemanticSegmentation 
+  class_path: terratorch.tasks.SemanticSegmentationTask 
   init_args:
     model_args:
       decoder: FCNDecoder

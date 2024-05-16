@@ -52,7 +52,7 @@ data:
       - B12
 
 model:
-  class_path: IBMClassificationTask
+  class_path: terratorch.tasks.ClassificationTask
   init_args:
     model_args:
       decoder: IdentityDecoder

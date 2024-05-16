@@ -152,7 +152,7 @@ class Sen1Floods11NonGeo(NonGeoDataset):
             ax[4].title.set_text("Predicted Mask")
             ax[4].imshow(prediction, cmap="jet", norm=norm)
 
-        cmap = cm.get_cmap("jet")
+        cmap = plt.get_cmap("jet")
         legend_data = []
         for i, _ in enumerate(range(num_classes)):
             class_name = class_names[i] if class_names else str(i)
