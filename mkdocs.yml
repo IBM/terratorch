@@ -1,4 +1,4 @@
-site_name: Terratorch
+site_name: TerraTorch
 theme:
   name: material
   palette:
@@ -15,7 +15,7 @@ plugins:
           options:
             show_root_heading: true
 
-repo_url: https://github.ibm.com/GeoFM-Finetuning/terratorch
+repo_url: https://github.com/IBM/terratorch
 nav:
   - index.md
   - quick_start.md
