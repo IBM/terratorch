@@ -19,11 +19,14 @@ print(timm.list_models("prithvi*"))
 print(timm.list_pretrained("prithvi*"))
 
 # instantiate your desired model with features_only=True to obtain a backbone
-# this defaults to the weights present in CCC. You may pass your own path to the weights instead of passing `True`
 model = timm.create_model(
     "prithvi_vit_100", num_frames=1, pretrained=True, features_only=True
 )
 
+# instantiate your model with weights of your own
+model = timm.create_model(
+    "prithvi_vit_100", num_frames=1, pretrained=True, pretrained_cfg_overlay={"file": "<path to weights>"}, features_only=True
+)
 # Rest of your PyTorch / PyTorchLightning code
 
 ```

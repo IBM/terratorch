@@ -24,32 +24,6 @@ def model_factory() -> PrithviModelFactory:
 def model_input() -> torch.Tensor:
     return torch.ones((1, NUM_CHANNELS, 224, 224))
 
-"""
-def test_pretrained_weights_load_correctly_prithvi_vit(model_factory: PrithviModelFactory):
-    # run only on CCC, where we know where weights are
-    if not os.path.exists("/dccstor"):
-        return True
-    model = model_factory.build_model(
-        "segmentation",
-        backbone="prithvi_vit_100",
-        decoder="FCNDecoder",
-        in_channels=NUM_CHANNELS,
-        bands=PRETRAINED_BANDS,
-        pretrained=True,
-        num_classes=NUM_CLASSES,
-    )
-    ckpt_weights = torch.load(vit_default_cfgs["prithvi_vit_100"].cfgs[""].file, map_location="cpu")
-    ckpt_encoder_weights = {
-        k: v for k, v in ckpt_weights.items() if (k.startswith("patch_embed") or k.startswith("blocks"))
-    }
-    encoder_weights = {k[8:]: v for k, v in model.state_dict().items() if (k.startswith("encoder"))}
-    encoder_weights = {k: v for k, v in encoder_weights.items() if (k not in {"norm.weight", "norm.bias", "cls_token"})}
-
-    # check ckpt_encoder_weights == encoder_weights
-    for k in ckpt_encoder_weights.keys():
-        assert (ckpt_encoder_weights[k] == encoder_weights[k]).all()
-"""
-
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
 def test_create_segmentation_model(backbone, decoder, model_factory: PrithviModelFactory, model_input):
