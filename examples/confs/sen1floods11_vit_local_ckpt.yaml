@@ -85,7 +85,7 @@ model:
       backbone_patch_size: 16
       backbone_in_chans: 6
       backbone_num_frames: 1
-      backbone_checkpoint_path: /dccstor/jlsa931/GEOFM/prithvi/epoch-50-loss-0.0179.pt
+      backbone_checkpoint_path: <ckpt-dir>/epoch-50-loss-0.0179.pt
       # backbone_window_size: 8
       decoder_channels: 256
       in_channels: 6
