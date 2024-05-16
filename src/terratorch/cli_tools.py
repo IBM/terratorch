@@ -19,7 +19,6 @@ import torch
 
 # Allows classes to be referenced using only the class name
 import torchgeo.datamodules
-import torchgeo.trainers  # noqa: F401
 from albumentations.pytorch import ToTensorV2  # noqa: F401
 from lightning.fabric.utilities.types import _PATH  # noqa: F401
 from lightning.pytorch import LightningDataModule, LightningModule, Trainer  # noqa: F401
