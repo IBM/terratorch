@@ -21,7 +21,7 @@ print(timm.list_pretrained("prithvi*"))
 # instantiate your desired model with features_only=True to obtain a backbone
 # this defaults to the weights present in CCC. You may pass your own path to the weights instead of passing `True`
 model = timm.create_model(
-    "prithvi_swin_B", num_frames=1, pretrained=True, features_only=True
+    "prithvi_vit_100", num_frames=1, pretrained=True, features_only=True
 )
 
 # Rest of your PyTorch / PyTorchLightning code
@@ -165,9 +165,9 @@ model:
   class_path: SemanticSegmentationTask
   init_args:
     model_args:
-      decoder: UperNetDecoder
+      decoder: FCNDecoder
       pretrained: true
-      backbone: prithvi_swin_B
+      backbone: prithvi_vit_100
       img_size: 512
       backbone_adaptive_inference_size: True
       backbone_window_size: 8

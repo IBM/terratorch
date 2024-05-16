@@ -13,11 +13,11 @@ import logging
 from functools import partial
 from pathlib import Path
 
+import torch
 from timm.models import FeatureInfo
 from timm.models._builder import build_model_with_cfg
 from timm.models._registry import generate_default_cfgs, register_model
 from torch import nn
-import torch 
 
 from terratorch.datasets import HLSBands
 from terratorch.models.backbones.prithvi_select_patch_embed_weights import prithvi_select_patch_embed_weights
@@ -32,6 +32,24 @@ PRETRAINED_BANDS = [
     HLSBands.SWIR_2,
 ]
 
+def _cfg(file: Path = "", **kwargs) -> dict:
+    return {
+        "file": file,
+        "source": "file",
+        "input_size": (6, 224, 224),
+        "license": "mit",
+        # "first_conv": "patch_embed.proj",
+        **kwargs,
+    }
+
+default_cfgs = generate_default_cfgs(
+    {
+        "prithvi_vit_100": {
+            "hf_hub_id": "ibm-nasa-geospatial/Prithvi-100M",
+            "hf_hub_filename": "Prithvi_100M.pt"
+        }
+    }
+)
 
 def checkpoint_filter_fn(
     state_dict, model: TemporalViTEncoder, pretrained_bands: list[HLSBands | int], model_bands: list[HLSBands | int]
@@ -98,18 +116,6 @@ def _create_prithvi(
         model.pretrained_bands = pretrained_bands
 
     return model
-
-
-def _cfg(file: Path = "", **kwargs) -> dict:
-    return {
-        "file": file,
-        "source": "file",
-        "input_size": (6, 224, 224),
-        "license": "mit",
-        # "first_conv": "patch_embed.proj",
-        **kwargs,
-    }
-
 
 def create_prithvi_vit_100(
     model_name: str,
@@ -208,16 +214,6 @@ def prithvi_vit_tiny(
     }
     model = _create_prithvi("prithvi_vit_tiny", **dict(model_args, **kwargs))
     return model
-
-
-@register_model
-def prithvi_vit_100_us(
-    pretrained: bool = False,  # noqa: FBT001, FBT002
-    bands: list[HLSBands] | None = None,
-    **kwargs,
-) -> TemporalViTEncoder:
-    return create_prithvi_vit_100("prithvi_vit_100_us", pretrained, bands, **kwargs)
-
 
 @register_model
 def prithvi_vit_100(
