@@ -169,9 +169,6 @@ model:
       pretrained: true
       backbone: prithvi_vit_100
       img_size: 512
-      backbone_adaptive_inference_size: True
-      backbone_window_size: 8
-      decoder_channels: 256
       in_channels: 6
       bands:
         - RED
