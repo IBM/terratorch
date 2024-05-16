@@ -1,4 +1,4 @@
-"""This module contains the ibm regression task and its auxiliary classes."""
+"""This module contains the regression task and its auxiliary classes."""
 
 from collections.abc import Sequence
 from typing import Any

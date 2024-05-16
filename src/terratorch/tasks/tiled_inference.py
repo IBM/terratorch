@@ -60,7 +60,6 @@ def tiled_inference(
     Returns:
         torch.Tensor: The result of the inference
     """
-    # from https://github.ibm.com/mazortea/biomass_UNet/blob/main/exe02_produce_map_UNet.py
 
     batch_size, h_img, w_img = input_batch.shape[0], *input_batch.shape[-2:]
     preds = input_batch.new_zeros((batch_size, out_channels, h_img, w_img))
