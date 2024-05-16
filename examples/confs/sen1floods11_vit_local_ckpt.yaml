@@ -53,6 +53,8 @@ data:
     val_split: /dccstor/jlsa931/senfloods/v1.1/splits/flood_handlabeled/flood_valid_data.txt
     img_grep: "*_S2Hand.tif"
     label_grep: "*_LabelHand.tif"
+    no_label_replace: -1
+    no_data_replace: 0
     means:
       - 0.107582
       - 0.13471393
