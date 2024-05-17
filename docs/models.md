@@ -34,6 +34,13 @@ We also provide a model factory that can build a task specific model for a downs
 
 By passing a list of bands being used to the constructor, we automatically filter out unused bands, and randomly initialize weights for new bands that were not pretrained on.
 
+!!! info
+
+    To pass your own path from where to load the weights with the PrithviModelFactory, you can make use of timm's `pretrained_cfg_overlay`.
+    E.g. to pass a local path, you can pass the parameter `backbone_pretrained_cfg_overlay = {"file": "<local_path>"}` to the model factory.
+    
+    Besides `file`, you can also pass `url`, `hf_hub_id`, amongst others. Check timm's documentation for full details.
+
 :::terratorch.models.backbones.prithvi_select_patch_embed_weights
 
 ## Decoders
