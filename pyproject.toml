@@ -4,7 +4,7 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name = "terratorch"
-version = "0.99.0"
+#version = "0.99.0"
 dynamic = ["version"]
 description = "TerraTorch - A model training toolkit for geospatial tasks"
 license = { "text" = "Apache License, Version 2.0" }
@@ -143,9 +143,9 @@ exclude_lines = [
   "if TYPE_CHECKING:",
 ]
 
-[tool.setuptools.packages.find]
-include = ["terratorch"]
-namespaces = false
+#[tool.setuptools.packages.find]
+#include = ["terratorch"]
+#namespaces = false
 
 [tool.bumpver]
 current_version = "0.99.0"
