@@ -105,6 +105,17 @@ task = PixelwiseRegressionTask(
 
 At this level of abstraction, you can also provide a configuration file (see [LightningCLI](https://lightning.ai/docs/pytorch/stable/cli/lightning_cli.html#lightning-cli)) with all the details of the training. See an example for semantic segmentation below:
 
+!!! info
+
+    To pass your own path from where to load the weights with the PrithviModelFactory, you can make use of timm's `pretrained_cfg_overlay`.
+    E.g. to pass a local path, you can add, under model_args:
+    
+    ```yaml
+    backbone_pretrained_cfg_overlay:
+        file: <local_path>
+    ```
+    Besides `file`, you can also pass `url`, `hf_hub_id`, amongst others. Check timm's documentation for full details.
+
 ```yaml title="Configuration file for a Semantic Segmentation Task"
 # lightning.pytorch==2.1.1
 seed_everything: 0
