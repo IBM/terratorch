@@ -2,7 +2,9 @@
 We suggest using Python==3.10.
 To get started, make sure to have `PyTorch >= 2` [installed](https://pytorch.org/get-started/locally/). 
 
-To install the package, clone the repository and install it with `pip install -e .` from within the repository directory.
+Install TerraTorch with `pip install git+https://github.com/IBM/terratorch.git`
+
+To install as a developer (e.g. to extend the library) clone this repo, and run `pip install -e .`.
 
 You can interact with the library at several levels of abstraction. Each deeper level of abstraction trades off some amount of flexibility for ease of use and configuration.
 
