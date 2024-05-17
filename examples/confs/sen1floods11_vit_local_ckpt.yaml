@@ -87,8 +87,8 @@ model:
       backbone_patch_size: 16
       backbone_in_chans: 6
       backbone_num_frames: 1
-      backbone_checkpoint_path: examples/Prithvi_100M.pt
-      # backbone_window_size: 8
+      backbone_pretrained_cfg_overlay:
+        file: examples/Prithvi_100M.pt
       decoder_channels: 256
       in_channels: 6
       bands:
