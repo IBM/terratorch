@@ -1,6 +1,8 @@
 # Quick start
 We suggest using Python==3.10.
-To get started, make sure to have `PyTorch >= 2` [installed](https://pytorch.org/get-started/locally/). 
+To get started, make sure to have [PyTorch](https://pytorch.org/get-started/locally/) >= 2.0.0 and [GDAL](https://gdal.org/index.html) installed. 
+
+Installing GDAL can be quite a complex process. If you don't have GDAL set up on your system, we reccomend using a conda environment and installing it with `conda install -c conda-forge gdal`.
 
 For a stable point-release, use `pip install terratorch`. 
 If you prefer to get the most recent version of the main branch, install the library with `pip install git+https://github.com/IBM/terratorch.git`.
