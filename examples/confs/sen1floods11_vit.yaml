@@ -79,7 +79,6 @@ model:
       decoder: FCNDecoder
       pretrained: true
       backbone: prithvi_vit_100
-      backbone_pretrain_img_size: 512
       decoder_channels: 256
       in_channels: 6
       bands:
