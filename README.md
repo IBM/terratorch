@@ -1,6 +1,9 @@
 # TerraTorch
 
-:book: [Documentation](https://IBM.github.io/terratorch/)
+![example workflow](https://github.com/IBM/TERRATORCH/actions/workflows/test.yaml/badge.svg)
+
+:book: [Documentation](https://IBM.github.io/terratorch/) 
+
 
 ## Overview
 TerraTorch is a library based on [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/) and the [TorchGeo](https://github.com/microsoft/torchgeo) domain library
