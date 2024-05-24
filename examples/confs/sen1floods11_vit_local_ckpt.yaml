@@ -77,14 +77,6 @@ model:
       decoder: FCNDecoder
       pretrained: true
       backbone: prithvi_vit_100
-      backbone_embed_dim: 768
-      backbone_num_heads: 12 
-      backbone_decoder_depth: 8
-      backbone_decoder_num_heads: 16
-      backbone_decoder_embed_dim: 512
-      backbone_mlp_ratio: 4
-      backbone_patch_size: 16
-      backbone_in_chans: 6
       backbone_pretrained_cfg_overlay:
         file: examples/Prithvi_100M.pt
       decoder_channels: 256
