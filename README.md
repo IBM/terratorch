@@ -16,7 +16,8 @@ The library provides:
 ### Pip
 In order to use th file `pyproject.toml` it is necessary to guarantee `pip>=21.8`. If necessary upgrade `pip` using `python -m pip install --upgrade pip`. 
 
-Install the library with `pip install git+https://github.com/IBM/terratorch.git`.
+For a stable point-release, use `pip install terratorch`. 
+If you prefer to get the most recent version of the main branch, install the library with `pip install git+https://github.com/IBM/terratorch.git`.
 
 TerraTorch requires gdal to be installed, which can be quite a complex process. If you don't have GDAL set up on your system, we reccomend using a conda environment and installing it with `conda install -c conda-forge gdal`.
 
