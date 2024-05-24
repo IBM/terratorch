@@ -1,6 +1,6 @@
 # TerraTorch
 
-![example workflow](https://github.com/IBM/TERRATORCH/actions/workflows/test.yaml/badge.svg)
+[![tests](https://github.com/IBM/terratorch/actions/workflows/test.yaml/badge.svg)](https://github.com/IBM/terratorch/actions/workflows/test.yaml)
 
 :book: [Documentation](https://IBM.github.io/terratorch/) 
 
