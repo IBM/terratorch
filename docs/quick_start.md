@@ -1,3 +1,4 @@
+![example workflow](https://github.com/IBM/TERRATORCH/actions/workflows/test.yaml/badge.svg)
 # Quick start
 We suggest using Python==3.10.
 To get started, make sure to have [PyTorch](https://pytorch.org/get-started/locally/) >= 2.0.0 and [GDAL](https://gdal.org/index.html) installed. 
