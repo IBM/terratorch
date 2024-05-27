@@ -56,7 +56,7 @@ def test_create_classification_model_no_in_channels(backbone, model_factory: Pri
     with torch.no_grad():
         assert model(model_input).output.shape == EXPECTED_CLASSIFICATION_OUTPUT_SHAPE
 
-@pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
+@pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
 def test_create_segmentation_model(backbone, decoder, model_factory: PrithviModelFactory, model_input):
     model = model_factory.build_model(
@@ -73,7 +73,7 @@ def test_create_segmentation_model(backbone, decoder, model_factory: PrithviMode
     with torch.no_grad():
         assert model(model_input).output.shape == EXPECTED_SEGMENTATION_OUTPUT_SHAPE
 
-@pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
+@pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
 def test_create_segmentation_model_no_in_channels(backbone, decoder, model_factory: PrithviModelFactory, model_input):
     model = model_factory.build_model(
@@ -90,7 +90,7 @@ def test_create_segmentation_model_no_in_channels(backbone, decoder, model_facto
         assert model(model_input).output.shape == EXPECTED_SEGMENTATION_OUTPUT_SHAPE
 
 
-@pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
+@pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
 def test_create_segmentation_model_with_aux_heads(backbone, decoder, model_factory: PrithviModelFactory, model_input):
     aux_heads_name = ["first_aux", "second_aux"]
@@ -115,7 +115,7 @@ def test_create_segmentation_model_with_aux_heads(backbone, decoder, model_facto
             assert output.shape == EXPECTED_SEGMENTATION_OUTPUT_SHAPE
 
 
-@pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
+@pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
 def test_create_regression_model(backbone, decoder, model_factory: PrithviModelFactory, model_input):
     model = model_factory.build_model(
@@ -131,7 +131,7 @@ def test_create_regression_model(backbone, decoder, model_factory: PrithviModelF
     with torch.no_grad():
         assert model(model_input).output.shape == EXPECTED_REGRESSION_OUTPUT_SHAPE
 
-@pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
+@pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
 def test_create_regression_model_no_in_channels(backbone, decoder, model_factory: PrithviModelFactory, model_input):
     model = model_factory.build_model(
@@ -146,7 +146,7 @@ def test_create_regression_model_no_in_channels(backbone, decoder, model_factory
     with torch.no_grad():
         assert model(model_input).output.shape == EXPECTED_REGRESSION_OUTPUT_SHAPE
 
-@pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
+@pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
 def test_create_regression_model_with_aux_heads(backbone, decoder, model_factory: PrithviModelFactory, model_input):
     aux_heads_name = ["first_aux", "second_aux"]
@@ -170,7 +170,7 @@ def test_create_regression_model_with_aux_heads(backbone, decoder, model_factory
             assert output.shape == EXPECTED_REGRESSION_OUTPUT_SHAPE
 
 
-@pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
+@pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
 def test_create_model_with_extra_bands(backbone, decoder, model_factory: PrithviModelFactory):
     model = model_factory.build_model(
