@@ -32,7 +32,7 @@ class PrithviModelFactory(ModelFactory):
         backbone: str | nn.Module,
         decoder: str | nn.Module,
         bands: list[HLSBands | int],
-        in_channels: int = int | None,  # this should be removed, can be derived from bands. But it is a breaking change
+        in_channels: int | None = None,  # this should be removed, can be derived from bands. But it is a breaking change
         num_classes: int | None = None,
         pretrained: bool = True,  # noqa: FBT001, FBT002
         num_frames: int = 1,
