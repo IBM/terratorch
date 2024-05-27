@@ -13,6 +13,7 @@ NUM_CHANNELS = 6
 NUM_CLASSES = 2
 EXPECTED_SEGMENTATION_OUTPUT_SHAPE = (1, NUM_CLASSES, 224, 224)
 EXPECTED_REGRESSION_OUTPUT_SHAPE = (1, 224, 224)
+EXPECTED_CLASSIFICATION_OUTPUT_SHAPE = (1, NUM_CLASSES)
 
 
 @pytest.fixture(scope="session")
@@ -25,6 +26,37 @@ def model_input() -> torch.Tensor:
     return torch.ones((1, NUM_CHANNELS, 224, 224))
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
+def test_create_classification_model(backbone, model_factory: PrithviModelFactory, model_input):
+    model = model_factory.build_model(
+        "classification",
+        backbone=backbone,
+        decoder="IdentityDecoder",
+        in_channels=NUM_CHANNELS,
+        bands=PRETRAINED_BANDS,
+        pretrained=False,
+        num_classes=NUM_CLASSES,
+    )
+    model.eval()
+
+    with torch.no_grad():
+        assert model(model_input).output.shape == EXPECTED_CLASSIFICATION_OUTPUT_SHAPE
+
+@pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
+def test_create_classification_model_no_in_channels(backbone, model_factory: PrithviModelFactory, model_input):
+    model = model_factory.build_model(
+        "classification",
+        backbone=backbone,
+        decoder="IdentityDecoder",
+        bands=PRETRAINED_BANDS,
+        pretrained=False,
+        num_classes=NUM_CLASSES,
+    )
+    model.eval()
+
+    with torch.no_grad():
+        assert model(model_input).output.shape == EXPECTED_CLASSIFICATION_OUTPUT_SHAPE
+
+@pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
 def test_create_segmentation_model(backbone, decoder, model_factory: PrithviModelFactory, model_input):
     model = model_factory.build_model(
@@ -32,6 +64,22 @@ def test_create_segmentation_model(backbone, decoder, model_factory: PrithviMode
         backbone=backbone,
         decoder=decoder,
         in_channels=NUM_CHANNELS,
+        bands=PRETRAINED_BANDS,
+        pretrained=False,
+        num_classes=NUM_CLASSES,
+    )
+    model.eval()
+
+    with torch.no_grad():
+        assert model(model_input).output.shape == EXPECTED_SEGMENTATION_OUTPUT_SHAPE
+
+@pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
+@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
+def test_create_segmentation_model_no_in_channels(backbone, decoder, model_factory: PrithviModelFactory, model_input):
+    model = model_factory.build_model(
+        "segmentation",
+        backbone=backbone,
+        decoder=decoder,
         bands=PRETRAINED_BANDS,
         pretrained=False,
         num_classes=NUM_CLASSES,
@@ -83,6 +131,20 @@ def test_create_regression_model(backbone, decoder, model_factory: PrithviModelF
     with torch.no_grad():
         assert model(model_input).output.shape == EXPECTED_REGRESSION_OUTPUT_SHAPE
 
+@pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
+@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
+def test_create_regression_model_no_in_channels(backbone, decoder, model_factory: PrithviModelFactory, model_input):
+    model = model_factory.build_model(
+        "regression",
+        backbone=backbone,
+        decoder=decoder,
+        bands=PRETRAINED_BANDS,
+        pretrained=False,
+    )
+    model.eval()
+
+    with torch.no_grad():
+        assert model(model_input).output.shape == EXPECTED_REGRESSION_OUTPUT_SHAPE
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
@@ -115,7 +177,7 @@ def test_create_model_with_extra_bands(backbone, decoder, model_factory: Prithvi
         "segmentation",
         backbone=backbone,
         decoder=decoder,
-        in_channels=NUM_CHANNELS,
+        in_channels=NUM_CHANNELS + 1,
         bands=[*PRETRAINED_BANDS, 7],  # add an extra band
         pretrained=False,
         num_classes=NUM_CLASSES,
