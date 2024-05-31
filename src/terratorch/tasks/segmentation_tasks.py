@@ -152,11 +152,13 @@ class SemanticSegmentationTask(BaseTask):
                     f"Jaccard loss does not support ignore_index, but found non-None value of {ignore_index}."
                 )
                 raise RuntimeError(exception_message)
-            self.criterion = smp.losses.JaccardLoss(mode="multiclass", classes=self.hparams["num_classes"])
+            self.criterion = smp.losses.JaccardLoss(mode="multiclass")
         elif loss == "focal":
             self.criterion = smp.losses.FocalLoss("multiclass", ignore_index=ignore_index, normalized=True)
+        elif loss == "dice":
+            self.criterion = smp.losses.DiceLoss("multiclass", ignore_index=ignore_index)
         else:
-            exception_message = f"Loss type '{loss}' is not valid. Currently, supports 'ce', 'jaccard' or 'focal' loss."
+            exception_message = f"Loss type '{loss}' is not valid. Currently, supports 'ce', 'jaccard', 'dice' or 'focal' loss."
             raise ValueError(exception_message)
 
     def configure_metrics(self) -> None:

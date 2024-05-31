@@ -22,7 +22,8 @@ def model_input() -> torch.Tensor:
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
-def test_create_segmentation_task(backbone, decoder, model_factory: PrithviModelFactory):
+@pytest.mark.parametrize("loss", ["ce", "jaccard", "focal", "dice"])
+def test_create_segmentation_task(backbone, decoder, loss, model_factory: PrithviModelFactory):
     SemanticSegmentationTask(
         {
             "backbone": backbone,
@@ -33,12 +34,14 @@ def test_create_segmentation_task(backbone, decoder, model_factory: PrithviModel
             "num_classes": NUM_CLASSES,
         },
         model_factory,
+        loss=loss
     )
 
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
-def test_create_regression_task(backbone, decoder, model_factory: PrithviModelFactory):
+@pytest.mark.parametrize("loss", ["mae", "rmse", "huber"])
+def test_create_regression_task(backbone, decoder, loss, model_factory: PrithviModelFactory):
     PixelwiseRegressionTask(
         {
             "backbone": backbone,
@@ -48,12 +51,14 @@ def test_create_regression_task(backbone, decoder, model_factory: PrithviModelFa
             "pretrained": False,
         },
         model_factory,
+        loss=loss
     )
 
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
-def test_create_classification_task(backbone, decoder, model_factory: PrithviModelFactory):
+@pytest.mark.parametrize("loss", ["ce", "bce", "jaccard", "focal"])
+def test_create_classification_task(backbone, decoder, loss, model_factory: PrithviModelFactory):
     ClassificationTask(
         {
             "backbone": backbone,
@@ -64,4 +69,5 @@ def test_create_classification_task(backbone, decoder, model_factory: PrithviMod
             "num_classes": NUM_CLASSES,
         },
         model_factory,
+        loss=loss
     )
