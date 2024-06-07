@@ -77,7 +77,7 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
         allow_substring_split_file: bool = True,
         dataset_bands: list[HLSBands | int] | None = None,
         predict_dataset_bands: list[HLSBands | int] | None = None,
-        output_bands: list[HLSBands | int] | None = None,
+        input_bands: list[HLSBands | int] | None = None,
         constant_scale: float = 1,
         rgb_indices: list[int] | None = None,
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
@@ -112,7 +112,7 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
                 matches (e.g. eurosat). Defaults to True.
             dataset_bands (list[HLSBands | int] | None, optional): _description_. Defaults to None.
             predict_dataset_bands (list[HLSBands | int] | None, optional): _description_. Defaults to None.
-            output_bands (list[HLSBands | int] | None, optional): _description_. Defaults to None.
+            input_bands (list[HLSBands | int] | None, optional): _description_. Defaults to None.
             constant_scale (float, optional): _description_. Defaults to 1.
             rgb_indices (list[int] | None, optional): _description_. Defaults to None.
             train_transform (Albumentations.Compose | None): Albumentations transform
@@ -152,7 +152,7 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
 
         self.dataset_bands = dataset_bands
         self.predict_dataset_bands = predict_dataset_bands if predict_dataset_bands else dataset_bands
-        self.output_bands = output_bands
+        self.input_bands = input_bands
         self.rgb_indices = rgb_indices
         self.expand_temporal_dimension = expand_temporal_dimension
 
@@ -178,7 +178,7 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
                 ignore_split_file_extensions=self.ignore_split_file_extensions,
                 allow_substring_split_file=self.allow_substring_split_file,
                 dataset_bands=self.dataset_bands,
-                output_bands=self.output_bands,
+                input_bands=self.input_bands,
                 constant_scale=self.constant_scale,
                 rgb_indices=self.rgb_indices,
                 transform=self.train_transform,
@@ -193,7 +193,7 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
                 ignore_split_file_extensions=self.ignore_split_file_extensions,
                 allow_substring_split_file=self.allow_substring_split_file,
                 dataset_bands=self.dataset_bands,
-                output_bands=self.output_bands,
+                input_bands=self.input_bands,
                 constant_scale=self.constant_scale,
                 rgb_indices=self.rgb_indices,
                 transform=self.val_transform,
@@ -208,7 +208,7 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
                 ignore_split_file_extensions=self.ignore_split_file_extensions,
                 allow_substring_split_file=self.allow_substring_split_file,
                 dataset_bands=self.dataset_bands,
-                output_bands=self.output_bands,
+                input_bands=self.input_bands,
                 constant_scale=self.constant_scale,
                 rgb_indices=self.rgb_indices,
                 transform=self.test_transform,
@@ -220,7 +220,7 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
                 self.predict_root,
                 self.num_classes,
                 dataset_bands=self.predict_dataset_bands,
-                output_bands=self.output_bands,
+                input_bands=self.input_bands,
                 constant_scale=self.constant_scale,
                 rgb_indices=self.rgb_indices,
                 transform=self.test_transform,
@@ -277,7 +277,7 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
 #         allow_substring_split_file: bool = True,
 #         dataset_bands: list[HLSBands | int] | None = None,
 #         predict_dataset_bands: list[HLSBands | int] | None = None,
-#         output_bands: list[HLSBands | int] | None = None,
+#         input_bands: list[HLSBands | int] | None = None,
 #         constant_scale: float = 1,
 #         rgb_indices: list[int] | None = None,
 #         train_transform: A.Compose | None | list[A.BasicTransform] = None,
@@ -311,7 +311,7 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
 #                 matches (e.g. eurosat). Defaults to True.
 #             dataset_bands (list[HLSBands | int] | None, optional): _description_. Defaults to None.
 #             predict_dataset_bands (list[HLSBands | int] | None, optional): _description_. Defaults to None.
-#             output_bands (list[HLSBands | int] | None, optional): _description_. Defaults to None.
+#             input_bands (list[HLSBands | int] | None, optional): _description_. Defaults to None.
 #             constant_scale (float, optional): _description_. Defaults to 1.
 #             rgb_indices (list[int] | None, optional): _description_. Defaults to None.
 #             train_transform (Albumentations.Compose | None): Albumentations transform
@@ -350,7 +350,7 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
 #         self.constant_scale = constant_scale
 #         self.dataset_bands = dataset_bands
 #         self.predict_dataset_bands = predict_dataset_bands if predict_dataset_bands else dataset_bands
-#         self.output_bands = output_bands
+#         self.input_bands = input_bands
 #         self.rgb_indices = rgb_indices
 
 #         # self.aug = AugmentationSequential(
@@ -372,7 +372,7 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
 #                 ignore_split_file_extensions=self.ignore_split_file_extensions,
 #                 allow_substring_split_file=self.allow_substring_split_file,
 #                 dataset_bands=self.dataset_bands,
-#                 output_bands=self.output_bands,
+#                 input_bands=self.input_bands,
 #                 constant_scale=self.constant_scale,
 #                 rgb_indices=self.rgb_indices,
 #                 transform=self.train_transform,
@@ -386,7 +386,7 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
 #                 ignore_split_file_extensions=self.ignore_split_file_extensions,
 #                 allow_substring_split_file=self.allow_substring_split_file,
 #                 dataset_bands=self.dataset_bands,
-#                 output_bands=self.output_bands,
+#                 input_bands=self.input_bands,
 #                 constant_scale=self.constant_scale,
 #                 rgb_indices=self.rgb_indices,
 #                 transform=self.val_transform,
@@ -400,7 +400,7 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
 #                 ignore_split_file_extensions=self.ignore_split_file_extensions,
 #                 allow_substring_split_file=self.allow_substring_split_file,
 #                 dataset_bands=self.dataset_bands,
-#                 output_bands=self.output_bands,
+#                 input_bands=self.input_bands,
 #                 constant_scale=self.constant_scale,
 #                 rgb_indices=self.rgb_indices,
 #                 transform=self.test_transform,
@@ -412,7 +412,7 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
 #             self.predict_dataset = self.dataset_class(
 #                 self.predict_root,
 #                 dataset_bands=self.predict_dataset_bands,
-#                 output_bands=self.output_bands,
+#                 input_bands=self.input_bands,
 #                 constant_scale=self.constant_scale,
 #                 rgb_indices=self.rgb_indices,
 #                 transform=self.test_transform,
