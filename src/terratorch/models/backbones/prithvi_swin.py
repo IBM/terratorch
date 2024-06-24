@@ -36,23 +36,14 @@ def _cfg(file: Path = "", **kwargs) -> dict:
         **kwargs,
     }
 
-
 default_cfgs = generate_default_cfgs(
     {
-        # us trained model
-        "prithvi_swin_90_us": _cfg(
-            file="/dccstor/geofm-finetuning/pretrain_ckpts/swin_weights/2023-07-24_14-06-22/epoch-99-loss-0.1632_mmseg.pt"
-        ),
-        # global models
-        "prithvi_swin_B": _cfg(
-            file="/dccstor/geofm-finetuning/swin_weights/2023-10-15_16-08-35/epoch-100-loss-0.0923.pt"
-        ),
-        "prithvi_swin_L": _cfg(
-            file="/dccstor/geofm-finetuning/swin_weights/2023-10-25_14-59-41/epoch-94-loss-0.0918.pt"
-        ),
+        "prithvi_swin_90_us": {
+            "hf_hub_id": "ibm-nasa-geospatial/Prithvi-100M",
+            "hf_hub_filename": "Prithvi_100M.pt"
+        }
     }
 )
-
 
 def convert_weights_swin2mmseg(ckpt):
     # from https://github.com/open-mmlab/mmsegmentation/blob/main/tools/model_converters/swin2mmseg.py
