@@ -31,7 +31,7 @@ data:
       - NIR_NARROW
       - SWIR_1
       - SWIR_2
-    output_bands:
+    input_bands:
       - BLUE
       - GREEN
       - RED
