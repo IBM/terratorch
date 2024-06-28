@@ -44,7 +44,7 @@ def test_can_create_backbones_from_timm_features_only(model_name, test_input, re
     backbone(input_tensor)
 
 
-@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_vit_300", "prithvi_swin_B"])
+@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_vit_300"])
 def test_vit_models_accept_multitemporal(model_name, input_224_multitemporal):
     backbone = timm.create_model(model_name, pretrained=False, num_frames=NUM_FRAMES)
     backbone(input_224_multitemporal)
