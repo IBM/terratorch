@@ -1,6 +1,7 @@
 import pytest
 import timm
 import torch
+import importlib
 
 import terratorch  # noqa: F401
 
@@ -49,7 +50,16 @@ def test_vit_models_accept_multitemporal(model_name, input_224_multitemporal):
     backbone = timm.create_model(model_name, pretrained=False, num_frames=NUM_FRAMES)
     backbone(input_224_multitemporal)
 
+# Swin IS NOT on HuggingFace
+@pytest.mark.parametrize("model_name", ["prithvi_swin_L", "prithvi_swin_B"])
+def test_swin_instantiation(model_name):
+     base_module = "terratorch.models.backbones.prithvi_swin"
+     module = importlib.import_module(base_module)
+     model_class = getattr(module, model_name) 
 
+     model = model_class(pretrained=False, pretrained_bands=[0,1,2,3,4,5,6,7,8,9],
+                         bands=[1,2,3,4,5,6])
+ 
 #def test_swin_models_accept_non_divisible_by_patch_size(input_386):
 #    backbone = timm.create_model("prithvi_swin_90_us", pretrained=False, num_frames=NUM_FRAMES)
 #    backbone(input_386)
