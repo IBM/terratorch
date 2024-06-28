@@ -36,15 +36,6 @@ def _cfg(file: Path = "", **kwargs) -> dict:
         **kwargs,
     }
 
-default_cfgs = generate_default_cfgs(
-    {
-        "prithvi_swin_90_us": {
-            "hf_hub_id": "ibm-nasa-geospatial/Prithvi-100M",
-            "hf_hub_filename": "Prithvi_100M.pt"
-        }
-    }
-)
-
 def convert_weights_swin2mmseg(ckpt):
     # from https://github.com/open-mmlab/mmsegmentation/blob/main/tools/model_converters/swin2mmseg.py
     new_ckpt = OrderedDict()
@@ -213,37 +204,6 @@ def _create_swin_mmseg_transformer(
     # add permuting here
     model.prepare_features_for_image_model = prepare_features_for_image_model
     return model
-
-
-@register_model
-def prithvi_swin_90_us(
-    pretrained: bool = False,  # noqa: FBT002, FBT001
-    pretrained_bands: list[HLSBands] | None = None,
-    bands: list[int] | None = None,
-    **kwargs,
-) -> MMSegSwinTransformer:
-    """Prithvi Swin 90M"""
-    if pretrained_bands is None:
-        pretrained_bands = PRETRAINED_BANDS
-    if bands is None:
-        bands = pretrained_bands
-        logging.info(
-            f"Model bands not passed. Assuming bands are ordered in the same way as {PRETRAINED_BANDS}.\
-            Pretrained patch_embed layer may be misaligned with current bands"
-        )
-
-    model_args = {
-        "patch_size": 4,
-        "window_size": 7,
-        "embed_dim": 128,
-        "depths": (2, 2, 18, 2),
-        "in_chans": 6,
-        "num_heads": (4, 8, 16, 32),
-    }
-    transformer = _create_swin_mmseg_transformer(
-        "prithvi_swin_90_us", pretrained_bands, bands, pretrained=pretrained, **dict(model_args, **kwargs)
-    )
-    return transformer
 
 
 @register_model
