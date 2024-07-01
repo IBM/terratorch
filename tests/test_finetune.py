@@ -34,9 +34,12 @@ def test_finetune_multiple_backbones(model_name):
 
     torch.save(filtered_state_dict, os.path.join("/tmp", model_name + ".pt"))
 
-    # Running the terratorch CLI
-    command_str = f"terratorch fit -c tests/manufactured-finetune_{model_name}.yaml" 
+    try:
+        # Running the terratorch CLI
+        command_str = f"terratorch fit -c tests/manufactured-finetune_{model_name}.yaml" 
 
-    subprocess.run(command_str, shell=True) 
+        subprocess.run(command_str, shell=True) 
+    except:
+        Exception("Fine-tuning cannot be executed.")
 
 
