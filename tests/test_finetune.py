@@ -32,7 +32,7 @@ def test_finetune_multiple_backbones(model_name):
 
     filtered_state_dict = ckpt_filter(model_instance.state_dict(), model_instance, pretrained_bands, model_bands)
 
-    torch.save(filtered_state_dict, os.path.join("/tmp", model_name + ".pt"))
+    torch.save(filtered_state_dict, os.path.join("tests/", model_name + ".pt"))
 
     try:
         # Running the terratorch CLI
@@ -42,4 +42,4 @@ def test_finetune_multiple_backbones(model_name):
     except:
         Exception("Fine-tuning cannot be executed.")
 
-
+    

@@ -64,9 +64,9 @@ def test_all_backbone_instantiation(model_name):
 
     model_instance = model_template()
 
-    torch.save(model_instance.state_dict(), os.path.join("/tmp", str(id(model_instance)) + ".pth"))
+    torch.save(model_instance.state_dict(), os.path.join("tests/", str(id(model_instance)) + ".pth"))
 
-    model_restored = torch.load(os.path.join("/tmp", str(id(model_instance)) + ".pth"))
+    model_restored = torch.load(os.path.join("tests/", str(id(model_instance)) + ".pth"))
 
 #def test_swin_models_accept_non_divisible_by_patch_size(input_386):
 #    backbone = timm.create_model("prithvi_swin_90_us", pretrained=False, num_frames=NUM_FRAMES)
