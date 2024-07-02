@@ -9,7 +9,7 @@ trainer:
   logger:
     class_path: TensorBoardLogger
     init_args:
-      save_dir: /tmp
+      save_dir: tests/
       name: all_ecos_random
   callbacks:
     - class_path: RichProgressBar
@@ -24,7 +24,7 @@ trainer:
   check_val_every_n_epoch: 1
   log_every_n_steps: 20
   enable_checkpointing: true
-  default_root_dir: /tmp
+  default_root_dir: tests/
 data:
   class_path: GenericNonGeoPixelwiseRegressionDataModule
   init_args:
