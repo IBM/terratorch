@@ -4,3 +4,5 @@ build/*
 dist/*
 *.egg-info
 *.ipynb_checkpoints
+**/*pt
+**/*pth
