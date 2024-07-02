@@ -1,6 +1,6 @@
 # https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 # mostly from https://github.com/microsoft/torchgeo/blob/main/.github/dependabot.yml
-version: 1
+version: 2
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
