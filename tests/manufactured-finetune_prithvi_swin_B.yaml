@@ -127,7 +127,7 @@ model:
     #aux_loss:
     #  aux_head: 0.4
     ignore_index: -1
-    freeze_backbone: false
+    freeze_backbone: true
     freeze_decoder: false
     model_factory: PrithviModelFactory
 
