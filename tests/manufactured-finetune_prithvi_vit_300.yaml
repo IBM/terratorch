@@ -102,6 +102,7 @@ model:
       backbone_drop_path_rate: 0.3
       # backbone_window_size: 8
       decoder_channels: 64
+      num_frames: 1
       in_channels: 6
       bands:
         - BLUE
