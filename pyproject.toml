@@ -26,8 +26,6 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "coverage",
-  "pytest",
   "torch>=2.1.0",
   "torchvision>=0.16.0",
   "torchgeo>=0.5.1",
@@ -48,6 +46,11 @@ dev = [
   "black",
   "mkdocs-material",
   "mkdocstrings[python]"
+]
+
+test = [
+  "coverage",
+  "pytest"
 ]
 
 [project.urls]
