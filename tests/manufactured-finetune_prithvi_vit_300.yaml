@@ -98,7 +98,7 @@ model:
       pretrained: true
       backbone: prithvi_vit_300
       backbone_pretrained_cfg_overlay:
-        file: /tmp/prithvi_vit_300.pt
+        file: tests/prithvi_vit_300.pt
       backbone_drop_path_rate: 0.3
       # backbone_window_size: 8
       decoder_channels: 64
