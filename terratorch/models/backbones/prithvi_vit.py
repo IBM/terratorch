@@ -24,6 +24,7 @@ PRETRAINED_BANDS = [
     HLSBands.SWIR_2,
 ]
 
+
 def _cfg(file: Path = "", **kwargs) -> dict:
     return {
         "file": file,
@@ -34,14 +35,11 @@ def _cfg(file: Path = "", **kwargs) -> dict:
         **kwargs,
     }
 
+
 default_cfgs = generate_default_cfgs(
-    {
-        "prithvi_vit_100": {
-            "hf_hub_id": "ibm-nasa-geospatial/Prithvi-100M",
-            "hf_hub_filename": "Prithvi_100M.pt"
-        }
-    }
+    {"prithvi_vit_100": {"hf_hub_id": "ibm-nasa-geospatial/Prithvi-100M", "hf_hub_filename": "Prithvi_100M.pt"}}
 )
+
 
 def checkpoint_filter_fn(
     state_dict, model: TemporalViTEncoder, pretrained_bands: list[HLSBands | int], model_bands: list[HLSBands | int]
@@ -64,6 +62,7 @@ def checkpoint_filter_fn(
     state_dict = prithvi_select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands)
 
     return state_dict
+
 
 def _create_prithvi(
     variant: str,
@@ -108,6 +107,7 @@ def _create_prithvi(
         model.pretrained_bands = pretrained_bands
 
     return model
+
 
 def create_prithvi_vit_100(
     model_name: str,
@@ -206,6 +206,7 @@ def prithvi_vit_tiny(
     }
     model = _create_prithvi("prithvi_vit_tiny", **dict(model_args, **kwargs))
     return model
+
 
 @register_model
 def prithvi_vit_100(

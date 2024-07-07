@@ -26,6 +26,7 @@ SUPPORTED_TASKS = PIXEL_WISE_TASKS + SCALAR_TASKS
 class DecoderNotFoundError(Exception):
     pass
 
+
 @register_factory
 class PrithviModelFactory(ModelFactory):
     def build_model(
@@ -34,7 +35,8 @@ class PrithviModelFactory(ModelFactory):
         backbone: str | nn.Module,
         decoder: str | nn.Module,
         bands: list[HLSBands | int],
-        in_channels: int | None = None,  # this should be removed, can be derived from bands. But it is a breaking change
+        in_channels: int
+        | None = None,  # this should be removed, can be derived from bands. But it is a breaking change
         num_classes: int | None = None,
         pretrained: bool = True,  # noqa: FBT001, FBT002
         num_frames: int = 1,

@@ -38,6 +38,7 @@ def _cfg(file: Path = "", **kwargs) -> dict:
         **kwargs,
     }
 
+
 def convert_weights_swin2mmseg(ckpt):
     # from https://github.com/open-mmlab/mmsegmentation/blob/main/tools/model_converters/swin2mmseg.py
     new_ckpt = OrderedDict()

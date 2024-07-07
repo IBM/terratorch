@@ -8,7 +8,7 @@ import torch
 from terratorch.models import PrithviModelFactory
 from terratorch.models.backbones.prithvi_vit import PRETRAINED_BANDS
 
-#from terratorch.models.backbones.prithvi_vit import default_cfgs as vit_default_cfgs
+# from terratorch.models.backbones.prithvi_vit import default_cfgs as vit_default_cfgs
 from terratorch.models.model import AuxiliaryHead
 
 NUM_CHANNELS = 6
@@ -27,6 +27,7 @@ def model_factory() -> PrithviModelFactory:
 def model_input() -> torch.Tensor:
     return torch.ones((1, NUM_CHANNELS, 224, 224))
 
+
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
 def test_create_classification_model(backbone, model_factory: PrithviModelFactory, model_input):
     model = model_factory.build_model(
@@ -43,6 +44,7 @@ def test_create_classification_model(backbone, model_factory: PrithviModelFactor
     with torch.no_grad():
         assert model(model_input).output.shape == EXPECTED_CLASSIFICATION_OUTPUT_SHAPE
 
+
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
 def test_create_classification_model_no_in_channels(backbone, model_factory: PrithviModelFactory, model_input):
     model = model_factory.build_model(
@@ -57,6 +59,7 @@ def test_create_classification_model_no_in_channels(backbone, model_factory: Pri
 
     with torch.no_grad():
         assert model(model_input).output.shape == EXPECTED_CLASSIFICATION_OUTPUT_SHAPE
+
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
@@ -74,6 +77,7 @@ def test_create_segmentation_model(backbone, decoder, model_factory: PrithviMode
 
     with torch.no_grad():
         assert model(model_input).output.shape == EXPECTED_SEGMENTATION_OUTPUT_SHAPE
+
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
@@ -133,6 +137,7 @@ def test_create_regression_model(backbone, decoder, model_factory: PrithviModelF
     with torch.no_grad():
         assert model(model_input).output.shape == EXPECTED_REGRESSION_OUTPUT_SHAPE
 
+
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
 def test_create_regression_model_no_in_channels(backbone, decoder, model_factory: PrithviModelFactory, model_input):
@@ -147,6 +152,7 @@ def test_create_regression_model_no_in_channels(backbone, decoder, model_factory
 
     with torch.no_grad():
         assert model(model_input).output.shape == EXPECTED_REGRESSION_OUTPUT_SHAPE
+
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])

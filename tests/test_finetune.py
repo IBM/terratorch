@@ -2,11 +2,12 @@ import pytest
 import timm
 import torch
 import importlib
-import terratorch 
+import terratorch
 import subprocess
-import os 
+import os
 
 from terratorch.cli_tools import build_lightning_cli
+
 
 @pytest.mark.parametrize("model_name", ["prithvi_swin_B", "prithvi_swin_L", "prithvi_vit_100", "prithvi_vit_300"])
 def test_finetune_multiple_backbones(model_name):
@@ -22,6 +23,7 @@ def test_finetune_multiple_backbones(model_name):
     # Running the terratorch CLI
     command_list = ["fit", "-c", f"tests/manufactured-finetune_{model_name}.yaml"]
     _ = build_lightning_cli(command_list)
+
 
 """
 @pytest.mark.parametrize("model_name", ["prithvi_swin_B", "prithvi_swin_L", "prithvi_vit_100", "prithvi_vit_300"])
@@ -40,4 +42,4 @@ def test_finetune_multiple_backbones(model_name):
     command_out = subprocess.run(command_str, shell=True)
     
     assert not command_out.returncode
- """   
+ """

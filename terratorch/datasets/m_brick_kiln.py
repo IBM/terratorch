@@ -14,6 +14,7 @@ from albumentations.pytorch import ToTensorV2
 from torchgeo.datasets import NonGeoDataset
 from terratorch.datasets.utils import to_tensor
 
+
 class MBrickKilnNonGeo(NonGeoDataset):
 
     all_band_names = (
@@ -36,20 +37,20 @@ class MBrickKilnNonGeo(NonGeoDataset):
 
     BAND_SETS = {"all": all_band_names, "rgb": rgb_bands}
 
-    def __init__(self, data_root: str, bands: Sequence[str] = BAND_SETS["all"], transform: A.Compose | None = None, split="train") -> None:
+    def __init__(
+        self, data_root: str, bands: Sequence[str] = BAND_SETS["all"], transform: A.Compose | None = None, split="train"
+    ) -> None:
         super().__init__()
         if split not in ["train", "test", "val"]:
             msg = "Split must be one of train, test, val."
             raise Exception(msg)
         if split == "val":
             split = "valid"
-        
+
         self.transform = transform if transform else lambda **batch: to_tensor(batch)
         self._validate_bands(bands)
         self.bands = bands
-        self.band_indices = np.array(
-            [self.all_band_names.index(b) for b in bands if b in self.all_band_names]
-        )
+        self.band_indices = np.array([self.all_band_names.index(b) for b in bands if b in self.all_band_names])
         self.split = split
         data_root = Path(data_root)
         self.data_directory = data_root / "m-brick-kiln"
@@ -65,8 +66,8 @@ class MBrickKilnNonGeo(NonGeoDataset):
 
     def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
         file_path = self.image_files[index]
-        image_id = file_path.stem 
-        
+        image_id = file_path.stem
+
         with h5py.File(file_path, 'r') as h5file:
             keys = sorted(h5file.keys())
             keys = np.array([key for key in keys if key != 'label'])[self.band_indices]
@@ -75,11 +76,8 @@ class MBrickKilnNonGeo(NonGeoDataset):
             image = np.stack(bands, axis=-1)
             attr_dict = pickle.loads(ast.literal_eval(h5file.attrs["pickle"]))
             class_index = attr_dict["label"]
-        
-        output =  {
-            "image": image.astype(np.float32),
-            "label": class_index
-        }
+
+        output = {"image": image.astype(np.float32), "label": class_index}
 
         output = self.transform(**output)
 
@@ -93,7 +91,7 @@ class MBrickKilnNonGeo(NonGeoDataset):
         for band in bands:
             if band not in self.all_band_names:
                 raise ValueError(f"'{band}' is an invalid band name.")
-        
+
     def plot(self, arg, suptitle: str | None = None) -> None:
         if isinstance(arg, int):
             sample = self.__getitem__(arg)
@@ -101,7 +99,7 @@ class MBrickKilnNonGeo(NonGeoDataset):
             sample = arg
         else:
             raise TypeError("Argument must be an integer index or a sample dictionary.")
-        
+
         image = sample["image"].numpy()
         label_index = sample["label"].numpy()
 
@@ -115,13 +113,9 @@ class MBrickKilnNonGeo(NonGeoDataset):
         rgb_image = image[rgb_indices, :, :]
         rgb_image = np.transpose(rgb_image, (1, 2, 0))
         rgb_image = (rgb_image - np.min(rgb_image)) / (np.max(rgb_image) - np.min(rgb_image))
-        
-        self._plot_sample(
-            image=rgb_image,
-            label_index=label_index,
-            suptitle=suptitle
-        )
-            
+
+        self._plot_sample(image=rgb_image, label_index=label_index, suptitle=suptitle)
+
     @staticmethod
     def _plot_sample(image, label_index, suptitle=None) -> None:
         fig, ax = plt.subplots(figsize=(6, 6))
@@ -135,4 +129,3 @@ class MBrickKilnNonGeo(NonGeoDataset):
         ax.set_title(title)
 
         return fig
-        

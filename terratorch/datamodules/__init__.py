@@ -50,5 +50,5 @@ __all__ = (
     "MChesapeakeLandcoverNonGeoDataModule",
     "MPv4gerSegNonGeoDataModule",
     "MSACropTypeNonGeoDataModule",
-    "MNeonTreeNonGeoDataModule"
+    "MNeonTreeNonGeoDataModule",
 )

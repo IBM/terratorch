@@ -29,7 +29,6 @@ class DecoderNotFoundError(Exception):
 
 
 class ModelWrapper(nn.Module):
-
     def __init__(self, model: nn.Module = None) -> None:
 
         super(ModelWrapper, self).__init__()
@@ -51,6 +50,7 @@ class ModelWrapper(nn.Module):
         datacube['timestep'] = None
         datacube['latlon'] = None
         return self.model.forward(datacube)
+
 
 @register_factory
 class ClayModelFactory(ModelFactory):
@@ -147,16 +147,18 @@ class ClayModelFactory(ModelFactory):
 
                 # The CLAY source code must be installed or available via PYTHONPATH.
                 try:  # TODO Inlcude the Clay source code into the tolkit in order to
-                      # avoid issues with the modules paths or made it
-                      # seamlessly accesible via configuration.
+                    # avoid issues with the modules paths or made it
+                    # seamlessly accesible via configuration.
                     if self.syspath_kwarg in kwargs:
                         syspath_value = kwargs.get(self.syspath_kwarg)
 
                     else:
 
-                        Exception(f"It is necessary to define the variable {self.syspath_kwarg} on yaml"
-                                                           "config for restoring local model.")
-    
+                        Exception(
+                            f"It is necessary to define the variable {self.syspath_kwarg} on yaml"
+                            "config for restoring local model."
+                        )
+
                     sys.path.insert(0, syspath_value)
 
                     from src.model_clay import CLAYModule
@@ -219,6 +221,7 @@ class ClayModelFactory(ModelFactory):
             rescale=rescale,
             auxiliary_heads=to_be_aux_decoders,
         )
+
 
 def _build_appropriate_model(
     task: str,

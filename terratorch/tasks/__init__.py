@@ -7,6 +7,5 @@ __all__ = (
     "SemanticSegmentationTask",
     "PixelwiseRegressionTask",
     "ClassificationTask",
-    "MultiLabelClassificationTask"
-    "BATCH_IDX_FOR_VALIDATION_PLOTTING",
+    "MultiLabelClassificationTask" "BATCH_IDX_FOR_VALIDATION_PLOTTING",
 )

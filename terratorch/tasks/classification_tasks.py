@@ -31,7 +31,7 @@ class ClassificationTask(BaseTask):
         - Does not have any callbacks by default (TorchGeo tasks do early stopping by default)
         - Allows the setting of optimizers in the constructor
         - It provides mIoU with both Micro and Macro averaging
-    
+
     .. note::
            * 'Micro' averaging suits overall performance evaluation but may not reflect
              minority class accuracy.

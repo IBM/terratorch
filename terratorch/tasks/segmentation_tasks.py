@@ -158,7 +158,9 @@ class SemanticSegmentationTask(BaseTask):
         elif loss == "dice":
             self.criterion = smp.losses.DiceLoss("multiclass", ignore_index=ignore_index)
         else:
-            exception_message = f"Loss type '{loss}' is not valid. Currently, supports 'ce', 'jaccard', 'dice' or 'focal' loss."
+            exception_message = (
+                f"Loss type '{loss}' is not valid. Currently, supports 'ce', 'jaccard', 'dice' or 'focal' loss."
+            )
             raise ValueError(exception_message)
 
     def configure_metrics(self) -> None:

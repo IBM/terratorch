@@ -19,7 +19,7 @@ class HLS(Landsat, abc.ABC):
     aiming to produce a seamless surface reflectance record from the
     Operational Land Imager (OLI) and Multi-Spectral Instrument (MSI) aboard
     Landsat-8/9 and Sentinel-2A/B remote sensing satellites, respectively.
-    The HLS products are hosted at `LP DAAC 
+    The HLS products are hosted at `LP DAAC
     <https://hls.gsfc.nasa.gov/hls-data/>`_, and created from a set of
     algorithms: atmospheric correction, cloud and cloud-shadow masking,
     geographic co-registration and common gridding, bidirectional reflectance
@@ -71,7 +71,7 @@ class HLS(Landsat, abc.ABC):
         Raises:
             FileNotFoundError: if no files are found in ``root``
         """
-        
+
         super().__init__(paths, crs, res, bands, transforms, cache)
 
 

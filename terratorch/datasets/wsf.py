@@ -35,7 +35,7 @@ class WSF(RasterDataset, abc.ABC):
         crs: Optional[CRS] = None,
         res: Optional[float] = None,
         transforms: Optional[Callable[[dict[str, Any]], dict[str, Any]]] = None,
-        cache: bool = True
+        cache: bool = True,
     ) -> None:
         """Initialize a new dataset instance.
 
@@ -109,7 +109,7 @@ class WSFEvolution(WSF):
     The `World Settlement Footprint Evolution Version 1 dataset
     <https://download.geoservice.dlr.de/WSF_EVO/>`__, created and hosted by
     `DLR <https://dlr.de/>`_, provides a raster, geo-referenced, single-layer
-    global built settlement land cover map. The WSF Evolution mask defines one 
+    global built settlement land cover map. The WSF Evolution mask defines one
     value per pixel corresponding to the year between 1985 and 2015 when built
     settlements were identified, or zero otherwise. The data was created with a
     mix of Landsat and Sentinel satellite imagery.

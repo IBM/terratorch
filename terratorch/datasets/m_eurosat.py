@@ -35,25 +35,28 @@ class MEuroSATNonGeo(NonGeoDataset):
 
     BAND_SETS = {"all": all_band_names, "rgb": rgb_bands}
 
-    def __init__(self, data_root: str | None = None, bands: Sequence[str] = BAND_SETS["all"], transform: A.Compose | None = None, split="train") -> None:
+    def __init__(
+        self,
+        data_root: str | None = None,
+        bands: Sequence[str] = BAND_SETS["all"],
+        transform: A.Compose | None = None,
+        split="train",
+    ) -> None:
         super().__init__()
         if split not in ["train", "test", "val"]:
             msg = "Split must be one of train, test, val."
             raise Exception(msg)
         if split == "val":
             split = "valid"
-        
 
         self.transform = transform if transform else lambda **batch: to_tensor(batch)
         self._validate_bands(bands)
         self.bands = bands
-        self.band_indices = np.array(
-            [self.all_band_names.index(b) for b in bands if b in self.all_band_names]
-        )
+        self.band_indices = np.array([self.all_band_names.index(b) for b in bands if b in self.all_band_names])
         self.split = split
         self.data_root = Path(data_root)
         self.data_directory = self.data_root / "m-eurosat"
-        
+
         label_map_file = self.data_directory / "label_map.json"
         with open(label_map_file, 'r') as file:
             self.label_map = json.load(file)
@@ -69,10 +72,9 @@ class MEuroSATNonGeo(NonGeoDataset):
 
         self.image_files = [self.data_directory / (filename + ".hdf5") for filename in partitions[split]]
 
-
     def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
         file_path = self.image_files[index]
-        image_id = file_path.stem 
+        image_id = file_path.stem
 
         with h5py.File(file_path, 'r') as h5file:
             keys = sorted(h5file.keys())
@@ -84,13 +86,10 @@ class MEuroSATNonGeo(NonGeoDataset):
         label_class = self.id_to_class[image_id]
         label_index = list(self.label_map.keys()).index(label_class)
 
-        output =  {
-            "image": image.astype(np.float32),
-            "label": label_index
-        }
+        output = {"image": image.astype(np.float32), "label": label_index}
 
         output = self.transform(**output)
-                
+
         return output
 
     def _validate_bands(self, bands: Sequence[str]) -> None:
@@ -109,8 +108,8 @@ class MEuroSATNonGeo(NonGeoDataset):
             sample = arg
         else:
             raise TypeError("Argument must be an integer index or a sample dictionary.")
-            
-        image = sample["image"].numpy() 
+
+        image = sample["image"].numpy()
         label_index = sample["label"].item()
 
         rgb_indices = []
@@ -122,19 +121,14 @@ class MEuroSATNonGeo(NonGeoDataset):
 
         rgb_image = image[rgb_indices, :, :]
         rgb_image = np.transpose(rgb_image, (1, 2, 0))
-        rgb_image = (rgb_image - np.min(rgb_image)) / (np.max(rgb_image) - np.min(rgb_image)) 
+        rgb_image = (rgb_image - np.min(rgb_image)) / (np.max(rgb_image) - np.min(rgb_image))
 
         class_names = list(self.label_map.keys())
-        
-        self._plot_sample(
-            image=rgb_image,
-            label_index=label_index,
-            class_names=class_names,
-            suptitle=suptitle
-        )
-    
+
+        self._plot_sample(image=rgb_image, label_index=label_index, class_names=class_names, suptitle=suptitle)
+
     def _plot_sample(image, label_index, class_names=None, suptitle=None) -> None:
-        
+
         fig, ax = plt.subplots(figsize=(6, 6))
         ax.imshow(image)
         ax.axis('off')

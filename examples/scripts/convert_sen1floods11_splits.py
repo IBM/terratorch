@@ -12,7 +12,7 @@ input_file = args.input_file
 
 data = np.genfromtxt(input_file, delimiter=',', dtype=str)
 
-col1 = data[:,0].tolist()
+col1 = data[:, 0].tolist()
 
 col1_ = ["_".join(i.split("_")[:2]) for i in col1]
 

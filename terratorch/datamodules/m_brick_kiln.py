@@ -22,7 +22,7 @@ MEANS = {
     "WATER_VAPOR": 1129.8171906000355,
     "CIRRUS": 83.27188605598549,
     "SWIR_1": 90.54924599052214,
-    "SWIR_2": 68.98768652434848
+    "SWIR_2": 68.98768652434848,
 }
 
 STDS = {
@@ -38,25 +38,25 @@ STDS = {
     "WATER_VAPOR": 704.0219637458916,
     "CIRRUS": 36.355745901131705,
     "SWIR_1": 28.004671947623894,
-    "SWIR_2": 24.268892726362033
+    "SWIR_2": 24.268892726362033,
 }
 
-class MBrickKilnNonGeoDataModule(NonGeoDataModule):
 
+class MBrickKilnNonGeoDataModule(NonGeoDataModule):
     def __init__(
-        self, 
-        batch_size: int = 8, 
-        num_workers: int = 0, 
+        self,
+        batch_size: int = 8,
+        num_workers: int = 0,
         data_root: str = "./",
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
         val_transform: A.Compose | None | list[A.BasicTransform] = None,
         test_transform: A.Compose | None | list[A.BasicTransform] = None,
         aug: AugmentationSequential = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
 
         super().__init__(MBrickKilnNonGeo, batch_size, num_workers, **kwargs)
-        
+
         bands = kwargs.get("bands", MBrickKilnNonGeo.all_band_names)
         self.means = torch.tensor([MEANS[b] for b in bands])
         self.stds = torch.tensor([STDS[b] for b in bands])
@@ -64,11 +64,13 @@ class MBrickKilnNonGeoDataModule(NonGeoDataModule):
         self.val_transform = wrap_in_compose_is_list(val_transform)
         self.test_transform = wrap_in_compose_is_list(test_transform)
         self.data_root = data_root
-        self.aug = AugmentationSequential(K.Normalize(self.means, self.stds), data_keys=["image"]) if aug is None else aug
-    
+        self.aug = (
+            AugmentationSequential(K.Normalize(self.means, self.stds), data_keys=["image"]) if aug is None else aug
+        )
+
     def setup(self, stage: str) -> None:
         if stage in ["fit"]:
-            self.train_dataset = self.dataset_class(  
+            self.train_dataset = self.dataset_class(
                 split="train", data_root=self.data_root, transform=self.train_transform, **self.kwargs
             )
         if stage in ["fit", "validate"]:
@@ -77,5 +79,5 @@ class MBrickKilnNonGeoDataModule(NonGeoDataModule):
             )
         if stage in ["test"]:
             self.test_dataset = self.dataset_class(
-                split="test",data_root=self.data_root, transform=self.test_transform, **self.kwargs
+                split="test", data_root=self.data_root, transform=self.test_transform, **self.kwargs
             )

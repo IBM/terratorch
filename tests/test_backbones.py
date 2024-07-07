@@ -5,7 +5,7 @@ import timm
 import torch
 import importlib
 import terratorch  # noqa: F401
-import os 
+import os
 
 NUM_CHANNELS = 6
 NUM_FRAMES = 3
@@ -52,6 +52,7 @@ def test_vit_models_accept_multitemporal(model_name, input_224_multitemporal):
     backbone = timm.create_model(model_name, pretrained=False, num_frames=NUM_FRAMES)
     backbone(input_224_multitemporal)
 
-#def test_swin_models_accept_non_divisible_by_patch_size(input_386):
+
+# def test_swin_models_accept_non_divisible_by_patch_size(input_386):
 #    backbone = timm.create_model("prithvi_swin_90_us", pretrained=False, num_frames=NUM_FRAMES)
 #    backbone(input_386)

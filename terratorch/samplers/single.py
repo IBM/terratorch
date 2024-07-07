@@ -12,7 +12,7 @@ class MultiSampler(Sampler[BoundingBox]):
     def __init__(self, samplers: Iterable[GeoSampler]) -> None:
         self.length = sum(map(len, samplers))
         self.samplers = samplers
-    
+
     def __len__(self) -> int:
         return self.length
 

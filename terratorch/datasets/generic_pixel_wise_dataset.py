@@ -141,7 +141,7 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         return len(self.image_files)
 
     def __getitem__(self, index: int) -> dict[str, Any]:
-        image = self._load_file(self.image_files[index], nan_replace = self.no_data_replace).to_numpy()
+        image = self._load_file(self.image_files[index], nan_replace=self.no_data_replace).to_numpy()
         # to channels last
         if self.expand_temporal_dimension:
             image = rearrange(image, "(channels time) h w -> channels time h w", channels=len(self.output_bands))
@@ -151,7 +151,9 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             image = image[..., self.filter_indices]
         output = {
             "image": image.astype(np.float32) * self.constant_scale,
-            "mask": self._load_file(self.segmentation_mask_files[index], nan_replace = self.no_label_replace).to_numpy()[0],
+            "mask": self._load_file(self.segmentation_mask_files[index], nan_replace=self.no_label_replace).to_numpy()[
+                0
+            ],
             "filename": self.image_files[index],
         }
         if self.reduce_zero_label:

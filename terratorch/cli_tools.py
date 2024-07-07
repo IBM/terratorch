@@ -80,7 +80,7 @@ def write_tiff(img_wrt, filename, metadata):
     return filename
 
 
-def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16"):
+def save_prediction(prediction, input_file_name, out_dir, dtype: str = "int16"):
     mask, metadata = open_tiff(input_file_name)
     mask = np.where(mask == metadata["nodata"], 1, 0)
     mask = np.max(mask, axis=0)
@@ -310,9 +310,10 @@ class MyLightningCLI(LightningCLI):
             config = self.config
         if hasattr(config, "predict_output_dir"):
             self.trainer.predict_output_dir = config.predict_output_dir
-        
+
         if hasattr(config, "out_dtype"):
             self.trainer.out_dtype = config.out_dtype
+
 
 def build_lightning_cli(
     args: ArgsType = None,
@@ -413,8 +414,12 @@ class LightningInferenceModel:
         ]
 
         if predict_dataset_bands is not None:
-            arguments.extend([ "--data.init_args.predict_dataset_bands",
-            "[" + ",".join(predict_dataset_bands) + "]",])
+            arguments.extend(
+                [
+                    "--data.init_args.predict_dataset_bands",
+                    "[" + ",".join(predict_dataset_bands) + "]",
+                ]
+            )
 
         cli = build_lightning_cli(arguments, run=False)
         trainer = cli.trainer
