@@ -1,3 +1,5 @@
+# Copyright contributors to the Terratorch project
+
 import os
 
 import pytest

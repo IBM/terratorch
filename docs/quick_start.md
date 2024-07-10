@@ -1,8 +1,13 @@
 # Quick start
 We suggest using Python==3.10.
-To get started, make sure to have `PyTorch >= 2` [installed](https://pytorch.org/get-started/locally/). 
+To get started, make sure to have [PyTorch](https://pytorch.org/get-started/locally/) >= 2.0.0 and [GDAL](https://gdal.org/index.html) installed. 
 
-To install the package, clone the repository and install it with `pip install -e .` from within the repository directory.
+Installing GDAL can be quite a complex process. If you don't have GDAL set up on your system, we reccomend using a conda environment and installing it with `conda install -c conda-forge gdal`.
+
+For a stable point-release, use `pip install terratorch`. 
+If you prefer to get the most recent version of the main branch, install the library with `pip install git+https://github.com/IBM/terratorch.git`.
+
+To install as a developer (e.g. to extend the library) clone this repo, and run `pip install -e .`.
 
 You can interact with the library at several levels of abstraction. Each deeper level of abstraction trades off some amount of flexibility for ease of use and configuration.
 
@@ -104,6 +109,17 @@ task = PixelwiseRegressionTask(
 ```
 
 At this level of abstraction, you can also provide a configuration file (see [LightningCLI](https://lightning.ai/docs/pytorch/stable/cli/lightning_cli.html#lightning-cli)) with all the details of the training. See an example for semantic segmentation below:
+
+!!! info
+
+    To pass your own path from where to load the weights with the PrithviModelFactory, you can make use of timm's `pretrained_cfg_overlay`.
+    E.g. to pass a local path, you can add, under model_args:
+    
+    ```yaml
+    backbone_pretrained_cfg_overlay:
+        file: <local_path>
+    ```
+    Besides `file`, you can also pass `url`, `hf_hub_id`, amongst others. Check timm's documentation for full details.
 
 ```yaml title="Configuration file for a Semantic Segmentation Task"
 # lightning.pytorch==2.1.1
