@@ -3,4 +3,6 @@ site/*
 build/*
 dist/*
 *.egg-info
+*.coverage.*
+**/*.pt
 
