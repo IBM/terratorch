@@ -7,7 +7,7 @@ import os
 from abc import ABC
 from functools import partial
 from pathlib import Path
-from typing import Any
+from typing import Any, List, Union
 
 import albumentations as A
 import matplotlib as mpl
@@ -122,18 +122,26 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
 
         self.dataset_bands = dataset_bands
         self.output_bands = output_bands
-        if self.output_bands and not self.dataset_bands:
-            msg = "If output bands provided, dataset_bands must also be provided"
-            return Exception(msg)  # noqa: PLE0101
 
-        if self.output_bands:
-            if len(set(self.output_bands) & set(self.dataset_bands)) != len(self.output_bands):
-                msg = "Output bands must be a subset of dataset bands"
-                raise Exception(msg)
-            self.filter_indices = [self.dataset_bands.index(band) for band in self.output_bands]
+        bands_by_interval = (self._bands_defined_by_interval(bands_list=dataset_bands) and
+                             self._bands_defined_by_interval(bands_list=output_bands))
+
+        if not bands_by_interval:
+            if self.output_bands and not self.dataset_bands:
+                msg = "If output bands provided, dataset_bands must also be provided"
+                return Exception(msg)  # noqa: PLE0101
+
+            if self.output_bands:
+                if len(set(self.output_bands) & set(self.dataset_bands)) != len(self.output_bands):
+                    msg = "Output bands must be a subset of dataset bands"
+                    raise Exception(msg)
+                self.filter_indices = [self.dataset_bands.index(band) for band in self.output_bands]
+            else:
+                self.filter_indices = None
         else:
-            self.filter_indices = None
-        # If no transform is given, apply only to transform to torch tensor
+            pass
+
+            # If no transform is given, apply only to transform to torch tensor
         self.transform = transform if transform else lambda **batch: to_tensor(batch)
         # self.transform = transform if transform else ToTensorV2()
 
@@ -166,6 +174,13 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             data = data.fillna(nan_replace)
         return data
 
+    def _bands_defined_by_interval(self, bands_list: List[int] | List[List[int]] = None) -> bool:
+        if all([type(band)==int for band in bands_list]):
+            return False
+        elif all([isinstance(band, list) for band in bands_list]):
+            return True
+        else:
+            raise Exception(f"Excpected List[int] or List[List[int]], but received {type(bands_list)}.")
 
 class GenericNonGeoSegmentationDataset(GenericPixelWiseDataset):
     """GenericNonGeoSegmentationDataset"""
