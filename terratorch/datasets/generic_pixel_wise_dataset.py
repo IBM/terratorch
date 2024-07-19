@@ -184,7 +184,9 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         return sorted(sum(bands, []))
 
     def _bands_defined_by_interval(self, bands_list: list[int] | list[list[int]] = None) -> bool:
-        if all([type(band)==int or isinstance(band, HLSBands) for band in bands_list]):
+        if not bands_list:
+            return False
+        elif all([type(band)==int or isinstance(band, HLSBands) for band in bands_list]):
             return False
         elif all([isinstance(subinterval, list) for subinterval in bands_list]):
             if all([type(band)==int for band in sum(bands_list, [])]):
