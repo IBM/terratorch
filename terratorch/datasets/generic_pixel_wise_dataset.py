@@ -185,7 +185,7 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         return sorted(sum(bands, []))
 
     def _bands_defined_by_interval(self, bands_list: List[int] | List[List[int]] = None) -> bool:
-        if all([type(band)==int for band in bands_list]):
+        if all([type(band)==int or isinstance(band, HLSBands) for band in bands_list]):
             return False
         elif all([isinstance(band, list) for band in bands_list]):
             return True
@@ -373,8 +373,8 @@ class GenericNonGeoPixelwiseRegressionDataset(GenericPixelWiseDataset):
         ignore_split_file_extensions: bool = True,
         allow_substring_split_file: bool = True,
         rgb_indices: list[int] | None = None,
-        dataset_bands: list[HLSBands | int] | None = None,
-        output_bands: list[HLSBands | int] | None = None,
+        dataset_bands: list[HLSBands | int | list[int]] | None = None,
+        output_bands: list[HLSBands | int | list[int]] | None = None,
         constant_scale: float = 1,
         transform: A.Compose | None = None,
         no_data_replace: float | None = None,
