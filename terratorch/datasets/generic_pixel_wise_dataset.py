@@ -120,28 +120,30 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             )
         self.rgb_indices = [0, 1, 2] if rgb_indices is None else rgb_indices
 
-        self.dataset_bands = dataset_bands
-        self.output_bands = output_bands
-
         bands_by_interval = (self._bands_defined_by_interval(bands_list=dataset_bands) and
                              self._bands_defined_by_interval(bands_list=output_bands))
 
-        if not bands_by_interval:
-            if self.output_bands and not self.dataset_bands:
-                msg = "If output bands provided, dataset_bands must also be provided"
-                return Exception(msg)  # noqa: PLE0101
-
-            if self.output_bands:
-                if len(set(self.output_bands) & set(self.dataset_bands)) != len(self.output_bands):
-                    msg = "Output bands must be a subset of dataset bands"
-                    raise Exception(msg)
-                self.filter_indices = [self.dataset_bands.index(band) for band in self.output_bands]
-            else:
-                self.filter_indices = None
+        # If the bands are defined by sub-intervals or not.
+        if bands_by_interval:
+            self.dataset_bands = self._generate_bands_intervals(dataset_bands)
+            self.output_bands = self._generate_bands_intervals(output_bands)
         else:
-            pass
+            self.dataset_bands = dataset_bands
+            self.output_bands = output_bands
 
-            # If no transform is given, apply only to transform to torch tensor
+        if self.output_bands and not self.dataset_bands:
+            msg = "If output bands provided, dataset_bands must also be provided"
+            return Exception(msg)  # noqa: PLE0101
+
+        if self.output_bands:
+            if len(set(self.output_bands) & set(self.dataset_bands)) != len(self.output_bands):
+                msg = "Output bands must be a subset of dataset bands"
+                raise Exception(msg)
+            self.filter_indices = [self.dataset_bands.index(band) for band in self.output_bands]
+        else:
+            self.filter_indices = None
+
+        # If no transform is given, apply only to transform to torch tensor
         self.transform = transform if transform else lambda **batch: to_tensor(batch)
         # self.transform = transform if transform else ToTensorV2()
 
@@ -173,6 +175,14 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         if nan_replace is not None:
             data = data.fillna(nan_replace)
         return data
+
+    def _generate_bands_intervals(self, bands_intervals:List[List[int]] = None):
+        bands = list()
+        for b_interval in bands_intervals:
+            b_interval[-1] += 1
+            bands_sublist = np.arange(*b_interval).astype(int)
+            bands.append(bands_sublist)
+        return sorted(sum(bands, []))
 
     def _bands_defined_by_interval(self, bands_list: List[int] | List[List[int]] = None) -> bool:
         if all([type(band)==int for band in bands_list]):
