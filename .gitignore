@@ -3,6 +3,7 @@ site/*
 build/*
 dist/*
 *.egg-info
+*.coverage.*
+**/*.pt
 *.ipynb_checkpoints
-**/*pt
 **/*pth
