@@ -43,8 +43,8 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         ignore_split_file_extensions: bool = True,
         allow_substring_split_file: bool = True,
         rgb_indices: list[int] | None = None,
-        dataset_bands: list[HLSBands | int] | None = None,
-        output_bands: list[HLSBands | int] | None = None,
+        dataset_bands: list[HLSBands | int | list[int]] | None = None,
+        output_bands: list[HLSBands | int | list[int]] | None = None,
         constant_scale: float = 1,
         transform: A.Compose | None = None,
         no_data_replace: float | None = None,
@@ -179,16 +179,18 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
     def _generate_bands_intervals(self, bands_intervals:List[List[int]] = None):
         bands = list()
         for b_interval in bands_intervals:
-            b_interval[-1] += 1
-            bands_sublist = np.arange(*b_interval).astype(int)
+            bands_sublist = np.arange(b_interval[0], b_interval[1] + 1).astype(int).tolist()
             bands.append(bands_sublist)
         return sorted(sum(bands, []))
 
-    def _bands_defined_by_interval(self, bands_list: List[int] | List[List[int]] = None) -> bool:
+    def _bands_defined_by_interval(self, bands_list: list[int] | list[list[int]] = None) -> bool:
         if all([type(band)==int or isinstance(band, HLSBands) for band in bands_list]):
             return False
-        elif all([isinstance(band, list) for band in bands_list]):
-            return True
+        elif all([isinstance(subinterval, list) for subinterval in bands_list]):
+            if all([type(band)==int for band in sum(bands_list, [])]):
+                return True
+            else:
+                raise Exception(f"Whe using subintervals, the limits must be int.")
         else:
             raise Exception(f"Excpected List[int] or List[List[int]], but received {type(bands_list)}.")
 
@@ -206,8 +208,8 @@ class GenericNonGeoSegmentationDataset(GenericPixelWiseDataset):
         ignore_split_file_extensions: bool = True,
         allow_substring_split_file: bool = True,
         rgb_indices: list[str] | None = None,
-        dataset_bands: list[HLSBands | int] | None = None,
-        output_bands: list[HLSBands | int] | None = None,
+        dataset_bands: list[HLSBands | int | list[int]] | None = None,
+        output_bands: list[HLSBands | int | list[int]] | None = None,
         class_names: list[str] | None = None,
         constant_scale: float = 1,
         transform: A.Compose | None = None,
