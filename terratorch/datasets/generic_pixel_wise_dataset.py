@@ -174,6 +174,7 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             "mask": self._load_file(self.segmentation_mask_files[index], nan_replace = self.no_label_replace).to_numpy()[0],
             "filename": self.image_files[index],
         }
+
         if self.reduce_zero_label:
             output["mask"] -= 1
         if self.transform:
@@ -196,17 +197,20 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
     def _bands_as_int_or_str(self, dataset_bands, output_bands) -> type:
 
         band_type = [None, None]
-        for b, bands_list in enumerate([dataset_bands, output_bands]):
-            if all([type(band)==int for band in bands_list]):
-                band_type[b] = int
-            elif all([type(band)==str for band in bands_list]):
-                band_type[b] = str
-            else:
-                pass 
-        if band_type.count(band_type[0]) == len(band_type):
-            return band_type[0]
+        if not dataset_bands and not output_bands:
+            return None
         else:
-            raise Exception("The bands must be or all str or all int.")
+            for b, bands_list in enumerate([dataset_bands, output_bands]):
+                if all([type(band)==int for band in bands_list]):
+                    band_type[b] = int
+                elif all([type(band)==str for band in bands_list]):
+                    band_type[b] = str
+                else:
+                    pass 
+            if band_type.count(band_type[0]) == len(band_type):
+                return band_type[0]
+            else:
+                raise Exception("The bands must be or all str or all int.")
 
     def _bands_defined_by_interval(self, bands_list: list[int] | list[list[int]] = None) -> bool:
         if not bands_list:
