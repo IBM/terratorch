@@ -88,6 +88,7 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
                 expected 0. Defaults to False.
         """
         super().__init__()
+
         self.split_file = split
 
         label_data_root = label_data_root if label_data_root is not None else data_root
@@ -136,7 +137,7 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             if bands_type == str:
                 raise UserWarning("When the bands are defined as str, guarantee your input files"+ 
                                   "are organized by band and all have its specific name.")
-
+                
         if self.output_bands and not self.dataset_bands:
             msg = "If output bands provided, dataset_bands must also be provided"
             return Exception(msg)  # noqa: PLE0101
@@ -146,7 +147,9 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             if len(set(self.output_bands) & set(self.dataset_bands)) != len(self.output_bands):
                 msg = "Output bands must be a subset of dataset bands"
                 raise Exception(msg)
+
             self.filter_indices = [self.dataset_bands.index(band) for band in self.output_bands]
+
         else:
             self.filter_indices = None
 
@@ -176,7 +179,7 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         if self.transform:
             output = self.transform(**output)
         return output
-
+    
     def _load_file(self, path, nan_replace: int | float | None = None) -> xr.DataArray:
         data = rioxarray.open_rasterio(path, masked=True)
         if nan_replace is not None:
@@ -200,7 +203,7 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
                 band_type[b] = str
             else:
                 pass 
-        if band_type.cound(band_type[0]) == len(band_type)
+        if band_type.cound(band_type[0]) == len(band_type):
             return band_type[0]
         else:
             raise Exception("The bands must be or all str or all int.")
@@ -232,8 +235,8 @@ class GenericNonGeoSegmentationDataset(GenericPixelWiseDataset):
         ignore_split_file_extensions: bool = True,
         allow_substring_split_file: bool = True,
         rgb_indices: list[str] | None = None,
-        dataset_bands: list[HLSBands | int | list[int]] | None = None,
-        output_bands: list[HLSBands | int | list[int]] | None = None,
+        dataset_bands: list[HLSBands | int | list[int] | str ] | None = None,
+        output_bands: list[HLSBands | int | list[int] | str ] | None = None,
         class_names: list[str] | None = None,
         constant_scale: float = 1,
         transform: A.Compose | None = None,
@@ -399,8 +402,8 @@ class GenericNonGeoPixelwiseRegressionDataset(GenericPixelWiseDataset):
         ignore_split_file_extensions: bool = True,
         allow_substring_split_file: bool = True,
         rgb_indices: list[int] | None = None,
-        dataset_bands: list[HLSBands | int | list[int]] | None = None,
-        output_bands: list[HLSBands | int | list[int]] | None = None,
+        dataset_bands: list[HLSBands | int | list[int] | str ] | None = None,
+        output_bands: list[HLSBands | int | list[int] | str ] | None = None,
         constant_scale: float = 1,
         transform: A.Compose | None = None,
         no_data_replace: float | None = None,
