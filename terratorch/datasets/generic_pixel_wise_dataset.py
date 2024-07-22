@@ -135,7 +135,7 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             bands_type = self._bands_as_int_or_str(dataset_bands, output_bands)
 
             if bands_type == str:
-                raise UserWarning("When the bands are defined as str, guarantee your input files"+ 
+                UserWarning("When the bands are defined as str, guarantee your input files"+ 
                                   "are organized by band and all have its specific name.")
                 
         if self.output_bands and not self.dataset_bands:
@@ -203,7 +203,7 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
                 band_type[b] = str
             else:
                 pass 
-        if band_type.cound(band_type[0]) == len(band_type):
+        if band_type.count(band_type[0]) == len(band_type):
             return band_type[0]
         else:
             raise Exception("The bands must be or all str or all int.")
