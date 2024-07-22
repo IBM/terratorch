@@ -130,11 +130,18 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         else:
             self.dataset_bands = dataset_bands
             self.output_bands = output_bands
+            
+            bands_type = self._bands_as_int_or_str(dataset_bands, output_bands)
+
+            if bands_type == str:
+                raise UserWarning("When the bands are defined as str, guarantee your input files"+ 
+                                  "are organized by band and all have its specific name.")
 
         if self.output_bands and not self.dataset_bands:
             msg = "If output bands provided, dataset_bands must also be provided"
             return Exception(msg)  # noqa: PLE0101
 
+        # There is a special condition if the bands are defined as simple strings.
         if self.output_bands:
             if len(set(self.output_bands) & set(self.dataset_bands)) != len(self.output_bands):
                 msg = "Output bands must be a subset of dataset bands"
@@ -183,10 +190,25 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             bands.append(bands_sublist)
         return sorted(sum(bands, []))
 
+    def _bands_as_int_or_str(self, dataset_bands, output_bands) -> type:
+
+        band_type = [None, None]
+        for b, bands_list in enumerate([dataset_bands, output_bands]):
+            if all([type(band)==int for band in bands_list]):
+                band_type[b] = int
+            elif all([type(band)==str for band in bands_list]):
+                band_type[b] = str
+            else:
+                pass 
+        if band_type.cound(band_type[0]) == len(band_type)
+            return band_type[0]
+        else:
+            raise Exception("The bands must be or all str or all int.")
+
     def _bands_defined_by_interval(self, bands_list: list[int] | list[list[int]] = None) -> bool:
         if not bands_list:
             return False
-        elif all([type(band)==int or isinstance(band, HLSBands) for band in bands_list]):
+        elif all([type(band)==int or type(band)==str or isinstance(band, HLSBands) for band in bands_list]):
             return False
         elif all([isinstance(subinterval, list) for subinterval in bands_list]):
             if all([type(band)==int for band in sum(bands_list, [])]):
@@ -194,7 +216,7 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             else:
                 raise Exception(f"Whe using subintervals, the limits must be int.")
         else:
-            raise Exception(f"Excpected List[int] or List[List[int]], but received {type(bands_list)}.")
+            raise Exception(f"Excpected List[int] or List[str] or List[List[int]], but received {type(bands_list)}.")
 
 class GenericNonGeoSegmentationDataset(GenericPixelWiseDataset):
     """GenericNonGeoSegmentationDataset"""
