@@ -121,11 +121,10 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             )
         self.rgb_indices = [0, 1, 2] if rgb_indices is None else rgb_indices
 
-        bands_by_interval = (self._bands_defined_by_interval(bands_list=dataset_bands) and
-                             self._bands_defined_by_interval(bands_list=output_bands))
+        is_bands_by_interval = self._check_if_its_defined_by_interval(dataset_bands, output_bands) 
 
         # If the bands are defined by sub-intervals or not.
-        if bands_by_interval:
+        if is_bands_by_interval:
             self.dataset_bands = self._generate_bands_intervals(dataset_bands)
             self.output_bands = self._generate_bands_intervals(output_bands)
         else:
@@ -212,6 +211,19 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             else:
                 raise Exception("The bands must be or all str or all int.")
 
+    def _check_if_its_defined_by_interval(self, dataset_bands: list[int] | list[tuple[int]] = None,
+                                          output_bands: list[int] | list[tuple[int]] = None) -> bool:
+
+        is_dataset_bands_defined = self._bands_defined_by_interval(bands_list=dataset_bands)
+        is_output_bands_defined = self._bands_defined_by_interval(bands_list=output_bands)
+
+        if is_dataset_bands_defined and is_output_bands_defined:
+            return True
+        elif not is_dataset_bands_defined and not is_output_bands_defined:
+            return False
+        else:
+            raise Exception(f"Both dataset_bands and output_bands must have the same type, but received {dataset_bands} and {output_bands}")
+
     def _bands_defined_by_interval(self, bands_list: list[int] | list[tuple[int]] = None) -> bool:
         if not bands_list:
             return False
@@ -224,7 +236,6 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             else:
                 raise Exception(f"Whe using subintervals, the limits must be int.")
         else:
-            print(bands_list)
             raise Exception(f"Excpected List[int] or List[str] or List[tuple[int, int]], but received {type(bands_list)}.")
 
 class GenericNonGeoSegmentationDataset(GenericPixelWiseDataset):
