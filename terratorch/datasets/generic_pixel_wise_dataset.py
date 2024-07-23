@@ -43,8 +43,8 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         ignore_split_file_extensions: bool = True,
         allow_substring_split_file: bool = True,
         rgb_indices: list[int] | None = None,
-        dataset_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
-        output_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
+        dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         constant_scale: float = 1,
         transform: A.Compose | None = None,
         no_data_replace: float | None = None,
@@ -121,7 +121,7 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             )
         self.rgb_indices = [0, 1, 2] if rgb_indices is None else rgb_indices
 
-        is_bands_by_interval = self._check_if_its_defined_by_interval(dataset_bands, output_bands) 
+        is_bands_by_interval = self._check_if_its_defined_by_interval(dataset_bands, output_bands)
 
         # If the bands are defined by sub-intervals or not.
         if is_bands_by_interval:
@@ -130,7 +130,7 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         else:
             self.dataset_bands = dataset_bands
             self.output_bands = output_bands
-                
+
         if self.output_bands and not self.dataset_bands:
             msg = "If output bands provided, dataset_bands must also be provided"
             return Exception(msg)  # noqa: PLE0101
@@ -154,7 +154,7 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         return len(self.image_files)
 
     def __getitem__(self, index: int) -> dict[str, Any]:
-        image = self._load_file(self.image_files[index], nan_replace = self.no_data_replace).to_numpy()
+        image = self._load_file(self.image_files[index], nan_replace=self.no_data_replace).to_numpy()
         # to channels last
         if self.expand_temporal_dimension:
             image = rearrange(image, "(channels time) h w -> channels time h w", channels=len(self.output_bands))
@@ -164,7 +164,9 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             image = image[..., self.filter_indices]
         output = {
             "image": image.astype(np.float32) * self.constant_scale,
-            "mask": self._load_file(self.segmentation_mask_files[index], nan_replace = self.no_label_replace).to_numpy()[0],
+            "mask": self._load_file(self.segmentation_mask_files[index], nan_replace=self.no_label_replace).to_numpy()[
+                0
+            ],
             "filename": self.image_files[index],
         }
 
@@ -173,14 +175,14 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         if self.transform:
             output = self.transform(**output)
         return output
-    
+
     def _load_file(self, path, nan_replace: int | float | None = None) -> xr.DataArray:
         data = rioxarray.open_rasterio(path, masked=True)
         if nan_replace is not None:
             data = data.fillna(nan_replace)
         return data
 
-    def _generate_bands_intervals(self, bands_intervals:List[List[int]] = None):
+    def _generate_bands_intervals(self, bands_intervals: List[List[int]] = None):
         bands = list()
         for b_interval in bands_intervals:
             bands_sublist = np.arange(b_interval[0], b_interval[1] + 1).astype(int).tolist()
@@ -194,19 +196,20 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             return None
         else:
             for b, bands_list in enumerate([dataset_bands, output_bands]):
-                if all([type(band)==int for band in bands_list]):
+                if all([type(band) == int for band in bands_list]):
                     band_type[b] = int
-                elif all([type(band)==str for band in bands_list]):
+                elif all([type(band) == str for band in bands_list]):
                     band_type[b] = str
                 else:
-                    pass 
+                    pass
             if band_type.count(band_type[0]) == len(band_type):
                 return band_type[0]
             else:
                 raise Exception("The bands must be or all str or all int.")
 
-    def _check_if_its_defined_by_interval(self, dataset_bands: list[int] | list[tuple[int]] = None,
-                                          output_bands: list[int] | list[tuple[int]] = None) -> bool:
+    def _check_if_its_defined_by_interval(
+        self, dataset_bands: list[int] | list[tuple[int]] = None, output_bands: list[int] | list[tuple[int]] = None
+    ) -> bool:
 
         is_dataset_bands_defined = self._bands_defined_by_interval(bands_list=dataset_bands)
         is_output_bands_defined = self._bands_defined_by_interval(bands_list=output_bands)
@@ -216,21 +219,26 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         elif not is_dataset_bands_defined and not is_output_bands_defined:
             return False
         else:
-            raise Exception(f"Both dataset_bands and output_bands must have the same type, but received {dataset_bands} and {output_bands}")
+            raise Exception(
+                f"Both dataset_bands and output_bands must have the same type, but received {dataset_bands} and {output_bands}"
+            )
 
     def _bands_defined_by_interval(self, bands_list: list[int] | list[tuple[int]] = None) -> bool:
         if not bands_list:
             return False
-        elif all([type(band)==int or type(band)==str or isinstance(band, HLSBands) for band in bands_list]):
+        elif all([type(band) == int or type(band) == str or isinstance(band, HLSBands) for band in bands_list]):
             return False
         elif all([isinstance(subinterval, tuple) for subinterval in bands_list]):
             bands_list_ = [list(subinterval) for subinterval in bands_list]
-            if all([type(band)==int for band in sum(bands_list_, [])]):
+            if all([type(band) == int for band in sum(bands_list_, [])]):
                 return True
             else:
                 raise Exception(f"Whe using subintervals, the limits must be int.")
         else:
-            raise Exception(f"Excpected List[int] or List[str] or List[tuple[int, int]], but received {type(bands_list)}.")
+            raise Exception(
+                f"Excpected List[int] or List[str] or List[tuple[int, int]], but received {type(bands_list)}."
+            )
+
 
 class GenericNonGeoSegmentationDataset(GenericPixelWiseDataset):
     """GenericNonGeoSegmentationDataset"""
@@ -246,8 +254,8 @@ class GenericNonGeoSegmentationDataset(GenericPixelWiseDataset):
         ignore_split_file_extensions: bool = True,
         allow_substring_split_file: bool = True,
         rgb_indices: list[str] | None = None,
-        dataset_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
-        output_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
+        dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         class_names: list[str] | None = None,
         constant_scale: float = 1,
         transform: A.Compose | None = None,
@@ -413,8 +421,8 @@ class GenericNonGeoPixelwiseRegressionDataset(GenericPixelWiseDataset):
         ignore_split_file_extensions: bool = True,
         allow_substring_split_file: bool = True,
         rgb_indices: list[int] | None = None,
-        dataset_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
-        output_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
+        dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         constant_scale: float = 1,
         transform: A.Compose | None = None,
         no_data_replace: float | None = None,
