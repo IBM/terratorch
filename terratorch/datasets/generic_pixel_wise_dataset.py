@@ -183,11 +183,11 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         return data
 
     def _generate_bands_intervals(self, bands_intervals: List[List[int]] = None):
-        bands = list()
+        bands = []
         for b_interval in bands_intervals:
-            bands_sublist = np.arange(b_interval[0], b_interval[1] + 1).astype(int).tolist()
+            bands_sublist = list(range(b_interval[0], b_interval[1] + 1))
             bands.append(bands_sublist)
-        return sorted(sum(bands, []))
+        return reduce(operator.iadd, bands, [])
 
     def _bands_as_int_or_str(self, dataset_bands, output_bands) -> type:
 
