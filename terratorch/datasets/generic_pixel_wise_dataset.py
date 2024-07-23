@@ -130,12 +130,6 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         else:
             self.dataset_bands = dataset_bands
             self.output_bands = output_bands
-            
-            bands_type = self._bands_as_int_or_str(dataset_bands, output_bands)
-
-            if bands_type == str:
-                UserWarning("When the bands are defined as str, guarantee your input files"+ 
-                                  "are organized by band and all have its specific name.")
                 
         if self.output_bands and not self.dataset_bands:
             msg = "If output bands provided, dataset_bands must also be provided"
