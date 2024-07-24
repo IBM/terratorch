@@ -130,30 +130,31 @@ class CustomWriter(BasePredictionWriter):
                 save_prediction(prediction, file_name, output_dir, dtype=trainer.out_dtype)
 
 
-def clean_config_for_deployment_and_dump(config: dict[str, Any]):
+def clean_config_for_deployment_and_dump(config: dict[str, Any], clean:bool=False):
     deploy_config = deepcopy(config)
-    ## General
-    # drop ckpt_path
-    deploy_config.pop("ckpt_path", None)
-    # drop checkpoints
-    deploy_config.pop("ModelCheckpoint", None)
-    deploy_config.pop("StateDictModelCheckpoint", None)
-    # drop optimizer and lr sheduler
-    deploy_config.pop("optimizer", None)
-    deploy_config.pop("lr_scheduler", None)
-    ## Trainer
-    # remove logging
-    deploy_config["trainer"]["logger"] = False
-    # remove callbacks
-    deploy_config["trainer"].pop("callbacks", None)
-    # remove default_root_dir
-    deploy_config["trainer"].pop("default_root_dir", None)
-    # set mixed precision by default for inference
-    deploy_config["trainer"]["precision"] = "16-mixed"
-    ## Model
-    # set pretrained to false
-    if "model_args" in deploy_config["model"]["init_args"]:
-        deploy_config["model"]["init_args"]["model_args"]["pretrained"] = False
+    if clean:
+        ## General
+        # drop ckpt_path
+        deploy_config.pop("ckpt_path", None)
+        # drop checkpoints
+        deploy_config.pop("ModelCheckpoint", None)
+        deploy_config.pop("StateDictModelCheckpoint", None)
+        # drop optimizer and lr sheduler
+        deploy_config.pop("optimizer", None)
+        deploy_config.pop("lr_scheduler", None)
+        ## Trainer
+        # remove logging
+        deploy_config["trainer"]["logger"] = False
+        # remove callbacks
+        deploy_config["trainer"].pop("callbacks", None)
+        # remove default_root_dir
+        deploy_config["trainer"].pop("default_root_dir", None)
+        # set mixed precision by default for inference
+        deploy_config["trainer"]["precision"] = "16-mixed"
+        ## Model
+        # set pretrained to false
+        if "model_args" in deploy_config["model"]["init_args"]:
+            deploy_config["model"]["init_args"]["model_args"]["pretrained"] = False
 
     return yaml.safe_dump(deploy_config)
 
