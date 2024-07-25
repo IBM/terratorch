@@ -182,6 +182,8 @@ class StudioDeploySaveConfigCallback(SaveConfigCallback):
         if self.already_saved:
             return
 
+        _, self.config_filename = os.path.split(self.config.config[0].abs_path)
+
         if self.save_to_log_dir:
             log_dir = trainer.log_dir or trainer.default_root_dir  # this broadcasts the directory
             if log_dir is None:
