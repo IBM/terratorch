@@ -130,9 +130,10 @@ class CustomWriter(BasePredictionWriter):
                 save_prediction(prediction, file_name, output_dir, dtype=trainer.out_dtype)
 
 
-def clean_config_for_deployment_and_dump(config: dict[str, Any], clean:bool=False):
+def clean_config_for_deployment_and_dump(config: dict[str, Any]):
     deploy_config = deepcopy(config)
-    if clean:
+
+    if config["clean_config"]:
         ## General
         # drop ckpt_path
         deploy_config.pop("ckpt_path", None)
@@ -176,7 +177,7 @@ class StudioDeploySaveConfigCallback(SaveConfigCallback):
     ):
         super().__init__(parser, config, config_filename, overwrite, multifile, save_to_log_dir)
         set_dumper("deploy_config", clean_config_for_deployment_and_dump)
-
+        
     def setup(self, trainer: Trainer, pl_module: LightningModule, stage: str) -> None:
         if self.already_saved:
             return
@@ -285,6 +286,7 @@ class MyLightningCLI(LightningCLI):
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:
         parser.add_argument("--predict_output_dir", default=None)
         parser.add_argument("--out_dtype", default="int16")
+        parser.add_argument("--clean_config", type=bool, default=False)
 
         # parser.set_defaults({"trainer.enable_checkpointing": False})
 
@@ -314,6 +316,9 @@ class MyLightningCLI(LightningCLI):
         
         if hasattr(config, "out_dtype"):
             self.trainer.out_dtype = config.out_dtype
+
+        if hasattr(config, "clean_config"):
+            self.trainer.clean_config = config.clean_config
 
 def build_lightning_cli(
     args: ArgsType = None,
