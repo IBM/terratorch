@@ -42,8 +42,8 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
         ignore_split_file_extensions: bool = True,
         allow_substring_split_file: bool = True,
         rgb_indices: list[int] | None = None,
-        dataset_bands: list[HLSBands | int] | None = None,
-        output_bands: list[HLSBands | int] | None = None,
+        dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         constant_scale: float = 1,
         transform: A.Compose | None = None,
         no_data_replace: float = 0,
@@ -64,8 +64,8 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
                 that must be present in file names to be included (as in mmsegmentation), or exact
                 matches (e.g. eurosat). Defaults to True.
             rgb_indices (list[str], optional): Indices of RGB channels. Defaults to [0, 1, 2].
-            dataset_bands (list[HLSBands | int] | None): Bands present in the dataset.
-            output_bands (list[HLSBands | int] | None): Bands that should be output by the dataset.
+            dataset_bands (list[HLSBands | int | tuple[int, int] | str] | None): Bands present in the dataset. This parameter names input channels (bands) using HLSBands, ints, int ranges, or strings, so that they can then be refered to by output_bands. Defaults to None.
+            output_bands (list[HLSBands | int | tuple[int, int] | str] | None): Bands that should be output by the dataset as named by dataset_bands.
             constant_scale (float): Factor to multiply image values by. Defaults to 1.
             transform (Albumentations.Compose | None): Albumentations transform to be applied.
                 Should end with ToTensorV2(). If used through the generic_data_module,
@@ -110,17 +110,21 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
 
         self.rgb_indices = [0, 1, 2] if rgb_indices is None else rgb_indices
 
-        self.dataset_bands = dataset_bands
-        self.output_bands = output_bands
+        self.dataset_bands = self._generate_bands_intervals(dataset_bands)
+        self.output_bands = self._generate_bands_intervals(output_bands)
+
         if self.output_bands and not self.dataset_bands:
             msg = "If output bands provided, dataset_bands must also be provided"
             return Exception(msg)  # noqa: PLE0101
 
+        # There is a special condition if the bands are defined as simple strings.
         if self.output_bands:
             if len(set(self.output_bands) & set(self.dataset_bands)) != len(self.output_bands):
                 msg = "Output bands must be a subset of dataset bands"
                 raise Exception(msg)
+
             self.filter_indices = [self.dataset_bands.index(band) for band in self.output_bands]
+
         else:
             self.filter_indices = None
         # If no transform is given, apply only to transform to torch tensor
