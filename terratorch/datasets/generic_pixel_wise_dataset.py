@@ -1,24 +1,21 @@
 # Copyright contributors to the Terratorch project
 
-"""Module containing generic dataset classes
-"""
+"""Module containing generic dataset classes"""
+
 import glob
+import operator
 import os
 from abc import ABC
-from functools import partial
-from pathlib import Path
-from typing import Any, List, Union
 from functools import reduce
-import operator
+from pathlib import Path
+from typing import Any
+
 import albumentations as A
 import matplotlib as mpl
 import numpy as np
 import rioxarray
-import torch
 import xarray as xr
-from albumentations.pytorch import ToTensorV2
 from einops import rearrange
-from matplotlib import cm
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
@@ -122,15 +119,8 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             )
         self.rgb_indices = [0, 1, 2] if rgb_indices is None else rgb_indices
 
-        is_bands_by_interval = self._check_if_its_defined_by_interval(dataset_bands, output_bands)
-
-        # If the bands are defined by sub-intervals or not.
-        if is_bands_by_interval:
-            self.dataset_bands = self._generate_bands_intervals(dataset_bands)
-            self.output_bands = self._generate_bands_intervals(output_bands)
-        else:
-            self.dataset_bands = dataset_bands
-            self.output_bands = output_bands
+        self.dataset_bands = self._generate_bands_intervals(dataset_bands)
+        self.output_bands = self._generate_bands_intervals(output_bands)
 
         if self.output_bands and not self.dataset_bands:
             msg = "If output bands provided, dataset_bands must also be provided"
@@ -183,63 +173,25 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             data = data.fillna(nan_replace)
         return data
 
-    def _generate_bands_intervals(self, bands_intervals: List[List[int]] = None):
-        bands = []
-        for b_interval in bands_intervals:
-            bands_sublist = list(range(b_interval[0], b_interval[1] + 1))
-            bands.append(bands_sublist)
-        return reduce(operator.iadd, bands, [])
-
-    def _bands_as_int_or_str(self, dataset_bands, output_bands) -> type:
-
-        band_type = [None, None]
-        if not dataset_bands and not output_bands:
+    def _generate_bands_intervals(self, bands_intervals: list[int | str | HLSBands | tuple[int]] | None = None):
+        if bands_intervals is None:
             return None
-        else:
-            for b, bands_list in enumerate([dataset_bands, output_bands]):
-                if all([type(band) == int for band in bands_list]):
-                    band_type[b] = int
-                elif all([type(band) == str for band in bands_list]):
-                    band_type[b] = str
-                else:
-                    pass
-            if band_type.count(band_type[0]) == len(band_type):
-                return band_type[0]
+        bands = []
+        for element in bands_intervals:
+            # if its an interval
+            if isinstance(element, tuple):
+                if len(element) != 2:  # noqa: PLR2004
+                    msg = "When defining an interval, a tuple of two integers should be passed, defining start and end indices inclusive"
+                    raise Exception(msg)
+                expanded_element = list(range(element[0], element[1] + 1))
+                bands.extend(expanded_element)
             else:
-                raise Exception("The bands must be or all str or all int.")
-
-    def _check_if_its_defined_by_interval(
-        self, dataset_bands: list[int] | list[tuple[int]] = None, output_bands: list[int] | list[tuple[int]] = None
-    ) -> bool:
-
-        is_dataset_bands_defined = self._bands_defined_by_interval(bands_list=dataset_bands)
-        is_output_bands_defined = self._bands_defined_by_interval(bands_list=output_bands)
-
-        if is_dataset_bands_defined and is_output_bands_defined:
-            return True
-        elif not is_dataset_bands_defined and not is_output_bands_defined:
-            return False
-        else:
-            raise Exception(
-                f"Both dataset_bands and output_bands must have the same type, but received {dataset_bands} and {output_bands}"
-            )
-
-    def _bands_defined_by_interval(self, bands_list: list[int] | list[tuple[int]] = None) -> bool:
-        if not bands_list:
-            return False
-        elif all([type(band) == int or type(band) == str or isinstance(band, HLSBands) for band in bands_list]):
-            return False
-        elif all([isinstance(subinterval, tuple) for subinterval in bands_list]):
-            bands_list_ = [list(subinterval) for subinterval in bands_list]
-            if all([type(band) == int for band in sum(bands_list_, [])]):
-                return True
-            else:
-                raise Exception(f"Whe using subintervals, the limits must be int.")
-        else:
-            raise Exception(
-                f"Excpected List[int] or List[str] or List[tuple[int, int]], but received {type(bands_list)}."
-            )
-
+                bands.append(element)
+        # check the expansion didnt result in duplicate elements
+        if len(set(bands)) != len(bands):
+            msg = "Duplicate indices detected. Indices must be unique."
+            raise Exception(msg)
+        return bands
 
 class GenericNonGeoSegmentationDataset(GenericPixelWiseDataset):
     """GenericNonGeoSegmentationDataset"""

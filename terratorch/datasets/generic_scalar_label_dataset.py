@@ -110,17 +110,21 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
 
         self.rgb_indices = [0, 1, 2] if rgb_indices is None else rgb_indices
 
-        self.dataset_bands = dataset_bands
-        self.output_bands = output_bands
+        self.dataset_bands = self._generate_bands_intervals(dataset_bands)
+        self.output_bands = self._generate_bands_intervals(output_bands)
+
         if self.output_bands and not self.dataset_bands:
             msg = "If output bands provided, dataset_bands must also be provided"
             return Exception(msg)  # noqa: PLE0101
 
+        # There is a special condition if the bands are defined as simple strings.
         if self.output_bands:
             if len(set(self.output_bands) & set(self.dataset_bands)) != len(self.output_bands):
                 msg = "Output bands must be a subset of dataset bands"
                 raise Exception(msg)
+
             self.filter_indices = [self.dataset_bands.index(band) for band in self.output_bands]
+
         else:
             self.filter_indices = None
         # If no transform is given, apply only to transform to torch tensor
