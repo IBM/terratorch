@@ -334,8 +334,8 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         train_data_root: Path,
         val_data_root: Path,
         test_data_root: Path,
-        means: list[float],
-        stds: list[float],
+        means: list[float] | str,
+        stds: list[float] | str,
         predict_data_root: Path | None = None,
         img_grep: str | None = "*",
         label_grep: str | None = "*",
@@ -447,6 +447,9 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         #     K.Normalize(means, stds),
         #     data_keys=["image"],
         # )
+        means = load_from_file_or_attribute(means)
+        stds = load_from_file_or_attribute(stds)
+
         self.aug = Normalize(means, stds)
         self.no_data_replace = no_data_replace
         self.no_label_replace = no_label_replace
