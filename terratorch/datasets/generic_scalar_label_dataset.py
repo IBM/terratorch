@@ -42,8 +42,8 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
         ignore_split_file_extensions: bool = True,
         allow_substring_split_file: bool = True,
         rgb_indices: list[int] | None = None,
-        dataset_bands: list[HLSBands | int] | None = None,
-        output_bands: list[HLSBands | int] | None = None,
+        dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         constant_scale: float = 1,
         transform: A.Compose | None = None,
         no_data_replace: float = 0,
@@ -64,8 +64,8 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
                 that must be present in file names to be included (as in mmsegmentation), or exact
                 matches (e.g. eurosat). Defaults to True.
             rgb_indices (list[str], optional): Indices of RGB channels. Defaults to [0, 1, 2].
-            dataset_bands (list[HLSBands | int] | None): Bands present in the dataset.
-            output_bands (list[HLSBands | int] | None): Bands that should be output by the dataset.
+            dataset_bands (list[HLSBands | int | tuple[int, int] | str] | None): Bands present in the dataset. This parameter names input channels (bands) using HLSBands, ints, int ranges, or strings, so that they can then be refered to by output_bands. Defaults to None.
+            output_bands (list[HLSBands | int | tuple[int, int] | str] | None): Bands that should be output by the dataset as named by dataset_bands.
             constant_scale (float): Factor to multiply image values by. Defaults to 1.
             transform (Albumentations.Compose | None): Albumentations transform to be applied.
                 Should end with ToTensorV2(). If used through the generic_data_module,
