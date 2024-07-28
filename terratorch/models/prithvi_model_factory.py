@@ -17,6 +17,7 @@ from terratorch.models.model import (
 )
 from terratorch.models.pixel_wise_model import PixelWiseModel
 from terratorch.models.scalar_output_model import ScalarOutputModel
+from terratorch.models.smp_model_factory import get_smp_decoder
 
 PIXEL_WISE_TASKS = ["segmentation", "regression"]
 SCALAR_TASKS = ["classification"]
@@ -95,7 +96,13 @@ class PrithviModelFactory(ModelFactory):
                 msg = f"Task {task} not supported. Please choose one of {SUPPORTED_TASKS}"
                 raise NotImplementedError(msg)
 
+            # These params are used in case we need a SMP decoder
+            # but should not be used for timm encoder
             backbone_kwargs, kwargs = _extract_prefix_keys(kwargs, "backbone_")
+            smp_kwargs, kwargs = _extract_prefix_keys(kwargs, "smp_")
+            aux_kwargs, kwargs = _extract_prefix_keys(kwargs, "aux_")
+            output_stride = backbone_kwargs.pop('output_stride', None)
+            out_channels = backbone_kwargs.pop('out_channels', None)
 
             backbone: nn.Module = timm.create_model(
                 backbone,
@@ -106,13 +113,16 @@ class PrithviModelFactory(ModelFactory):
                 features_only=True,
                 **backbone_kwargs,
             )
-        # allow decoder to be a module passed directly
-        decoder_cls = _get_decoder(decoder)
 
         decoder_kwargs, kwargs = _extract_prefix_keys(kwargs, "decoder_")
-
+        args = kwargs.copy()
         # TODO: remove this
-        decoder: nn.Module = decoder_cls(backbone.feature_info.channels(), **decoder_kwargs)
+        if decoder.startswith("smp_"):
+            decoder: nn.Module = get_smp_decoder(decoder, backbone_kwargs, smp_kwargs, aux_kwargs, args, out_channels, in_channels, num_classes, output_stride)
+        else:
+            # allow decoder to be a module passed directly
+            decoder_cls = _get_decoder(decoder)
+            decoder: nn.Module = decoder_cls(backbone.feature_info.channels(), **decoder_kwargs)
         # decoder: nn.Module = decoder_cls([128, 256, 512, 1024], **decoder_kwargs)
 
         head_kwargs, kwargs = _extract_prefix_keys(kwargs, "head_")

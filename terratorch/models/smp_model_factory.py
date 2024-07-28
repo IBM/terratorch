@@ -1,69 +1,90 @@
 # Copyright contributors to the Terratorch project
 
-import segmentation_models_pytorch as smp
-from segmentation_models_pytorch.encoders import encoders as ENCODERS
 import importlib
-import math
+from collections.abc import Callable
 
+import segmentation_models_pytorch as smp
 import torch
+import torch.nn.functional as F  # noqa: N812
+from segmentation_models_pytorch.encoders import encoders as ENCODERS
 from torch import nn
 
 from terratorch.datasets import HLSBands
-from terratorch.models.backbones.prithvi_vit import checkpoint_filter_fn
 from terratorch.models.model import Model, ModelFactory, ModelOutput, register_factory
-from terratorch.models.backbones.vit_encoder_decoder import TemporalViTEncoder
-from terratorch.models.backbones.swin_encoder_decoder import MMSegSwinTransformer
 
-import torch.nn.functional as F  # noqa: N812
 
-class PrithviModelWrapper(nn.Module):
-    def __init__(self, prithvi_class, **kwargs) -> None:
+class SMPDecoderForPrithviWrapper(nn.Module):
+    """
+    A wrapper for SMP decoders designed to handle single or multiple embeddings.
+
+    Attributes:
+        decoder (nn.Module): The SMP decoder module being wrapped.
+        channels (int): The number of output channels of the decoder.
+
+    Methods:
+        forward_multiple_embeds(*x) -> torch.Tensor:
+            Forward pass for multiple embeddings.
+        forward_single_embed(x) -> torch.Tensor:
+            Forward pass for a single embedding.
+    """
+    def __init__(self, decoder, num_channels) -> None:
+        """
+        Args:
+            decoder (nn.Module): The SMP decoder module to be wrapped.
+            num_channels (int): The number of output channels of the decoder.
+        """
         super().__init__()
+        self.decoder = decoder
+        self.channels = num_channels
 
-        self.config = kwargs
-        self.prithvi_class = str(prithvi_class)
-        if "MMSegSwinTransformer" in self.prithvi_class:
-            self.model = prithvi_class(**kwargs)
-            # Default swin preapre_features_for_image_model, can be changed later.
-            def prepare_features_for_image_model(x):
-                x = list(x)
-                outs = [i for i in x if not isinstance(i, tuple)]
-                return [
-                    layer_output.reshape(
-                        -1,
-                        int(math.sqrt(layer_output.shape[1])),
-                        int(math.sqrt(layer_output.shape[1])),
-                        layer_output.shape[2],
-                    ).permute(0,3,1,2).contiguous()
-                    for layer_output in outs
-                ]
+    @property
+    def output_embed_dim(self):
+        return self.channels
 
-            self.model.prepare_features_for_image_model = prepare_features_for_image_model
-        elif "TemporalViTEncoder" in self.prithvi_class:
-            self.model = prithvi_class(**kwargs, encoder_only=True)
-        else:
-            self.model = prithvi_class(**kwargs) 
-    
-    def forward(self, x):
-        return self.model.forward_features(x)
+    def forward_multiple_embeds(self, *x):
+        return self.decoder(*x)
 
-    def prepare_features_for_image_model(self, x):
-        return self.model.prepare_features_for_image_model(x)
-    
-    def channels(self):
-        return self.config["num_heads"]*[self.config["embed_dim"]]
-        
+    def forward_single_embed(self, x):
+        return self.decoder(x[-1])
+
+
 
 class SMPModelWrapper(Model, nn.Module):
+    """
+    Wrapper class for SMP models.
+
+    This class provides additional functionalities on top of SMP models.
+
+    Attributes:
+        rescale (bool): Whether to rescale the output to match the input dimensions.
+        smp_model (nn.Module): The base SMP model being wrapped.
+        final_act (nn.Module): The final activation function to be applied on the output.
+        squeeze_single_class (bool): Whether to squeeze the output if there is a single output class.
+
+    Methods:
+        forward(x: torch.Tensor) -> ModelOutput:
+            Forward pass through the model, optionally rescaling the output.
+        freeze_encoder() -> None:
+            Freezes the parameters of the encoder part of the model.
+        freeze_decoder() -> None:
+            Freezes the parameters of the decoder part of the model.
+    """
     def __init__(
-            self, 
-            smp_model, 
-            rescale = True, 
-            relu=False, 
+            self,
+            smp_model,
+            rescale = True,
+            relu=False,
             squeeze_single_class=False
         ) -> None:
-        
+
         super().__init__()
+        """
+        Args:
+            smp_model (nn.Module): The base SMP model to be wrapped.
+            rescale (bool, optional): Whether to rescale the output to match the input dimensions. Defaults to True.
+            relu (bool, optional): Whether to apply ReLU activation on the output. If False, Identity activation is used. Defaults to False.
+            squeeze_single_class (bool, optional): Whether to squeeze the output if there is a single output class. Defaults to False.
+        """
         self.rescale = rescale
         self.smp_model = smp_model
         self.final_act = nn.ReLU() if relu else nn.Identity()
@@ -77,7 +98,7 @@ class SMPModelWrapper(Model, nn.Module):
         #TODO: support auxiliary head labels
         if isinstance(smp_output, tuple):
             smp_output, labels = smp_output
-        
+
         if smp_output.shape[1] == 1 and self.squeeze_single_class:
             smp_output = smp_output.squeeze(1)
 
@@ -98,11 +119,12 @@ class SMPModelFactory(ModelFactory):
         self,
         task: str,
         backbone: str,
-        decoder: str,
+        model: str,
         bands: list[HLSBands | int],
         in_channels: int | None = None,
         num_classes: int = 1,
         pretrained: str | bool | None = True,
+        prepare_features_for_image_model: Callable | None = None,
         regression_relu: bool = False,
         **kwargs,
     ) -> Model:
@@ -140,181 +162,234 @@ class SMPModelFactory(ModelFactory):
             nn.Module: A model instance wrapped in SMPModelWrapper configured according to the specified
                     parameters and tasks.
         """
-        self.CPU_ONLY = not torch.cuda.is_available()
+
         bands = [HLSBands.try_convert_to_hls_bands_enum(b) for b in bands]
         if in_channels is None:
             in_channels = len(bands)
 
-        if task.lower() not in ["segmentation", "regression"]:
-            msg = f"SMP models can only perform pixel wise tasks, but got task {task}"
-            raise Exception(msg)
-        
+        # Gets decoder module.
+        model_module = getattr(smp, model, None)
+        if model_module is None:
+            msg = f"Decoder {model} is not supported in SMP."
+            raise ValueError(msg)
+
         backbone_kwargs = _extract_prefix_keys(kwargs, "backbone_") # Encoder params should be prefixed backbone_
         smp_kwargs = _extract_prefix_keys(backbone_kwargs, "smp_") # Smp model params should be prefixed smp_
         aux_params = _extract_prefix_keys(backbone_kwargs, "aux_") # Auxiliary head params should be prefixed aux_
+        aux_params = None if aux_params == {} else aux_params
 
-        # Gets decoder module.
-        decoder_module = getattr(smp, decoder, None)
-        if decoder_module is None:
-            raise ValueError(f"Decoder {decoder} is not supported in SMP.")
-        
         if isinstance(pretrained, bool):
             if pretrained:
                 pretrained = "imagenet"
             else:
-                pretrained = None  
-        
-        model_dict = None
-        # If encoder not currently supported by SMP (either Prithvi or custom encoder).
+                pretrained = None
+
+        # If encoder not currently supported by SMP (custom encoder).
         if backbone not in ENCODERS:
             # These params must be included in the config file with appropriate prefix.
             required_params = {
-                'encoder_depth': smp_kwargs,
-                'out_channels': backbone_kwargs,
-                'output_stride': backbone_kwargs
+                "encoder_depth": smp_kwargs,
+                "out_channels": backbone_kwargs,
+                "output_stride": backbone_kwargs
             }
-            
+
             for param, config_dict in required_params.items():
                 if param not in config_dict:
-                    raise ValueError(f"Config must include the '{param}' parameter")
-            # Can load model from local checkpoint. 
-            if "checkpoint_path" in backbone_kwargs:
-                
-                checkpoint_path = backbone_kwargs.pop("checkpoint_path")
-                print(f"Trying to load from the path defined in the config file, {checkpoint_path}.")
+                    msg = f"Config must include the '{param}' parameter"
+                    raise ValueError(msg)
 
-                if self.CPU_ONLY:
-                    model_dict = torch.load(checkpoint_path, map_location="cpu")
-                else:
-                    model_dict = torch.load(checkpoint_path)        
-
-            if backbone.startswith("prithvi"): # Using Prithvi encoder (ViT or Swin).
-                backbone_class = self._make_smp_encoder(PrithviModelWrapper)
-                if  backbone.startswith("prithvi_swin"):
-                    backbone_kwargs['prithvi_class'] = MMSegSwinTransformer
-                elif backbone.startswith("prithvi_vit"):
-                    backbone_kwargs['prithvi_class'] = TemporalViTEncoder
-                else:
-                    msg = f"Prithvi Backbone not found."
-                    raise NotImplementedError(msg)
-            # Using new encoder (not Prithvi or SMP).
-            else: 
-                backbone_class = self._make_smp_encoder(backbone)
-
+            # Using new encoder.
+            backbone_class = self._make_smp_encoder(backbone)
+            backbone_kwargs["prepare_features_for_image_model"] = prepare_features_for_image_model
             # Registering custom encoder into SMP.
-            self._register_custom_encoder(backbone_class, backbone_kwargs, pretrained)
+            _register_custom_encoder(backbone_class, backbone_kwargs, pretrained)
 
             model_args = {
                 "encoder_name": "SMPEncoderWrapperWithPFFIM",
-                "encoder_weights": pretrained,  
-                "in_channels": in_channels,   
+                "encoder_weights": pretrained,
+                "in_channels": in_channels,
                 "classes": num_classes,
                 **smp_kwargs
             }
         # Using SMP encoder.
-        else: 
+        else:
             model_args = {
                 "encoder_name": backbone,
-                "encoder_weights": pretrained,  
-                "in_channels": in_channels,   
+                "encoder_weights": pretrained,
+                "in_channels": in_channels,
                 "classes": num_classes,
                 **smp_kwargs
             }
-            
-        if aux_params:  
-            model = decoder_module(**model_args, aux_params=aux_params)
-        else:
-            model = decoder_module(**model_args)
 
-        # Loads state dict from checkpoint.
-        if model_dict:
-            if hasattr(model, "prithvi_class") and "TemporalViTEncoder" in model.prithvi_class:
-                model_dict = checkpoint_filter_fn(model_dict, model=model.encoder, pretrained_bands=bands, model_bands=bands)
-            model.encoder.load_state_dict(model_dict, strict=False)
-
+        model = model_module(**model_args, aux_params=aux_params)
 
         return SMPModelWrapper(
-            model, 
-            relu=task == "regression" and regression_relu, 
+            model,
+            relu=task == "regression" and regression_relu,
             squeeze_single_class=task == "regression"
         )
 
-    # Registers a custom encoder into SMP.
-    def _register_custom_encoder(self, Encoder, params, pretrained):
 
-        ENCODERS["SMPEncoderWrapperWithPFFIM"] = {
-            'encoder': Encoder,
-            'params': params,
-            'pretrained_settings': pretrained
-        }
+def get_smp_decoder(
+    decoder: str,
+    backbone_kwargs: dict,
+    smp_kwargs: dict,
+    aux_kwargs: dict,
+    args: dict,
+    out_channels: list[int] | int,
+    in_channels: int,
+    num_classes: int,
+    output_stride: int,
+)  :
+    """
+    Creates and configures a decoder from the Segmentation Models Pytorch (SMP) library.
 
-    # Gets class either from string or from Module reference.
-    def _make_smp_encoder(self, Encoder):
-        if isinstance(Encoder, str):
-            BaseClass = _get_class_from_string(Encoder)
-        else:
-            BaseClass = Encoder
-        
-        # Creates Wrapper for SMP Encoder with PFFIM.
-        # Wrapper needed to include SMP params and PFFIM
-        class SMPEncoderWrapperWithPFFIM(BaseClass, nn.Module):
-            def __init__(
-                    self, 
-                    depth,
-                    output_stride,
-                    out_channels,
-                    *args,
-                    **kwargs
-                ) -> None:
-                super().__init__(*args, **kwargs)
-                self._depth = depth
-                self._output_stride = output_stride
-                self._out_channels = out_channels
-                
-                # If PFFIM is passed from config file
-                if "prepare_features_for_image_model" in kwargs:
-                    path = kwargs['prepare_features_for_image_model'] 
-                    self.prepare_features_for_image_model = _get_callable_from_path(path)  
-                # If PFFIM is in super                  
-                elif hasattr(super(), 'prepare_features_for_image_model'):
-                    self.prepare_features_for_image_model = super().prepare_features_for_image_model
-                # No PFFIM
-                else:
-                    self.prepare_features_for_image_model = lambda x: x
+    This function constructs a decoder module based on the specified parameters and wraps it in a
+    custom wrapper that allows handling single or multiple embeddings. It also ensures that the
+    appropriate encoder parameters are passed and registered correctly.
 
-            def forward(self, x: torch.Tensor) -> torch.Tensor:
-                features = super().forward(x)
-                features = self.prepare_features_for_image_model(features)
+    Args:
+        decoder (str): The name of the SMP decoder to use.
+        backbone_kwargs (dict): Dictionary of parameters for configuring the backbone.
+        smp_kwargs (dict): Dictionary of parameters specific to the SMP model.
+        aux_kwargs (dict): Dictionary of parameters for auxiliary configurations.
+        args (dict): Additional arguments, typically containing head-specific parameters.
+        out_channels (list[int] | int): The number of output channels for each layer of the decoder.
+        in_channels (int): The number of input channels.
+        num_classes (int): The number of output classes for the model.
+        output_stride (int): The output stride of the decoder.
 
-                return features
+    Returns:
+        SMPDecoderForPrithviWrapper: A wrapped decoder module configured based on the provided parameters.
 
-            @property
-            def out_channels(self):
-                if hasattr(super(), 'out_channels'):
-                    return super().out_channels()
-                
-                return self._out_channels
+    Raises:
+        ValueError: If the specified decoder is not supported by SMP.
+    """
 
-            @property
-            def output_stride(self):
-                if hasattr(super(), 'output_stride'):
-                    return super().output_stride()
-                
-                return min(self._output_stride, 2**self._depth)
+    # Gets decoder class.
+    decoder = decoder.removeprefix("smp_")
+    decoder_module = getattr(smp, decoder, None)
+    if decoder_module is None:
+        msg = f"Decoder {decoder} is not supported in SMP."
+        raise ValueError(msg)
 
-            def set_in_channels(self, in_channels, pretrained):
-                if hasattr(super(), 'set_in_channels'):
-                    return super().set_in_channels(in_channels, pretrained)
-                else:
-                    pass
-                
-            def make_dilated(self, output_stride):
-                if hasattr(super(), 'make_dilated'):
-                    return super().make_dilated(output_stride)
-                else:
-                    pass
+    # head args for handling embeds.
+    head_kwargs = _extract_prefix_keys(args, "head_")
+
+    # Little hack to make SMP model accept our encoder.
+    # passes a dummy encoder to be changed later.
+    # this is needed to pass encoder params.
+    backbone_kwargs['out_channels'] = out_channels
+    backbone_kwargs['output_stride'] = output_stride
+    aux_kwargs = None if aux_kwargs == {} else aux_kwargs
+
+    dummy_encoder = _make_smp_encoder()
+
+    _register_custom_encoder(dummy_encoder, backbone_kwargs, None)
+
+    dummy_encoder = dummy_encoder(
+        depth=smp_kwargs["encoder_depth"],
+        output_stride=backbone_kwargs["output_stride"],
+        out_channels=backbone_kwargs["out_channels"],
+    )
+
+    model_args = {
+        "encoder_name": "SMPEncoderWrapperWithPFFIM",
+        "encoder_weights": None,
+        "in_channels": in_channels,
+        "classes": num_classes,
+        **smp_kwargs
+    }
     
-        return SMPEncoderWrapperWithPFFIM
+    # Creates model with dummy encoder and decoder.
+    model = decoder_module(**model_args, aux_params=aux_kwargs)
+
+    # Wrapper for SMP Decoder.
+    smp_decoder = SMPDecoderForPrithviWrapper(
+        decoder=model.decoder, 
+        num_channels=out_channels[-1]
+    )
+    if "multiple_embed" in head_kwargs:
+        smp_decoder.forward = smp_decoder.forward_multiple_embeds
+    else:
+        smp_decoder.forward = smp_decoder.forward_single_embed
+
+    return smp_decoder
+
+# Registers a custom encoder into SMP.
+def _register_custom_encoder( encoder, params, pretrained):
+    ENCODERS["SMPEncoderWrapperWithPFFIM"] = {
+        "encoder": encoder,
+        "params": params,
+        "pretrained_settings": pretrained
+    }
+
+# Gets class either from string or from Module reference.
+def _make_smp_encoder(encoder = None):
+    if isinstance(encoder, str):
+        base_class = _get_class_from_string(encoder)
+    else:
+        base_class = nn.Module
+
+    # Wrapper needed to include SMP params and PFFIM
+    class SMPEncoderWrapperWithPFFIM(base_class):
+        def __init__(
+                self,
+                depth: int,
+                output_stride: int,
+                out_channels: list[int],
+                prepare_features_for_image_model: Callable | None = None,
+                *args,
+                **kwargs
+            ) -> None:
+            super().__init__(*args, **kwargs)
+            self._depth = depth
+            self._output_stride = output_stride
+            self._out_channels = out_channels
+            self.model = None
+
+            if prepare_features_for_image_model:
+                self.prepare_features_for_image_model = prepare_features_for_image_model
+            elif not hasattr(super(), "prepare_features_for_image_model"):
+                self.prepare_features_for_image_model = lambda x: x
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            if self.model:
+                features = self.model(x)
+                if hasattr(self.model, "prepare_features_for_image_model"):
+                    return self.model.prepare_features_for_image_model(features)
+
+            features = super().forward(x)
+            return self.prepare_features_for_image_model(features)
+
+
+        @property
+        def out_channels(self):
+            if hasattr(super(), "out_channels"):
+                return super().out_channels()
+
+            return self._out_channels
+
+        @property
+        def output_stride(self):
+            if hasattr(super(), "output_stride"):
+                return super().output_stride()
+
+            return min(self._output_stride, 2**self._depth)
+
+        def set_in_channels(self, in_channels, pretrained):
+            if hasattr(super(), "set_in_channels"):
+                return super().set_in_channels(in_channels, pretrained)
+            else:
+                pass
+
+        def make_dilated(self, output_stride):
+            if hasattr(super(), "make_dilated"):
+                return super().make_dilated(output_stride)
+            else:
+                pass
+
+    return SMPEncoderWrapperWithPFFIM
 
 
 def _extract_prefix_keys(d: dict, prefix: str) -> dict:
@@ -332,34 +407,24 @@ def _extract_prefix_keys(d: dict, prefix: str) -> dict:
 
 
 def _get_class_from_string(class_path):
-    module_path, name = class_path.rsplit('.', 1)  
-    module = importlib.import_module(module_path)
-    return getattr(module, name)
-
-def _get_callable_from_path(func_path):
-    parts = func_path.split('.')
-    method_name = parts[-1]
-    module_path = parts[:-1]
-
-    if not module_path:  
-        raise ValueError(f"No callable named '{method_name}' found scope.")
+    try:
+        module_path, name = class_path.rsplit(".", 1)
+    except ValueError:
+        msg = "Path must contain a '.' separating module from the class name"
+        raise ValueError(msg)
 
     try:
-        module_part = '.'.join(module_path)
-        module = importlib.import_module(module_part)
-        result = module
-        if hasattr(result, method_name) and callable(getattr(result, method_name)):
-            return getattr(result, method_name)
-        else:
-            for part in module_path[1:]:
-                result = getattr(result, part)
-                if hasattr(result, method_name) and callable(getattr(result, method_name)):
-                    return getattr(result, method_name)
-            raise AttributeError(f"Failed to resolve '{func_path}' to a valid callable.")
-    except ImportError as ie:
-        raise ImportError(f"Failed to import '{module_part}': {ie}")
-    except AttributeError as ae:
-        raise AttributeError(f"Attribute error in resolving the callable: {ae}")
+        module = importlib.import_module(module_path)
+    except ImportError:
+        msg = f"Could not import module '{module_path}'."
+        raise ImportError(msg)
+
+    try:
+        return getattr(module, name)
+    except AttributeError:
+        msg = f"The class '{name}' was not found in the module '{module_path}'."
+        raise AttributeError(msg)
+
 
 def freeze_module(module: nn.Module):
     for param in module.parameters():
