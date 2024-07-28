@@ -27,6 +27,7 @@ SUPPORTED_TASKS = PIXEL_WISE_TASKS + SCALAR_TASKS
 class DecoderNotFoundError(Exception):
     pass
 
+
 @register_factory
 class PrithviModelFactory(ModelFactory):
     def build_model(
@@ -35,7 +36,8 @@ class PrithviModelFactory(ModelFactory):
         backbone: str | nn.Module,
         decoder: str | nn.Module,
         bands: list[HLSBands | int],
-        in_channels: int | None = None,  # this should be removed, can be derived from bands. But it is a breaking change
+        in_channels: int
+        | None = None,  # this should be removed, can be derived from bands. But it is a breaking change
         num_classes: int | None = None,
         pretrained: bool = True,  # noqa: FBT001, FBT002
         num_frames: int = 1,
@@ -101,8 +103,8 @@ class PrithviModelFactory(ModelFactory):
             backbone_kwargs, kwargs = _extract_prefix_keys(kwargs, "backbone_")
             smp_kwargs, kwargs = _extract_prefix_keys(kwargs, "smp_")
             aux_kwargs, kwargs = _extract_prefix_keys(kwargs, "aux_")
-            output_stride = backbone_kwargs.pop('output_stride', None)
-            out_channels = backbone_kwargs.pop('out_channels', None)
+            output_stride = backbone_kwargs.pop("output_stride", None)
+            out_channels = backbone_kwargs.pop("out_channels", None)
 
             backbone: nn.Module = timm.create_model(
                 backbone,
@@ -118,7 +120,17 @@ class PrithviModelFactory(ModelFactory):
         args = kwargs.copy()
         # TODO: remove this
         if decoder.startswith("smp_"):
-            decoder: nn.Module = get_smp_decoder(decoder, backbone_kwargs, smp_kwargs, aux_kwargs, args, out_channels, in_channels, num_classes, output_stride)
+            decoder: nn.Module = get_smp_decoder(
+                decoder,
+                backbone_kwargs,
+                smp_kwargs,
+                aux_kwargs,
+                args,
+                out_channels,
+                in_channels,
+                num_classes,
+                output_stride,
+            )
         else:
             # allow decoder to be a module passed directly
             decoder_cls = _get_decoder(decoder)
