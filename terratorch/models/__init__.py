@@ -6,8 +6,6 @@ from terratorch.models.scalemae_model_factory import ScaleMAEModelFactory
 from terratorch.models.smp_model_factory import SMPModelFactory
 from terratorch.models.timm_model_factory import TimmModelFactory
 
-from terratorch.models.smp_model_factory import get_smp_decoder
-
 __all__ = (
     "PrithviModelFactory",
     "ClayModelFactory",
@@ -17,5 +15,4 @@ __all__ = (
     "TimmModelFactory",
     "AuxiliaryHead",
     "AuxiliaryHeadWithDecoderWithoutInstantiatedHead",
-    "get_smp_decoder",
 )

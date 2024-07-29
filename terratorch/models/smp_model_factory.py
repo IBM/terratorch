@@ -13,42 +13,6 @@ from terratorch.datasets import HLSBands
 from terratorch.models.model import Model, ModelFactory, ModelOutput, register_factory
 
 
-class SMPDecoderForPrithviWrapper(nn.Module):
-    """
-    A wrapper for SMP decoders designed to handle single or multiple embeddings.
-
-    Attributes:
-        decoder (nn.Module): The SMP decoder module being wrapped.
-        channels (int): The number of output channels of the decoder.
-
-    Methods:
-        forward_multiple_embeds(*x) -> torch.Tensor:
-            Forward pass for multiple embeddings.
-        forward_single_embed(x) -> torch.Tensor:
-            Forward pass for a single embedding.
-    """
-
-    def __init__(self, decoder, num_channels) -> None:
-        """
-        Args:
-            decoder (nn.Module): The SMP decoder module to be wrapped.
-            num_channels (int): The number of output channels of the decoder.
-        """
-        super().__init__()
-        self.decoder = decoder
-        self.channels = num_channels
-
-    @property
-    def output_embed_dim(self):
-        return self.channels
-
-    def forward_multiple_embeds(self, *x):
-        return self.decoder(*x)
-
-    def forward_single_embed(self, x):
-        return self.decoder(x[-1])
-
-
 class SMPModelWrapper(Model, nn.Module):
     """
     Wrapper class for SMP models.
@@ -70,7 +34,7 @@ class SMPModelWrapper(Model, nn.Module):
             Freezes the parameters of the decoder part of the model.
     """
 
-    def __init__(self, smp_model, rescale=True, relu=False, squeeze_single_class=False) -> None: # noqa: FBT002
+    def __init__(self, smp_model, rescale=True, relu=False, squeeze_single_class=False) -> None:  # noqa: FBT002
         super().__init__()
         """
         Args:
@@ -119,9 +83,9 @@ class SMPModelFactory(ModelFactory):
         bands: list[HLSBands | int],
         in_channels: int | None = None,
         num_classes: int = 1,
-        pretrained: str | bool | None = True, # noqa: FBT002
+        pretrained: str | bool | None = True,  # noqa: FBT002
         prepare_features_for_image_model: Callable | None = None,
-        regression_relu: bool = False, # noqa: FBT001, FBT002
+        regression_relu: bool = False,  # noqa: FBT001, FBT002
         **kwargs,
     ) -> Model:
         """
@@ -195,10 +159,10 @@ class SMPModelFactory(ModelFactory):
                     raise ValueError(msg)
 
             # Using new encoder.
-            backbone_class = self._make_smp_encoder(backbone)
+            backbone_class = make_smp_encoder(backbone)
             backbone_kwargs["prepare_features_for_image_model"] = prepare_features_for_image_model
             # Registering custom encoder into SMP.
-            _register_custom_encoder(backbone_class, backbone_kwargs, pretrained)
+            register_custom_encoder(backbone_class, backbone_kwargs, pretrained)
 
             model_args = {
                 "encoder_name": "SMPEncoderWrapperWithPFFIM",
@@ -224,101 +188,17 @@ class SMPModelFactory(ModelFactory):
         )
 
 
-def get_smp_decoder(
-    decoder: str,
-    backbone_kwargs: dict,
-    smp_kwargs: dict,
-    aux_kwargs: dict,
-    args: dict,
-    out_channels: list[int] | int,
-    in_channels: int,
-    num_classes: int,
-    output_stride: int,
-):
-    """
-    Creates and configures a decoder from the Segmentation Models Pytorch (SMP) library.
-
-    This function constructs a decoder module based on the specified parameters and wraps it in a
-    custom wrapper that allows handling single or multiple embeddings. It also ensures that the
-    appropriate encoder parameters are passed and registered correctly.
-
-    Args:
-        decoder (str): The name of the SMP decoder to use.
-        backbone_kwargs (dict): Dictionary of parameters for configuring the backbone.
-        smp_kwargs (dict): Dictionary of parameters specific to the SMP model.
-        aux_kwargs (dict): Dictionary of parameters for auxiliary configurations.
-        args (dict): Additional arguments, typically containing head-specific parameters.
-        out_channels (list[int] | int): The number of output channels for each layer of the decoder.
-        in_channels (int): The number of input channels.
-        num_classes (int): The number of output classes for the model.
-        output_stride (int): The output stride of the decoder.
-
-    Returns:
-        SMPDecoderForPrithviWrapper: A wrapped decoder module configured based on the provided parameters.
-
-    Raises:
-        ValueError: If the specified decoder is not supported by SMP.
-    """
-
-    # Gets decoder class.
-    decoder = decoder.removeprefix("smp_")
-    decoder_module = getattr(smp, decoder, None)
-    if decoder_module is None:
-        msg = f"Decoder {decoder} is not supported in SMP."
-        raise ValueError(msg)
-
-    # head args for handling embeds.
-    head_kwargs = _extract_prefix_keys(args, "head_")
-
-    # Little hack to make SMP model accept our encoder.
-    # passes a dummy encoder to be changed later.
-    # this is needed to pass encoder params.
-    backbone_kwargs["out_channels"] = out_channels
-    backbone_kwargs["output_stride"] = output_stride
-    aux_kwargs = None if aux_kwargs == {} else aux_kwargs
-
-    dummy_encoder = _make_smp_encoder()
-
-    _register_custom_encoder(dummy_encoder, backbone_kwargs, None)
-
-    dummy_encoder = dummy_encoder(
-        depth=smp_kwargs["encoder_depth"],
-        output_stride=backbone_kwargs["output_stride"],
-        out_channels=backbone_kwargs["out_channels"],
-    )
-
-    model_args = {
-        "encoder_name": "SMPEncoderWrapperWithPFFIM",
-        "encoder_weights": None,
-        "in_channels": in_channels,
-        "classes": num_classes,
-        **smp_kwargs,
-    }
-
-    # Creates model with dummy encoder and decoder.
-    model = decoder_module(**model_args, aux_params=aux_kwargs)
-
-    # Wrapper for SMP Decoder.
-    smp_decoder = SMPDecoderForPrithviWrapper(decoder=model.decoder, num_channels=out_channels[-1])
-    if "multiple_embed" in head_kwargs:
-        smp_decoder.forward = smp_decoder.forward_multiple_embeds
-    else:
-        smp_decoder.forward = smp_decoder.forward_single_embed
-
-    return smp_decoder
-
-
 # Registers a custom encoder into SMP.
-def _register_custom_encoder(encoder, params, pretrained):
+def register_custom_encoder(encoder, params, pretrained):
     smp_encoders["SMPEncoderWrapperWithPFFIM"] = {
         "encoder": encoder,
         "params": params,
-        "pretrained_settings": pretrained
+        "pretrained_settings": pretrained,
     }
 
 
 # Gets class either from string or from Module reference.
-def _make_smp_encoder(encoder=None):
+def make_smp_encoder(encoder = None):
     if isinstance(encoder, str):
         base_class = _get_class_from_string(encoder)
     else:
