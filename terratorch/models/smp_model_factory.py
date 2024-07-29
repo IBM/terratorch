@@ -96,10 +96,9 @@ class SMPModelFactory(ModelFactory):
         as auxiliary decoders or modified encoders.
 
         Attributes:
-            task (str): Specifies the task for which the model is being built. Supported tasks include
-                        "segmentation" and "regression".
-            backbone (str, nn.Module): Specifies the backbone model to be used. If a string, it should be
-                        recognized by the model factory and be able to be parsed appropriately.
+            task (str): Specifies the task for which the model is being built. Supported tasks are
+                        "segmentation".
+            backbone (str): Specifies the backbone model to be used.
             decoder (str): Specifies the decoder to be used for constructing the
                         segmentation model.
             bands (list[terratorch.datasets.HLSBands | int]): A list specifying the bands that the model
@@ -116,12 +115,15 @@ class SMPModelFactory(ModelFactory):
 
         Raises:
             ValueError: If the specified decoder is not supported by SMP.
-            Exception: If the specified task is not "segmentation" or "regression".
+            Exception: If the specified task is not "segmentation"
 
         Returns:
             nn.Module: A model instance wrapped in SMPModelWrapper configured according to the specified
                     parameters and tasks.
         """
+        if task != "segmentation":
+            msg = f"SMP models can only perform segmentatio, but got task {task}"
+            raise Exception(msg)
 
         bands = [HLSBands.try_convert_to_hls_bands_enum(b) for b in bands]
         if in_channels is None:
@@ -197,8 +199,7 @@ def register_custom_encoder(encoder, params, pretrained):
     }
 
 
-# Gets class either from string or from Module reference.
-def make_smp_encoder(encoder = None):
+def make_smp_encoder(encoder=None):
     if isinstance(encoder, str):
         base_class = _get_class_from_string(encoder)
     else:

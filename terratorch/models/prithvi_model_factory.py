@@ -99,9 +99,9 @@ class PrithviModelFactory(ModelFactory):
                 msg = f"Task {task} not supported. Please choose one of {SUPPORTED_TASKS}"
                 raise NotImplementedError(msg)
 
+            backbone_kwargs, kwargs = _extract_prefix_keys(kwargs, "backbone_")
             # These params are used in case we need a SMP decoder
             # but should not be used for timm encoder
-            backbone_kwargs, kwargs = _extract_prefix_keys(kwargs, "backbone_")
             output_stride = backbone_kwargs.pop("output_stride", None)
             out_channels = backbone_kwargs.pop("out_channels", None)
 
@@ -179,6 +179,7 @@ class SMPDecoderForPrithviWrapper(nn.Module):
         forward(x: List[torch.Tensor]) -> torch.Tensor:
             Forward pass for embeddings with specified indices.
     """
+
     def __init__(self, decoder, num_channels, in_index=-1) -> None:
         """
         Args:
