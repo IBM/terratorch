@@ -122,7 +122,7 @@ class SMPModelFactory(ModelFactory):
                     parameters and tasks.
         """
         if task != "segmentation":
-            msg = f"SMP models can only perform segmentatio, but got task {task}"
+            msg = f"SMP models can only perform segmentation, but got task {task}"
             raise Exception(msg)
 
         bands = [HLSBands.try_convert_to_hls_bands_enum(b) for b in bands]
