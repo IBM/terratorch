@@ -29,16 +29,16 @@ def wrap_in_compose_is_list(transform_list):
 
 def load_from_file_or_attribute(value:list[float] | str):
 
-    if type(value) == list:
+    if isinstance(value, list):
         return value
-    elif type(str): # It can be the path for a file
+    elif isinstance(value, str): # It can be the path for a file
         if os.path.isfile(value):
             try:
                 content = np.genfromtxt(value).tolist()
             except:
                 raise Exception(f"File must be txt, but received {value}")
         else:
-            raise Exception("It seems that {value} does not exist or is not a file.")
+            raise Exception(f"The input {value} does not exist or is not a file.")
 
         return content  
 
