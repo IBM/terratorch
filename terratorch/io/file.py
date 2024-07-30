@@ -1,6 +1,7 @@
 import os
 import importlib 
 from torch import nn
+import numpy as np
 
 def open_generic_torch_model(model: type | str = None,
                              model_kwargs: dict = None,
@@ -51,3 +52,21 @@ def load_torch_weights(model:nn.Module=None, save_dir: str = None, name: str = N
         )
 
     return model
+
+def load_from_file_or_attribute(value: list[float]|str):
+
+    if isinstance(value, list):
+        return value
+    elif isinstance(value, str):  # It can be the path for a file
+        if os.path.isfile(value):
+            try:
+                print(value)
+                content = np.genfromtxt(value).tolist()
+            except:
+                raise Exception(f"File must be txt, but received {value}")
+        else:
+            raise Exception(f"The input {value} does not exist or is not a file.")
+
+        return content
+
+
