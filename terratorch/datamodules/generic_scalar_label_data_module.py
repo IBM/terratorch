@@ -22,27 +22,11 @@ from terratorch.datasets import (
     HLSBands,
 )
 
+from terratorch.io.file import load_from_file_or_attribute
 
 def wrap_in_compose_is_list(transform_list):
     # set check shapes to false because of the multitemporal case
     return A.Compose(transform_list, is_check_shapes=False) if isinstance(transform_list, Iterable) else transform_list
-
-
-def load_from_file_or_attribute(value: list[float]|str):
-
-    if isinstance(value, list):
-        return value
-    elif isinstance(value, str):  # It can be the path for a file
-        if os.path.isfile(value):
-            try:
-                content = np.genfromtxt(value).tolist()
-            except:
-                raise Exception(f"File must be txt, but received {value}")
-        else:
-            raise Exception(f"The input {value} does not exist or is not a file.")
-
-        return content
-
 
 class Normalize(Callable):
     def __init__(self, means, stds):
