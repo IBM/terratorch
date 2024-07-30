@@ -3,11 +3,11 @@
 """
 This module contains generic data modules for instantiation at runtime.
 """
-
+import os
 from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
-
+import numpy as np
 import albumentations as A
 import kornia.augmentation as K
 import torch
@@ -17,7 +17,7 @@ from torchgeo.datamodules import NonGeoDataModule
 from torchgeo.transforms import AugmentationSequential
 
 from terratorch.datasets import GenericNonGeoPixelwiseRegressionDataset, GenericNonGeoSegmentationDataset, HLSBands
-
+from terratorch.io.file import load_from_file_or_attribute
 
 def wrap_in_compose_is_list(transform_list):
     # set check shapes to false because of the multitemporal case
@@ -79,8 +79,8 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
         test_data_root: Path,
         img_grep: str,
         label_grep: str,
-        means: list[float],
-        stds: list[float],
+        means: list[float] | str,
+        stds: list[float] | str,
         num_classes: int,
         predict_data_root: Path | None = None,
         train_label_data_root: Path | None = None,
@@ -198,6 +198,9 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
         #     K.Normalize(means, stds),
         #     data_keys=["image"],
         # )
+        means = load_from_file_or_attribute(means)
+        stds = load_from_file_or_attribute(stds)
+
         self.aug = Normalize(means, stds)
 
         # self.aug = Normalize(means, stds)
@@ -317,8 +320,8 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         train_data_root: Path,
         val_data_root: Path,
         test_data_root: Path,
-        means: list[float],
-        stds: list[float],
+        means: list[float] | str,
+        stds: list[float] | str,
         predict_data_root: Path | None = None,
         img_grep: str | None = "*",
         label_grep: str | None = "*",
@@ -430,6 +433,9 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         #     K.Normalize(means, stds),
         #     data_keys=["image"],
         # )
+        means = load_from_file_or_attribute(means)
+        stds = load_from_file_or_attribute(stds)
+
         self.aug = Normalize(means, stds)
         self.no_data_replace = no_data_replace
         self.no_label_replace = no_label_replace
