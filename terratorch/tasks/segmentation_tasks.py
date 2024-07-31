@@ -168,13 +168,13 @@ class SemanticSegmentationTask(BaseTask):
         class_names = self.hparams["class_names"]
         metrics = MetricCollection(
             {
-                "Multiclass Accuracy": MulticlassAccuracy(
+                "Multiclass_Accuracy": MulticlassAccuracy(
                     num_classes=num_classes,
                     ignore_index=ignore_index,
                     multidim_average="global",
                     average="micro",
                 ),
-                "Multiclass Accuracy Class": ClasswiseWrapper(
+                "Multiclass_Accuracy_Class": ClasswiseWrapper(
                     MulticlassAccuracy(
                         num_classes=num_classes,
                         ignore_index=ignore_index,
@@ -183,18 +183,18 @@ class SemanticSegmentationTask(BaseTask):
                     ),
                     labels=class_names,
                 ),
-                "Multiclass Jaccard Index Micro": MulticlassJaccardIndex(
+                "Multiclass_Jaccard_Index_Micro": MulticlassJaccardIndex(
                     num_classes=num_classes, ignore_index=ignore_index, average="micro"
                 ),
-                "Multiclass Jaccard Index": MulticlassJaccardIndex(
+                "Multiclass_Jaccard_Index": MulticlassJaccardIndex(
                     num_classes=num_classes,
                     ignore_index=ignore_index,
                 ),
-                "Multiclass Jaccard Index Class": ClasswiseWrapper(
+                "Multiclass_Jaccard_Index_Class": ClasswiseWrapper(
                     MulticlassJaccardIndex(num_classes=num_classes, ignore_index=ignore_index, average=None),
                     labels=class_names,
                 ),
-                "Multiclass F1 Score": MulticlassF1Score(
+                "Multiclass_F1_Score": MulticlassF1Score(
                     num_classes=num_classes,
                     ignore_index=ignore_index,
                     multidim_average="global",
