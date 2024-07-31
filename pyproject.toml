@@ -41,7 +41,7 @@ dependencies = [
   # broken due to https://github.com/Lightning-AI/pytorch-lightning/issues/19977
   "lightning>=2, <=2.2.5",
   # see issue #64
-  "albumentations<=1.4.10"
+  "albumentations<=1.4.12"
 ]
 
 [project.optional-dependencies]
