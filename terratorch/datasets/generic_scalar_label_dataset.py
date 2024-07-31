@@ -143,13 +143,12 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
 
         output = {
             "image": image.astype(np.float32) * self.constant_scale,
-            "label": label,
-            "filename": self.samples[index][
-                0
-            ],  # samples is an attribute of ImageFolder. Contains a tuple of (Path, Target)
+            "label": label,  # samples is an attribute of ImageFolder. Contains a tuple of (Path, Target)
         }
         if self.transforms:
             output = self.transforms(**output)
+        output["filename"] = self.image_files[index]
+
         return output
 
     def _load_file(self, path) -> xr.DataArray:
