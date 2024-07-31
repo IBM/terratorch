@@ -42,13 +42,13 @@ class MultiLabelClassificationTask(ClassificationTask):
     def configure_metrics(self) -> None:
         metrics = MetricCollection(
             {
-                "Overall Accuracy": MultilabelAccuracy(
+                "Overall_Accuracy": MultilabelAccuracy(
                     num_labels=self.hparams["model_args"]["num_classes"], average="micro"
                 ),
-                "Average Accuracy": MultilabelAccuracy(
+                "Average_Accuracy": MultilabelAccuracy(
                     num_labels=self.hparams["model_args"]["num_classes"], average="macro"
                 ),
-                "Multilabel F1 Score": MultilabelFBetaScore(
+                "Multilabel_F1_Score": MultilabelFBetaScore(
                     num_labels=self.hparams["model_args"]["num_classes"], beta=1.0, average="micro"
                 ),
             }
