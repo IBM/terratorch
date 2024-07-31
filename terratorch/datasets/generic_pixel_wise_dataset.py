@@ -155,14 +155,15 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             "image": image.astype(np.float32) * self.constant_scale,
             "mask": self._load_file(self.segmentation_mask_files[index], nan_replace=self.no_label_replace).to_numpy()[
                 0
-            ],
-            "filename": self.image_files[index],
+            ]
         }
 
         if self.reduce_zero_label:
             output["mask"] -= 1
         if self.transform:
             output = self.transform(**output)
+        output["filename"] = self.image_files[index]
+
         return output
 
     def _load_file(self, path, nan_replace: int | float | None = None) -> xr.DataArray:
