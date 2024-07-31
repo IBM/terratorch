@@ -41,10 +41,7 @@ class GenericUnetModelFactory(ModelFactory):
             msg = f"SMP models can only perform pixel wise tasks, but got task {task}"
             raise Exception(msg)
     
-        try: 
-            mmseg = importlib.import_module("mmseg.models.decode_heads")
-        except:
-            raise Exception("The module 'mmseg' is not installed or not accessible via PYTHONPATH.")
+        mmseg = importlib.import_module("mmseg.models.decode_heads")
 
         model_class = getattr(mmseg, model)
 
