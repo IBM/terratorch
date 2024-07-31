@@ -9,8 +9,6 @@ from torch import nn
 
 from terratorch.models.model import Model, ModelFactory, ModelOutput, register_factory
 
-from mmseg.models.decode_heads import ASPPHead 
-
 import importlib
 
 @register_factory
@@ -42,8 +40,13 @@ class GenericUnetModelFactory(ModelFactory):
         if task not in ["segmentation", "regression"]:
             msg = f"SMP models can only perform pixel wise tasks, but got task {task}"
             raise Exception(msg)
+    
+        try: 
+            mmseg = importlib.import_module("mmseg.models.decode_heads")
+        except:
+            raise Exception("The module 'mmseg' is not installed or not accessible via PYTHONPATH.")
 
-        model_class = getattr(mmseg.models.decode_heads, model)
+        model_class = getattr(mmseg, model)
 
         model = model_class(
            dilations=dilations 

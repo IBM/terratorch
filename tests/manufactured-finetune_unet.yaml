@@ -94,6 +94,7 @@ model:
   init_args:
     model_args:
       decoder: "unet"
+      decoder_model: "ASPPHead"
       decoder_dilations: [1, 6, 12, 18]
       backbone_drop_path_rate: 0.3
       # backbone_window_size: 8
