@@ -22,11 +22,11 @@ from terratorch.datasets import (
     HLSBands,
 )
 
+from terratorch.io.file import load_from_file_or_attribute
 
 def wrap_in_compose_is_list(transform_list):
     # set check shapes to false because of the multitemporal case
     return A.Compose(transform_list, is_check_shapes=False) if isinstance(transform_list, Iterable) else transform_list
-
 
 class Normalize(Callable):
     def __init__(self, means, stds):
@@ -68,8 +68,8 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
         train_data_root: Path,
         val_data_root: Path,
         test_data_root: Path,
-        means: list[float],
-        stds: list[float],
+        means: list[float] | str,
+        stds: list[float] | str,
         num_classes: int,
         predict_data_root: Path | None = None,
         train_split: Path | None = None,
@@ -166,6 +166,10 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
         #     K.Normalize(means, stds),
         #     data_keys=["image"],
         # )
+
+        means = load_from_file_or_attribute(means)
+        stds = load_from_file_or_attribute(stds)
+
         self.aug = Normalize(means, stds)
 
         # self.aug = Normalize(means, stds)

@@ -4,11 +4,13 @@
 
 ## Overview
 TerraTorch is a library based on [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/) and the [TorchGeo](https://github.com/microsoft/torchgeo) domain library
-for geospatial data. TerraTorch’s main purpose is to provide a flexible fine-tuning framework for Geospatial Foundation Models, which can be interacted with at different abstraction levels.
+for geospatial data. 
+
+TerraTorch’s main purpose is to provide a flexible fine-tuning framework for Geospatial Foundation Models, which can be interacted with at different abstraction levels.
 
 The library provides:
 
-- Easy access to open source pre-trained Geospatial Foundation Model backbones (e.g., [Prithvi](https://huggingface.co/ibm-nasa-geospatial/Prithvi-100M), [SatMAE](https://sustainlab-group.github.io/SatMAE/) and [ScaleMAE](https://github.com/bair-climate-initiative/scale-mae) and other backbones available in the [timm](https://github.com/huggingface/pytorch-image-models) (Pytorch image models) or [SMP](https://github.com/qubvel/segmentation_models.pytorch) (Pytorch Segmentation models with pre-training backbones) packages.
+- Easy access to open source pre-trained Geospatial Foundation Model backbones (e.g., [Prithvi](https://huggingface.co/ibm-nasa-geospatial/Prithvi-100M), [SatMAE](https://sustainlab-group.github.io/SatMAE/) and [ScaleMAE](https://github.com/bair-climate-initiative/scale-mae), other backbones available in the [timm](https://github.com/huggingface/pytorch-image-models) (Pytorch image models) or [SMP](https://github.com/qubvel/segmentation_models.pytorch) (Pytorch Segmentation models with pre-training backbones) packages, as well as fine-tuned models such as [granite-geospatial-biomass](https://huggingface.co/ibm-granite/granite-geospatial-biomass)
 - Flexible trainers for Image Segmentation, Classification and Pixel Wise Regression fine-tuning tasks
 - Launching of fine-tuning tasks through flexible configuration files
 
