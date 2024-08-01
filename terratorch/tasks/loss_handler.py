@@ -40,6 +40,7 @@ class LossHandler:
                 If there are auxiliary heads, the main decode head is returned under the key "decode_head".
                 All other heads are returned with the same key as their name.
         """
+        print(f"Model output: {model_output.output.shape}, Ground truth: {ground_truth.shape}")
         loss = self._compute_loss(model_output.output, ground_truth, criterion)
         if not model_output.auxiliary_heads:
             return {"loss": loss}

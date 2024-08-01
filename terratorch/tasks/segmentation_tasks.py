@@ -254,6 +254,7 @@ class SemanticSegmentationTask(BaseTask):
         x = batch["image"]
         y = batch["mask"]
         model_output: ModelOutput = self(x)
+        print(f"Model output, validation: {model_output.output.shape}")
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat_hard = to_segmentation_prediction(model_output)
