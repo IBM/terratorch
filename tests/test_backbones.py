@@ -31,7 +31,7 @@ def input_386():
     return torch.ones((1, NUM_CHANNELS, 386, 386))
 
 
-@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_vit_300", "prithvi_swin_B"])
+@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_vit_300", "prithvi_swin_B", "hiera_weather"])
 @pytest.mark.parametrize("test_input", ["input_224", "input_512"])
 def test_can_create_backbones_from_timm(model_name, test_input, request):
     backbone = timm.create_model(model_name, pretrained=False)

@@ -1,4 +1,4 @@
-"""This module handles registering prithvi_swin models into timm.
+"""This module handles registering hiera_models models into timm.
 """
 from typing import List
 import logging
@@ -80,7 +80,6 @@ default_cfgs = generate_default_cfgs(
     }
 )
 
-
 @register_model
 def hiera_weather(
     pretrained: bool = False,  # noqa: FBT002, FBT001
@@ -110,6 +109,7 @@ def hiera_weather(
     transformer = _create_hiera_transformer(
         "hiera_weather", pretrained_bands, bands, pretrained=pretrained, **dict(model_args, **kwargs)
     )
+    
     return transformer
 
 
