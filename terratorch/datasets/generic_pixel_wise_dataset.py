@@ -186,10 +186,6 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
                 bands.extend(expanded_element)
             else:
                 bands.append(element)
-        # check the expansion didnt result in duplicate elements
-        if len(set(bands)) != len(bands):
-            msg = "Duplicate indices detected. Indices must be unique."
-            raise Exception(msg)
         return bands
 
 
