@@ -20,7 +20,7 @@ from matplotlib.patches import Rectangle
 from torch import Tensor
 from torchgeo.datasets import NonGeoDataset
 
-from terratorch.datasets.utils import HLSBands, filter_valid_files, to_tensor
+from terratorch.datasets.utils import HLSBands, default_transform, filter_valid_files
 
 
 class GenericPixelWiseDataset(NonGeoDataset, ABC):
@@ -136,7 +136,7 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             self.filter_indices = None
 
         # If no transform is given, apply only to transform to torch tensor
-        self.transform = transform if transform else lambda **batch: to_tensor(batch)
+        self.transform = transform if transform else default_transform
         # self.transform = transform if transform else ToTensorV2()
 
     def __len__(self) -> int:
