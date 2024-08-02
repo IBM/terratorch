@@ -1,11 +1,13 @@
 # Copyright contributors to the Terratorch project
 
+import importlib
+import os
+
 import pytest
 import timm
 import torch
-import importlib
+
 import terratorch  # noqa: F401
-import os 
 
 NUM_CHANNELS = 6
 NUM_FRAMES = 3
@@ -52,6 +54,14 @@ def test_vit_models_accept_multitemporal(model_name, input_224_multitemporal):
     backbone = timm.create_model(model_name, pretrained=False, num_frames=NUM_FRAMES)
     backbone(input_224_multitemporal)
 
-#def test_swin_models_accept_non_divisible_by_patch_size(input_386):
-#    backbone = timm.create_model("prithvi_swin_90_us", pretrained=False, num_frames=NUM_FRAMES)
-#    backbone(input_386)
+@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_vit_300"])
+def test_out_indices(model_name, input_224):
+    out_indices = [2, 4, 8, 10]
+    backbone = timm.create_model(model_name, pretrained=False, features_only=True, out_indices=out_indices)
+    assert backbone.feature_info.out_indices == out_indices
+
+    output = backbone(input_224)
+    full_output = backbone.forward_features(input_224)
+
+    for filtered_index, full_index in enumerate(out_indices):
+        assert torch.allclose(full_output[full_index], output[filtered_index])

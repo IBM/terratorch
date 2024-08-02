@@ -103,7 +103,10 @@ def _create_prithvi(
             kwargs = {k: v for k, v in kwargs.items() if k != "out_indices"}
         model.feature_info = FeatureInfo(model.feature_info, out_indices)
         model.encode_decode_forward = model.forward
-        model.forward = model.forward_features
+        def forward_filter_indices(*args, **kwargs):
+            features = model.forward_features(*args, **kwargs)
+            return [features[i] for i in out_indices]
+        model.forward = forward_filter_indices
         model.model_bands = model_bands
         model.pretrained_bands = pretrained_bands
 
