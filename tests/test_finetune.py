@@ -9,13 +9,21 @@ import torch
 from terratorch.cli_tools import build_lightning_cli
 
 
+@pytest.fixture(autouse=True)
+def cleanup():
+    yield # everything after this runs after each test
+
+    for file in os.listdir("tests"):
+        if file.endswith(".pt"):
+            os.remove(os.path.join("tests", file))
+
 @pytest.mark.parametrize("model_name", ["prithvi_swin_B", "prithvi_swin_L", "prithvi_vit_100", "prithvi_vit_300"])
-def test_finetune_multiple_backbones(model_name, tmpdir):
+def test_finetune_multiple_backbones(model_name):
     model_instance = timm.create_model(model_name)
 
     state_dict = model_instance.state_dict()
 
-    torch.save(state_dict, os.path.join(tmpdir, model_name + ".pt"))
+    torch.save(state_dict, os.path.join("tests", model_name + ".pt"))
 
     # Running the terratorch CLI
     command_list = ["fit", "-c", f"tests/manufactured-finetune_{model_name}.yaml"]
@@ -23,12 +31,12 @@ def test_finetune_multiple_backbones(model_name, tmpdir):
 
 
 @pytest.mark.parametrize("model_name", ["prithvi_swin_B"])
-def test_finetune_bands_intervals(model_name, tmpdir):
+def test_finetune_bands_intervals(model_name):
     model_instance = timm.create_model(model_name)
 
     state_dict = model_instance.state_dict()
 
-    torch.save(state_dict, os.path.join(tmpdir, model_name + ".pt"))
+    torch.save(state_dict, os.path.join("tests", model_name + ".pt"))
 
     # Running the terratorch CLI
     command_list = ["fit", "-c", f"tests/manufactured-finetune_{model_name}_band_interval.yaml"]
@@ -36,12 +44,12 @@ def test_finetune_bands_intervals(model_name, tmpdir):
 
 
 @pytest.mark.parametrize("model_name", ["prithvi_swin_B"])
-def test_finetune_bands_str(model_name, tmpdir):
+def test_finetune_bands_str(model_name):
     model_instance = timm.create_model(model_name)
 
     state_dict = model_instance.state_dict()
 
-    torch.save(state_dict, os.path.join(tmpdir, model_name + ".pt"))
+    torch.save(state_dict, os.path.join("tests", model_name + ".pt"))
 
     # Running the terratorch CLI
     command_list = ["fit", "-c", f"tests/manufactured-finetune_{model_name}_string.yaml"]
