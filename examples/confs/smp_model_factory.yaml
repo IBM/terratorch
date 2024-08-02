@@ -1,0 +1,93 @@
+benchmark_suffix: smp_test
+experiment_name: smp_test
+backbone:
+  # backbone: resnet18
+  # backbone_args:
+  #   pretrained: False
+  #   output_stride: 2
+  #   smp_decoder_channels: 512
+  #   smp_encoder_depth: 5
+  
+  backbone: swin3d.swin3d_backbone.Swin3dBackbone
+  backbone_args:
+    pretrained: False
+    output_stride: 2
+    out_channels:
+      - 192
+      - 384
+      - 768
+      - 768
+    smp_decoder_channels: 768
+    smp_encoder_depth: 5
+
+
+tasks:
+  - name: cashew
+    type: segmentation
+    loss: ce
+    model_factory: SMPModelFactory
+    bands:
+      - RED
+      - GREEN
+      - BLUE
+    num_classes: 7
+    max_epochs: 60
+    direction: max
+    datamodule:
+      class_path: terratorch.datamodules.MBeninSmallHolderCashewsNonGeoDataModule
+      init_args:
+        batch_size: 16
+        num_workers: 4
+        train_transform:
+        - class_path: albumentations.Resize
+          init_args:
+            always_apply: True
+            height: 224
+            width: 224  
+        - class_path: ToTensorV2   
+        test_transform:
+        - class_path: albumentations.Resize
+          init_args:
+            always_apply: True
+            height: 224
+            width: 224
+        - class_path: ToTensorV2
+        val_transform:
+        - class_path: albumentations.Resize
+          init_args:
+            height: 224
+            width: 224
+        - class_path: ToTensorV2
+        data_root: "/dccstor/geofm-finetuning/geobench/segmentation_v1.0"
+        bands:
+          - "RED"
+          - "GREEN"
+          - "BLUE"
+    decoder: Unet
+    decoder_args:
+      channels: 128
+    metric: val/Multiclass Jaccard Index
+
+n_trials: 16
+save_models: False
+storage_uri: /dccstor/geofm-finetuning/pedrohc/smp_test
+optimization_space:
+  model:
+    - DeepLabV3
+  lr:
+    min: 6e-5
+    max: 1e-3
+    type: real
+    log: true
+  batch_size:
+    - 8
+    - 16
+    - 32
+  decoder_channels:
+    - 32
+    - 64
+    - 128
+  head_dropout:
+    min: 0.2
+    max: 0.8
+    type: real
