@@ -123,7 +123,7 @@ class CustomWriter(BasePredictionWriter):
             output_dir = self.output_dir
 
         if not os.path.exists(output_dir):
-            os.mkdir(output_dir)
+            os.makedirs(output_dir, exist_ok=True)
 
         for pred_batch, filename_batch in predictions:
             for prediction, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
