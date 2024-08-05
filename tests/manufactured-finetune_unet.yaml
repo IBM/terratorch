@@ -26,7 +26,7 @@ trainer:
   enable_checkpointing: true
   default_root_dir: tests/
 data:
-  class_path: GenericNonGeoPixelwiseRegressionDataModule
+  class_path: GenericNonGeoSegmentationDataModule
   init_args:
     batch_size: 2
     num_workers: 4
@@ -88,9 +88,9 @@ data:
     - 1067.641
     no_label_replace: -1
     no_data_replace: 0
-
+    num_classes: 2
 model:
-  class_path: terratorch.tasks.PixelwiseRegressionTask
+  class_path: terratorch.tasks.SemanticSegmentationTask
   init_args:
     model_args:
       decoder: "unet"
@@ -99,6 +99,8 @@ model:
       backbone_drop_path_rate: 0.3
       # backbone_window_size: 8
       decoder_channels: 256
+      decoder_in_channels: 6
+      decoder_num_classes: 2
       in_channels: 6
       bands:
         - BLUE
@@ -111,7 +113,8 @@ model:
       head_dropout: 0.5708022831486758
       head_final_act: torch.nn.ReLU
       head_learned_upscale_layers: 2
-    loss: rmse
+      num_classes: 2
+    loss: ce
     #aux_heads:
     #  - name: aux_head
     #    decoder: IdentityDecoder
@@ -124,8 +127,8 @@ model:
     #aux_loss:
     #  aux_head: 0.4
     ignore_index: -1
-    freeze_backbone: true
-    freeze_decoder: false
+    #freeze_encoder: false #true
+    #freeze_decoder: false
     model_factory: GenericUnetModelFactory
 
     # uncomment this block for tiled inference
