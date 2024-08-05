@@ -11,6 +11,10 @@ from terratorch.models.model import Model, ModelFactory, ModelOutput, register_f
 
 import importlib
 
+def freeze_module(module: nn.Module):
+    for param in module.parameters():
+        param.requires_grad_(False)
+
 @register_factory
 class GenericUnetModelFactory(ModelFactory):
     def build_model(
@@ -43,13 +47,17 @@ class GenericUnetModelFactory(ModelFactory):
     
         mmseg = importlib.import_module("mmseg.models.decode_heads")
 
+        decoder_kwargs = _extract_prefix_keys(kwargs, "decoder_")
+        decoder_kwargs.pop("model")
+
         model_class = getattr(mmseg, model)
 
         model = model_class(
-           dilations=dilations 
+           #dilations=dilations 
+           **decoder_kwargs,
         )
        
-        return SMPModelWrapper(
+        return GenericUnetModelWrapper(
             model, relu=task == "regression" and regression_relu, squeeze_single_class=task == "regression"
         )
 
@@ -62,6 +70,9 @@ class GenericUnetModelWrapper(Model, nn.Module):
         self.squeeze_single_class = squeeze_single_class
 
     def forward(self, *args, **kwargs):
+        input_data = args[0][:, :, None, ...]
+        args = (input_data,)
+        print(kwargs)
         smp_output = self.smp_model(*args, **kwargs)
         smp_output = self.final_act(smp_output)
         if smp_output.shape[1] == 1 and self.squeeze_single_class:
@@ -69,7 +80,7 @@ class GenericUnetModelWrapper(Model, nn.Module):
         return ModelOutput(smp_output)
 
     def freeze_encoder(self):
-        raise NotImplementedError()
+        raise freeze_module(self.smp_model)
 
     def freeze_decoder(self):
         raise NotImplementedError()
