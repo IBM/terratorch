@@ -34,6 +34,9 @@ class HLSBands(Enum):
         except ValueError:
             return x
 
+def default_transform(**batch):
+    return to_tensor(batch)
+
 
 def filter_valid_files(
     files, valid_files: Iterator[str] | None = None, ignore_extensions: bool = False, allow_substring: bool = True
