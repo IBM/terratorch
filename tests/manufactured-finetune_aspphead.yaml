@@ -5,6 +5,7 @@ trainer:
   strategy: auto
   devices: auto
   num_nodes: 1
+  precision: 16-mixed
   # precision: 16-mixed
   logger:
     class_path: TensorBoardLogger
@@ -93,12 +94,8 @@ model:
   class_path: terratorch.tasks.SemanticSegmentationTask
   init_args:
     model_args:
-      backbone: "UNet"
-      backbone_in_channels: 6
-      backbone_conv_cfg:
-        crop_size: 224
-        stride: 1
-        type: "float32"
+      decoder: "ASPPHead"
+      decoder_dilations: [1, 6, 12, 18]
       # backbone_window_size: 8
       decoder_channels: 256
       decoder_in_channels: 6
@@ -111,7 +108,7 @@ model:
         - NIR_NARROW
         - SWIR_1
         - SWIR_2
-      num_frames: 1
+        #num_frames: 1
       head_dropout: 0.5708022831486758
       head_final_act: torch.nn.ReLU
       head_learned_upscale_layers: 2
