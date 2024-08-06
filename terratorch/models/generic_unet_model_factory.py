@@ -20,7 +20,8 @@ class GenericUnetModelFactory(ModelFactory):
     def build_model(
         self,
         task: str = "segmentation",
-        model: str = "ASPPHead",
+        backbone: str = None,
+        decoder: str = None,
         dilations: tuple[int] = (1, 6, 12, 18),
         in_channels: int = 6,
         pretrained: str | bool | None = True,
@@ -45,16 +46,27 @@ class GenericUnetModelFactory(ModelFactory):
             msg = f"SMP models can only perform pixel wise tasks, but got task {task}"
             raise Exception(msg)
     
-        mmseg = importlib.import_module("mmseg.models.decode_heads")
+        mmseg_decoders = importlib.import_module("mmseg.models.decode_heads")
+        mmseg_encoders = importlib.import_module("mmseg.models.backbones")
 
-        decoder_kwargs = _extract_prefix_keys(kwargs, "decoder_")
-        decoder_kwargs.pop("model")
+        if backbone:
+            backbone_kwargs = _extract_prefix_keys(kwargs, "backbone_")
+            model = backbone
+            model_kwargs = backbone_kwargs
+            mmseg = mmseg_encoders
+        elif decoder: 
+            decoder_kwargs = _extract_prefix_keys(kwargs, "decoder_")
+            model = decoder
+            model_kwargs = decoder_kwargs
+            mmseg = mmseg_decoders
+        else:
+            print("It is necessary to define a backbone and/or a decoder.")
 
         model_class = getattr(mmseg, model)
 
         model = model_class(
            #dilations=dilations 
-           **decoder_kwargs,
+           **model_kwargs,
         )
        
         return GenericUnetModelWrapper(
@@ -70,13 +82,17 @@ class GenericUnetModelWrapper(Model, nn.Module):
         self.squeeze_single_class = squeeze_single_class
 
     def forward(self, *args, **kwargs):
-        input_data = args[0][:, :, None, ...]
+        input_data = args[0][:, None, ...]
         args = (input_data,)
-        print(kwargs)
+
         smp_output = self.smp_model(*args, **kwargs)
         smp_output = self.final_act(smp_output)
+
         if smp_output.shape[1] == 1 and self.squeeze_single_class:
             smp_output = smp_output.squeeze(1)
+
+        smp_output = smp_output.squeeze(0)
+    
         return ModelOutput(smp_output)
 
     def freeze_encoder(self):
