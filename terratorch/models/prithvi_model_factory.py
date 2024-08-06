@@ -80,11 +80,6 @@ class PrithviModelFactory(ModelFactory):
         Returns:
             nn.Module: Full model with encoder, decoder and head.
         """
-        if not torch.cuda.is_available():
-            self.CPU_ONLY = True
-        else:
-            self.CPU_ONLY = False
-
         bands = [HLSBands.try_convert_to_hls_bands_enum(b) for b in bands]
         if in_channels is None:
             in_channels = len(bands)
