@@ -93,7 +93,8 @@ model:
   class_path: terratorch.tasks.SemanticSegmentationTask
   init_args:
     model_args:
-      decoder: "unet"
+      backbone: "unet"
+      backbone_in_channels: 6
       decoder_model: "ASPPHead"
       decoder_dilations: [1, 6, 12, 18]
       backbone_drop_path_rate: 0.3
