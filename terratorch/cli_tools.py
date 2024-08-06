@@ -132,28 +132,30 @@ class CustomWriter(BasePredictionWriter):
 
 def clean_config_for_deployment_and_dump(config: dict[str, Any]):
     deploy_config = deepcopy(config)
-    ## General
-    # drop ckpt_path
-    deploy_config.pop("ckpt_path", None)
-    # drop checkpoints
-    deploy_config.pop("ModelCheckpoint", None)
-    deploy_config.pop("StateDictModelCheckpoint", None)
-    # drop optimizer and lr sheduler
-    deploy_config.pop("optimizer", None)
-    deploy_config.pop("lr_scheduler", None)
-    ## Trainer
-    # remove logging
-    deploy_config["trainer"]["logger"] = False
-    # remove callbacks
-    deploy_config["trainer"].pop("callbacks", None)
-    # remove default_root_dir
-    deploy_config["trainer"].pop("default_root_dir", None)
-    # set mixed precision by default for inference
-    deploy_config["trainer"]["precision"] = "16-mixed"
-    ## Model
-    # set pretrained to false
-    if "model_args" in deploy_config["model"]["init_args"]:
-        deploy_config["model"]["init_args"]["model_args"]["pretrained"] = False
+
+    if config["clean_config"]:
+        ## General
+        # drop ckpt_path
+        deploy_config.pop("ckpt_path", None)
+        # drop checkpoints
+        deploy_config.pop("ModelCheckpoint", None)
+        deploy_config.pop("StateDictModelCheckpoint", None)
+        # drop optimizer and lr sheduler
+        deploy_config.pop("optimizer", None)
+        deploy_config.pop("lr_scheduler", None)
+        ## Trainer
+        # remove logging
+        deploy_config["trainer"]["logger"] = False
+        # remove callbacks
+        deploy_config["trainer"].pop("callbacks", None)
+        # remove default_root_dir
+        deploy_config["trainer"].pop("default_root_dir", None)
+        # set mixed precision by default for inference
+        deploy_config["trainer"]["precision"] = "16-mixed"
+        ## Model
+        # set pretrained to false
+        if "model_args" in deploy_config["model"]["init_args"]:
+            deploy_config["model"]["init_args"]["model_args"]["pretrained"] = False
 
     return yaml.safe_dump(deploy_config)
 
@@ -175,10 +177,12 @@ class StudioDeploySaveConfigCallback(SaveConfigCallback):
     ):
         super().__init__(parser, config, config_filename, overwrite, multifile, save_to_log_dir)
         set_dumper("deploy_config", clean_config_for_deployment_and_dump)
-
+        
     def setup(self, trainer: Trainer, pl_module: LightningModule, stage: str) -> None:
         if self.already_saved:
             return
+
+        _, self.config_filename = os.path.split(self.config.config[0].abs_path)
 
         if self.save_to_log_dir:
             log_dir = trainer.log_dir or trainer.default_root_dir  # this broadcasts the directory
@@ -284,6 +288,7 @@ class MyLightningCLI(LightningCLI):
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:
         parser.add_argument("--predict_output_dir", default=None)
         parser.add_argument("--out_dtype", default="int16")
+        parser.add_argument("--clean_config", type=bool, default=False)
 
         # parser.set_defaults({"trainer.enable_checkpointing": False})
 
@@ -313,6 +318,9 @@ class MyLightningCLI(LightningCLI):
         
         if hasattr(config, "out_dtype"):
             self.trainer.out_dtype = config.out_dtype
+
+        if hasattr(config, "clean_config"):
+            self.trainer.clean_config = config.clean_config
 
 def build_lightning_cli(
     args: ArgsType = None,
