@@ -148,7 +148,7 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         if self.expand_temporal_dimension:
             image = rearrange(image, "(channels time) h w -> channels time h w", channels=len(self.output_bands))
         image = np.moveaxis(image, 0, -1)
-        print(f"Image shape when entering __getitem__: {image.shape}")
+        
         if self.filter_indices:
             image = image[..., self.filter_indices]
         output = {
@@ -163,7 +163,7 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         if self.transform:
             output = self.transform(**output)
         output["filename"] = self.image_files[index]
-        print(f"Image shape after transform: {output['image'].shape}")
+        
         return output
 
     def _load_file(self, path, nan_replace: int | float | None = None) -> xr.DataArray:
