@@ -26,7 +26,7 @@ from torchgeo.datasets import NonGeoDataset
 from torchgeo.datasets.utils import rasterio_loader
 from torchvision.datasets import ImageFolder
 
-from terratorch.datasets.utils import HLSBands, filter_valid_files, to_tensor
+from terratorch.datasets.utils import HLSBands, default_transform, filter_valid_files
 
 
 class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
@@ -128,7 +128,7 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
         else:
             self.filter_indices = None
         # If no transform is given, apply only to transform to torch tensor
-        self.transforms = transform if transform else lambda **batch: to_tensor(batch)
+        self.transforms = transform if transform else default_transform
         # self.transform = transform if transform else ToTensorV2()
 
     def __len__(self) -> int:
@@ -143,13 +143,12 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
 
         output = {
             "image": image.astype(np.float32) * self.constant_scale,
-            "label": label,
-            "filename": self.samples[index][
-                0
-            ],  # samples is an attribute of ImageFolder. Contains a tuple of (Path, Target)
+            "label": label,  # samples is an attribute of ImageFolder. Contains a tuple of (Path, Target)
         }
         if self.transforms:
             output = self.transforms(**output)
+        output["filename"] = self.image_files[index]
+
         return output
 
     def _load_file(self, path) -> xr.DataArray:

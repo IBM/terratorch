@@ -154,17 +154,17 @@ class ClassificationTask(BaseTask):
         class_names = self.hparams["class_names"]
         metrics = MetricCollection(
             {
-                "Overall Accuracy": MulticlassAccuracy(
+                "Overall_Accuracy": MulticlassAccuracy(
                     num_classes=num_classes,
                     ignore_index=ignore_index,
                     average="micro",
                 ),
-                "Average Accuracy": MulticlassAccuracy(
+                "Average_Accuracy": MulticlassAccuracy(
                     num_classes=num_classes,
                     ignore_index=ignore_index,
                     average="macro",
                 ),
-                "Multiclass Accuracy Class": ClasswiseWrapper(
+                "Multiclass_Accuracy_Class": ClasswiseWrapper(
                     MulticlassAccuracy(
                         num_classes=num_classes,
                         ignore_index=ignore_index,
@@ -172,13 +172,13 @@ class ClassificationTask(BaseTask):
                     ),
                     labels=class_names,
                 ),
-                "Multiclass Jaccard Index": MulticlassJaccardIndex(num_classes=num_classes, ignore_index=ignore_index),
-                "Multiclass Jaccard Index Class": ClasswiseWrapper(
+                "Multiclass_Jaccard_Index": MulticlassJaccardIndex(num_classes=num_classes, ignore_index=ignore_index),
+                "Multiclass_Jaccard_Index_Class": ClasswiseWrapper(
                     MulticlassJaccardIndex(num_classes=num_classes, ignore_index=ignore_index, average=None),
                     labels=class_names,
                 ),
                 # why FBetaScore
-                "Multiclass F1 Score": MulticlassFBetaScore(
+                "Multiclass_F1_Score": MulticlassFBetaScore(
                     num_classes=num_classes,
                     ignore_index=ignore_index,
                     beta=1.0,

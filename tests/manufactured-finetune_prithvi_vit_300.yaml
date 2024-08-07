@@ -1,7 +1,7 @@
 # lightning.pytorch==2.1.1
 seed_everything: 42
 trainer:
-  accelerator: auto
+  accelerator: cpu
   strategy: auto
   devices: auto
   num_nodes: 1
@@ -111,7 +111,6 @@ model:
         - NIR_NARROW
         - SWIR_1
         - SWIR_2
-      num_frames: 1
       head_dropout: 0.5708022831486758
       head_final_act: torch.nn.ReLU
       head_learned_upscale_layers: 2
