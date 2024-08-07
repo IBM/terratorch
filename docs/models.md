@@ -61,6 +61,7 @@ By passing a list of bands being used to the constructor, we automatically filte
 
 ## Model Factory
 ### :::terratorch.models.PrithviModelFactory
+### :::terratorch.models.SMPModelFactory
 
 # Adding new model types
 Adding new model types is as simple as creating a new factory that produces models. See for instance the example below for a potential `SMPModelFactory`
