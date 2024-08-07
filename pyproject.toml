@@ -2,6 +2,10 @@
 requires = [ "setuptools" ]
 build-backend = 'setuptools.build_meta'
 
+# It allows installation via `pip install -e`
+[tool.setuptools]
+py-modules = []
+
 [project]
 name = "terratorch"
 version = "0.99.1"
