@@ -6,8 +6,9 @@ Right now it always returns a UNET, but could easily be extended to many of the 
 """
 
 from torch import nn
-
+import torch
 from terratorch.models.model import Model, ModelFactory, ModelOutput, register_factory
+from terratorch.tasks.segmentation_tasks import to_segmentation_prediction
 
 import importlib
 
@@ -65,7 +66,6 @@ class GenericUnetModelFactory(ModelFactory):
         model_class = getattr(mmseg, model)
 
         model = model_class(
-           #dilations=dilations 
            **model_kwargs,
         )
        
@@ -73,27 +73,27 @@ class GenericUnetModelFactory(ModelFactory):
             model, relu=task == "regression" and regression_relu, squeeze_single_class=task == "regression"
         )
 
-
 class GenericUnetModelWrapper(Model, nn.Module):
-    def __init__(self, smp_model, relu=False, squeeze_single_class=False) -> None:
+    def __init__(self, unet_model, relu=False, squeeze_single_class=False) -> None:
         super().__init__()
-        self.smp_model = smp_model
+        self.unet_model = unet_model
         self.final_act = nn.ReLU() if relu else nn.Identity()
         self.squeeze_single_class = squeeze_single_class
 
     def forward(self, *args, **kwargs):
-        input_data = args[0][:, None, ...]
+
+        input_data = [args[0]]
         args = (input_data,)
 
-        smp_output = self.smp_model(*args, **kwargs)
-        smp_output = self.final_act(smp_output)
+        unet_output = self.unet_model(*args, **kwargs)
+        unet_output = self.final_act(unet_output)
 
-        if smp_output.shape[1] == 1 and self.squeeze_single_class:
-            smp_output = smp_output.squeeze(1)
+        if unet_output.shape[1] == 1 and self.squeeze_single_class:
+            unet_output = unet_output.squeeze(1)
 
-        smp_output = smp_output.squeeze(0)
-    
-        return ModelOutput(smp_output)
+        model_output = ModelOutput(unet_output)
+
+        return model_output
 
     def freeze_encoder(self):
         raise freeze_module(self.smp_model)
