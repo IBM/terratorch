@@ -82,7 +82,8 @@ class GenericUnetModelWrapper(Model, nn.Module):
 
     def forward(self, *args, **kwargs):
 
-        input_data = [args[0]]
+        # It supposes the input has dimension (B, C, H, W)
+        input_data = [args[0]] # It adapts the input to became a list of time 'snapshots'
         args = (input_data,)
 
         unet_output = self.unet_model(*args, **kwargs)
@@ -96,10 +97,10 @@ class GenericUnetModelWrapper(Model, nn.Module):
         return model_output
 
     def freeze_encoder(self):
-        raise freeze_module(self.smp_model)
+        raise NotImplementedError()
 
     def freeze_decoder(self):
-        raise NotImplementedError()
+        raise freeze_module(self.unet_model)
 
 
 def _extract_prefix_keys(d: dict, prefix: str) -> dict:
