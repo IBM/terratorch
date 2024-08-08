@@ -1,4 +1,5 @@
 # TerraTorch
+![Automatic Tests](https://github.com/IBM/terratorch/blob/main/.github/workflows/test.yaml/badge.yaml)
 
 :book: [Documentation](https://IBM.github.io/terratorch/)
 
