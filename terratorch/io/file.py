@@ -60,7 +60,6 @@ def load_from_file_or_attribute(value: list[float]|str):
     elif isinstance(value, str):  # It can be the path for a file
         if os.path.isfile(value):
             try:
-                print(value)
                 content = np.genfromtxt(value).tolist()
             except:
                 raise Exception(f"File must be txt, but received {value}")
