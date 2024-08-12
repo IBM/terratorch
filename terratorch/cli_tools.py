@@ -2,6 +2,7 @@
 
 import logging  # noqa: I001
 import os
+import shutil
 import warnings
 from datetime import timedelta
 from pathlib import Path
@@ -176,6 +177,11 @@ class StudioDeploySaveConfigCallback(SaveConfigCallback):
         super().__init__(parser, config, config_filename, overwrite, multifile, save_to_log_dir)
         set_dumper("deploy_config", clean_config_for_deployment_and_dump)
 
+        # Preparing information to save config file to log dir
+        config_dict = config.as_dict()
+        self.config_path_original = str(config_dict["config"][0])
+        _, self.config_file_original = os.path.split(self.config_path_original)         
+
     def setup(self, trainer: Trainer, pl_module: LightningModule, stage: str) -> None:
         if self.already_saved:
             return
@@ -227,9 +233,13 @@ class StudioDeploySaveConfigCallback(SaveConfigCallback):
             )
             self.already_saved = True
 
+        config_path_dir, config_path_file = os.path.split(config_path)
+        self.config_path_new = os.path.join(config_path_dir, self.config_file_original)
+
         # broadcast so that all ranks are in sync on future calls to .setup()
         self.already_saved = trainer.strategy.broadcast(self.already_saved)
-
+        # Copying config file to log dir
+        shutil.copyfile(self.config_path_original, self.config_path_new)
 
 class StateDictAwareModelCheckpoint(ModelCheckpoint):
     # necessary as we wish to have one model checkpoint with only state dict and one with standard lightning checkpoints
