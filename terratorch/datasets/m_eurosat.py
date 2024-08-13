@@ -86,9 +86,11 @@ class MEuroSATNonGeo(NonGeoDataset):
         label_class = self.id_to_class[image_id]
         label_index = list(self.label_map.keys()).index(label_class)
 
-        output = {"image": image.astype(np.float32), "label": label_index}
+        output = {"image": image.astype(np.float32)}
 
         output = self.transform(**output)
+
+        output["label"] = label_index
 
         return output
 

@@ -81,9 +81,11 @@ class MBrickKilnNonGeo(NonGeoDataset):
             attr_dict = pickle.loads(ast.literal_eval(h5file.attrs["pickle"]))
             class_index = attr_dict["label"]
 
-        output = {"image": image.astype(np.float32), "label": class_index}
+        output = {"image": image.astype(np.float32)}
 
         output = self.transform(**output)
+
+        output["label"] = class_index
 
         return output
 

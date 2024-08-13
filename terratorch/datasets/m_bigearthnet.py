@@ -82,12 +82,12 @@ class MBigEarthNonGeo(NonGeoDataset):
         labels_tensor = torch.tensor(labels_vector, dtype=torch.float)
 
         output =  {
-            "image": image,
-            "label": labels_tensor
+            "image": image
         }
 
         output = self.transform(**output)
 
+        output["label"] = labels_tensor
         return output
     
     def _validate_bands(self, bands: Sequence[str]) -> None:
