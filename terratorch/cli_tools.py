@@ -181,6 +181,8 @@ class StudioDeploySaveConfigCallback(SaveConfigCallback):
         config_dict = config.as_dict()
         self.config_path_original = str(config_dict["config"][0])
         _, self.config_file_original = os.path.split(self.config_path_original)         
+        
+        self.deploy_config_file = config_dict["deploy_config_file"]
 
     def setup(self, trainer: Trainer, pl_module: LightningModule, stage: str) -> None:
         if self.already_saved:
@@ -212,26 +214,28 @@ class StudioDeploySaveConfigCallback(SaveConfigCallback):
                 # save only on rank zero to avoid race conditions.
                 # the `log_dir` needs to be created as we rely on the logger to do it usually
                 # but it hasn't logged anything at this point
-                fs.makedirs(log_dir, exist_ok=True)
-                self.parser.save(
-                    self.config, config_path, skip_none=True, overwrite=self.overwrite, multifile=self.multifile
-                )
+                if self.deploy_config_file:
+                    fs.makedirs(log_dir, exist_ok=True)
+                    self.parser.save(
+                        self.config, config_path, skip_none=True, overwrite=self.overwrite, multifile=self.multifile
+                    )
 
         if trainer.is_global_zero:
-            # also save the config that will be deployed
-            config_name, config_ext = os.path.splitext(self.config_filename)
-            config_name += "_deploy"
-            config_name += config_ext
-            config_path = os.path.join(log_dir, config_name)
-            self.parser.save(
-                self.config,
-                config_path,
-                format="deploy_config",
-                skip_none=True,
-                overwrite=self.overwrite,
-                multifile=self.multifile,
-            )
-            self.already_saved = True
+            if self.deploy_config_file:
+                # also save the config that will be deployed
+                config_name, config_ext = os.path.splitext(self.config_filename)
+                config_name += "_deploy"
+                config_name += config_ext
+                config_path = os.path.join(log_dir, config_name)
+                self.parser.save(
+                    self.config,
+                    config_path,
+                    format="deploy_config",
+                    skip_none=True,
+                    overwrite=self.overwrite,
+                    multifile=self.multifile,
+                )
+                self.already_saved = True
 
         config_path_dir, config_path_file = os.path.split(config_path)
         self.config_path_new = os.path.join(config_path_dir, self.config_file_original)
@@ -294,6 +298,7 @@ class MyLightningCLI(LightningCLI):
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:
         parser.add_argument("--predict_output_dir", default=None)
         parser.add_argument("--out_dtype", default="int16")
+        parser.add_argument("--deploy_config_file", type=bool, default=True)
 
         # parser.set_defaults({"trainer.enable_checkpointing": False})
 
@@ -323,6 +328,10 @@ class MyLightningCLI(LightningCLI):
         
         if hasattr(config, "out_dtype"):
             self.trainer.out_dtype = config.out_dtype
+
+        if hasattr(config, "deploy_config_file"):
+            self.trainer.deploy_config = config.deploy_config_file
+
 
 def build_lightning_cli(
     args: ArgsType = None,
