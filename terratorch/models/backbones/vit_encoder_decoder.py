@@ -185,6 +185,7 @@ class TemporalViTEncoder(nn.Module):
         # --------------------------------------------------------------------------
         # MAE encoder specifics
         self.patch_embed = PatchEmbed(pretrain_img_size, patch_size, num_frames, tubelet_size, in_chans, embed_dim)
+        self.patch_size = patch_size
         self.feature_info = []
         self.in_chans = in_chans
         self.num_frames = num_frames
@@ -435,7 +436,7 @@ class TemporalViTEncoder(nn.Module):
         t, h, w = x.shape[-3:]
         # embed patches
         x = self.patch_embed(x)
-        pos_embed = torch.from_numpy(get_3d_sincos_pos_embed(self.embed_dim, (t, h // 16, w // 16), cls_token=True)).to(
+        pos_embed = torch.from_numpy(get_3d_sincos_pos_embed(self.embed_dim, (t, h // self.patch_size, w // self.patch_size), cls_token=True)).to(
             x
         )
         # add pos embed w/o cls token
