@@ -398,6 +398,7 @@ class LightningInferenceModel:
         config_path: Path,
         checkpoint_path: Path | None = None,
         predict_dataset_bands: list[str] | None = None,
+        predict_output_bands: list[str] | None = None,
     ):
         """
         Args:
@@ -415,6 +416,10 @@ class LightningInferenceModel:
         if predict_dataset_bands is not None:
             arguments.extend([ "--data.init_args.predict_dataset_bands",
             "[" + ",".join(predict_dataset_bands) + "]",])
+
+        if predict_output_bands is not None:
+            arguments.extend([ "--data.init_args.predict_output_bands",
+            "[" + ",".join(predict_output_bands) + "]",])
 
         cli = build_lightning_cli(arguments, run=False)
         trainer = cli.trainer
