@@ -347,7 +347,7 @@ class TemporalViTEncoder(nn.Module):
             x = x.reshape(-1, self.in_chans, 1, *x.shape[-2:])
         t, h, w = x.shape[-3:]
         x = self.patch_embed(x)
-        pos_embed = torch.from_numpy(get_3d_sincos_pos_embed(self.embed_dim, (t, h // 16, w // 16), cls_token=True)).to(
+        pos_embed = torch.from_numpy(get_3d_sincos_pos_embed(self.embed_dim, (t, h // self.patch_size, w // self.patch_size), cls_token=True)).to(
             x
         )
         # add pos embed w/o cls token
@@ -378,7 +378,7 @@ class TemporalViTEncoder(nn.Module):
         x = self.decoder_embed(x)
         t, h, w = dim_info
         decoder_pos_embed = torch.from_numpy(
-            get_3d_sincos_pos_embed(self.decoder_embed_dim, (t, h // 16, w // 16), cls_token=True)
+            get_3d_sincos_pos_embed(self.decoder_embed_dim, (t, h // self.patch_size, w // self.patch_size), cls_token=True)
         ).to(x)
 
         # append mask tokens to sequence
