@@ -124,7 +124,7 @@ class SemanticSegmentationTask(BaseTask):
         return optimizer_factory(
             self.hparams["optimizer"],
             self.hparams["lr"],
-            self.parameters(),
+            self.model,
             self.hparams["optimizer_hparams"],
             self.hparams["scheduler"],
             self.monitor,
