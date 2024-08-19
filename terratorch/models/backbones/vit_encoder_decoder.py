@@ -186,7 +186,7 @@ class TemporalViTEncoder(nn.Module):
         # MAE encoder specifics
         self.patch_embed = PatchEmbed(pretrain_img_size, patch_size, num_frames, tubelet_size, in_chans, embed_dim)
         self.patch_size = patch_size
-        self.tubulet_size = tubulet_size
+        self.tubelet_size = tubelet_size
         self.feature_info = []
         self.in_chans = in_chans
         self.num_frames = num_frames
@@ -348,7 +348,7 @@ class TemporalViTEncoder(nn.Module):
             x = x.reshape(-1, self.in_chans, 1, *x.shape[-2:])
         t, h, w = x.shape[-3:]
         x = self.patch_embed(x)
-        pos_embed = torch.from_numpy(get_3d_sincos_pos_embed(self.embed_dim, (t // self.tubulet_size, h // self.patch_size, w // self.patch_size), cls_token=True)).to(
+        pos_embed = torch.from_numpy(get_3d_sincos_pos_embed(self.embed_dim, (t // self.tubelet_size, h // self.patch_size, w // self.patch_size), cls_token=True)).to(
             x
         )
         # add pos embed w/o cls token
@@ -379,7 +379,7 @@ class TemporalViTEncoder(nn.Module):
         x = self.decoder_embed(x)
         t, h, w = dim_info
         decoder_pos_embed = torch.from_numpy(
-            get_3d_sincos_pos_embed(self.decoder_embed_dim, (t // self.tubulet_size, h // self.patch_size, w // self.patch_size), cls_token=True)
+            get_3d_sincos_pos_embed(self.decoder_embed_dim, (t // self.tubelet_size, h // self.patch_size, w // self.patch_size), cls_token=True)
         ).to(x)
 
         # append mask tokens to sequence
@@ -437,7 +437,7 @@ class TemporalViTEncoder(nn.Module):
         t, h, w = x.shape[-3:]
         # embed patches
         x = self.patch_embed(x)
-        pos_embed = torch.from_numpy(get_3d_sincos_pos_embed(self.embed_dim, (t // self.tubulet_size, h // self.patch_size, w // self.patch_size), cls_token=True)).to(
+        pos_embed = torch.from_numpy(get_3d_sincos_pos_embed(self.embed_dim, (t // self.tubelet_size, h // self.patch_size, w // self.patch_size), cls_token=True)).to(
             x
         )
         # add pos embed w/o cls token
