@@ -301,7 +301,7 @@ class SemanticSegmentationTask(BaseTask):
         self.test_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat_hard = to_segmentation_prediction(model_output)
         self.test_metrics.update(y_hat_hard, y)
-
+        torch.cuda.memory_summary(device=None, abbreviated=False)
     def on_test_epoch_end(self) -> None:
         self.log_dict(self.test_metrics.compute(), sync_dist=True)
         self.test_metrics.reset()
@@ -323,6 +323,12 @@ class SemanticSegmentationTask(BaseTask):
 
         def model_forward(x):
             return self(x).output
+
+        # Avoiding GPU memory overloading
+        # Removing GPU cache
+        torch.cuda.empty_cache()
+        # Forcing the Python garbage collector
+        gc.collect()
 
         if self.tiled_inference_parameters:
             y_hat: Tensor = tiled_inference(
