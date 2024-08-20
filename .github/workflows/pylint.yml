@@ -26,3 +26,7 @@ jobs:
       run: |
         pylint $(git ls-files '*.py')  --output=lintpy.txt || true
         pylint $(git ls-files '*.ipynb')  --output=lintipynb.txt || true
+        echo "Linting for Python files."
+        cat lintpy.txt
+        echo "Linting for Jupyter files."
+        cat lintipynb.txt
