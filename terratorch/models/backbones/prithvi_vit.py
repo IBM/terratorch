@@ -99,7 +99,7 @@ def _create_prithvi(
             **kwargs,
         )
     except RuntimeError:
-        print(f"No pretrained configuration was found for the model {variant} was not")
+        print(f"No pretrained configuration was found for the model {variant}.")
         model = build_model_with_cfg(
             TemporalViTEncoder,
             variant,

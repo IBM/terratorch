@@ -192,7 +192,7 @@ def _create_swin_mmseg_transformer(
             **kwargs,
         )
     except RuntimeError:
-        print(f"No pretrained configuration was found for the model {variant} was not")
+        print(f"No pretrained configuration was found for the model {variant}.")
         model: MMSegSwinTransformer = build_model_with_cfg(
             MMSegSwinTransformer,
             variant,
