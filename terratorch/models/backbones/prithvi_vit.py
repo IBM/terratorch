@@ -4,6 +4,7 @@
 import logging
 from functools import partial
 from pathlib import Path
+from collections import defaultdict
 
 import torch
 from timm.models import FeatureInfo
@@ -14,6 +15,7 @@ from torch import nn
 from terratorch.datasets import HLSBands
 from terratorch.models.backbones.prithvi_select_patch_embed_weights import prithvi_select_patch_embed_weights
 from terratorch.models.backbones.vit_encoder_decoder import TemporalViTEncoder
+from terratorch.models.backbones.utils import _estimate_in_chans
 
 PRETRAINED_BANDS = [
     HLSBands.BLUE,
@@ -81,7 +83,7 @@ def _create_prithvi(
     if "features_only" in kwargs:
         kwargs = {k: v for k, v in kwargs.items() if k != "features_only"}
 
-    kwargs["in_chans"] = len(model_bands)
+    kwargs["in_chans"] = _estimate_in_chans(model_bands=model_bands)
 
     def checkpoint_filter_wrapper_fn(state_dict, model):
         return checkpoint_filter_fn(state_dict, model, pretrained_bands, model_bands)
@@ -139,13 +141,22 @@ def create_prithvi_vit_100(
         "norm_layer": partial(nn.LayerNorm, eps=1e-6),
         "num_frames": 1,
     }
+
+    # It is possible to overwrite default parameters using 
+    # config file
+    kwargs_ = defaultdict()
+    kwargs_.update(model_args)
+    kwargs_.update(kwargs)
+    kwargs_ = dict(kwargs_)
+
     model = _create_prithvi(
         model_name,
         pretrained=pretrained,
         model_bands=bands,
         pretrained_bands=pretrained_bands,
-        **dict(model_args, **kwargs),
+        **kwargs_,
     )
+    
     return model
 
 

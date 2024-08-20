@@ -18,6 +18,7 @@ from timm.models.swin_transformer import checkpoint_filter_fn as timm_swin_check
 from terratorch.datasets.utils import HLSBands
 from terratorch.models.backbones.prithvi_select_patch_embed_weights import prithvi_select_patch_embed_weights
 from terratorch.models.backbones.swin_encoder_decoder import MMSegSwinTransformer
+from terratorch.models.backbones.utils import _estimate_in_chans
 
 PRETRAINED_BANDS = [
     HLSBands.BLUE,
@@ -174,7 +175,8 @@ def _create_swin_mmseg_transformer(
     # the current swin model is not multitemporal
     if "num_frames" in kwargs:
         kwargs = {k: v for k, v in kwargs.items() if k != "num_frames"}
-    kwargs["in_chans"] = len(model_bands)
+
+    kwargs["in_chans"] = _estimate_in_chans(model_bands=model_bands)
 
     def checkpoint_filter_wrapper_fn(state_dict, model):
         return checkpoint_filter_fn(state_dict, model, pretrained_bands, model_bands)
