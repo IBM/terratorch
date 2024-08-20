@@ -33,6 +33,9 @@ from terratorch.datasets.utils import HLSBands
 # TorchGeo RasterDatasets
 from terratorch.datasets.wsf import WSF2019, WSFEvolution
 
+# miscellaneous datasets
+from terratorch.datasets.openearthmap import OpenEarthMapNonGeo
+
 __all__ = (
     "GenericNonGeoSegmentationDataset",
     "GenericNonGeoPixelwiseRegressionDataset",
@@ -59,4 +62,5 @@ __all__ = (
     "WSFEvolution",
     "HLSL30",
     "HLSS30",
+    "OpenEarthMapNonGeo"
 )

@@ -1,13 +1,11 @@
-import importlib
 from collections.abc import Callable
-import sys
 
-import numpy as np
 import timm
 import torch
 from torch import nn
 
 import terratorch.models.decoders as decoder_registry
+from terratorch.models.backbones.clay_v1.embedder import Embedder
 from terratorch.datasets import HLSBands
 from terratorch.models.model import (
     AuxiliaryHead,
@@ -27,30 +25,6 @@ SUPPORTED_TASKS = PIXEL_WISE_TASKS + SCALAR_TASKS
 class DecoderNotFoundError(Exception):
     pass
 
-
-class ModelWrapper(nn.Module):
-
-    def __init__(self, model: nn.Module = None) -> None:
-
-        super(ModelWrapper, self).__init__()
-
-        self.model = model
-
-        self.embedding_shape = self.model.model.state_dict()['decoder.embed_to_pixels.dem.bias'].shape[0]
-
-    def channels(self):
-        return (1, self.embedding_shape)
-
-    @property
-    def parameters(self):
-        return self.model.parameters
-
-    def forward(self, args, **kwargs):
-        datacube = {}
-        datacube['pixels'] = args
-        datacube['timestep'] = None
-        datacube['latlon'] = None
-        return self.model.forward(datacube)
 
 @register_factory
 class ClayModelFactory(ModelFactory):
@@ -116,7 +90,7 @@ class ClayModelFactory(ModelFactory):
         bands = [HLSBands.try_convert_to_hls_bands_enum(b) for b in bands]
         # TODO: support auxiliary heads
         if not isinstance(backbone, nn.Module):
-            if not "Clay" in backbone:
+            if not "clay" in backbone:
                 msg = "This class only handles models for `Clay` encoders"
                 raise NotImplementedError(msg)
 
@@ -138,51 +112,23 @@ class ClayModelFactory(ModelFactory):
                     features_only=True,
                     **backbone_kwargs,
                 )
-            except Exception:
-
-                # When the model is not on HG, it needs be restored locally.
-                print("This model is not available on HuggingFace. Trying to instantiate locally ...")
+            except Exception as e:
+                print(e, "Error loading from HF. Trying to instantiate locally ...")
 
                 assert checkpoint_path, "A checkpoint must be provided to restore the model."
 
-                # The CLAY source code must be installed or available via PYTHONPATH.
-                try:  # TODO Inlcude the Clay source code into the tolkit in order to
-                      # avoid issues with the modules paths or made it
-                      # seamlessly accesible via configuration.
-                    if self.syspath_kwarg in kwargs:
-                        syspath_value = kwargs.get(self.syspath_kwarg)
-
-                    else:
-
-                        Exception(f"It is necessary to define the variable {self.syspath_kwarg} on yaml"
-                                                           "config for restoring local model.")
-    
-                    sys.path.insert(0, syspath_value)
-
-                    from src.model_clay import CLAYModule
-
-                except ModuleNotFoundError:
-
-                    print(f"It is better to review the field {self.syspath_kwarg} in the yaml file.")
-
-                backbone: nn.Module = ModelWrapper(model=CLAYModule(**backbone_kwargs))
-
-                if self.CPU_ONLY:
-                    model_dict = torch.load(checkpoint_path, map_location="cpu")
-                else:
-                    model_dict = torch.load(checkpoint_path)
-
-                backbone.model.load_state_dict(model_dict['state_dict'])
-
+                device = "cpu" if self.CPU_ONLY else "cuda"
+                backbone: nn.Module = Embedder(
+                    ckpt_path=checkpoint_path, device=device, **backbone_kwargs)
                 print("Model Clay was successfully restored.")
 
         # allow decoder to be a module passed directly
         decoder_cls = _get_decoder(decoder)
-
         decoder_kwargs = _extract_prefix_keys(kwargs, "decoder_")
 
         # TODO: remove this
-        decoder: nn.Module = decoder_cls(backbone.channels(), **decoder_kwargs)
+        decoder: nn.Module = decoder_cls(
+            backbone.feature_info.channels(), **decoder_kwargs)
         # decoder: nn.Module = decoder_cls([128, 256, 512, 1024], **decoder_kwargs)
 
         head_kwargs = _extract_prefix_keys(kwargs, "head_")
@@ -193,12 +139,14 @@ class ClayModelFactory(ModelFactory):
                 task, backbone, decoder, head_kwargs, prepare_features_for_image_model, rescale=rescale
             )
 
-        to_be_aux_decoders: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] = []
+        to_be_aux_decoders: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] = [
+        ]
         for aux_decoder in aux_decoders:
             args = aux_decoder.decoder_args if aux_decoder.decoder_args else {}
             aux_decoder_cls: nn.Module = _get_decoder(aux_decoder.decoder)
             aux_decoder_kwargs = _extract_prefix_keys(args, "decoder_")
-            aux_decoder_instance = aux_decoder_cls(backbone.feature_info.channels(), **aux_decoder_kwargs)
+            aux_decoder_instance = aux_decoder_cls(
+                backbone.feature_info.channels(), **aux_decoder_kwargs)
             # aux_decoder_instance = aux_decoder_cls([128, 256, 512, 1024], **decoder_kwargs)
 
             aux_head_kwargs = _extract_prefix_keys(args, "head_")
@@ -207,7 +155,8 @@ class ClayModelFactory(ModelFactory):
             # aux_head: nn.Module = _get_head(task, aux_decoder_instance, num_classes=num_classes, **head_kwargs)
             # aux_decoder.decoder = nn.Sequential(aux_decoder_instance, aux_head)
             to_be_aux_decoders.append(
-                AuxiliaryHeadWithDecoderWithoutInstantiatedHead(aux_decoder.name, aux_decoder_instance, aux_head_kwargs)
+                AuxiliaryHeadWithDecoderWithoutInstantiatedHead(
+                    aux_decoder.name, aux_decoder_instance, aux_head_kwargs)
             )
 
         return _build_appropriate_model(
@@ -219,6 +168,7 @@ class ClayModelFactory(ModelFactory):
             rescale=rescale,
             auxiliary_heads=to_be_aux_decoders,
         )
+
 
 def _build_appropriate_model(
     task: str,

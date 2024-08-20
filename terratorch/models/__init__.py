@@ -1,5 +1,6 @@
 # Copyright contributors to the Terratorch project
 
+from terratorch.models.clay_model_factory import ClayModelFactory
 from terratorch.models.prithvi_model_factory import PrithviModelFactory
 from terratorch.models.satmae_model_factory import SatMAEModelFactory
 from terratorch.models.scalemae_model_factory import ScaleMAEModelFactory

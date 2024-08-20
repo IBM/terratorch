@@ -3,3 +3,4 @@
 # import so they get registered
 import terratorch.models.backbones.prithvi_swin
 import terratorch.models.backbones.prithvi_vit
+import terratorch.models.backbones.clay_v1
