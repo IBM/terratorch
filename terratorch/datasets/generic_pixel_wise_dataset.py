@@ -182,7 +182,7 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
                 if len(element) != 2:  # noqa: PLR2004
                     msg = "When defining an interval, a tuple of two integers should be passed, defining start and end indices inclusive"
                     raise Exception(msg)
-                expanded_element = list(range(element[0], element[1] + 1))
+                expanded_element = list(range(element[0], element[1])) 
                 bands.extend(expanded_element)
             else:
                 bands.append(element)
