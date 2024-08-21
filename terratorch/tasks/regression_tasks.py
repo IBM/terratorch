@@ -2,6 +2,7 @@
 
 from collections.abc import Sequence
 from typing import Any
+import gc
 
 import lightning
 import matplotlib.pyplot as plt
@@ -367,6 +368,12 @@ class PixelwiseRegressionTask(BaseTask):
 
         def model_forward(x):
             return self(x).output
+
+        # Avoiding GPU memory overloading
+        # Removing GPU cache
+        torch.cuda.empty_cache()
+        # Forcing the Python garbage collector
+        gc.collect()
 
         if self.tiled_inference_parameters:
             y_hat: Tensor = tiled_inference(model_forward, x, 1, self.tiled_inference_parameters)
