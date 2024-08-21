@@ -3,7 +3,7 @@
 import importlib
 
 from torch import nn
-
+import torch
 
 class PixelShuffleUpscale(nn.Module):
     def __init__(self, channels) -> None:
@@ -16,6 +16,8 @@ class PixelShuffleUpscale(nn.Module):
 
     def forward(self, x):
         post_conv = self.conv(x)
+        
+        torch.cuda.empty_cache()
         upscaled = self.upscale(post_conv)
         return self.relu(self.bn(upscaled))
 
@@ -81,5 +83,20 @@ class RegressionHead(nn.Module):
         self.head = nn.Sequential(*[*pre_layers, dropout, final_layer])
 
     def forward(self, x):
+        # Memory usage
+        reserved = torch.cuda.memory_reserved(0)//(1024**2)
+        allocated = torch.cuda.memory_allocated(0)//(1024**2)
+        print("Memory")
+        print(f"Allocated: {allocated} MiB")
+        print(f"Reserved: {reserved} MiB")
+        print(self.head)
+        torch.cuda.empty_cache()
+        reserved = torch.cuda.memory_reserved(0)//(1024**2)
+        allocated = torch.cuda.memory_allocated(0)//(1024**2)
+        print("Memory")
+        print(f"Allocated: {allocated} MiB")
+        print(f"Reserved: {reserved} MiB")
+
         output = self.head(x)
+        print("I passed by the head forward.")
         return self.final_act(output)

@@ -21,6 +21,8 @@ from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
 from terratorch.tasks.tiled_inference import TiledInferenceParameters, tiled_inference
 
+from torch.profiler import profile, record_function, ProfilerActivity
+
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
 
 
@@ -375,8 +377,21 @@ class PixelwiseRegressionTask(BaseTask):
         # Forcing the Python garbage collector
         gc.collect()
 
-        if self.tiled_inference_parameters:
-            y_hat: Tensor = tiled_inference(model_forward, x, 1, self.tiled_inference_parameters)
-        else:
-            y_hat: Tensor = self(x).output
+        # Memory usage
+        reserved = torch.cuda.memory_reserved(0)//(1024**2)
+        allocated = torch.cuda.memory_allocated(0)//(1024**2)
+        print("Memory")
+        print(f"Allocated: {allocated} MiB")
+        print(f"Reserved: {reserved} MiB")
+
+        with profile(activities=[ProfilerActivity.CUDA], record_shapes=True, profile_memory=True) as prof:
+            with record_function("model_inference"):
+
+                if self.tiled_inference_parameters:
+                    y_hat: Tensor = tiled_inference(model_forward, x, 1, self.tiled_inference_parameters)
+                else:
+                    y_hat: Tensor = self(x).output
+
+        print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=10))
+
         return y_hat, file_names
