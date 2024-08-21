@@ -427,7 +427,7 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
 
         self.dataset_bands = dataset_bands
         self.predict_dataset_bands = predict_dataset_bands if predict_dataset_bands else dataset_bands
-        self.predict_output_bands = predict_output_bands if predict_output_bands else dataset_bands
+        self.predict_output_bands = predict_output_bands if predict_output_bands else output_bands
         self.output_bands = output_bands
         self.rgb_indices = rgb_indices
 
