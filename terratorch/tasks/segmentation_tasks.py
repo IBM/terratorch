@@ -339,5 +339,7 @@ class SemanticSegmentationTask(BaseTask):
                     )
                 else:
                     y_hat: Tensor = self(x).output
+        print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=20))
+
         y_hat = y_hat.argmax(dim=1)
         return y_hat, file_names
