@@ -93,6 +93,7 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
         allow_substring_split_file: bool = True,
         dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         predict_dataset_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
+        predict_output_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
         output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         constant_scale: float = 1,
         rgb_indices: list[int] | None = None,
@@ -185,6 +186,7 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
 
         self.dataset_bands = dataset_bands
         self.predict_dataset_bands = predict_dataset_bands if predict_dataset_bands else dataset_bands
+        self.predict_output_bands = predict_output_bands if predict_output_bands else output_bands
         self.output_bands = output_bands
         self.rgb_indices = rgb_indices
         self.expand_temporal_dimension = expand_temporal_dimension
@@ -427,7 +429,7 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
 
         self.dataset_bands = dataset_bands
         self.predict_dataset_bands = predict_dataset_bands if predict_dataset_bands else dataset_bands
-        self.predict_output_bands = predict_output_bands if predict_output_bands else dataset_bands
+        self.predict_output_bands = predict_output_bands if predict_output_bands else output_bands
         self.output_bands = output_bands
         self.rgb_indices = rgb_indices
 

@@ -16,8 +16,6 @@ from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
 from terratorch.tasks.tiled_inference import TiledInferenceParameters, tiled_inference
 
-from torch.profiler import profile, record_function, ProfilerActivity
-
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
 
 
@@ -326,18 +324,12 @@ class SemanticSegmentationTask(BaseTask):
         def model_forward(x):
             return self(x).output
 
-        # Avoiding GPU memory overloading
-        # Removing GPU cache
-        torch.cuda.empty_cache()
-        # Forcing the Python garbage collector
-        gc.collect()
-        with profile(activities=[ProfilerActivity.CUDA], record_shapes=True) as prof:
-            with record_function("model_inference"):
-                if self.tiled_inference_parameters:
-                    y_hat: Tensor = tiled_inference(
-                        model_forward, x, self.hparams["model_args"]["num_classes"], self.tiled_inference_parameters
-                    )
-                else:
-                    y_hat: Tensor = self(x).output
+        if self.tiled_inference_parameters:
+            y_hat: Tensor = tiled_inference(
+                model_forward, x, self.hparams["model_args"]["num_classes"], self.tiled_inference_parameters
+            )
+        else:
+            y_hat: Tensor = self(x).output
+
         y_hat = y_hat.argmax(dim=1)
         return y_hat, file_names

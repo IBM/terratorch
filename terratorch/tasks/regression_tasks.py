@@ -368,15 +368,10 @@ class PixelwiseRegressionTask(BaseTask):
 
         def model_forward(x):
             return self(x).output
-
-        # Avoiding GPU memory overloading
-        # Removing GPU cache
-        torch.cuda.empty_cache()
-        # Forcing the Python garbage collector
-        gc.collect()
-
+        
         if self.tiled_inference_parameters:
             y_hat: Tensor = tiled_inference(model_forward, x, 1, self.tiled_inference_parameters)
         else:
             y_hat: Tensor = self(x).output
+
         return y_hat, file_names
