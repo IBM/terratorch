@@ -432,7 +432,6 @@ class Datacuber(nn.Module):
         super().__init__()
 
     def forward(self, x, **kwargs):
-        # TODO: dynamic dict handling/parsing
         if not isinstance(x, dict):
             datacube = {}
             datacube['pixels'] = x
@@ -442,4 +441,13 @@ class Datacuber(nn.Module):
             datacube['waves'] = torch.zeros(x.shape[1])
             return datacube
         else:
+            assert "pixels" in datacube
+            if "time" not in datacube:
+                datacube['time'] = torch.zeros((x.shape[0], 4))
+            if "latlon" not in datacube:
+                datacube['latlon'] = torch.zeros((x.shape[0], 4))
+            if "gsd" not in datacube:
+                datacube["gsd"] = 1.0
+            if  "waves" not in datacube:
+                datacube['waves'] = torch.zeros(x.shape[1])
             return x
