@@ -34,7 +34,8 @@ dependencies = [
   "torchvision>=0.16.0",
   "torchgeo>=0.5.1",
   "rioxarray>=0.15.0",
-  "albumentations>=1.3.1",
+  # see issue #64
+  "albumentations>=1.3.1, <=1.4.10",
   "rasterio>=1.3.9",
   "torchmetrics<=1.3.1",
   "geopandas>=0.14.2",
@@ -44,8 +45,6 @@ dependencies = [
   "mlflow>=2.12.1",
   # broken due to https://github.com/Lightning-AI/pytorch-lightning/issues/19977
   "lightning>=2, <=2.2.5",
-  # see issue #64
-  "albumentations<=1.4.10"
 ]
 
 [project.optional-dependencies]
