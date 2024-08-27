@@ -34,7 +34,6 @@ class ClayModelFactory(ModelFactory):
         backbone: str | nn.Module,
         decoder: str | nn.Module,
         in_channels: int,
-        bands: list[HLSBands | int],
         num_classes: int | None = None,
         pretrained: bool = True,  # noqa: FBT001, FBT002
         num_frames: int = 1,
@@ -58,9 +57,6 @@ class ClayModelFactory(ModelFactory):
                     If an nn.Module, we expect it to expose a property `decoder.output_embed_dim`.
                     Will be concatenated with a Conv2d for the final convolution. Defaults to "FCNDecoder".
             in_channels (int, optional): Number of input channels. Defaults to 3.
-            bands (list[terratorch.datasets.HLSBands], optional): Bands the model will be trained on.
-                    Should be a list of terratorch.datasets.HLSBands.
-                    Defaults to [HLSBands.RED, HLSBands.GREEN, HLSBands.BLUE].
             num_classes (int, optional): Number of classes. None for regression tasks.
             pretrained (Union[bool, Path], optional): Whether to load pretrained weights for the backbone, if available.
                 Defaults to True.
@@ -87,7 +83,6 @@ class ClayModelFactory(ModelFactory):
         # Path for accessing the model source code.
         self.syspath_kwarg = "model_sys_path"
 
-        bands = [HLSBands.try_convert_to_hls_bands_enum(b) for b in bands]
         # TODO: support auxiliary heads
         if not isinstance(backbone, nn.Module):
             if not "clay" in backbone:
@@ -108,7 +103,6 @@ class ClayModelFactory(ModelFactory):
                     pretrained=pretrained,
                     in_chans=in_channels,
                     num_frames=num_frames,
-                    bands=bands,
                     features_only=True,
                     **backbone_kwargs,
                 )
