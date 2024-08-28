@@ -64,12 +64,12 @@ data:
       - 2
       - 1
       - 0
-    train_data_root: tests/
-    train_label_data_root: tests/
-    val_data_root: tests/
-    val_label_data_root: tests/
-    test_data_root: tests/
-    test_label_data_root: tests/ 
+    train_data_root: tests/resources/inputs
+    train_label_data_root: tests/resources/inputs
+    val_data_root: tests/resources/inputs
+    val_label_data_root: tests/resources/inputs
+    test_data_root: tests/resources/inputs
+    test_label_data_root: tests/resources/inputs 
     img_grep: "regression*input*.tif"
     label_grep: "regression*label*.tif"
     means:
