@@ -128,6 +128,10 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
         self.transforms = transform if transform else default_transform
         # self.transform = transform if transform else ToTensorV2()
 
+        import warnings
+        import rasterio
+        warnings.filterwarnings("ignore", category=rasterio.errors.NotGeoreferencedWarning)
+
     def __len__(self) -> int:
         return len(self.image_files)
 
