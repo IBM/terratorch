@@ -141,15 +141,34 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
         if self.filter_indices:
             image = image[..., self.filter_indices]
 
-        output = {
-            "image": image.astype(np.float32) * self.constant_scale,
-            "label": label,  # samples is an attribute of ImageFolder. Contains a tuple of (Path, Target)
-        }
+        image = image.astype(np.float32) * self.constant_scale
+
         if self.transforms:
-            output = self.transforms(**output)
-        output["filename"] = self.image_files[index]
+            image = self.transforms(image=image)['image']  # albumentations returns dict
+
+        output = {
+            "image": image,
+            "label": label,  # samples is an attribute of ImageFolder. Contains a tuple of (Path, Target)
+            "filename": self.image_files[index]
+        }
 
         return output
+
+    def _generate_bands_intervals(self, bands_intervals: list[int | str | HLSBands | tuple[int]] | None = None):
+        if bands_intervals is None:
+            return None
+        bands = []
+        for element in bands_intervals:
+            # if its an interval
+            if isinstance(element, tuple):
+                if len(element) != 2:  # noqa: PLR2004
+                    msg = "When defining an interval, a tuple of two integers should be passed, defining start and end indices inclusive"
+                    raise Exception(msg)
+                expanded_element = list(range(element[0], element[1] + 1))
+                bands.extend(expanded_element)
+            else:
+                bands.append(element)
+        return bands
 
     def _load_file(self, path) -> xr.DataArray:
         data = rioxarray.open_rasterio(path, masked=True)
