@@ -168,9 +168,12 @@ class TemporalViTEncoder(nn.Module):
         """
         Args:
             pretrain_img_size (int, optional): Input image size for SSL. Ignored for forward_feature. Defaults to 224.
-            patch_size (int, optional): Patch size to be used by the transformer. Defaults to 16.
+            patch_size (int, optional): Patch size to be used by the transformer.
+                The number of patches in the h and w spatial dimensions will be H // patch_size and W // patch_size
+                for an input image of size HxW. Defaults to 16.
             num_frames (int, optional): Number of frames (temporal dimension) to be input to the encoder. Defaults to 1.
-            tubelet_size (int, optional): Tubelet size used in patch embedding. Defaults to 1.
+            tubelet_size (int, optional): Tubelet size used in patch embedding for the temporal dimension.
+                The depth of patches on the temporal dimension will be num_frames // tubelet size. Defaults to 1.
             in_chans (int, optional): Number of input channels. Defaults to 3.
             embed_dim (int, optional): Embedding dimension. Defaults to 1024.
             depth (int, optional): Encoder depth. Defaults to 24.
@@ -190,6 +193,10 @@ class TemporalViTEncoder(nn.Module):
         self.feature_info = []
         self.in_chans = in_chans
         self.num_frames = num_frames
+
+        # the size of the temporal dimension of the model depends on
+        # the number of frames passed to it and the tubelet size
+        self.effective_time_dim = self.num_frames // self.tubelet_size
         self.embed_dim = embed_dim
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
         self.encoder_only = encoder_only
@@ -205,7 +212,9 @@ class TemporalViTEncoder(nn.Module):
             Block(embed_dim, num_heads, mlp_ratio, qkv_bias=True, norm_layer=norm_layer) for i in range(depth)
         ]
         for i, _ in enumerate(self.blocks):
-            self.feature_info.append({"num_chs": embed_dim * num_frames, "reduction": 1, "module": f"blocks.{i}"})
+            self.feature_info.append(
+                {"num_chs": embed_dim * self.effective_time_dim, "reduction": 1, "module": f"blocks.{i}"}
+            )
         self.blocks = nn.ModuleList(self.blocks)
         self.norm = norm_layer(embed_dim)
         # --------------------------------------------------------------------------
@@ -217,10 +226,6 @@ class TemporalViTEncoder(nn.Module):
             self.decoder_embed = nn.Linear(embed_dim, decoder_embed_dim, bias=True)
 
             self.mask_token = nn.Parameter(torch.zeros(1, 1, decoder_embed_dim))
-
-            # self.decoder_pos_embed = torch.zeros(
-            #     1, num_patches + 1, decoder_embed_dim
-            # )  # fixed sin-cos embedding
 
             self.decoder_blocks = nn.ModuleList(
                 [
@@ -234,15 +239,6 @@ class TemporalViTEncoder(nn.Module):
                     for i in range(decoder_depth)
                 ]
             )
-
-            # decoder_pos_embed = get_3d_sincos_pos_embed(
-            #     self.decoder_embed_dim, self.patch_embed.grid_size, cls_token=True
-            # )
-            # self.register_buffer(
-            #     "decoder_pos_embed",
-            #     torch.from_numpy(decoder_pos_embed).float().unsqueeze(0),
-            #     persistent=False,
-            # )
 
             self.decoder_norm = norm_layer(decoder_embed_dim)
             self.decoder_pred = nn.Linear(
@@ -348,9 +344,11 @@ class TemporalViTEncoder(nn.Module):
             x = x.reshape(-1, self.in_chans, 1, *x.shape[-2:])
         t, h, w = x.shape[-3:]
         x = self.patch_embed(x)
-        pos_embed = torch.from_numpy(get_3d_sincos_pos_embed(self.embed_dim, (t // self.tubelet_size, h // self.patch_size, w // self.patch_size), cls_token=True)).to(
-            x
-        )
+        pos_embed = torch.from_numpy(
+            get_3d_sincos_pos_embed(
+                self.embed_dim, (self.effective_time_dim, h // self.patch_size, w // self.patch_size), cls_token=True
+            )
+        ).to(x)
         # add pos embed w/o cls token
         x = x + pos_embed[1:, :]
 
@@ -379,7 +377,11 @@ class TemporalViTEncoder(nn.Module):
         x = self.decoder_embed(x)
         t, h, w = dim_info
         decoder_pos_embed = torch.from_numpy(
-            get_3d_sincos_pos_embed(self.decoder_embed_dim, (t // self.tubelet_size, h // self.patch_size, w // self.patch_size), cls_token=True)
+            get_3d_sincos_pos_embed(
+                self.decoder_embed_dim,
+                (self.effective_time_dim, h // self.patch_size, w // self.patch_size),
+                cls_token=True,
+            )
         ).to(x)
 
         # append mask tokens to sequence
@@ -437,9 +439,11 @@ class TemporalViTEncoder(nn.Module):
         t, h, w = x.shape[-3:]
         # embed patches
         x = self.patch_embed(x)
-        pos_embed = torch.from_numpy(get_3d_sincos_pos_embed(self.embed_dim, (t // self.tubelet_size, h // self.patch_size, w // self.patch_size), cls_token=True)).to(
-            x
-        )
+        pos_embed = torch.from_numpy(
+            get_3d_sincos_pos_embed(
+                self.embed_dim, (self.effective_time_dim, h // self.patch_size, w // self.patch_size), cls_token=True
+            )
+        ).to(x)
         # add pos embed w/o cls token
         x = x + pos_embed[1:, :]
 
@@ -462,29 +466,15 @@ class TemporalViTEncoder(nn.Module):
         out = []
         for x in features:
             x_no_token = x[:, 1:, :]
-            # reshape and permute to channels first
-            # encoded = rearrange(
-            #     x_no_token,
-            #     "batch (t h w) e -> batch (t e) h w",
-            #     e=self.embed_dim,
-            #     t=self.num_frames,
-            #     h=int(np.sqrt(x_no_token.shape[1] // self.num_frames)),
-            # )
-            encoded = x_no_token.permute(0, 2, 1).reshape(
-                x.shape[0],
-                -1,
-                int(np.sqrt(x_no_token.shape[1] // self.num_frames)),
-                int(np.sqrt(x_no_token.shape[1] // self.num_frames)),
+            number_of_tokens = x_no_token.shape[1]
+            tokens_per_timestep = number_of_tokens // self.effective_time_dim
+            h = int(np.sqrt(tokens_per_timestep))
+            encoded = rearrange(
+                x_no_token,
+                "batch (t h w) e -> batch (t e) h w",
+                e=self.embed_dim,
+                t=self.effective_time_dim,
+                h=h,
             )
-            # encoded = (
-            #     x_no_token.reshape(
-            #         -1,
-            #         int(np.sqrt(x_no_token.shape[1])),
-            #         int(np.sqrt(x_no_token.shape[1])),
-            #         self.embed_dim * self.num_frames,
-            #     )
-            #     .permute(0, 3, 1, 2)
-            #     .contiguous()
-            # )
             out.append(encoded)
         return out
