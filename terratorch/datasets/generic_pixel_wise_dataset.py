@@ -20,7 +20,7 @@ from matplotlib.patches import Rectangle
 from torch import Tensor
 from torchgeo.datasets import NonGeoDataset
 
-from terratorch.datasets.utils import HLSBands, default_transform, filter_valid_files
+from terratorch.datasets.utils import HLSBands, default_transform, filter_valid_files, generate_bands_intervals
 
 
 class GenericPixelWiseDataset(NonGeoDataset, ABC):
@@ -117,8 +117,8 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             )
         self.rgb_indices = [0, 1, 2] if rgb_indices is None else rgb_indices
 
-        self.dataset_bands = self._generate_bands_intervals(dataset_bands)
-        self.output_bands = self._generate_bands_intervals(output_bands)
+        self.dataset_bands = generate_bands_intervals(dataset_bands)
+        self.output_bands = generate_bands_intervals(output_bands)
 
         if self.output_bands and not self.dataset_bands:
             msg = "If output bands provided, dataset_bands must also be provided"
@@ -171,22 +171,6 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         if nan_replace is not None:
             data = data.fillna(nan_replace)
         return data
-
-    def _generate_bands_intervals(self, bands_intervals: list[int | str | HLSBands | tuple[int]] | None = None):
-        if bands_intervals is None:
-            return None
-        bands = []
-        for element in bands_intervals:
-            # if its an interval
-            if isinstance(element, tuple):
-                if len(element) != 2:  # noqa: PLR2004
-                    msg = "When defining an interval, a tuple of two integers should be passed, defining start and end indices inclusive"
-                    raise Exception(msg)
-                expanded_element = list(range(element[0], element[1] + 1))
-                bands.extend(expanded_element)
-            else:
-                bands.append(element)
-        return bands
 
 
 class GenericNonGeoSegmentationDataset(GenericPixelWiseDataset):
