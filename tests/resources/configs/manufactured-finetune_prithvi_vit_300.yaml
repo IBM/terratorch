@@ -1,11 +1,10 @@
 # lightning.pytorch==2.1.1
 seed_everything: 42
 trainer:
-  accelerator: auto
+  accelerator: cpu
   strategy: auto
   devices: auto
   num_nodes: 1
-  #precision: 16-mixed
   # precision: 16-mixed
   logger:
     class_path: TensorBoardLogger
@@ -27,7 +26,7 @@ trainer:
   enable_checkpointing: true
   default_root_dir: tests/
 data:
-  class_path: GenericNonGeoSegmentationDataModule
+  class_path: GenericNonGeoPixelwiseRegressionDataModule
   init_args:
     batch_size: 2
     num_workers: 4
@@ -44,16 +43,17 @@ data:
           p: 0.5
       - class_path: ToTensorV2
     dataset_bands:
-      - COASTAL_AEROSOL
+      - 0
       - BLUE
       - GREEN
       - RED
       - NIR_NARROW
       - SWIR_1
       - SWIR_2
-      - CIRRUS
-      - THEMRAL_INFRARED_1
-      - THEMRAL_INFRARED_2
+      - 1
+      - 2
+      - 3
+      - 4
     output_bands:
       - BLUE
       - GREEN
@@ -65,14 +65,14 @@ data:
       - 2
       - 1
       - 0
-    train_data_root: tests/
-    train_label_data_root: tests/
-    val_data_root: tests/
-    val_label_data_root: tests/
-    test_data_root: tests/
-    test_label_data_root: tests/ 
-    img_grep: "segmentation*input*.tif"
-    label_grep: "segmentation*label*.tif"
+    train_data_root: tests/resources/inputs
+    train_label_data_root: tests/resources/inputs
+    val_data_root: tests/resources/inputs
+    val_label_data_root: tests/resources/inputs
+    test_data_root: tests/resources/inputs
+    test_label_data_root: tests/resources/inputs 
+    img_grep: "regression*input*.tif"
+    label_grep: "regression*label*.tif"
     means:
     - 547.36707
     - 898.5121
@@ -89,16 +89,20 @@ data:
     - 1067.641
     no_label_replace: -1
     no_data_replace: 0
-    num_classes: 2
+
 model:
-  class_path: terratorch.tasks.SemanticSegmentationTask
+  class_path: terratorch.tasks.PixelwiseRegressionTask
   init_args:
     model_args:
-      decoder: "ASPPHead"
-      decoder_dilations: [1, 6, 12, 18]
-      decoder_channels: 256
-      decoder_in_channels: 6
-      decoder_num_classes: 2
+      decoder: UperNetDecoder
+      pretrained: true
+      backbone: prithvi_vit_300
+      backbone_pretrained_cfg_overlay:
+        file: tests/prithvi_vit_300.pt
+      backbone_drop_path_rate: 0.3
+      # backbone_window_size: 8
+      decoder_channels: 64
+      num_frames: 1
       in_channels: 6
       bands:
         - BLUE
@@ -107,12 +111,10 @@ model:
         - NIR_NARROW
         - SWIR_1
         - SWIR_2
-        #num_frames: 1
       head_dropout: 0.5708022831486758
       head_final_act: torch.nn.ReLU
       head_learned_upscale_layers: 2
-      num_classes: 2
-    loss: ce
+    loss: rmse
     #aux_heads:
     #  - name: aux_head
     #    decoder: IdentityDecoder
@@ -125,9 +127,9 @@ model:
     #aux_loss:
     #  aux_head: 0.4
     ignore_index: -1
-    #freeze_encoder: false #true
-    #freeze_decoder: false
-    model_factory: GenericUnetModelFactory
+    freeze_backbone: true
+    freeze_decoder: false
+    model_factory: PrithviModelFactory
 
     # uncomment this block for tiled inference
     # tiled_inference_parameters:
