@@ -1,12 +1,21 @@
 # Copyright contributors to the Terratorch project
 
-import logging
+import warnings
 
 import torch
 from torch import nn
 
 from terratorch.datasets import HLSBands
 
+
+def patch_embed_weights_are_compatible(model_patch_embed: torch.Tensor, checkpoint_patch_embed: torch.Tensor) -> bool:
+    # check all dimensions are the same except for channel dimension
+    if len(model_patch_embed.shape) != len(checkpoint_patch_embed.shape):
+        return False
+    model_shape = [model_patch_embed.shape[i] for i in range(len(model_patch_embed.shape)) if i != 1]
+    checkpoint_shape = [checkpoint_patch_embed.shape[i] for i in range(len(checkpoint_patch_embed.shape)) if i != 1]
+
+    return model_shape == checkpoint_shape
 
 def prithvi_select_patch_embed_weights(
     state_dict: dict, model: nn.Module, pretrained_bands: list[HLSBands | int], model_bands: list[HLSBands | int]
@@ -44,10 +53,18 @@ def prithvi_select_patch_embed_weights(
     patch_embed_weight = state_dict[patch_embed_proj_weight_key]
 
     temp_weight = model.state_dict()[patch_embed_proj_weight_key].clone()
-    torch.nn.init.xavier_uniform_(temp_weight.view([temp_weight.shape[0], -1]))
-    for index, band in enumerate(model_bands):
-        if band in pretrained_bands:
-            temp_weight[:, index] = patch_embed_weight[:, pretrained_bands.index(band)]
+
+    # only do this if the patch size and tubelet size match. If not, start with random weights
+    if temp_weight.shape == patch_embed_weight.shape:
+        torch.nn.init.xavier_uniform_(temp_weight.view([temp_weight.shape[0], -1]))
+        for index, band in enumerate(model_bands):
+            if band in pretrained_bands:
+                temp_weight[:, index] = patch_embed_weight[:, pretrained_bands.index(band)]
+    else:
+        warnings.warn(
+            f"Incompatible shapes between patch embedding of model {temp_weight.shape} and of checkpoint {patch_embed_weight.shape}",
+            stacklevel=1,
+        )
 
     state_dict[patch_embed_proj_weight_key] = temp_weight
     return state_dict

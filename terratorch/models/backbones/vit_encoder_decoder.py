@@ -103,14 +103,14 @@ class PatchEmbed(nn.Module):
     ):
         super().__init__()
         patch_size = to_2tuple(patch_size)
-        self.patch_embed.patch_size = patch_size
+        self.patch_size = patch_size
         self.tubelet_size = tubelet_size
         self.num_frames = num_frames
 
         if num_frames % tubelet_size != 0:
             msg = f"num_frames ({num_frames} must be divisible by tubelet size ({tubelet_size}))"
             raise Exception(msg)
-        self.patch_embed.effective_time_dim = num_frames // tubelet_size
+        self.effective_time_dim = num_frames // tubelet_size
         self.in_chans = in_chans
         self.flatten = flatten
 
@@ -164,12 +164,15 @@ class TemporalViTEncoder(nn.Module):
         """
         Args:
             pretrain_img_size (int, optional): Input image size for SSL. Ignored for forward_feature. Defaults to 224.
-            patch_size (int, optional): Patch size to be used by the transformer.
-                The number of patches in the h and w spatial dimensions will be H // patch_size and W // patch_size
+            patch_size (int, optional): Patch size to be used by the patch embedding. The input image will be transformed
+                into a bag of tokens by dividing it across x and y dimensions in patches of this size.
+                The number of patches in these dimensions will be H // patch_size and W // patch_size
                 for an input image of size HxW. Defaults to 16.
-            num_frames (int, optional): Number of frames (temporal dimension) to be input to the encoder. Defaults to 1.
-            tubelet_size (int, optional): Tubelet size used in patch embedding for the temporal dimension.
-                The depth of patches on the temporal dimension will be num_frames // tubelet size. Defaults to 1.
+            num_frames (int, optional): Number of frames (temporal dimension) to be input to the encoder. 
+                The final features output by the decoder will be the concatenation of the temporal features,
+                with a channel size of embed_dim * num_frames. Defaults to 1.
+            tubelet_size (int, optional): Tubelet size used in patch embedding representing the depth of a patch in the temporal dimension.
+                The number of patches on the temporal dimension will be num_frames // tubelet size. Defaults to 1.
             in_chans (int, optional): Number of input channels. Defaults to 3.
             embed_dim (int, optional): Embedding dimension. Defaults to 1024.
             depth (int, optional): Encoder depth. Defaults to 24.
@@ -184,7 +187,7 @@ class TemporalViTEncoder(nn.Module):
         # --------------------------------------------------------------------------
         # MAE encoder specifics
         self.patch_embed: PatchEmbed = PatchEmbed(
-            pretrain_img_size, patch_size, num_frames, tubelet_size, in_chans, embed_dim
+            patch_size, num_frames, tubelet_size, in_chans, embed_dim
         )
         self.feature_info = []
         self.in_chans = in_chans
@@ -335,8 +338,8 @@ class TemporalViTEncoder(nn.Module):
                 self.embed_dim,
                 (
                     self.patch_embed.effective_time_dim,
-                    h // self.patch_embed.patch_size,
-                    w // self.patch_embed.patch_size,
+                    h // self.patch_embed.patch_size[0],
+                    w // self.patch_embed.patch_size[1],
                 ),
                 cls_token=True,
             )
@@ -373,8 +376,8 @@ class TemporalViTEncoder(nn.Module):
                 self.decoder_embed_dim,
                 (
                     self.patch_embed.effective_time_dim,
-                    h // self.patch_embed.patch_size,
-                    w // self.patch_embed.patch_size,
+                    h // self.patch_embed.patch_size[0],
+                    w // self.patch_embed.patch_size[1],
                 ),
                 cls_token=True,
             )
@@ -440,8 +443,8 @@ class TemporalViTEncoder(nn.Module):
                 self.embed_dim,
                 (
                     self.patch_embed.effective_time_dim,
-                    h // self.patch_embed.patch_size,
-                    w // self.patch_embed.patch_size,
+                    h // self.patch_embed.patch_size[0],
+                    w // self.patch_embed.patch_size[1],
                 ),
                 cls_token=True,
             )
