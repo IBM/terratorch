@@ -24,7 +24,12 @@ class MChesapeakeLandcoverNonGeo(NonGeoDataset):
     BAND_SETS = {"all": all_band_names, "rgb": rgb_bands}
 
     def __init__(
-        self, data_root: str, bands: Sequence[str] = BAND_SETS["all"], transform: A.Compose | None = None, split="train"
+        self,
+        data_root: str,
+        bands: Sequence[str] = BAND_SETS["all"],
+        transform: A.Compose | None = None,
+        split="train",
+        partition="default",
     ) -> None:
         super().__init__()
         if split not in ["train", "test", "val"]:
@@ -41,7 +46,7 @@ class MChesapeakeLandcoverNonGeo(NonGeoDataset):
         data_root = Path(data_root)
         self.data_directory = data_root / "m-chesapeake"
 
-        partition_file = self.data_directory / "default_partition.json"
+        partition_file = self.data_directory / f"{partition}_partition.json"
         with open(partition_file, "r") as file:
             partitions = json.load(file)
 

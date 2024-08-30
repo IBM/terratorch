@@ -20,7 +20,7 @@ trainer:
       init_args:
         monitor: val/loss
         patience: 100
-  max_epochs: 5
+  max_epochs: 3
   check_val_every_n_epoch: 1
   log_every_n_steps: 20
   enable_checkpointing: true
@@ -65,12 +65,12 @@ data:
       - 2
       - 1
       - 0
-    train_data_root: tests/
-    train_label_data_root: tests/
-    val_data_root: tests/
-    val_label_data_root: tests/
-    test_data_root: tests/
-    test_label_data_root: tests/ 
+    train_data_root: tests/resources/inputs
+    train_label_data_root: tests/resources/inputs
+    val_data_root: tests/resources/inputs
+    val_label_data_root: tests/resources/inputs
+    test_data_root: tests/resources/inputs
+    test_label_data_root: tests/resources/inputs 
     img_grep: "regression*input*.tif"
     label_grep: "regression*label*.tif"
     means:
@@ -96,13 +96,12 @@ model:
     model_args:
       decoder: UperNetDecoder
       pretrained: true
-      backbone: prithvi_vit_300
+      backbone: prithvi_swin_B
       backbone_pretrained_cfg_overlay:
-        file: tests/prithvi_vit_300.pt
+        file: tests/prithvi_swin_B.pt
       backbone_drop_path_rate: 0.3
       # backbone_window_size: 8
-      decoder_channels: 64
-      num_frames: 1
+      decoder_channels: 256
       in_channels: 6
       bands:
         - BLUE
@@ -111,6 +110,7 @@ model:
         - NIR_NARROW
         - SWIR_1
         - SWIR_2
+      num_frames: 1
       head_dropout: 0.5708022831486758
       head_final_act: torch.nn.ReLU
       head_learned_upscale_layers: 2

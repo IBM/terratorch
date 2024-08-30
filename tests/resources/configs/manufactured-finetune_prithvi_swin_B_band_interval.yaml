@@ -43,33 +43,20 @@ data:
           p: 0.5
       - class_path: ToTensorV2
     dataset_bands:
-      - "band_1"
-      - "band_2"
-      - "band_3"
-      - "band_4"
-      - "band_5"
-      - "band_6"
-      - "band_7"
-      - "band_8"
-      - "band_9"
-      - "band_10"
+      - [0, 11]
     output_bands:
-      - "band_2"
-      - "band_3"
-      - "band_4"
-      - "band_5"
-      - "band_6"
-      - "band_7"
+      - [1, 3]
+      - [4, 6]
     rgb_indices:
       - 2
       - 1
       - 0
-    train_data_root: tests/
-    train_label_data_root: tests/
-    val_data_root: tests/
-    val_label_data_root: tests/
-    test_data_root: tests/
-    test_label_data_root: tests/ 
+    train_data_root: tests/resources/inputs
+    train_label_data_root: tests/resources/inputs
+    val_data_root: tests/resources/inputs
+    val_label_data_root: tests/resources/inputs
+    test_data_root: tests/resources/inputs
+    test_label_data_root: tests/resources/inputs 
     img_grep: "regression*input*.tif"
     label_grep: "regression*label*.tif"
     means:
