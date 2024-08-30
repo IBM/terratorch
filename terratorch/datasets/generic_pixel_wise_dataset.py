@@ -1,11 +1,10 @@
 # Copyright contributors to the Terratorch project
 
-"""Module containing generic dataset classes
-"""
+"""Module containing generic dataset classes"""
+
 import glob
 import os
 from abc import ABC
-from functools import partial
 from pathlib import Path
 from typing import Any
 
@@ -13,18 +12,15 @@ import albumentations as A
 import matplotlib as mpl
 import numpy as np
 import rioxarray
-import torch
 import xarray as xr
-from albumentations.pytorch import ToTensorV2
 from einops import rearrange
-from matplotlib import cm
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 from torch import Tensor
 from torchgeo.datasets import NonGeoDataset
 
-from terratorch.datasets.utils import HLSBands, filter_valid_files, to_tensor
+from terratorch.datasets.utils import HLSBands, default_transform, filter_valid_files, generate_bands_intervals
 
 
 class GenericPixelWiseDataset(NonGeoDataset, ABC):
@@ -43,8 +39,8 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         ignore_split_file_extensions: bool = True,
         allow_substring_split_file: bool = True,
         rgb_indices: list[int] | None = None,
-        dataset_bands: list[HLSBands | int] | None = None,
-        output_bands: list[HLSBands | int] | None = None,
+        dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         constant_scale: float = 1,
         transform: A.Compose | None = None,
         no_data_replace: float | None = None,
@@ -73,8 +69,8 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
                 that must be present in file names to be included (as in mmsegmentation), or exact
                 matches (e.g. eurosat). Defaults to True.
             rgb_indices (list[str], optional): Indices of RGB channels. Defaults to [0, 1, 2].
-            dataset_bands (list[HLSBands | int] | None): Bands present in the dataset.
-            output_bands (list[HLSBands | int] | None): Bands that should be output by the dataset.
+            dataset_bands (list[HLSBands | int | tuple[int, int] | str] | None): Bands present in the dataset. This parameter names input channels (bands) using HLSBands, ints, int ranges, or strings, so that they can then be refered to by output_bands. Defaults to None.
+            output_bands (list[HLSBands | int | tuple[int, int] | str] | None): Bands that should be output by the dataset as named by dataset_bands.
             constant_scale (float): Factor to multiply image values by. Defaults to 1.
             transform (Albumentations.Compose | None): Albumentations transform to be applied.
                 Should end with ToTensorV2(). If used through the generic_data_module,
@@ -88,6 +84,7 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
                 expected 0. Defaults to False.
         """
         super().__init__()
+
         self.split_file = split
 
         label_data_root = label_data_root if label_data_root is not None else data_root
@@ -120,28 +117,37 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             )
         self.rgb_indices = [0, 1, 2] if rgb_indices is None else rgb_indices
 
-        self.dataset_bands = dataset_bands
-        self.output_bands = output_bands
+        self.dataset_bands = generate_bands_intervals(dataset_bands)
+        self.output_bands = generate_bands_intervals(output_bands)
+
         if self.output_bands and not self.dataset_bands:
             msg = "If output bands provided, dataset_bands must also be provided"
             return Exception(msg)  # noqa: PLE0101
 
+        # There is a special condition if the bands are defined as simple strings.
         if self.output_bands:
             if len(set(self.output_bands) & set(self.dataset_bands)) != len(self.output_bands):
                 msg = "Output bands must be a subset of dataset bands"
                 raise Exception(msg)
+
             self.filter_indices = [self.dataset_bands.index(band) for band in self.output_bands]
+
         else:
             self.filter_indices = None
+
         # If no transform is given, apply only to transform to torch tensor
-        self.transform = transform if transform else lambda **batch: to_tensor(batch)
+        self.transform = transform if transform else default_transform
         # self.transform = transform if transform else ToTensorV2()
+
+        import warnings
+        import rasterio
+        warnings.filterwarnings("ignore", category=rasterio.errors.NotGeoreferencedWarning)
 
     def __len__(self) -> int:
         return len(self.image_files)
 
     def __getitem__(self, index: int) -> dict[str, Any]:
-        image = self._load_file(self.image_files[index], nan_replace = self.no_data_replace).to_numpy()
+        image = self._load_file(self.image_files[index], nan_replace=self.no_data_replace).to_numpy()
         # to channels last
         if self.expand_temporal_dimension:
             image = rearrange(image, "(channels time) h w -> channels time h w", channels=len(self.output_bands))
@@ -151,13 +157,17 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             image = image[..., self.filter_indices]
         output = {
             "image": image.astype(np.float32) * self.constant_scale,
-            "mask": self._load_file(self.segmentation_mask_files[index], nan_replace = self.no_label_replace).to_numpy()[0],
-            "filename": self.image_files[index],
+            "mask": self._load_file(self.segmentation_mask_files[index], nan_replace=self.no_label_replace).to_numpy()[
+                0
+            ]
         }
+
         if self.reduce_zero_label:
             output["mask"] -= 1
         if self.transform:
             output = self.transform(**output)
+        output["filename"] = self.image_files[index]
+
         return output
 
     def _load_file(self, path, nan_replace: int | float | None = None) -> xr.DataArray:
@@ -181,8 +191,8 @@ class GenericNonGeoSegmentationDataset(GenericPixelWiseDataset):
         ignore_split_file_extensions: bool = True,
         allow_substring_split_file: bool = True,
         rgb_indices: list[str] | None = None,
-        dataset_bands: list[HLSBands | int] | None = None,
-        output_bands: list[HLSBands | int] | None = None,
+        dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         class_names: list[str] | None = None,
         constant_scale: float = 1,
         transform: A.Compose | None = None,
@@ -348,8 +358,8 @@ class GenericNonGeoPixelwiseRegressionDataset(GenericPixelWiseDataset):
         ignore_split_file_extensions: bool = True,
         allow_substring_split_file: bool = True,
         rgb_indices: list[int] | None = None,
-        dataset_bands: list[HLSBands | int] | None = None,
-        output_bands: list[HLSBands | int] | None = None,
+        dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         constant_scale: float = 1,
         transform: A.Compose | None = None,
         no_data_replace: float | None = None,

@@ -3,11 +3,11 @@
 """
 This module contains generic data modules for instantiation at runtime.
 """
-
+import os
 from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
-
+import numpy as np
 import albumentations as A
 import kornia.augmentation as K
 import torch
@@ -17,7 +17,7 @@ from torchgeo.datamodules import NonGeoDataModule
 from torchgeo.transforms import AugmentationSequential
 
 from terratorch.datasets import GenericNonGeoPixelwiseRegressionDataset, GenericNonGeoSegmentationDataset, HLSBands
-
+from terratorch.io.file import load_from_file_or_attribute
 
 def wrap_in_compose_is_list(transform_list):
     # set check shapes to false because of the multitemporal case
@@ -79,8 +79,8 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
         test_data_root: Path,
         img_grep: str,
         label_grep: str,
-        means: list[float],
-        stds: list[float],
+        means: list[float] | str,
+        stds: list[float] | str,
         num_classes: int,
         predict_data_root: Path | None = None,
         train_label_data_root: Path | None = None,
@@ -91,9 +91,9 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
         test_split: Path | None = None,
         ignore_split_file_extensions: bool = True,
         allow_substring_split_file: bool = True,
-        dataset_bands: list[HLSBands | int] | None = None,
-        predict_dataset_bands: list[HLSBands | int] | None = None,
-        output_bands: list[HLSBands | int] | None = None,
+        dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        predict_dataset_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
+        output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         constant_scale: float = 1,
         rgb_indices: list[int] | None = None,
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
@@ -198,6 +198,9 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
         #     K.Normalize(means, stds),
         #     data_keys=["image"],
         # )
+        means = load_from_file_or_attribute(means)
+        stds = load_from_file_or_attribute(stds)
+
         self.aug = Normalize(means, stds)
 
         # self.aug = Normalize(means, stds)
@@ -269,7 +272,7 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
                 self.predict_root,
                 self.num_classes,
                 dataset_bands=self.predict_dataset_bands,
-                output_bands=self.output_bands,
+                output_bands=self.predict_output_bands,
                 constant_scale=self.constant_scale,
                 rgb_indices=self.rgb_indices,
                 transform=self.test_transform,
@@ -317,8 +320,8 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         train_data_root: Path,
         val_data_root: Path,
         test_data_root: Path,
-        means: list[float],
-        stds: list[float],
+        means: list[float] | str,
+        stds: list[float] | str,
         predict_data_root: Path | None = None,
         img_grep: str | None = "*",
         label_grep: str | None = "*",
@@ -330,9 +333,10 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         test_split: Path | None = None,
         ignore_split_file_extensions: bool = True,
         allow_substring_split_file: bool = True,
-        dataset_bands: list[HLSBands | int] | None = None,
-        predict_dataset_bands: list[HLSBands | int] | None = None,
-        output_bands: list[HLSBands | int] | None = None,
+        dataset_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
+        predict_dataset_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
+        predict_output_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
+        output_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
         constant_scale: float = 1,
         rgb_indices: list[int] | None = None,
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
@@ -423,6 +427,7 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
 
         self.dataset_bands = dataset_bands
         self.predict_dataset_bands = predict_dataset_bands if predict_dataset_bands else dataset_bands
+        self.predict_output_bands = predict_output_bands if predict_output_bands else output_bands
         self.output_bands = output_bands
         self.rgb_indices = rgb_indices
 
@@ -430,6 +435,9 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         #     K.Normalize(means, stds),
         #     data_keys=["image"],
         # )
+        means = load_from_file_or_attribute(means)
+        stds = load_from_file_or_attribute(stds)
+
         self.aug = Normalize(means, stds)
         self.no_data_replace = no_data_replace
         self.no_label_replace = no_label_replace
@@ -501,7 +509,7 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
             self.predict_dataset = self.dataset_class(
                 self.predict_root,
                 dataset_bands=self.predict_dataset_bands,
-                output_bands=self.output_bands,
+                output_bands=self.predict_output_bands,
                 constant_scale=self.constant_scale,
                 rgb_indices=self.rgb_indices,
                 transform=self.test_transform,

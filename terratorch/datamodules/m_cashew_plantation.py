@@ -1,13 +1,10 @@
 from typing import Any
-import torch
 
 import albumentations as A
-import kornia.augmentation as K  # noqa: N812
-from torchgeo.datamodules import NonGeoDataModule
 from torchgeo.transforms import AugmentationSequential
-from terratorch.datasets import MBeninSmallHolderCashewsNonGeo
-from terratorch.datamodules.utils import wrap_in_compose_is_list
 
+from terratorch.datamodules.geobench_data_module import GeobenchDataModule
+from terratorch.datasets import MBeninSmallHolderCashewsNonGeo
 
 MEANS = {
     "COASTAL_AEROSOL": 520.1185302734375,
@@ -22,7 +19,7 @@ MEANS = {
     "WATER_VAPOR": 2852.87451171875,
     "SWIR_1": 2463.933349609375,
     "SWIR_2": 1600.9207763671875,
-    "CLOUD_PROBABILITY": 0.010281000286340714
+    "CLOUD_PROBABILITY": 0.010281000286340714,
 }
 
 STDS = {
@@ -38,44 +35,34 @@ STDS = {
     "WATER_VAPOR": 413.8980407714844,
     "SWIR_1": 494.97430419921875,
     "SWIR_2": 514.4229736328125,
-    "CLOUD_PROBABILITY": 0.3447800576686859
+    "CLOUD_PROBABILITY": 0.3447800576686859,
 }
 
-class MBeninSmallHolderCashewsNonGeoDataModule(NonGeoDataModule):
 
+class MBeninSmallHolderCashewsNonGeoDataModule(GeobenchDataModule):
     def __init__(
-        self, 
-        batch_size: int = 8, 
-        num_workers: int = 0, 
+        self,
+        batch_size: int = 8,
+        num_workers: int = 0,
         data_root: str = "./",
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
         val_transform: A.Compose | None | list[A.BasicTransform] = None,
         test_transform: A.Compose | None | list[A.BasicTransform] = None,
         aug: AugmentationSequential = None,
-        **kwargs: Any
+        partition: str = "default",
+        **kwargs: Any,
     ) -> None:
-
-        super().__init__(MBeninSmallHolderCashewsNonGeo, batch_size, num_workers, **kwargs)
-        
-        bands = kwargs.get("bands", MBeninSmallHolderCashewsNonGeo.all_band_names)
-        self.means = torch.tensor([MEANS[b] for b in bands])
-        self.stds = torch.tensor([STDS[b] for b in bands])
-        self.train_transform = wrap_in_compose_is_list(train_transform)
-        self.val_transform = wrap_in_compose_is_list(val_transform)
-        self.test_transform = wrap_in_compose_is_list(test_transform)
-        self.data_root = data_root
-        self.aug = AugmentationSequential(K.Normalize(self.means, self.stds), data_keys=["image", "mask"]) if aug is None else aug
-    
-    def setup(self, stage: str) -> None:
-        if stage in ["fit"]:
-            self.train_dataset = self.dataset_class(  
-                split="train", data_root=self.data_root, transform=self.train_transform, **self.kwargs
-            )
-        if stage in ["fit", "validate"]:
-            self.val_dataset = self.dataset_class(
-                split="val", data_root=self.data_root, transform=self.val_transform, **self.kwargs
-            )
-        if stage in ["test"]:
-            self.test_dataset = self.dataset_class(
-                split="test",data_root=self.data_root, transform=self.test_transform, **self.kwargs
-            )
+        super().__init__(
+            MBeninSmallHolderCashewsNonGeo,
+            MEANS,
+            STDS,
+            batch_size=batch_size,
+            num_workers=num_workers,
+            data_root=data_root,
+            train_transform=train_transform,
+            val_transform=val_transform,
+            test_transform=test_transform,
+            aug=aug,
+            partition=partition,
+            **kwargs,
+        )

@@ -460,29 +460,12 @@ class TemporalViTEncoder(nn.Module):
         out = []
         for x in features:
             x_no_token = x[:, 1:, :]
-            # reshape and permute to channels first
-            # encoded = rearrange(
-            #     x_no_token,
-            #     "batch (t h w) e -> batch (t e) h w",
-            #     e=self.embed_dim,
-            #     t=self.num_frames,
-            #     h=int(np.sqrt(x_no_token.shape[1] // self.num_frames)),
-            # )
-            encoded = x_no_token.permute(0, 2, 1).reshape(
-                x.shape[0],
-                -1,
-                int(np.sqrt(x_no_token.shape[1] // self.num_frames)),
-                int(np.sqrt(x_no_token.shape[1] // self.num_frames)),
+            encoded = rearrange(
+                x_no_token,
+                "batch (t h w) e -> batch (t e) h w",
+                e=self.embed_dim,
+                t=self.num_frames,
+                h=int(np.sqrt(x_no_token.shape[1] // self.num_frames)),
             )
-            # encoded = (
-            #     x_no_token.reshape(
-            #         -1,
-            #         int(np.sqrt(x_no_token.shape[1])),
-            #         int(np.sqrt(x_no_token.shape[1])),
-            #         self.embed_dim * self.num_frames,
-            #     )
-            #     .permute(0, 3, 1, 2)
-            #     .contiguous()
-            # )
             out.append(encoded)
         return out
