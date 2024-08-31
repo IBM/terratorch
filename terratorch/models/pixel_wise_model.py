@@ -53,6 +53,12 @@ class PixelWiseModel(Model, SegmentationModel):
         else:
             self.multiple_embed = False
 
+        # Selecting the kind of forward method based on the task
+        if task in ["segmentation", "regression"]:
+            self.forward = self._forward_finetuning
+        else:
+            self.forward = self._forward_pretraining
+
         self.task = task
         self.encoder = encoder
         self.decoder = decoder
@@ -106,7 +112,7 @@ class PixelWiseModel(Model, SegmentationModel):
             x = x.squeeze(1)
         return x
 
-    def forward(self, x: torch.Tensor) -> ModelOutput:
+    def _forward_finetuning(self, x: torch.Tensor) -> ModelOutput:
         """Sequentially pass `x` through model`s encoder, decoder and heads"""
         self.check_input_shape(x)
         input_size = x.shape[-2:]
@@ -136,6 +142,15 @@ class PixelWiseModel(Model, SegmentationModel):
             aux_output = self._check_for_single_channel_and_squeeze(aux_output)
             aux_outputs[name] = aux_output
         return ModelOutput(output=mask, auxiliary_heads=aux_outputs)
+
+    def _forward_pretraining(self, x: torch.Tensor) -> ModelOutput:
+        """Sequentially pass `x` through model`s encoder, decoder and heads"""
+        """When the task "pretraining" is selected, the encoder is the original backbone. """
+        self.check_input_shape(x)
+        input_size = x.shape[-2:]
+        output = self.encoder(x)
+        
+        return output 
 
     def _get_head(self, task: str, input_embed_dim: int, head_kwargs):
         if task == "segmentation":
