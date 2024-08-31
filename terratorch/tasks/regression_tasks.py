@@ -132,6 +132,7 @@ class EncoderDecoderPreTrainingTask(BaseTask):
         model_args: dict,
         model_factory: str,
         loss: str = "mse",
+        aux_heads: list[AuxiliaryHead] | None = None,
         aux_loss: dict[str, float] | None = None,
         class_weights: list[float] | None = None,
         ignore_index: int | None = None,
@@ -185,6 +186,7 @@ class EncoderDecoderPreTrainingTask(BaseTask):
         return []
 
     def configure_models(self) -> None:
+        self.hparams["model_args"]["decoder"] = None
         self.model: Model = self.model_factory.build_model(
             "pretraining", aux_decoders=self.aux_heads, **self.hparams["model_args"]
         )
@@ -291,6 +293,7 @@ class EncoderDecoderPreTrainingTask(BaseTask):
         """
         x = batch["image"]
         y = batch["mask"]
+       
         model_output: ModelOutput = self(x)
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])

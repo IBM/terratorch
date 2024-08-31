@@ -1,6 +1,7 @@
 # Copyright contributors to the Terratorch project
 
 from collections.abc import Callable
+from typing import Optional
 
 import segmentation_models_pytorch as smp
 import timm
@@ -20,7 +21,7 @@ from terratorch.models.pixel_wise_model import PixelWiseModel
 from terratorch.models.scalar_output_model import ScalarOutputModel
 from terratorch.models.smp_model_factory import make_smp_encoder, register_custom_encoder
 
-PIXEL_WISE_TASKS = ["segmentation", "regression"]
+PIXEL_WISE_TASKS = ["segmentation", "regression", "pretraining"]
 SCALAR_TASKS = ["classification"]
 SUPPORTED_TASKS = PIXEL_WISE_TASKS + SCALAR_TASKS
 
@@ -35,7 +36,7 @@ class PrithviModelFactory(ModelFactory):
         self,
         task: str,
         backbone: str | nn.Module,
-        decoder: str | nn.Module,
+        decoder: Optional[str | nn.Module],
         bands: list[HLSBands | int],
         in_channels: int
         | None = None,  # this should be removed, can be derived from bands. But it is a breaking change
@@ -165,7 +166,8 @@ class PrithviModelFactory(ModelFactory):
             decoder = None
             aux_head_kwargs = None 
             head_kwargs = None 
-
+            to_be_aux_decoders = None
+            
         return _build_appropriate_model(
             task,
             backbone,

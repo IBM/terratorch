@@ -48,15 +48,21 @@ class PixelWiseModel(Model, SegmentationModel):
         """
         super().__init__()
 
-        if "multiple_embed" in head_kwargs:
-            self.multiple_embed = head_kwargs.pop("multiple_embed")
+        #if "multiple_embed" in head_kwargs:
+        #    self.multiple_embed = head_kwargs.pop("multiple_embed")
+        #else:
+        self.multiple_embed = False
+
+        # Selecting the kind of forward method based on the task
+        if task in ["segmentation", "regression"]:
+            self._forward = self._forward_finetuning
+            self.head = self._get_head(task, decoder.output_embed_dim, head_kwargs)
         else:
-            self.multiple_embed = False
+            self._forward = self._forward_pretraining
 
         self.task = task
         self.encoder = encoder
         self.decoder = decoder
-        self.head = self._get_head(task, decoder.output_embed_dim, head_kwargs)
 
         if auxiliary_heads is not None:
             aux_heads = {}
@@ -107,6 +113,11 @@ class PixelWiseModel(Model, SegmentationModel):
         return x
 
     def forward(self, x: torch.Tensor) -> ModelOutput:
+        print(self.encoder)
+        print(self.decoder)
+        return self._forward(x)
+
+    def _forward_finetuning(self, x: torch.Tensor) -> ModelOutput:
         """Sequentially pass `x` through model`s encoder, decoder and heads"""
         self.check_input_shape(x)
         input_size = x.shape[-2:]
@@ -136,6 +147,16 @@ class PixelWiseModel(Model, SegmentationModel):
             aux_output = self._check_for_single_channel_and_squeeze(aux_output)
             aux_outputs[name] = aux_output
         return ModelOutput(output=mask, auxiliary_heads=aux_outputs)
+
+    def _forward_pretraining(self, x: torch.Tensor) -> ModelOutput:
+        """Sequentially pass `x` through model`s encoder, decoder and heads"""
+        """When the task "pretraining" is selected, the encoder is the original backbone. """
+        self.check_input_shape(x)
+        input_size = x.shape[-2:]
+        output = self.encoder(x)
+        output = self.encoder.unpatchify(output)
+
+        return ModelOutput(output=output)
 
     def _get_head(self, task: str, input_embed_dim: int, head_kwargs):
         if task == "segmentation":
