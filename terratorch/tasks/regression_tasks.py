@@ -186,7 +186,7 @@ class EncoderDecoderPreTrainingTask(BaseTask):
 
     def configure_models(self) -> None:
         self.model: Model = self.model_factory.build_model(
-            "regression", aux_decoders=self.aux_heads, **self.hparams["model_args"]
+            "pretraining", aux_decoders=self.aux_heads, **self.hparams["model_args"]
         )
 
     def configure_optimizers(
