@@ -39,7 +39,7 @@ class PrithviModelFactory(ModelFactory):
         bands = []
         for element in bands_intervals:
             # if its an interval
-            if isinstance(element, tuple):
+            if isinstance(element, list):
                 if len(element) != 2:  # noqa: PLR2004
                     msg = "When defining an interval, a tuple of two integers should be passed, defining start and end indices inclusive"
                     raise Exception(msg)
@@ -99,7 +99,7 @@ class PrithviModelFactory(ModelFactory):
             nn.Module: Full model with encoder, decoder and head.
         """
         bands = self._generate_bands_intervals(bands)
-
+        print(bands)
         if in_channels is None:
             in_channels = len(bands)
         # TODO: support auxiliary heads
