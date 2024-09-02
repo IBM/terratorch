@@ -214,8 +214,9 @@ class StudioDeploySaveConfigCallback(SaveConfigCallback):
                 # save only on rank zero to avoid race conditions.
                 # the `log_dir` needs to be created as we rely on the logger to do it usually
                 # but it hasn't logged anything at this point
+                fs.makedirs(log_dir, exist_ok=True)
+
                 if self.deploy_config_file:
-                    fs.makedirs(log_dir, exist_ok=True)
                     self.parser.save(
                         self.config, config_path, skip_none=True, overwrite=self.overwrite, multifile=self.multifile
                     )
