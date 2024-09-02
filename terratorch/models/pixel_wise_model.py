@@ -60,6 +60,12 @@ class PixelWiseModel(Model, SegmentationModel):
         else:
             self._forward = self._forward_pretraining
 
+        # Selecting the kind of forward method based on the task
+        if task in ["segmentation", "regression"]:
+            self.forward = self._forward_finetuning
+        else:
+            self.forward = self._forward_pretraining
+
         self.task = task
         self.encoder = encoder
         self.decoder = decoder
@@ -154,6 +160,7 @@ class PixelWiseModel(Model, SegmentationModel):
         self.check_input_shape(x)
         input_size = x.shape[-2:]
         output = self.encoder(x)
+
         output = self.encoder.unpatchify(output)
 
         return ModelOutput(output=output)
