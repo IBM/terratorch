@@ -161,7 +161,7 @@ class PixelWiseModel(Model, SegmentationModel):
         input_size = x.shape[-2:]
         output = self.encoder(x)
 
-        output = self.encoder.unpatchify(output)
+        output = self.encoder.unpatchify(output)[:,:, 0, ...]
 
         return ModelOutput(output=output)
 

@@ -574,4 +574,72 @@ class GenericNonGeoPixelwisePreTrainingDataset(GenericPixelWiseDataset):
         item["mask"] = item["image"]
         return item
 
+    def plot(self, sample: dict[str, Tensor], suptitle: str | None = None) -> Figure:
+        """Plot a sample from the dataset.
+
+        Args:
+            sample (dict[str, Tensor]): a sample returned by :meth:`__getitem__`
+            suptitle (str|None): optional string to use as a suptitle
+
+        Returns:
+            a matplotlib Figure with the rendered sample
+
+        .. versionadded:: 0.2
+        """
+        image = sample["image"]
+        if len(image.shape) == 5:
+            return
+        if isinstance(image, Tensor):
+            image = image.numpy()
+
+        image = image.take(self.rgb_indices, axis=0)
+        image = np.transpose(image, (1, 2, 0))
+        image = (image - image.min(axis=(0, 1))) * (1 / image.max(axis=(0, 1)))
+        image = np.clip(image, 0, 1)
+
+        label_mask = sample["mask"]
+        if isinstance(label_mask, Tensor):
+            label_mask = label_mask.numpy()
+
+        showing_predictions = "prediction" in sample
+        if showing_predictions:
+            prediction_mask = sample["prediction"]
+            if isinstance(prediction_mask, Tensor):
+                prediction_mask = prediction_mask.numpy()
+
+        return self._plot_sample(
+            image,
+            label_mask,
+            prediction=prediction_mask if showing_predictions else None,
+            suptitle=suptitle,
+        )
+
+    @staticmethod
+    def _plot_sample(image, label, prediction=None, suptitle=None):
+        num_images = 4 if prediction is not None else 3
+        fig, ax = plt.subplots(1, num_images, figsize=(12, 10), layout="compressed")
+
+        norm = mpl.colors.Normalize(vmin=label.min(), vmax=label.max())
+        ax[0].axis("off")
+        ax[0].title.set_text("Image")
+        ax[0].imshow(image)
+
+        ax[1].axis("off")
+        ax[1].title.set_text("Ground Truth Mask")
+        ax[1].imshow(label, cmap="Greens", norm=norm)
+
+        ax[2].axis("off")
+        ax[2].title.set_text("GT Mask on Image")
+        ax[2].imshow(image)
+        ax[2].imshow(label, cmap="Greens", alpha=0.3, norm=norm)
+        # ax[2].legend()
+
+        if prediction is not None:
+            ax[3].title.set_text("Predicted Mask")
+            ax[3].imshow(prediction, cmap="Greens", norm=norm)
+
+        if suptitle is not None:
+            plt.suptitle(suptitle)
+        return fig
+
 
