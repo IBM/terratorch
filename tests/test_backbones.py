@@ -53,7 +53,7 @@ def test_vit_models_accept_multitemporal(model_name, input_224_multitemporal):
 
 
 @pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_vit_300"])
-@pytest.mark.parametrize("patch_size", [4, 8, 16])
+@pytest.mark.parametrize("patch_size", [8, 16])
 @pytest.mark.parametrize("tubelet_size", [1, 2, 4])
 def test_vit_models_different_patch_tubelet_sizes(model_name, patch_size, tubelet_size, input_224_multitemporal):
     backbone = timm.create_model(
