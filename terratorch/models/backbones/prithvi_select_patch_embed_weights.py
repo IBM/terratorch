@@ -14,7 +14,6 @@ def patch_embed_weights_are_compatible(model_patch_embed: torch.Tensor, checkpoi
         return False
     model_shape = [model_patch_embed.shape[i] for i in range(len(model_patch_embed.shape)) if i != 1]
     checkpoint_shape = [checkpoint_patch_embed.shape[i] for i in range(len(checkpoint_patch_embed.shape)) if i != 1]
-    print("before")
     return model_shape == checkpoint_shape
 
 def prithvi_select_patch_embed_weights(
@@ -66,7 +65,6 @@ def prithvi_select_patch_embed_weights(
             category=UserWarning,
             stacklevel=1,
         )
-    print("after")
 
     state_dict[patch_embed_proj_weight_key] = temp_weight
     return state_dict
