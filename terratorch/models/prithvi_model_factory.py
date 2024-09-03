@@ -81,7 +81,7 @@ class PrithviModelFactory(ModelFactory):
         Returns:
             nn.Module: Full model with encoder, decoder and head.
         """
-        if task in ["segmentation", "regression"]:
+        if task in ["segmentation", "regression", "classification"]:
             if not decoder:
                 raise ValueError(f"Decoder is required for 'segmentation' and 'regression' tasks, but received {decoder}.")
 
@@ -126,7 +126,7 @@ class PrithviModelFactory(ModelFactory):
 
         # These steps are necessary just when a fine-tuning task is 
         # performed (segmentation and regression).
-        if task in ["segmentation", "regression"]:
+        if task in ["segmentation", "regression", "classification"]:
 
             decoder_kwargs, kwargs = _extract_prefix_keys(kwargs, "decoder_")
             # TODO: remove this
