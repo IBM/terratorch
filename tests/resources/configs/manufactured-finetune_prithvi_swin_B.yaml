@@ -147,4 +147,3 @@ lr_scheduler:
   class_path: ReduceLROnPlateau
   init_args:
     monitor: val/loss
-
