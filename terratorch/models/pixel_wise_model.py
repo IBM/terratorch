@@ -154,11 +154,9 @@ class PixelWiseModel(Model, SegmentationModel):
         """When the task "pretraining" is selected, the encoder is the original backbone. """
         self.check_input_shape(x)
         input_size = x.shape[-2:]
-        output = self.encoder(x)
+        output, mask = self.encoder(x)
 
-        output = self.encoder.unpatchify(output)[:,:, 0, ...]
-
-        return ModelOutput(output=output)
+        return ModelOutput(output=output, mask=mask)
 
     def _get_head(self, task: str, input_embed_dim: int, head_kwargs):
         if task == "segmentation":

@@ -20,6 +20,8 @@ from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
 from terratorch.tasks.tiled_inference import TiledInferenceParameters, tiled_inference
 
+from terratorch.tasks.custom_loss import MaskedRMSELoss
+
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
 
 
@@ -73,7 +75,7 @@ class IgnoreIndexLossWrapper(nn.Module):
 
         msg = "Only 'mean' and None reduction supported"
         raise Exception(msg)
-
+    
 
 class IgnoreIndexMetricWrapper(WrapperMetric):
     """Wrapper over other metric that will ignore certain values.
@@ -114,6 +116,7 @@ class IgnoreIndexMetricWrapper(WrapperMetric):
     def reset(self) -> None:
         self.metric.reset()
 
+# TODO Maybe we could rewrite this method to inherit from PixelwiseRegressionTask.
 class EncoderDecoderPreTrainingTask(BaseTask):
     """It performs the pre-training of an encoder-decoder architecture.
 
@@ -167,11 +170,26 @@ class EncoderDecoderPreTrainingTask(BaseTask):
         self.aux_heads = aux_heads
         self.model_factory = get_factory(model_factory)
         super().__init__()
-        self.train_loss_handler = LossHandler(self.train_metrics.prefix)
-        self.test_loss_handler = LossHandler(self.test_metrics.prefix)
-        self.val_loss_handler = LossHandler(self.val_metrics.prefix)
+        self.train_loss_handler = LossHandler(self.train_metrics.prefix, multiple_inputs=True)
+        self.test_loss_handler = LossHandler(self.test_metrics.prefix, multiple_inputs=True)
+        self.val_loss_handler = LossHandler(self.val_metrics.prefix, multiple_inputs=True)
         self.monitor = f"{self.val_metrics.prefix}loss"
         self.plot_on_val = int(plot_on_val)
+
+    def patchify(self, imgs:Tensor) -> Tensor:
+
+        if len(imgs.shape) < 5:
+            imgs = imgs[:,:,None, ...]
+
+        imgs_patch = self.model.encoder.patchify(imgs)
+
+        return imgs_patch
+
+    def unpatchify(self, imgs_patch:Tensor) -> Tensor:
+
+        imgs = self.model.encoder.unpatchify(imgs_patch)
+
+        return imgs
 
     # overwrite early stopping
     def configure_callbacks(self) -> list[Callback]:
@@ -205,6 +223,7 @@ class EncoderDecoderPreTrainingTask(BaseTask):
         Raises:
             ValueError: If *loss* is invalid.
         """
+
         loss: str = self.hparams["loss"].lower()
         if loss == "mse":
             self.criterion: nn.Module = IgnoreIndexLossWrapper(
@@ -219,6 +238,16 @@ class EncoderDecoderPreTrainingTask(BaseTask):
             )
         elif loss == "huber":
             self.criterion = IgnoreIndexLossWrapper(nn.HuberLoss(reduction="none"), self.hparams["ignore_index"])
+
+        # Masked RMSE is a loss specifically desgined for pre-training tasks. 
+        elif loss == "masked-rmse":
+
+            if "norm_pix_loss" in self.hparams["model_args"] is not None:
+                norm_pix_loss = self.hparams["model_args"]["norm_pix_loss"]
+            else:
+                norm_pix_loss = False
+
+            self.criterion = IgnoreIndexLossWrapper(MaskedRMSELoss(norm_pix_loss=norm_pix_loss), self.hparams["ignore_index"])
         else:
             exception_message = f"Loss type '{loss}' is not valid. Currently, supports 'mse', 'rmse' or 'mae' loss."
             raise ValueError(exception_message)
@@ -252,7 +281,8 @@ class EncoderDecoderPreTrainingTask(BaseTask):
             dataloader_idx: Index of the current dataloader.
         """
         x = batch["image"]
-        y = batch["mask"]
+        y = self.patchify(batch["mask"])
+
         model_output: ModelOutput = self(x)
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
@@ -284,14 +314,20 @@ class EncoderDecoderPreTrainingTask(BaseTask):
             dataloader_idx: Index of the current dataloader.
         """
         x = batch["image"]
-        y = batch["mask"]
+        y = self.patchify(batch["mask"])
        
         model_output: ModelOutput = self(x)
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
-        y_hat = model_output.output
+
+        # Removing the time dimension
+        # TODO This should be less hard-coded
+        y_hat = self.unpatchify(model_output.output)[:,:,0,...]
+        y = self.unpatchify(y)[:,:,0, ...]
+
         out = y_hat[y != -1]
         mask = y[y != -1]
+
         self.val_metrics(out, mask)
         self.log_dict(self.val_metrics, on_epoch=True)
 
@@ -316,6 +352,7 @@ class EncoderDecoderPreTrainingTask(BaseTask):
             finally:
                 plt.close()
 
+
     def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         """Compute the test loss and additional metrics.
 
@@ -325,7 +362,8 @@ class EncoderDecoderPreTrainingTask(BaseTask):
             dataloader_idx: Index of the current dataloader.
         """
         x = batch["image"]
-        y = batch["mask"]
+        y = self.patchify(batch["mask"])
+
         model_output: ModelOutput = self(x)
         loss = self.test_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.test_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
