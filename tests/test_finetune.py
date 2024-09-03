@@ -10,15 +10,15 @@ from terratorch.cli_tools import build_lightning_cli
 
 @pytest.fixture(autouse=True)
 def setup_and_cleanup(model_name):
-    # model_instance = timm.create_model(model_name)
+    model_instance = timm.create_model(model_name)
 
-    # state_dict = model_instance.state_dict()
+    state_dict = model_instance.state_dict()
 
-    # torch.save(state_dict, os.path.join("tests", model_name + ".pt"))
+    torch.save(state_dict, os.path.join("tests", model_name + ".pt"))
 
     yield # everything after this runs after each test
 
-    # os.remove(os.path.join("tests", model_name + ".pt"))
+    os.remove(os.path.join("tests", model_name + ".pt"))
     shutil.rmtree(os.path.join("tests", "all_ecos_random"))
 
 @pytest.mark.skip(reason="Flakey on github runner")
