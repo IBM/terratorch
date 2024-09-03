@@ -117,15 +117,7 @@ class IgnoreIndexMetricWrapper(WrapperMetric):
 class EncoderDecoderPreTrainingTask(BaseTask):
     """It performs the pre-training of an encoder-decoder architecture.
 
-    This class is analog in functionality to
-    [PixelwiseRegressionTask]
-    (https://torchgeo.readthedocs.io/en/stable/api/trainers.html#torchgeo.trainers.PixelwiseRegressionTask)
-    defined by torchgeo.
-    However, it has some important differences:
-        - Accepts the specification of a model factory
-        - Logs metrics per class
-        - Does not have any callbacks by default (TorchGeo tasks do early stopping by default)
-        - Allows the setting of optimizers in the constructor"""
+    """
 
     def __init__(
         self,

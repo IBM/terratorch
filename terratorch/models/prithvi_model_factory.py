@@ -81,6 +81,10 @@ class PrithviModelFactory(ModelFactory):
         Returns:
             nn.Module: Full model with encoder, decoder and head.
         """
+        if task in ["segmentation", "regression"]:
+            if not decoder:
+                raise ValueError(f"Decoder is required for 'segmentation' and 'regression' tasks, but received {decoder}.")
+
         bands = [HLSBands.try_convert_to_hls_bands_enum(b) for b in bands]
         if in_channels is None:
             in_channels = len(bands)
@@ -102,7 +106,7 @@ class PrithviModelFactory(ModelFactory):
             out_channels = backbone_kwargs.pop("out_channels", None)
 
             # When the task is "pre-training", the original
-            # decoder is kept and the training is performed from
+            # decoder is maintained as is and the training is performed from
             # scratch 
             if task == "pretraining":
                 features_only = False
@@ -123,6 +127,7 @@ class PrithviModelFactory(ModelFactory):
         # These steps are necessary just when a fine-tuning task is 
         # performed (segmentation and regression).
         if task in ["segmentation", "regression"]:
+
             decoder_kwargs, kwargs = _extract_prefix_keys(kwargs, "decoder_")
             # TODO: remove this
             if decoder.startswith("smp_"):
@@ -162,7 +167,8 @@ class PrithviModelFactory(ModelFactory):
                 to_be_aux_decoders.append(
                     AuxiliaryHeadWithDecoderWithoutInstantiatedHead(aux_decoder.name, aux_decoder_instance, aux_head_kwargs)
                 )
-        else:
+        else: 
+            # By-passing entities not required for pre-training tasks.
             decoder = None
             aux_head_kwargs = None 
             head_kwargs = None 

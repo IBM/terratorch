@@ -48,23 +48,19 @@ class PixelWiseModel(Model, SegmentationModel):
         """
         super().__init__()
 
-        #if "multiple_embed" in head_kwargs:
-        #    self.multiple_embed = head_kwargs.pop("multiple_embed")
-        #else:
-        self.multiple_embed = False
-
         # Selecting the kind of forward method based on the task
         if task in ["segmentation", "regression"]:
             self._forward = self._forward_finetuning
             self.head = self._get_head(task, decoder.output_embed_dim, head_kwargs)
+
+            if "multiple_embed" in head_kwargs:
+                self.multiple_embed = head_kwargs.pop("multiple_embed")
+            else:
+                self.multiple_embed = False
+
         else:
             self._forward = self._forward_pretraining
-
-        # Selecting the kind of forward method based on the task
-        if task in ["segmentation", "regression"]:
-            self.forward = self._forward_finetuning
-        else:
-            self.forward = self._forward_pretraining
+            self.multiple_embed = False
 
         self.task = task
         self.encoder = encoder
@@ -119,8 +115,7 @@ class PixelWiseModel(Model, SegmentationModel):
         return x
 
     def forward(self, x: torch.Tensor) -> ModelOutput:
-        print(self.encoder)
-        print(self.decoder)
+
         return self._forward(x)
 
     def _forward_finetuning(self, x: torch.Tensor) -> ModelOutput:

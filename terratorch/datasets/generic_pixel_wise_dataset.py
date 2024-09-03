@@ -22,6 +22,7 @@ from torchgeo.datasets import NonGeoDataset
 
 from terratorch.datasets.utils import HLSBands, default_transform, filter_valid_files, generate_bands_intervals
 
+BCHW = 3
 
 class GenericPixelWiseDataset(NonGeoDataset, ABC):
     """
@@ -586,16 +587,14 @@ class GenericNonGeoPixelwisePreTrainingDataset(GenericPixelWiseDataset):
 
         .. versionadded:: 0.2
         """
+
+        # Reading the data for 'image', 'mask' (in this context, a repetion of the input image)
+        # and 'prediction' and converting them to arrays in order to produce some plots.
         image = sample["image"]
         if len(image.shape) == 5:
             return
         if isinstance(image, Tensor):
             image = image.numpy()
-
-        image = image.take(self.rgb_indices, axis=0)
-        image = np.transpose(image, (1, 2, 0))
-        image = (image - image.min(axis=(0, 1))) * (1 / image.max(axis=(0, 1)))
-        image = np.clip(image, 0, 1)
 
         label_mask = sample["mask"]
         if isinstance(label_mask, Tensor):
@@ -613,33 +612,43 @@ class GenericNonGeoPixelwisePreTrainingDataset(GenericPixelWiseDataset):
             prediction=prediction_mask if showing_predictions else None,
             suptitle=suptitle,
         )
+       
 
     @staticmethod
     def _plot_sample(image, label, prediction=None, suptitle=None):
+
+        assert len(image.shape) ==  BCHW, f"It's expected the image have a channels dimension, but received {image.shape}"
+        
+        n_channels = image.shape[0]
+
         num_images = 4 if prediction is not None else 3
-        fig, ax = plt.subplots(1, num_images, figsize=(12, 10), layout="compressed")
+        fig, ax = plt.subplots(n_channels, num_images, figsize=(12, 10), layout="compressed")
+        
+        # Plotting sets of results comparison for each channel. 
+        for channel in range(n_channels):
+            
+            norm = mpl.colors.Normalize(vmin=label.min(), vmax=label.max())
+            ax[channel, 0].axis("off")
+            ax[channel, 0].title.set_text(f"Image, channel {channel}")
+            ax[channel, 0].imshow(image[channel])
 
-        norm = mpl.colors.Normalize(vmin=label.min(), vmax=label.max())
-        ax[0].axis("off")
-        ax[0].title.set_text("Image")
-        ax[0].imshow(image)
+            ax[channel, 1].axis("off")
+            ax[channel, 1].title.set_text(f"Ground Truth Mask, channel {channel}")
+            ax[channel, 1].imshow(label[channel], cmap="Greens", norm=norm)
 
-        ax[1].axis("off")
-        ax[1].title.set_text("Ground Truth Mask")
-        ax[1].imshow(label, cmap="Greens", norm=norm)
+            ax[channel, 2].axis("off")
+            ax[channel, 2].title.set_text(f"GT Mask on Image, channel {channel}")
+            ax[channel, 2].imshow(image[channel])
+            ax[channel, 2].imshow(label[channel], cmap="Greens", alpha=0.3, norm=norm)
 
-        ax[2].axis("off")
-        ax[2].title.set_text("GT Mask on Image")
-        ax[2].imshow(image)
-        ax[2].imshow(label, cmap="Greens", alpha=0.3, norm=norm)
-        # ax[2].legend()
 
-        if prediction is not None:
-            ax[3].title.set_text("Predicted Mask")
-            ax[3].imshow(prediction, cmap="Greens", norm=norm)
+            if prediction is not None:
+                ax[channel, 3].title.set_text(f"Predicted Mask, channel {channel}")
+                ax[channel, 3].imshow(prediction[channel], cmap="Greens", norm=norm)
 
-        if suptitle is not None:
-            plt.suptitle(suptitle)
+            if suptitle is not None:
+                plt.suptitle(suptitle)
+
         return fig
 
 
