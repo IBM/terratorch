@@ -181,7 +181,7 @@ class TemporalViTEncoder(nn.Module):
             pretrained (str, optional): Path to pretrained encoder weights. Defaults to None.
         """
         super().__init__()
-        print(f"Encoder type:{encoder_only}")
+
         # --------------------------------------------------------------------------
         # MAE encoder specifics
         self.patch_embed = PatchEmbed(pretrain_img_size, patch_size, num_frames, tubelet_size, in_chans, embed_dim)
