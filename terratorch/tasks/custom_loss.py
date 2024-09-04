@@ -1,4 +1,4 @@
-
+import torch
 from torch import nn 
 
 class MaskedRMSELoss:
@@ -6,10 +6,17 @@ class MaskedRMSELoss:
     def __init__(self, norm_pix_loss:bool=True):
         self.norm_pix_loss = norm_pix_loss
 
+    @staticmethod
+    def _avoid_null_mask(mask):
+        if not torch.all(mask):
+            return torch.ones_like(mask)
+        else:
+            return mask
+
     def __call__(self, model_output, target):
 
         prediction = model_output.output 
-        mask = model_output.mask 
+        mask = self._avoid_null_mask(model_output.mask)
     
         if self.norm_pix_loss:
             mean = target.mean(dim=-1, keepdim=True)
