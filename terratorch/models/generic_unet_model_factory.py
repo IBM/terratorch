@@ -46,24 +46,45 @@ class GenericUnetModelFactory(ModelFactory):
         if task not in ["segmentation", "regression"]:
             msg = f"SMP models can only perform pixel wise tasks, but got task {task}"
             raise Exception(msg)
-    
-        mmseg_decoders = importlib.import_module("mmseg.models.decode_heads")
-        mmseg_encoders = importlib.import_module("mmseg.models.backbones")
+
+        builtin_engine_decoders = importlib.import_module("terratorch.models.decoders")
+        builtin_engine_encoders = importlib.import_module("terratorch.models.backbones")
+
+        try:
+            engine_decoders = importlib.import_module("mmseg.models.decode_heads")
+            engine_encoders = importlib.import_module("mmseg.models.backbones")
+            _has_mmseg = True
+        except:
+            engine_decoders = None
+            engine_encoders = None
+            _has_mmseg = False
+            print("mmseg is not installed.")
 
         if backbone:
             backbone_kwargs = _extract_prefix_keys(kwargs, "backbone_")
             model = backbone
             model_kwargs = backbone_kwargs
-            mmseg = mmseg_encoders
+            engine = engine_encoders
+            builtin_engine = builtin_engine_encoders
         elif decoder: 
             decoder_kwargs = _extract_prefix_keys(kwargs, "decoder_")
             model = decoder
             model_kwargs = decoder_kwargs
-            mmseg = mmseg_decoders
+            engine = engine_decoders
+            builtin_engine = builtin_engine_decoders
         else:
             print("It is necessary to define a backbone and/or a decoder.")
 
-        model_class = getattr(mmseg, model)
+        try:
+            print(f"Using module {model} from terratorch.")
+            model_class = getattr(builtin_engine, model)
+        except:
+            if _has_mmseg:
+                print("Module not available on terratorch.")
+                print(f"Using module {model} from mmseg.")
+                model_class = getattr(engine, model)
+            else:
+                raise Exception("mmseg is not installed.")
 
         model = model_class(
            **model_kwargs,
