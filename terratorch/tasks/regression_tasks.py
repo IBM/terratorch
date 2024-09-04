@@ -322,6 +322,8 @@ class EncoderDecoderPreTrainingTask(BaseTask):
 
         # Removing the time dimension
         # TODO This should be less hard-coded
+        # However, it seems that all this part (for all the PixelWise Models) would not work
+        # for models with num_frames > 1.
         y_hat = self.unpatchify(model_output.output)[:,:,0,...]
         y = self.unpatchify(y)[:,:,0, ...]
 

@@ -1,7 +1,7 @@
 
 from torch import nn 
 
-class MaskedRMSELoss:#(nn.Module):
+class MaskedRMSELoss:
 
     def __init__(self, norm_pix_loss:bool=True):
         self.norm_pix_loss = norm_pix_loss
