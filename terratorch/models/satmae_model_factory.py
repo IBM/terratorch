@@ -11,6 +11,7 @@ from torch import nn
 
 import terratorch.models.decoders as decoder_registry
 from terratorch.datasets import HLSBands
+from terratorch.io.file import open_generic_torch_model
 from terratorch.models.model import (
     AuxiliaryHead,
     AuxiliaryHeadWithDecoderWithoutInstantiatedHead,
@@ -20,7 +21,6 @@ from terratorch.models.model import (
 )
 from terratorch.models.pixel_wise_model import PixelWiseModel
 from terratorch.models.scalar_output_model import ScalarOutputModel
-from terratorch.models.utils import DecoderNotFoundError
 
 PIXEL_WISE_TASKS = ["segmentation", "regression"]
 SCALAR_TASKS = ["classification"]
@@ -48,6 +48,10 @@ def filter_cefficients_when_necessary(model_state_dict:dict=None, kind:str=None)
         print("No weight was removed.")
 
     return model_state_dict
+
+class DecoderNotFoundError(Exception):
+    pass
+
 class ModelWrapper(nn.Module):
 
     def __init__(self, model: nn.Module = None, kind:str=None) -> None:

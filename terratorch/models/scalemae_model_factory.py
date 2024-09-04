@@ -1,11 +1,17 @@
 # Copyright contributors to the Terratorch project
 
+import importlib
+import sys
 from collections.abc import Callable
 
+import numpy as np
+import timm
+import torch
 from torch import nn
 
 import terratorch.models.decoders as decoder_registry
-from terratorch.models.backbones import scalemae
+from terratorch.datasets import HLSBands
+from terratorch.io.file import open_generic_torch_model
 from terratorch.models.model import (
     AuxiliaryHead,
     AuxiliaryHeadWithDecoderWithoutInstantiatedHead,
@@ -15,11 +21,83 @@ from terratorch.models.model import (
 )
 from terratorch.models.pixel_wise_model import PixelWiseModel
 from terratorch.models.scalar_output_model import ScalarOutputModel
-from terratorch.models.utils import DecoderNotFoundError
 
 PIXEL_WISE_TASKS = ["segmentation", "regression"]
 SCALAR_TASKS = ["classification"]
 SUPPORTED_TASKS = PIXEL_WISE_TASKS + SCALAR_TASKS
+
+
+def check_the_kind_of_vit(name:str=None):
+    if "mae" in name.lower() or name == "MaskedAutoencoderViT":
+        return "vit-mae"
+    else:
+        return "vit"
+
+def filter_cefficients_when_necessary(model_state_dict:dict=None, kind:str=None):
+
+    # Head and backbone are not correctly separated in the original ScaleMAE source code
+    if kind == "vit":
+        ban_list = ["patch_embed", "decoder_blocks", "decoder_pred", "channel_embed", "mask_token", "decoder_embed", "pos_embed"] #['pos_embed', 'patch_embed.proj.weight', 'patch_embed.proj.bias', 'head.weight', 'head.bias']
+    else:
+        ban_list = list()
+
+    try:
+        for item in ban_list:
+            model_state_dict['model'].pop(item)
+    except Exception:
+        print("No weight was removed.")
+
+    return model_state_dict
+
+class DecoderNotFoundError(Exception):
+    pass
+
+class ModelWrapper(nn.Module):
+
+    def __init__(self, model: nn.Module = None, kind:str=None, res:float=1) -> None:
+
+        super(ModelWrapper, self).__init__()
+
+        self.model = model
+        self.kind = kind 
+        self.embedding_shape = self.model.state_dict()['norm.bias'].shape[0]
+        self.res = res
+
+        if self.kind == "vit":
+            self.inner_forward = self.model.forward_features
+        else:
+            self.inner_forward = self.model.forward_encoder
+
+        if hasattr(self.model, "num_patches"):
+            self.num_patches = self.model.num_patches
+
+        if self.kind == "vit":
+            self.forward = self._forward_vit
+        else:
+            self.forward = self._forward_vit_mae
+
+    def channels(self):
+        return (1, self.embedding_shape)
+
+    @property
+    def parameters(self):
+        return self.model.parameters
+
+    def _forward_vit(self, x, **kwargs):
+
+        res = self.res*torch.ones(x.shape[0])
+        x =  self.inner_forward(x, input_res=res)
+
+        return x
+
+    def _forward_vit_mae(self, x, mask_ratio=0.75):
+
+        x, _, ids_restore =  self.inner_forward(x, mask_ratio)
+
+        return x, ids_restore
+
+    def summary(self):
+        print(self)
 
 @register_factory
 class ScaleMAEModelFactory(ModelFactory):
@@ -28,11 +106,16 @@ class ScaleMAEModelFactory(ModelFactory):
         task: str,
         backbone: str | nn.Module,
         decoder: str | nn.Module,
+        in_channels: int,
+        bands: list[HLSBands | int],
         num_classes: int | None = None,
+        pretrained: bool = True,  # noqa: FBT001, FBT002
+        fixed_res: float = 1,
+        num_frames: int = 1,
         prepare_features_for_image_model: Callable | None = None,
         aux_decoders: list[AuxiliaryHead] | None = None,
         rescale: bool = True,  # noqa: FBT002, FBT001
-        checkpoint_path: str | None = None,
+        checkpoint_path: str = None,
         **kwargs,
     ) -> Model:
         """Model factory for ScaleMAE  models.
@@ -61,9 +144,7 @@ class ScaleMAEModelFactory(ModelFactory):
             aux_decoders (list[AuxiliaryHead] | None): List of AuxiliaryHead deciders to be added to the model.
                 These decoders take the input from the encoder as well.
             rescale (bool): Whether to apply bilinear interpolation to rescale the model output if its size
-                is different from the ground truth. Only applicable to pixel wise models
-                (e.g. segmentation, pixel wise regression). Defaults to True.
-            checkpoint_path (str | None): Path to scalemae pretrained checkpoint to load.
+                is different from the ground truth. Only applicable to pixel wise models (e.g. segmentation, pixel wise regression). Defaults to True.
 
         Raises:
             NotImplementedError: _description_
@@ -72,15 +153,110 @@ class ScaleMAEModelFactory(ModelFactory):
         Returns:
             nn.Module: _description_
         """
-        task = task.lower()
-        if task not in SUPPORTED_TASKS:
-            msg = f"Task {task} not supported. Please choose one of {SUPPORTED_TASKS}"
-            raise NotImplementedError(msg)
 
-        backbone_kwargs = _extract_prefix_keys(kwargs, "backbone_")
-        backbone_name = backbone
+        self.possible_modules = None 
 
-        backbone = scalemae.create_model(backbone_name, checkpoint_path, **backbone_kwargs)
+        if not torch.cuda.is_available():
+            self.CPU_ONLY = True
+        else:
+            self.CPU_ONLY = False
+
+        # Path for accessing the model source code.
+        self.syspath_kwarg = "model_sys_path"
+        self.fixed_res = fixed_res
+
+        bands = [HLSBands.try_convert_to_hls_bands_enum(b) for b in bands]
+
+        # TODO: support auxiliary heads
+        if not isinstance(backbone, nn.Module):
+            if not 'scale-mae' in kwargs[self.syspath_kwarg]:
+                msg = "This class only handles models for `ScaleMAE` encoders"
+                raise NotImplementedError(msg)
+
+                 
+            task = task.lower()
+            if task not in SUPPORTED_TASKS:
+                msg = f"Task {task} not supported. Please choose one of {SUPPORTED_TASKS}"
+                raise NotImplementedError(msg)
+
+            backbone_kwargs = _extract_prefix_keys(kwargs, "backbone_")
+            backbone_name = backbone
+
+            # Trying to find the model on HuggingFace.
+            try:
+                backbone: nn.Module = timm.create_model(
+                    backbone,
+                    pretrained=pretrained,
+                    in_chans=in_channels,
+                    num_frames=num_frames,
+                    bands=bands,
+                    features_only=True,
+                    **backbone_kwargs,
+                )
+            except Exception:
+
+                # When the model is not on HG, it needs be restored locally.
+                print("This model is not available on HuggingFace. Trying to instantiate locally ...")
+
+                assert checkpoint_path, "A checkpoint must be provided to restore the model."
+
+                # The ScaleMAE source code must be installed or available via PYTHONPATH.
+                try:  
+                    if self.syspath_kwarg in kwargs:
+                        syspath_value = kwargs.get(self.syspath_kwarg)
+
+                    else:
+
+                        Exception(f"It is necessary to define the variable {self.syspath_kwarg} on yaml"
+                                                           "config for restoring local model.")
+    
+                    sys.path.insert(0, syspath_value)
+
+                    # There are dozens of classes in the ScaleMAE repo, but it seems to be the right open_generic_torch_model
+                    backbone_template = None
+
+                    self.possible_modules = [importlib.import_module(mod) for mod in ["models_mae", "models_vit"]]
+
+                    for backbone_module in self.possible_modules:
+
+                        backbone_template_ = getattr(backbone_module, backbone_name, None)
+                        if not backbone_template_ :
+                            pass
+                        else:
+                            backbone_template = backbone_template_
+                    
+                except ModuleNotFoundError:
+
+                    print(f"It is better to review the field {self.syspath_kwarg} in the yaml file.")
+
+                # Is it a ViT or a ViT-MAE ?
+                backbone_kind = check_the_kind_of_vit(name=backbone_name)
+ 
+                backbone: nn.Module = ModelWrapper(model=backbone_template(**backbone_kwargs), kind=backbone_kind, res=fixed_res)
+
+                if self.CPU_ONLY:
+                    model_dict = torch.load(checkpoint_path, map_location="cpu")
+                else:
+                    model_dict = torch.load(checkpoint_path)
+
+               
+                # Filtering parameters from the model state_dict (when necessary)
+                model_dict = filter_cefficients_when_necessary(model_state_dict=model_dict, kind=backbone_kind)
+
+                if backbone_kind == "vit":
+                    backbone.model.fc_norm = nn.Identity()
+                    backbone.model.head_drop = nn.Identity()
+                    backbone.model.head = nn.Identity()
+                    backbone.model.pos_embed = None # TODO It needs be corrected from source
+
+                # Load saved model when it exists
+                if  pretrained: 
+                    backbone.model.load_state_dict(model_dict['model'], strict=False)
+              
+                # Print the general architecture
+                backbone.summary()
+
+                print("Model ScaleMAE was successfully restored.")
 
         # allow decoder to be a module passed directly
         decoder_cls = _get_decoder(decoder)
@@ -90,8 +266,12 @@ class ScaleMAEModelFactory(ModelFactory):
         # If backabone is a ViT-MAE, the attribute "num_patches" will be necessary
         if hasattr(backbone, "num_patches"):
             decoder_kwargs["num_patches"] = backbone.num_patches
-
-        decoder: nn.Module = decoder_cls(backbone.feature_info.channels(), **decoder_kwargs)
+    
+        # TODO: remove this
+        if "SatMAEHead" in decoder:
+            decoder: nn.Module = decoder_cls(**decoder_kwargs)
+        else:
+            decoder: nn.Module = decoder_cls(backbone.channels(), **decoder_kwargs)
 
         head_kwargs = _extract_prefix_keys(kwargs, "head_")
         if num_classes:
