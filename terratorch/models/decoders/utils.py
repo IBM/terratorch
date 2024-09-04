@@ -1,3 +1,4 @@
+import warnings
 import torch
 import torch.nn.functional as F  # noqa: N812
 from torch import Tensor, nn
@@ -6,13 +7,39 @@ from torch import Tensor, nn
 Adapted from https://github.com/yassouali/pytorch-segmentation/blob/master/models/upernet.py
 """
 class ConvModule(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, padding=0, inplace=False) -> None:  # noqa: FBT002
+    def __init__(self, in_channels, out_channels, kernel_size=3, padding=0, dilation=1, inplace=False) -> None:  # noqa: FBT002
         super().__init__()
-        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, padding=padding, bias=False)
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, padding=padding, dilation=dilation, bias=False)
         self.norm = nn.BatchNorm2d(out_channels)
         self.act = nn.ReLU(inplace=inplace)
 
     def forward(self, x):
         return self.act(self.norm(self.conv(x)))
+
+
+"""
+It cames from https://github.com/open-mmlab/mmsegmentation
+"""
+def resize(input,
+           size=None,
+           scale_factor=None,
+           mode='nearest',
+           align_corners=None,
+           warning=True):
+    if warning:
+        if size is not None and align_corners:
+            input_h, input_w = tuple(int(x) for x in input.shape[2:])
+            output_h, output_w = tuple(int(x) for x in size)
+            if output_h > input_h or output_w > input_w:
+                if ((output_h > 1 and output_w > 1 and input_h > 1
+                     and input_w > 1) and (output_h - 1) % (input_h - 1)
+                        and (output_w - 1) % (input_w - 1)):
+                    warnings.warn(
+                        f'When align_corners={align_corners}, '
+                        'the output would more aligned if '
+                        f'input size {(input_h, input_w)} is `x+1` and '
+                        f'out size {(output_h, output_w)} is `nx+1`')
+    return F.interpolate(input, size, scale_factor, mode, align_corners)
+
 
 
