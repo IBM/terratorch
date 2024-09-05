@@ -34,6 +34,7 @@ class ClayModelFactory(ModelFactory):
         backbone: str | nn.Module,
         decoder: str | nn.Module,
         in_channels: int,
+        bands: list[HLSBands | int],
         num_classes: int | None = None,
         pretrained: bool = True,  # noqa: FBT001, FBT002
         num_frames: int = 1,
@@ -102,6 +103,7 @@ class ClayModelFactory(ModelFactory):
                     backbone,
                     pretrained=pretrained,
                     in_chans=in_channels,
+                    bands=bands,
                     num_frames=num_frames,
                     features_only=True,
                     **backbone_kwargs,
