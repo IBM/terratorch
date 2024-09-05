@@ -32,14 +32,16 @@ class Embedder(nn.Module):
                  num_frames=1,
                  ckpt_path=None,
                  device="cuda",
+                 bands=["blue", "green", "red", "nir", "swir16", "swir22"],
                  **kwargs):
         super().__init__()
         self.feature_info = []
         self.img_size = img_size
         self.num_frames = num_frames
+        self.bands = bands
 
         if kwargs.get("datacuber", True) is not None:
-            self.datacuber = Datacuber()
+            self.datacuber = Datacuber(bands=bands)
         else:
             self.datacuber = None
             
@@ -99,7 +101,10 @@ class Embedder(nn.Module):
         return state_dict
 
     def forward_features(self, x):
-        datacube = self.datacuber(x)
+        if self.datacuber is not None:
+            datacube = self.datacuber(x)
+        else:
+            datacube = x
         embeddings = self.clay_encoder(datacube)
 
         # TODO: actually return features individually

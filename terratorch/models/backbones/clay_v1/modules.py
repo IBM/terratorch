@@ -4,11 +4,85 @@ import torch
 import torch.nn.functional as F
 from einops import rearrange, repeat
 from torch import nn, Tensor
-from vit_pytorch.simple_vit import Transformer
 
 from terratorch.models.backbones.clay_v1.utils import posemb_sincos_1d, posemb_sincos_2d_with_gsd
 
 os.environ["TORCH_CUDNN_V8_API_DISABLED"] = "1"
+
+# central wavelengths of pretrained model
+WAVELENGTHS = {
+    "blue": 0.493,
+    "green": 0.56,
+    "red": 0.665,
+    "rededge1": 0.704,
+    "rededge2": 0.74,
+    "rededge3": 0.783,
+    "nir": 0.842,
+    "nir08": 0.865,
+    "swir16": 1.61,
+    "swir22": 2.19,
+}
+
+
+class FeedForward(nn.Module):
+    def __init__(self, dim, hidden_dim):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.LayerNorm(dim),
+            nn.Linear(dim, hidden_dim),
+            nn.GELU(),
+            nn.Linear(hidden_dim, dim),
+        )
+
+    def forward(self, x):
+        return self.net(x)
+
+
+class Attention(nn.Module):
+    def __init__(self, dim, heads=8, dim_head=64):
+        super().__init__()
+        inner_dim = dim_head * heads
+        self.heads = heads
+        self.scale = dim_head ** -0.5
+        self.norm = nn.LayerNorm(dim)
+
+        self.attend = nn.Softmax(dim=-1)
+
+        self.to_qkv = nn.Linear(dim, inner_dim * 3, bias=False)
+        self.to_out = nn.Linear(inner_dim, dim, bias=False)
+
+    def forward(self, x):
+        x = self.norm(x)
+
+        qkv = self.to_qkv(x).chunk(3, dim=-1)
+        q, k, v = map(lambda t: rearrange(
+            t, 'b n (h d) -> b h n d', h=self.heads), qkv)
+
+        dots = torch.matmul(q, k.transpose(-1, -2)) * self.scale
+
+        attn = self.attend(dots)
+
+        out = torch.matmul(attn, v)
+        out = rearrange(out, 'b h n d -> b n (h d)')
+        return self.to_out(out)
+
+
+class Transformer(nn.Module):
+    def __init__(self, dim, depth, heads, dim_head, mlp_dim):
+        super().__init__()
+        self.norm = nn.LayerNorm(dim)
+        self.layers = nn.ModuleList([])
+        for _ in range(depth):
+            self.layers.append(nn.ModuleList([
+                Attention(dim, heads=heads, dim_head=dim_head),
+                FeedForward(dim, mlp_dim)
+            ]))
+
+    def forward(self, x):
+        for attn, ff in self.layers:
+            x = attn(x) + x
+            x = ff(x) + x
+        return self.norm(x)
 
 
 class Encoder(nn.Module):
@@ -428,8 +502,10 @@ class DynamicEmbedding(nn.Module):
 
 
 class Datacuber(nn.Module):
-    def __init__(self) -> None:
+    def __init__(self,
+                 bands=None) -> None:
         super().__init__()
+        self.bands = bands
 
     def forward(self, x, **kwargs):
         if not isinstance(x, dict):
@@ -438,7 +514,10 @@ class Datacuber(nn.Module):
             datacube['time'] = torch.zeros((x.shape[0], 4))
             datacube['latlon'] = torch.zeros((x.shape[0], 4))
             datacube['gsd'] = 1.0
-            datacube['waves'] = torch.zeros(x.shape[1])
+            if self.bands is not None and all([_ in WAVELENGTHS for  _ in self.bands]):
+                datacube['waves'] = torch.tensor([WAVELENGTHS[_] for _ in self.bands])
+            else:
+                datacube['waves'] = torch.zeros(x.shape[1])
             return datacube
         else:
             assert "pixels" in datacube
@@ -448,6 +527,6 @@ class Datacuber(nn.Module):
                 datacube['latlon'] = torch.zeros((x.shape[0], 4))
             if "gsd" not in datacube:
                 datacube["gsd"] = 1.0
-            if  "waves" not in datacube:
+            if "waves" not in datacube:
                 datacube['waves'] = torch.zeros(x.shape[1])
             return x
