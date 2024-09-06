@@ -4,6 +4,7 @@ import pytest
 import torch
 
 from terratorch.models import ClayModelFactory
+from terratorch.models.backbones.clay_v1 import WAVELENGTHS
 from terratorch.tasks import ClassificationTask, PixelwiseRegressionTask, SemanticSegmentationTask
 
 NUM_CHANNELS = 6
@@ -20,7 +21,6 @@ def model_factory() -> str:
 def model_input() -> torch.Tensor:
     return torch.ones((1, NUM_CHANNELS, 224, 224))
 
-
 @pytest.mark.parametrize("backbone", ["clay_v1_base"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
 @pytest.mark.parametrize("loss", ["ce", "jaccard", "focal", "dice"])
@@ -31,6 +31,7 @@ def test_create_segmentation_task(backbone, decoder, loss, model_factory: ClayMo
         "in_channels": NUM_CHANNELS,
         "pretrained": False,
         "num_classes": NUM_CLASSES,
+        "bands": list(WAVELENGTHS.keys()),
     }
 
     if decoder == "UperNetDecoder":
@@ -52,6 +53,7 @@ def test_create_regression_task(backbone, decoder, loss, model_factory: ClayMode
         "decoder": decoder,
         "in_channels": NUM_CHANNELS,
         "pretrained": False,
+        "bands": list(WAVELENGTHS.keys()),
     }
 
     if decoder == "UperNetDecoder":
@@ -75,6 +77,7 @@ def test_create_classification_task(backbone, decoder, loss, model_factory: Clay
         "in_channels": NUM_CHANNELS,
         "pretrained": False,
         "num_classes": NUM_CLASSES,
+        "bands": list(WAVELENGTHS.keys()),
     }
 
     if decoder == "UperNetDecoder":

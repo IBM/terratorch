@@ -6,7 +6,6 @@ from torch import nn
 
 import terratorch.models.decoders as decoder_registry
 from terratorch.models.backbones.clay_v1.embedder import Embedder
-from terratorch.datasets import HLSBands
 from terratorch.models.model import (
     AuxiliaryHead,
     AuxiliaryHeadWithDecoderWithoutInstantiatedHead,
@@ -34,7 +33,7 @@ class ClayModelFactory(ModelFactory):
         backbone: str | nn.Module,
         decoder: str | nn.Module,
         in_channels: int,
-        bands: list[HLSBands | int],
+        bands: list[int] = [],
         num_classes: int | None = None,
         pretrained: bool = True,  # noqa: FBT001, FBT002
         num_frames: int = 1,

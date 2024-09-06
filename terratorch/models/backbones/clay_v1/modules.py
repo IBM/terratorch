@@ -514,10 +514,7 @@ class Datacuber(nn.Module):
             datacube['time'] = torch.zeros((x.shape[0], 4))
             datacube['latlon'] = torch.zeros((x.shape[0], 4))
             datacube['gsd'] = 1.0
-            if self.bands is not None and all([_ in WAVELENGTHS for  _ in self.bands]):
-                datacube['waves'] = torch.tensor([WAVELENGTHS[_] for _ in self.bands])
-            else:
-                datacube['waves'] = torch.zeros(x.shape[1])
+            datacube['waves'] = self._parse_wavelengths(self.bands, x.shape[1])
             return datacube
         else:
             assert "pixels" in datacube
@@ -528,5 +525,11 @@ class Datacuber(nn.Module):
             if "gsd" not in datacube:
                 datacube["gsd"] = 1.0
             if "waves" not in datacube:
-                datacube['waves'] = torch.zeros(x.shape[1])
+                datacube['waves'] = self._parse_wavelengths(self.bands, x.shape[1])
             return x
+        
+    def _parse_wavelengths(self, bands, channels):
+        if bands is not None and all([_ in WAVELENGTHS for  _ in bands]):
+            return torch.tensor([WAVELENGTHS[_] for _ in bands])
+        else:
+            return torch.zeros(channels)
