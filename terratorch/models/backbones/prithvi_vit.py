@@ -15,7 +15,7 @@ from torch import nn
 from terratorch.datasets import HLSBands
 from terratorch.models.backbones.prithvi_select_patch_embed_weights import prithvi_select_patch_embed_weights
 from terratorch.models.backbones.vit_encoder_decoder import TemporalViTEncoder
-from terratorch.models.backbones.utils import _estimate_in_chans
+from terratorch.datasets.utils import generate_bands_intervals
 
 PRETRAINED_BANDS = [
     HLSBands.BLUE,
@@ -83,7 +83,9 @@ def _create_prithvi(
     if "features_only" in kwargs:
         kwargs = {k: v for k, v in kwargs.items() if k != "features_only"}
 
-    kwargs["in_chans"] = _estimate_in_chans(model_bands=model_bands)
+    model_bands = generate_bands_intervals(model_bands)
+
+    kwargs["in_chans"] = len(model_bands)
 
     def checkpoint_filter_wrapper_fn(state_dict, model):
         return checkpoint_filter_fn(state_dict, model, pretrained_bands, model_bands)
