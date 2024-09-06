@@ -142,19 +142,12 @@ def create_prithvi_vit_100(
         "num_frames": 1,
     }
 
-    # It is possible to overwrite default parameters using 
-    # config file
-    kwargs_ = defaultdict()
-    kwargs_.update(model_args)
-    kwargs_.update(kwargs)
-    kwargs_ = dict(kwargs_)
-
     model = _create_prithvi(
         model_name,
         pretrained=pretrained,
         model_bands=bands,
         pretrained_bands=pretrained_bands,
-        **kwargs_,
+        **dict(model_args,**kwargs),
     )
     
     return model
