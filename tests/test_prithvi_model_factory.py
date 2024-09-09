@@ -1,14 +1,10 @@
 # Copyright contributors to the Terratorch project
 
-import os
-
 import pytest
 import torch
 
 from terratorch.models import PrithviModelFactory
 from terratorch.models.backbones.prithvi_vit import PRETRAINED_BANDS
-
-# from terratorch.models.backbones.prithvi_vit import default_cfgs as vit_default_cfgs
 from terratorch.models.model import AuxiliaryHead
 
 NUM_CHANNELS = 6

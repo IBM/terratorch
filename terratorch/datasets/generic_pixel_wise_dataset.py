@@ -20,7 +20,7 @@ from matplotlib.patches import Rectangle
 from torch import Tensor
 from torchgeo.datasets import NonGeoDataset
 
-from terratorch.datasets.utils import HLSBands, default_transform, filter_valid_files
+from terratorch.datasets.utils import HLSBands, default_transform, filter_valid_files, generate_bands_intervals
 
 
 class GenericPixelWiseDataset(NonGeoDataset, ABC):
@@ -117,8 +117,8 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             )
         self.rgb_indices = [0, 1, 2] if rgb_indices is None else rgb_indices
 
-        self.dataset_bands = self._generate_bands_intervals(dataset_bands)
-        self.output_bands = self._generate_bands_intervals(output_bands)
+        self.dataset_bands = generate_bands_intervals(dataset_bands)
+        self.output_bands = generate_bands_intervals(output_bands)
 
         if self.output_bands and not self.dataset_bands:
             msg = "If output bands provided, dataset_bands must also be provided"
@@ -138,6 +138,10 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         # If no transform is given, apply only to transform to torch tensor
         self.transform = transform if transform else default_transform
         # self.transform = transform if transform else ToTensorV2()
+
+        import warnings
+        import rasterio
+        warnings.filterwarnings("ignore", category=rasterio.errors.NotGeoreferencedWarning)
 
     def __len__(self) -> int:
         return len(self.image_files)
