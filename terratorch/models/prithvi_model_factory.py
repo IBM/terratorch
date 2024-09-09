@@ -39,7 +39,7 @@ class PrithviModelFactory(ModelFactory):
         bands = []
         for element in bands_intervals:
             # if its an interval
-            if isinstance(element, list):
+            if isinstance(element, list) or isinstance(element, tuple):
                 if len(element) != 2:  # noqa: PLR2004
                     msg = "When defining an interval, a tuple of two integers should be passed, defining start and end indices inclusive"
                     raise Exception(msg)
