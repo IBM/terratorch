@@ -9,10 +9,12 @@ Adapted from https://github.com/yassouali/pytorch-segmentation/blob/master/model
 class ConvModule(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size=3, padding=0, dilation=1, stride=1, inplace=False, transpose=False, scale_factor=None) -> None:  # noqa: FBT002
         super().__init__()
+
         if transpose:
             kind = "Transpose"
         else:
             kind = ""
+
         conv_name = f"Conv{kind}2d"
 
         if transpose:
