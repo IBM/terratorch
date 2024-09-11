@@ -5,6 +5,7 @@ from collections.abc import Callable
 from torch import nn
 
 import terratorch.models.decoders as decoder_registry
+from terratorch.datasets.utils import HLSBands
 from terratorch.models.backbones import scalemae
 from terratorch.models.model import (
     AuxiliaryHead,
@@ -32,7 +33,8 @@ class ScaleMAEModelFactory(ModelFactory):
         prepare_features_for_image_model: Callable | None = None,
         aux_decoders: list[AuxiliaryHead] | None = None,
         rescale: bool = True,  # noqa: FBT002, FBT001
-        checkpoint_path: str | None = None,
+        pretrained: str | None = None,
+        bands: list[HLSBands | int | str] | None = None,
         **kwargs,
     ) -> Model:
         """Model factory for ScaleMAE  models.
@@ -50,7 +52,7 @@ class ScaleMAEModelFactory(ModelFactory):
                     Will be concatenated with a Conv2d for the final convolution. Defaults to "FCNDecoder".
             in_channels (int, optional): Number of input channels. Defaults to 3.
             bands (list[terratorch.datasets.HLSBands], optional): Bands the model will be trained on.
-                    Should be a list of terratorch.datasets.HLSBands.
+                    Should be a list of terratorch.datasets.HLSBands, strings or ints.
                     Defaults to [HLSBands.RED, HLSBands.GREEN, HLSBands.BLUE].
             num_classes (int, optional): Number of classes. None for regression tasks.
             pretrained (Union[bool, Path], optional): Whether to load pretrained weights for the backbone, if available.
@@ -63,11 +65,8 @@ class ScaleMAEModelFactory(ModelFactory):
             rescale (bool): Whether to apply bilinear interpolation to rescale the model output if its size
                 is different from the ground truth. Only applicable to pixel wise models
                 (e.g. segmentation, pixel wise regression). Defaults to True.
-            checkpoint_path (str | None): Path to scalemae pretrained checkpoint to load.
+            pretrained (str | None): Path to scalemae pretrained checkpoint to load.
 
-        Raises:
-            NotImplementedError: _description_
-            DecoderNotFoundException: _description_
 
         Returns:
             nn.Module: _description_
@@ -80,16 +79,11 @@ class ScaleMAEModelFactory(ModelFactory):
         backbone_kwargs = _extract_prefix_keys(kwargs, "backbone_")
         backbone_name = backbone
 
-        backbone = scalemae.create_model(backbone_name, checkpoint_path, **backbone_kwargs)
-
+        backbone = scalemae.create_model(backbone_name, pretrained, bands, **backbone_kwargs)
         # allow decoder to be a module passed directly
         decoder_cls = _get_decoder(decoder)
 
         decoder_kwargs = _extract_prefix_keys(kwargs, "decoder_")
-
-        # If backabone is a ViT-MAE, the attribute "num_patches" will be necessary
-        if hasattr(backbone, "num_patches"):
-            decoder_kwargs["num_patches"] = backbone.num_patches
 
         decoder: nn.Module = decoder_cls(backbone.feature_info.channels(), **decoder_kwargs)
 
@@ -118,6 +112,9 @@ class ScaleMAEModelFactory(ModelFactory):
                 AuxiliaryHeadWithDecoderWithoutInstantiatedHead(aux_decoder.name, aux_decoder_instance, aux_head_kwargs)
             )
 
+        if len(kwargs) != 0:
+            msg = f"Unused keys in factory: {list(kwargs.keys())}"
+            raise Exception(msg)
         return _build_appropriate_model(
             task,
             backbone,

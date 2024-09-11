@@ -65,3 +65,5 @@ def test_out_indices(model_name, input_224):
 
     for filtered_index, full_index in enumerate(out_indices):
         assert torch.allclose(full_output[full_index], output[filtered_index])
+
+# def test_scale_mae():

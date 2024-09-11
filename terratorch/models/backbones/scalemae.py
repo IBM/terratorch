@@ -11,6 +11,7 @@
 # DeiT: https://github.com/facebookresearch/deit
 # --------------------------------------------------------
 
+import logging
 from functools import partial
 
 import numpy as np
@@ -21,7 +22,16 @@ from timm.models import FeatureInfo
 from timm.models.vision_transformer import PatchEmbed
 from torch import nn
 
+from terratorch.datasets.utils import HLSBands
+from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
+
 scalemae_model_registry = {}
+
+PRETRAINED_BANDS = [
+    HLSBands.RED,
+    HLSBands.GREEN,
+    HLSBands.BLUE,
+]
 
 def register_scalemae_model(constructor: callable):
     scalemae_model_registry[constructor.__name__] = constructor
@@ -34,7 +44,6 @@ def get_1d_sincos_pos_embed_from_grid_torch(embed_dim, pos):
     out: (M, D)
     """
     assert embed_dim % 2 == 0
-    old_shape = pos
     omega = torch.arange(embed_dim // 2, dtype=torch.float32, device=pos.device)
     omega /= embed_dim / 2.0
     omega = 1.0 / 10000**omega  # (D/2,)
@@ -113,11 +122,25 @@ class PatchEmbedUnSafe(PatchEmbed):
 
 
 class VisionTransformer(timm.models.vision_transformer.VisionTransformer):
-    """Vision Transformer with support for global average pooling"""
+    """
+    Vision Transformer for ScaleMAE model
+
+    Adapted from `https://github.com/bair-climate-initiative/scale-mae/blob/main/mae/models_vit.py`.
+    Vision transformer with scale-dependent position embedding.
+    """
 
     def __init__(
         self, patch_size=16, in_chans=3, embed_dim=1024, out_indices=None, default_input_res=1, **kwargs
     ):
+        """
+        Args:
+            patch_size (int, optional): Patch size. Defaults to 16.
+            in_chans (int, optional): Number of input channels. Defaults to 3.
+            embed_dim (int, optional): Embedding dimension. Defaults to 1024.
+            out_indices (_type_, optional): Indices of transformer blocks to be output as features. Defaults to None.
+            default_input_res (int, optional): GSD of the input. If not passed through
+                the dataset, this value will be used by default. Defaults to 1.
+        """
         super().__init__(embed_dim=embed_dim, **kwargs)
 
         self.patch_embed = PatchEmbedUnSafe(
@@ -127,7 +150,6 @@ class VisionTransformer(timm.models.vision_transformer.VisionTransformer):
         )
 
         # preserve old forward
-
         self.encode_decode_forward = self.forward
 
         self.default_input_res = default_input_res
@@ -144,15 +166,14 @@ class VisionTransformer(timm.models.vision_transformer.VisionTransformer):
         del self.head
 
 
-    # TODO: figure out how input res gets passed
     def forward(self, x, input_res=None):
         B, _, h, w = x.shape
         x = self.patch_embed(x)
 
         if input_res is None:
             input_res = self.default_input_res
+            input_res = torch.FloatTensor([input_res] * B)
 
-        input_res = torch.FloatTensor(input_res)
         num_patches = int(
             (h * w) / (self.patch_embed.patch_size[0] * self.patch_embed.patch_size[1])
         )
@@ -236,7 +257,7 @@ def vit_huge_patch14(**kwargs):
     )
     return model
 
-def load_scalemae_weights(model: nn.Module, ckpt_data: str, input_size: int = 224) -> nn.Module:
+def load_scalemae_weights(model: nn.Module, ckpt_data: str, model_bands: list[HLSBands], input_size: int = 224) -> nn.Module:
     checkpoint_model = torch.load(ckpt_data, map_location="cpu")["model"]
     state_dict = model.state_dict()
 
@@ -245,7 +266,7 @@ def load_scalemae_weights(model: nn.Module, ckpt_data: str, input_size: int = 22
                 k in checkpoint_model
                 and checkpoint_model[k].shape != state_dict[k].shape
             ):
-                print(f"Removing key {k} from pretrained checkpoint")
+                logging.info(f"Removing key {k} from pretrained checkpoint")
                 del checkpoint_model[k]
 
     if input_size != 224:
@@ -253,17 +274,19 @@ def load_scalemae_weights(model: nn.Module, ckpt_data: str, input_size: int = 22
             "pos_embed" in checkpoint_model
             and checkpoint_model["pos_embed"].shape != state_dict["pos_embed"].shape
         ):
-            print("Removing key pos_embed from pretrained checkpoint")
+            logging.info("Removing key pos_embed from pretrained checkpoint")
             del checkpoint_model["pos_embed"]
 
+    checkpoint_model = select_patch_embed_weights(checkpoint_model, model, PRETRAINED_BANDS, model_bands)
     # load pre-trained model
     msg = model.load_state_dict(checkpoint_model, strict=False)
-    print(msg)
+
+    logging.info(msg)
     return model
 
 
 
-def create_model(model_name: str, ckpt_path: str | None = None, **kwargs):
+def create_model(model_name: str, ckpt_path: str | None = None, bands: list[HLSBands | int | str] | None = None, **kwargs):
     input_size = kwargs.pop("input_size", 224)
     try:
         constructor = scalemae_model_registry[model_name]
@@ -271,10 +294,13 @@ def create_model(model_name: str, ckpt_path: str | None = None, **kwargs):
         msg = f"Model {model_name} not in registry. Possible models are {list(scalemae_model_registry.keys())}"
         raise Exception(msg) from e
 
+    if bands is None:
+        bands = PRETRAINED_BANDS
+    kwargs["in_chans"] = len(bands)
     model = constructor(**kwargs)
 
     if ckpt_path:
-        load_scalemae_weights(model, ckpt_path, input_size)
+        load_scalemae_weights(model, ckpt_path, bands, input_size)
 
     # ScaleMAE does not use the pos_embed within ViT
     model.pos_embed.requires_grad = False
