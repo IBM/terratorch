@@ -1,13 +1,11 @@
 # Copyright contributors to the Terratorch project
 
-import importlib
-import os
 
 import pytest
 import timm
 import torch
 
-import terratorch  # noqa: F401
+from terratorch.models.backbones import scalemae
 
 NUM_CHANNELS = 6
 NUM_FRAMES = 3
@@ -66,4 +64,22 @@ def test_out_indices(model_name, input_224):
     for filtered_index, full_index in enumerate(out_indices):
         assert torch.allclose(full_output[full_index], output[filtered_index])
 
-# def test_scale_mae():
+@pytest.mark.parametrize("model_name", ["vit_base_patch16", "vit_large_patch16"])
+def test_scale_mae(model_name):
+    out_indices = [2, 4, 8, 10]
+
+    # default should have 3 channels
+    backbone = scalemae.create_model(model_name, out_indices=out_indices)
+    input_tensor = torch.ones((1, 3, 224, 224))
+    output = backbone(input_tensor)
+
+    assert len(output) == len(out_indices)
+
+@pytest.mark.parametrize("model_name", ["vit_base_patch16", "vit_large_patch16"])
+@pytest.mark.parametrize("bands", [2, 4, 6])
+def test_scale_mae_new_channels(model_name, bands):
+
+    backbone = scalemae.create_model(model_name, bands=list(range(bands)))
+    input_tensor = torch.ones((1, bands, 224, 224))
+    backbone(input_tensor)
+
