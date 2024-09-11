@@ -95,6 +95,9 @@ model:
   init_args:
     model_args:
       backbone: "UNet"
+      backbone_in_channels: 6
+      backbone_base_channels: 2
+      channels: 2
       in_channels: 6
       bands:
         - BLUE

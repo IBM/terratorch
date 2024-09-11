@@ -1,16 +1,11 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import warnings
 from typing import Dict
+
+import torch
+from torch.nn import Upsample as Upsample
 import torch.nn as nn
 import torch.utils.checkpoint as cp
-from mmcv.cnn import (UPSAMPLE_LAYERS, ConvModule, build_activation_layer,
-                      build_norm_layer)
-
-#from mmcv.runner import BaseModule
-#from mmcv.utils.parrots_wrapper import _BatchNorm
-
-#from mmseg.ops import Upsample
-from torch.nn import Upsample as Upsample
 
 from terratorch.models.decoders.utils import ConvModule
 
@@ -44,15 +39,8 @@ def build_upsample_layer(cfg: Dict, *args, **kwargs) -> nn.Module:
             f'the cfg dict must contain the key "type", but got {cfg}')
     cfg_ = cfg.copy()
 
-    #layer_type = cfg_.pop('type')
-    #if layer_type not in UPSAMPLE_LAYERS:
-    #    raise KeyError(f'Unrecognized upsample type {layer_type}')
-    #else:
-    #    upsample = UPSAMPLE_LAYERS.get(layer_type)
     upsample = Upsample
 
-    #if upsample is nn.Upsample:
-    #    cfg_['mode'] = layer_type
     layer = upsample(*args, **kwargs, **cfg_)
     return layer
 
@@ -106,7 +94,7 @@ class UpConvBlock(nn.Module):
                  conv_cfg=None,
                  norm_cfg=dict(type='BN'),
                  act_cfg=dict(type='ReLU'),
-                 upsample_cfg=dict(type='InterpConv'),
+                 upsample_cfg=None, #dict(type='InterpConv'),
                  dcn=None,
                  plugins=None):
         super(UpConvBlock, self).__init__()
@@ -125,29 +113,34 @@ class UpConvBlock(nn.Module):
             act_cfg=act_cfg,
             dcn=None,
             plugins=None)
-        if upsample_cfg is not None:
-            self.upsample = build_upsample_layer(
-                cfg=upsample_cfg,
-                in_channels=in_channels,
-                out_channels=skip_channels,
-                with_cp=with_cp,
-                norm_cfg=norm_cfg,
-                act_cfg=act_cfg)
-        else:
-            self.upsample = ConvModule(
-                in_channels,
-                skip_channels,
-                kernel_size=1,
-                stride=1,
-                padding=0,
-                conv_cfg=conv_cfg,
-                norm_cfg=norm_cfg,
-                act_cfg=act_cfg)
+        # TODO Upsampling as alternative for transposed convolution
+        #if upsample_cfg is not None:
+        #    self.upsample = build_upsample_layer(
+        #        cfg=upsample_cfg,
+        #        in_channels=in_channels,
+        #        out_channels=skip_channels,
+        #        with_cp=with_cp,
+        #        norm_cfg=norm_cfg,
+        #        act_cfg=act_cfg)
+        #else:
+        self.upsample = ConvModule(
+            in_channels,
+            skip_channels,
+            kernel_size=4,
+            stride=1,
+            padding=1,
+            transpose=True,
+            scale_factor=2)
+            #TODO add more options for configuring these layers
+            #conv_cfg=conv_cfg,
+            #norm_cfg=norm_cfg,
+            #act_cfg=act_cfg)
 
     def forward(self, skip, x):
         """Forward function."""
 
         x = self.upsample(x)
+
         out = torch.cat([skip, x], dim=1)
         out = self.conv_block(out)
 
@@ -210,6 +203,7 @@ class BasicConvBlock(nn.Module):
                     stride=stride if i == 0 else 1,
                     dilation=1 if i == 0 else dilation,
                     padding=1 if i == 0 else dilation,))
+                    # TODO add more options for configuring these layers
                     #conv_cfg=conv_cfg,
                     #norm_cfg=norm_cfg,
                     #act_cfg=act_cfg))
@@ -226,7 +220,6 @@ class BasicConvBlock(nn.Module):
         return out
 
 
-@UPSAMPLE_LAYERS.register_module()
 class DeconvModule(nn.Module):
     """Deconvolution upsample module in decoder for UNet (2X upsample).
 
@@ -287,7 +280,6 @@ class DeconvModule(nn.Module):
         return out
 
 
-@UPSAMPLE_LAYERS.register_module()
 class InterpConv(nn.Module):
     """Interpolation upsample module in decoder for UNet.
 
@@ -541,6 +533,7 @@ class UNet(nn.Module):
             in_channels = base_channels * 2**i
 
     def forward(self, x):
+        x = x[0]
         self._check_input_divisible(x)
         enc_outs = []
         for enc in self.encoder:
@@ -551,7 +544,7 @@ class UNet(nn.Module):
             x = self.decoder[i](enc_outs[i], x)
             dec_outs.append(x)
 
-        return dec_outs
+        return dec_outs[-1]
 
     def train(self, mode=True):
         """Convert the model into training mode while keep normalization layer
