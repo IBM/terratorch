@@ -20,7 +20,7 @@ trainer:
       init_args:
         monitor: val/loss
         patience: 100
-  max_epochs: 5
+  max_epochs: 2
   check_val_every_n_epoch: 1
   log_every_n_steps: 20
   enable_checkpointing: true
@@ -81,10 +81,10 @@ model:
   init_args:
     model_args:
       decoder: UperNetDecoder
-      pretrained: true
+      pretrained: false
       backbone: prithvi_swin_B
-      backbone_pretrained_cfg_overlay:
-        file: tests/prithvi_swin_B.pt
+      # backbone_pretrained_cfg_overlay:
+      #   file: tests/prithvi_swin_B.pt
       backbone_drop_path_rate: 0.3
       # backbone_window_size: 8
       decoder_channels: 256
