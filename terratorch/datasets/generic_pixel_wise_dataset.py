@@ -140,6 +140,7 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         # self.transform = transform if transform else ToTensorV2()
 
         import warnings
+
         import rasterio
         warnings.filterwarnings("ignore", category=rasterio.errors.NotGeoreferencedWarning)
 

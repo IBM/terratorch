@@ -7,7 +7,7 @@ include = ["terratorch*"]
 
 [project]
 name = "terratorch"
-version = "0.99.1"
+version = "0.99.3"
 description = "TerraTorch - A model training toolkit for geospatial tasks"
 license = { "text" = "Apache License, Version 2.0" }
 readme = "README.md"
@@ -152,7 +152,7 @@ exclude_lines = [
 ]
 
 [tool.bumpver]
-current_version = "0.99.1"
+current_version = "0.99.3"
 version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
 commit_message = "Bump version {old_version} -> {new_version}"
 commit = true

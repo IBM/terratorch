@@ -92,7 +92,6 @@ class PatchEmbed(nn.Module):
 
     def __init__(
         self,
-        img_size=224,
         patch_size=16,
         num_frames=3,
         tubelet_size=1,
@@ -103,19 +102,16 @@ class PatchEmbed(nn.Module):
         bias=True,  # noqa: FBT002
     ):
         super().__init__()
-        img_size = to_2tuple(img_size)
         patch_size = to_2tuple(patch_size)
-        self.img_size = img_size
         self.patch_size = patch_size
-        self.num_frames = num_frames
         self.tubelet_size = tubelet_size
+        self.num_frames = num_frames
+
+        if num_frames % tubelet_size != 0:
+            msg = f"num_frames ({num_frames} must be divisible by tubelet size ({tubelet_size}))"
+            raise Exception(msg)
+        self.effective_time_dim = num_frames // tubelet_size
         self.in_chans = in_chans
-        self.grid_size = (
-            num_frames // tubelet_size,
-            img_size[0] // patch_size[0],
-            img_size[1] // patch_size[1],
-        )
-        self.num_patches = self.grid_size[0] * self.grid_size[1] * self.grid_size[2]
         self.flatten = flatten
 
         self.proj = nn.Conv3d(
@@ -150,7 +146,7 @@ class TemporalViTEncoder(nn.Module):
         self,
         pretrain_img_size: int = 224,
         patch_size: int = 16,
-        num_frames: int = 3,
+        num_frames: int = 1,
         tubelet_size: int = 1,
         in_chans: int = 3,
         embed_dim: int = 1024,
@@ -168,9 +164,15 @@ class TemporalViTEncoder(nn.Module):
         """
         Args:
             pretrain_img_size (int, optional): Input image size for SSL. Ignored for forward_feature. Defaults to 224.
-            patch_size (int, optional): Patch size to be used by the transformer. Defaults to 16.
-            num_frames (int, optional): Number of frames (temporal dimension) to be input to the encoder. Defaults to 1.
-            tubelet_size (int, optional): Tubelet size used in patch embedding. Defaults to 1.
+            patch_size (int, optional): Patch size to be used by the patch embedding. The input image will be transformed
+                into a bag of tokens by dividing it across x and y dimensions in patches of this size.
+                The number of patches in these dimensions will be H // patch_size and W // patch_size
+                for an input image of size HxW. Defaults to 16.
+            num_frames (int, optional): Number of frames (temporal dimension) to be input to the encoder. 
+                The final features output by the decoder will be the concatenation of the temporal features,
+                with a channel size of embed_dim * num_frames. Defaults to 1.
+            tubelet_size (int, optional): Tubelet size used in patch embedding representing the depth of a patch in the temporal dimension.
+                The number of patches on the temporal dimension will be num_frames // tubelet size. Defaults to 1.
             in_chans (int, optional): Number of input channels. Defaults to 3.
             embed_dim (int, optional): Embedding dimension. Defaults to 1024.
             depth (int, optional): Encoder depth. Defaults to 24.
@@ -184,26 +186,24 @@ class TemporalViTEncoder(nn.Module):
 
         # --------------------------------------------------------------------------
         # MAE encoder specifics
-        self.patch_embed = PatchEmbed(pretrain_img_size, patch_size, num_frames, tubelet_size, in_chans, embed_dim)
+        self.patch_embed: PatchEmbed = PatchEmbed(
+            patch_size, num_frames, tubelet_size, in_chans, embed_dim
+        )
         self.feature_info = []
         self.in_chans = in_chans
         self.num_frames = num_frames
+
         self.embed_dim = embed_dim
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
         self.encoder_only = encoder_only
-        # initialize (and freeze) pos_embed by sin-cos embedding
-        pos_embed = get_3d_sincos_pos_embed(self.embed_dim, self.patch_embed.grid_size, cls_token=True)
-        self.register_buffer(
-            "pos_embed",
-            torch.from_numpy(pos_embed).float().unsqueeze(0),
-            persistent=False,
-        )
 
         self.blocks = [
             Block(embed_dim, num_heads, mlp_ratio, qkv_bias=True, norm_layer=norm_layer) for i in range(depth)
         ]
         for i, _ in enumerate(self.blocks):
-            self.feature_info.append({"num_chs": embed_dim * num_frames, "reduction": 1, "module": f"blocks.{i}"})
+            self.feature_info.append(
+                {"num_chs": embed_dim * self.patch_embed.effective_time_dim, "reduction": 1, "module": f"blocks.{i}"}
+            )
         self.blocks = nn.ModuleList(self.blocks)
         self.norm = norm_layer(embed_dim)
         # --------------------------------------------------------------------------
@@ -215,10 +215,6 @@ class TemporalViTEncoder(nn.Module):
             self.decoder_embed = nn.Linear(embed_dim, decoder_embed_dim, bias=True)
 
             self.mask_token = nn.Parameter(torch.zeros(1, 1, decoder_embed_dim))
-
-            # self.decoder_pos_embed = torch.zeros(
-            #     1, num_patches + 1, decoder_embed_dim
-            # )  # fixed sin-cos embedding
 
             self.decoder_blocks = nn.ModuleList(
                 [
@@ -232,15 +228,6 @@ class TemporalViTEncoder(nn.Module):
                     for i in range(decoder_depth)
                 ]
             )
-
-            # decoder_pos_embed = get_3d_sincos_pos_embed(
-            #     self.decoder_embed_dim, self.patch_embed.grid_size, cls_token=True
-            # )
-            # self.register_buffer(
-            #     "decoder_pos_embed",
-            #     torch.from_numpy(decoder_pos_embed).float().unsqueeze(0),
-            #     persistent=False,
-            # )
 
             self.decoder_norm = norm_layer(decoder_embed_dim)
             self.decoder_pred = nn.Linear(
@@ -346,9 +333,17 @@ class TemporalViTEncoder(nn.Module):
             x = x.reshape(-1, self.in_chans, 1, *x.shape[-2:])
         t, h, w = x.shape[-3:]
         x = self.patch_embed(x)
-        pos_embed = torch.from_numpy(get_3d_sincos_pos_embed(self.embed_dim, (t, h // 16, w // 16), cls_token=True)).to(
-            x
-        )
+        pos_embed = torch.from_numpy(
+            get_3d_sincos_pos_embed(
+                self.embed_dim,
+                (
+                    self.patch_embed.effective_time_dim,
+                    h // self.patch_embed.patch_size[0],
+                    w // self.patch_embed.patch_size[1],
+                ),
+                cls_token=True,
+            )
+        ).to(x)
         # add pos embed w/o cls token
         x = x + pos_embed[1:, :]
 
@@ -377,7 +372,15 @@ class TemporalViTEncoder(nn.Module):
         x = self.decoder_embed(x)
         t, h, w = dim_info
         decoder_pos_embed = torch.from_numpy(
-            get_3d_sincos_pos_embed(self.decoder_embed_dim, (t, h // 16, w // 16), cls_token=True)
+            get_3d_sincos_pos_embed(
+                self.decoder_embed_dim,
+                (
+                    self.patch_embed.effective_time_dim,
+                    h // self.patch_embed.patch_size[0],
+                    w // self.patch_embed.patch_size[1],
+                ),
+                cls_token=True,
+            )
         ).to(x)
 
         # append mask tokens to sequence
@@ -435,9 +438,17 @@ class TemporalViTEncoder(nn.Module):
         t, h, w = x.shape[-3:]
         # embed patches
         x = self.patch_embed(x)
-        pos_embed = torch.from_numpy(get_3d_sincos_pos_embed(self.embed_dim, (t, h // 16, w // 16), cls_token=True)).to(
-            x
-        )
+        pos_embed = torch.from_numpy(
+            get_3d_sincos_pos_embed(
+                self.embed_dim,
+                (
+                    self.patch_embed.effective_time_dim,
+                    h // self.patch_embed.patch_size[0],
+                    w // self.patch_embed.patch_size[1],
+                ),
+                cls_token=True,
+            )
+        ).to(x)
         # add pos embed w/o cls token
         x = x + pos_embed[1:, :]
 
@@ -460,29 +471,15 @@ class TemporalViTEncoder(nn.Module):
         out = []
         for x in features:
             x_no_token = x[:, 1:, :]
-            # reshape and permute to channels first
-            # encoded = rearrange(
-            #     x_no_token,
-            #     "batch (t h w) e -> batch (t e) h w",
-            #     e=self.embed_dim,
-            #     t=self.num_frames,
-            #     h=int(np.sqrt(x_no_token.shape[1] // self.num_frames)),
-            # )
-            encoded = x_no_token.permute(0, 2, 1).reshape(
-                x.shape[0],
-                -1,
-                int(np.sqrt(x_no_token.shape[1] // self.num_frames)),
-                int(np.sqrt(x_no_token.shape[1] // self.num_frames)),
+            number_of_tokens = x_no_token.shape[1]
+            tokens_per_timestep = number_of_tokens // self.patch_embed.effective_time_dim
+            h = int(np.sqrt(tokens_per_timestep))
+            encoded = rearrange(
+                x_no_token,
+                "batch (t h w) e -> batch (t e) h w",
+                e=self.embed_dim,
+                t=self.patch_embed.effective_time_dim,
+                h=h,
             )
-            # encoded = (
-            #     x_no_token.reshape(
-            #         -1,
-            #         int(np.sqrt(x_no_token.shape[1])),
-            #         int(np.sqrt(x_no_token.shape[1])),
-            #         self.embed_dim * self.num_frames,
-            #     )
-            #     .permute(0, 3, 1, 2)
-            #     .contiguous()
-            # )
             out.append(encoded)
         return out

@@ -25,10 +25,17 @@ data:
     num_workers: 8
     constant_scale: 0.0001
     dataset_bands:
-      - RED
-      - GREEN
+      - COASTAL_AEROSOL
       - BLUE
+      - GREEN
+      - RED
+      - RED_EDGE_1
+      - RED_EDGE_2
+      - RED_EDGE_3
+      - NIR_BROAD
       - NIR_NARROW
+      - WATER_VAPOR
+      - CIRRUS
       - SWIR_1
       - SWIR_2
     output_bands:
@@ -57,19 +64,19 @@ data:
     no_label_replace: -1
     no_data_replace: 0
     means:
-      - 0.107582
-      - 0.13471393
-      - 0.12520133
-      - 0.3236181
-      - 0.2341743
-      - 0.15878009
+      - 0.1412956
+      - 0.13795798
+      - 0.12353792
+      - 0.30902815
+      - 0.2044958
+      - 0.11912015
     stds:
-      - 0.07145836
-      - 0.06783548
-      - 0.07323416
-      - 0.09489725
-      - 0.07938496
-      - 0.07089546
+      - 0.07406382
+      - 0.07370365
+      - 0.08692279
+      - 0.11798815
+      - 0.09772074
+      - 0.07659938
     num_classes: 2
 
 model:
@@ -123,3 +130,5 @@ lr_scheduler:
   class_path: ReduceLROnPlateau
   init_args:
     monitor: val/loss
+
+
