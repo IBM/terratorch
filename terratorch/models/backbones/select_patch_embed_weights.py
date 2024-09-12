@@ -1,5 +1,6 @@
 # Copyright contributors to the Terratorch project
 
+
 import warnings
 
 import torch
@@ -16,7 +17,7 @@ def patch_embed_weights_are_compatible(model_patch_embed: torch.Tensor, checkpoi
     checkpoint_shape = [checkpoint_patch_embed.shape[i] for i in range(len(checkpoint_patch_embed.shape)) if i != 1]
     return model_shape == checkpoint_shape
 
-def prithvi_select_patch_embed_weights(
+def select_patch_embed_weights(
     state_dict: dict, model: nn.Module, pretrained_bands: list[HLSBands | int], model_bands: list[HLSBands | int]
 ) -> dict:
     """Filter out the patch embedding weights according to the bands being used.
@@ -61,7 +62,8 @@ def prithvi_select_patch_embed_weights(
                 temp_weight[:, index] = patch_embed_weight[:, pretrained_bands.index(band)]
     else:
         warnings.warn(
-            f"Incompatible shapes between patch embedding of model {temp_weight.shape} and of checkpoint {patch_embed_weight.shape}",
+            f"Incompatible shapes between patch embedding of model {temp_weight.shape} and\
+            of checkpoint {patch_embed_weight.shape}",
             category=UserWarning,
             stacklevel=1,
         )
