@@ -1,8 +1,8 @@
 import pytest
 import timm
 
-from terratorch.models.backbones.prithvi_select_patch_embed_weights import prithvi_select_patch_embed_weights
 from terratorch.models.backbones.prithvi_vit import PRETRAINED_BANDS
+from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
 
 
 @pytest.mark.parametrize("patch_size", [4, 8, 16])
@@ -26,7 +26,7 @@ def test_prithvi_vit_patch_embed_loading_compatible(patch_size, tubelet_size, nu
         features_only=True,
     ).state_dict()
 
-    prithvi_select_patch_embed_weights(weights, model, PRETRAINED_BANDS, PRETRAINED_BANDS)
+    select_patch_embed_weights(weights, model, PRETRAINED_BANDS, PRETRAINED_BANDS)
 
 @pytest.mark.parametrize("tubelet_size,tubelet_size_other", [(1, 2), (2, 4)])
 def test_prithvi_vit_patch_embed_loading_not_compatible_tubelet(tubelet_size, tubelet_size_other):
@@ -50,7 +50,7 @@ def test_prithvi_vit_patch_embed_loading_not_compatible_tubelet(tubelet_size, tu
 
     # assert warning produced
     with pytest.warns(UserWarning):
-        prithvi_select_patch_embed_weights(weights, model, PRETRAINED_BANDS, PRETRAINED_BANDS)
+        select_patch_embed_weights(weights, model, PRETRAINED_BANDS, PRETRAINED_BANDS)
 
 @pytest.mark.parametrize("patch_size,patch_size_other", [(2, 4), (4, 8), (16, 4)])
 def test_prithvi_vit_patch_embed_loading_not_compatible_patch(patch_size, patch_size_other):
@@ -73,4 +73,4 @@ def test_prithvi_vit_patch_embed_loading_not_compatible_patch(patch_size, patch_
     ).state_dict()
 
     with pytest.warns(UserWarning):
-        prithvi_select_patch_embed_weights(weights, model, PRETRAINED_BANDS, PRETRAINED_BANDS)
+        select_patch_embed_weights(weights, model, PRETRAINED_BANDS, PRETRAINED_BANDS)
