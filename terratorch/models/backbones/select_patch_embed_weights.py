@@ -28,8 +28,8 @@ def select_patch_embed_weights(
     Args:
         state_dict (dict): State Dict
         model (nn.Module): Model to load the weights onto.
-        pretrained_bands (list[HLSBands]): List of bands the model was pretrained on, in the correct order.
-        model_bands (list[HLSBands]): List of bands the model is going to be finetuned on, in the correct order
+        pretrained_bands (list[HLSBands | int]): List of bands the model was pretrained on, in the correct order.
+        model_bands (list[HLSBands | int]): List of bands the model is going to be finetuned on, in the correct order
 
     Returns:
         dict: New state dict

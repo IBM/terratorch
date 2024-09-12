@@ -55,8 +55,6 @@ class ScaleMAEModelFactory(ModelFactory):
                     Should be a list of terratorch.datasets.HLSBands, strings or ints.
                     Defaults to [HLSBands.RED, HLSBands.GREEN, HLSBands.BLUE].
             num_classes (int, optional): Number of classes. None for regression tasks.
-            pretrained (Union[bool, Path], optional): Whether to load pretrained weights for the backbone, if available.
-                Defaults to True.
             num_frames (int, optional): Number of timesteps for the model to handle. Defaults to 1.
             prepare_features_for_image_model (Callable | None): Function to be called on encoder features
                 before passing them to the decoder. Defaults to None, which applies the identity function.
@@ -66,6 +64,7 @@ class ScaleMAEModelFactory(ModelFactory):
                 is different from the ground truth. Only applicable to pixel wise models
                 (e.g. segmentation, pixel wise regression). Defaults to True.
             pretrained (str | None): Path to scalemae pretrained checkpoint to load.
+                If None, will initialize randomly. Defaults to None.
 
 
         Returns:
