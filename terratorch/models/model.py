@@ -30,7 +30,7 @@ class Model(ABC):
 
 class ModelFactory(ABC):
     @abstractmethod
-    def build_model() -> Model:
+    def build_model(self, *args, **kwargs) -> Model:
         pass
 
 
