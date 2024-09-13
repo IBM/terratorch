@@ -113,7 +113,8 @@ class GenericUnetModelWrapper(Model, nn.Module):
         self.decoder = decoder
         self.final_act = nn.ReLU() if relu else nn.Identity()
         self.squeeze_single_class = squeeze_single_class
-
+        print(unet_model)
+        print(decoder)
         if decoder:
             self.decode = self._with_decoder
         else:

@@ -70,7 +70,7 @@ class ASPPHead(nn.Module):
     def __init__(self, dilations:list | tuple =(1, 6, 12, 18), 
                  in_channels:int=None, 
                  channels:int=None,
-                 num_classes:int=2,
+                 out_dim:int=3,
                  align_corners=False,
                  head_dropout_ratio:float=0.3,
                  input_transform: str = None,
@@ -82,7 +82,7 @@ class ASPPHead(nn.Module):
         self.dilations = dilations
         self.in_channels = in_channels
         self.channels = channels
-        self.num_classes = num_classes
+        self.out_dim = out_dim
 
         self.align_corners = align_corners
         self.input_transform = input_transform
@@ -121,15 +121,13 @@ class ASPPHead(nn.Module):
         self.bottleneck = ConvModule(
             (len(dilations) + 1) * self.channels,
             self.channels,
-            3,
+            self.out_dim,
             padding=1,)
             # TODO Extend it to support more possible configurations
             # for convolution, normalization and activation.
             #conv_cfg=self.conv_cfg,
             #norm_cfg=self.norm_cfg,
             #act_cfg=self.act_cfg)
-
-        self.conv_seg = nn.Conv2d(self.channels, self.num_classes, kernel_size=1)
 
         if head_dropout_ratio > 0:
             self.dropout = nn.Dropout2d(head_dropout_ratio)
@@ -197,15 +195,6 @@ class ASPPHead(nn.Module):
 
         return feats
 
-    def segmentation_head(self, features):
-
-        """PixelWise classification"""
-
-        if self.dropout is not None:
-            feat = self.dropout(features)
-        output = self.conv_seg(features)
-        return output
-
     def forward(self, inputs):
 
         output = self._forward_feature(inputs)
@@ -238,7 +227,6 @@ class ASPPSegmentationHead(ASPPHead):
                  dilations=dilations, 
                  in_channels=in_channels, 
                  channels=channels,
-                 num_classes=num_classes,
                  align_corners=align_corners,
                  head_dropout_ratio=head_dropout_ratio,
                  input_transform=input_transform,
@@ -307,18 +295,23 @@ class ASPPRegressionHead(ASPPHead):
                  out_channels:int=1,
                  align_corners=False,
                  head_dropout_ratio:float=0.3,
+                 input_transform: str = None,
+                 in_index: int = -1,
                  **kwargs):
 
         super(ASPPRegressionHead, self).__init__(
                  dilations=dilations, 
                  in_channels=in_channels, 
                  channels=channels,
-                 num_classes=num_classes,
+                 out_dim=out_channels,
                  align_corners=align_corners,
                  head_dropout_ratio=head_dropout_ratio,
                  input_transform=input_transform,
                  in_index=in_index,
                 **kwargs)
+
+        self.out_channels = out_channels
+        self.conv_seg = nn.Conv2d(self.channels, self.out_channels, kernel_size=1)
 
     def _forward_feature(self, inputs):
         """Forward function.
@@ -330,6 +323,7 @@ class ASPPRegressionHead(ASPPHead):
             feats (Tensor): A tensor of shape (batch_size, self.channels,
                 H, W) which is feature map for last layer of decoder head.
         """
+        inputs = inputs[0]
         x = self._transform_inputs(inputs)
         aspp_outs = [
             resize(
@@ -344,9 +338,20 @@ class ASPPRegressionHead(ASPPHead):
 
         return feats
 
+    def regression_head(self, features):
+
+        """PixelWise regression"""
+
+        if self.dropout is not None:
+            feat = self.dropout(features)
+        output = self.conv_seg(features)
+        return output
+
+
     def forward(self, inputs):
 
         output = self._forward_feature(inputs)
+        output = self.regression_head(output)
         return output
 
 
