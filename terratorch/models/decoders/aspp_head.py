@@ -121,7 +121,6 @@ class ASPPHead(nn.Module):
         self.bottleneck = ConvModule(
             (len(dilations) + 1) * self.channels,
             self.channels,
-            self.out_dim,
             padding=1,)
             # TODO Extend it to support more possible configurations
             # for convolution, normalization and activation.
@@ -198,7 +197,6 @@ class ASPPHead(nn.Module):
     def forward(self, inputs):
 
         output = self._forward_feature(inputs)
-        output = self.segmentation_head(output)
 
         return output
 
@@ -233,6 +231,7 @@ class ASPPSegmentationHead(ASPPHead):
                  in_index=in_index,
                 **kwargs)
 
+        self.num_classes = num_classes
         self.conv_seg = nn.Conv2d(self.channels, self.num_classes, kernel_size=1)
 
         if head_dropout_ratio > 0:
@@ -267,7 +266,7 @@ class ASPPSegmentationHead(ASPPHead):
         """PixelWise classification"""
 
         if self.dropout is not None:
-            feat = self.dropout(features)
+            features = self.dropout(features)
         output = self.conv_seg(features)
         return output
 
@@ -311,7 +310,7 @@ class ASPPRegressionHead(ASPPHead):
                 **kwargs)
 
         self.out_channels = out_channels
-        self.conv_seg = nn.Conv2d(self.channels, self.out_channels, kernel_size=1)
+        self.conv_reg = nn.Conv2d(self.channels, self.out_channels, kernel_size=1)
 
     def _forward_feature(self, inputs):
         """Forward function.
@@ -343,8 +342,8 @@ class ASPPRegressionHead(ASPPHead):
         """PixelWise regression"""
 
         if self.dropout is not None:
-            feat = self.dropout(features)
-        output = self.conv_seg(features)
+            features = self.dropout(features)
+        output = self.conv_reg(features)
         return output
 
 
@@ -352,6 +351,7 @@ class ASPPRegressionHead(ASPPHead):
 
         output = self._forward_feature(inputs)
         output = self.regression_head(output)
+
         return output
 
 

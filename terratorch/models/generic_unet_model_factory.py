@@ -113,8 +113,7 @@ class GenericUnetModelWrapper(Model, nn.Module):
         self.decoder = decoder
         self.final_act = nn.ReLU() if relu else nn.Identity()
         self.squeeze_single_class = squeeze_single_class
-        print(unet_model)
-        print(decoder)
+
         if decoder:
             self.decode = self._with_decoder
         else:
@@ -124,7 +123,7 @@ class GenericUnetModelWrapper(Model, nn.Module):
         return x
 
     def _with_decoder(self, x):
-
+        
         return self.decoder(x)
 
     def forward(self, *args, **kwargs):
@@ -138,10 +137,10 @@ class GenericUnetModelWrapper(Model, nn.Module):
         # Decoding is optional
         input_data = [unet_output]
         unet_output_decoded = self.decode(input_data)
-
+        
         if unet_output_decoded.shape[1] == 1 and self.squeeze_single_class:
-            unet_output_decoded = unet_output.squeeze(1)
-
+            unet_output_decoded = unet_output_decoded.squeeze(1)
+       
         model_output = ModelOutput(unet_output_decoded)
 
         return model_output
