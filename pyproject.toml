@@ -65,7 +65,6 @@ mmseg = [
   "openmim"
 ]
 
-]
 [project.urls]
 Documentation = "https://github.com/IBM/terratorch#readme"
 Issues = "https://github.com/IBM/terratorch/issues"
