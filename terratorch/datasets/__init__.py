@@ -27,7 +27,7 @@ from terratorch.datasets.m_SA_crop_type import MSACropTypeNonGeo
 from terratorch.datasets.m_so2sat import MSo2SatNonGeo
 
 # GenericNonGeoRegressionDataset,
-from terratorch.datasets.sen1floods11 import Sen1Floods11NonGeo
+from terratorch.datasets.sen1floods11_lat_lon import Sen1Floods11NonGeo
 from terratorch.datasets.utils import HLSBands
 
 # TorchGeo RasterDatasets

@@ -76,7 +76,7 @@ class ScalarOutputModel(Model, SegmentationModel):
         """Sequentially pass `x` through model`s encoder, decoder and heads"""
 
         self.check_input_shape(x)
-        features = self.encoder(x)
+        features = self.encoder(x, **kwargs)
 
         # some models need their features reshaped
 
