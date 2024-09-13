@@ -58,6 +58,14 @@ test = [
   "pytest"
 ]
 
+mmseg = [
+  "mmcv",
+  "ftfy"
+  "regex"
+  "openmim"
+]
+
+]
 [project.urls]
 Documentation = "https://github.com/IBM/terratorch#readme"
 Issues = "https://github.com/IBM/terratorch/issues"
