@@ -14,7 +14,7 @@ from torch.nn.modules.instancenorm import _InstanceNorm
 SyncBatchNorm_ = nn.SyncBatchNorm
 
 
-def build_upsample_layer(cfg: Dict, *args, **kwargs) -> nn.Module:
+def build_upsample_layer(cfg: Dict, **kwargs) -> nn.Module:
     """Build upsample layer.
 
     Args:
@@ -32,16 +32,17 @@ def build_upsample_layer(cfg: Dict, *args, **kwargs) -> nn.Module:
     Returns:
         nn.Module: Created upsample layer.
     """
-    if not isinstance(cfg, dict):
-        raise TypeError(f'cfg must be a dict, but got {type(cfg)}')
-    if 'type' not in cfg:
-        raise KeyError(
-            f'the cfg dict must contain the key "type", but got {cfg}')
-    cfg_ = cfg.copy()
-
     upsample = Upsample
 
-    layer = upsample(*args, **kwargs, **cfg_)
+    upsample_layer = upsample(**cfg)
+    conv_layer = ConvModule(
+        **kwargs,
+        kernel_size=3,
+        stride=1,
+        padding=1,)
+
+    layer = nn.Sequential(upsample_layer, conv_layer)
+
     return layer
 
 class UpConvBlock(nn.Module):
@@ -94,7 +95,7 @@ class UpConvBlock(nn.Module):
                  conv_cfg=None,
                  norm_cfg=dict(type='BN'),
                  act_cfg=dict(type='ReLU'),
-                 upsample_cfg=None, #dict(type='InterpConv'),
+                 upsample_cfg=None,
                  dcn=None,
                  plugins=None):
         super(UpConvBlock, self).__init__()
@@ -114,36 +115,37 @@ class UpConvBlock(nn.Module):
             dcn=None,
             plugins=None)
         # TODO Upsampling as alternative for transposed convolution
-        #if upsample_cfg is not None:
-        #    self.upsample = build_upsample_layer(
-        #        cfg=upsample_cfg,
-        #        in_channels=in_channels,
-        #        out_channels=skip_channels,
-        #        with_cp=with_cp,
-        #        norm_cfg=norm_cfg,
-        #        act_cfg=act_cfg)
-        #else:
-        self.upsample = ConvModule(
-            in_channels,
-            skip_channels,
-            kernel_size=4,
-            stride=1,
-            padding=1,
-            transpose=True,
-            scale_factor=2)
-            #TODO add more options for configuring these layers
-            #conv_cfg=conv_cfg,
-            #norm_cfg=norm_cfg,
-            #act_cfg=act_cfg)
+
+        if upsample_cfg is not None:
+            self.upsample = build_upsample_layer(
+                cfg=upsample_cfg, in_channels=in_channels, out_channels=skip_channels) 
+        else:
+            self.upsample = ConvModule(
+                in_channels,
+                skip_channels,
+                **self._default_conv_config,)
+                #TODO add more options for configuring these layers
+                #conv_cfg=conv_cfg,
+                #norm_cfg=norm_cfg,
+                #act_cfg=act_cfg)
+
+    @property
+    def _default_conv_config(self):
+
+        return {"kernel_size": 4,
+                "stride": 1,
+                "padding": 1,
+                "transpose": True,
+                "scale_factor": 2}
 
     def forward(self, skip, x):
         """Forward function."""
-
         x = self.upsample(x)
-
+        print(f"After upsample: {x.shape}")
         out = torch.cat([skip, x], dim=1)
+        print(f"After concat: {out.shape}")
         out = self.conv_block(out)
-
+        print(f"After conv: {out.shape}")
         return out
     
 class BasicConvBlock(nn.Module):
@@ -425,7 +427,7 @@ class UNet(nn.Module):
                  conv_cfg=None,
                  norm_cfg=dict(type='BN'),
                  act_cfg=dict(type='ReLU'),
-                 upsample_cfg=dict(type='InterpConv'),
+                 upsample_cfg=None,
                  norm_eval=False,
                  dcn=None,
                  plugins=None,
