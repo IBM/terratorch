@@ -141,11 +141,8 @@ class UpConvBlock(nn.Module):
     def forward(self, skip, x):
         """Forward function."""
         x = self.upsample(x)
-        print(f"After upsample: {x.shape}")
         out = torch.cat([skip, x], dim=1)
-        print(f"After concat: {out.shape}")
         out = self.conv_block(out)
-        print(f"After conv: {out.shape}")
         return out
     
 class BasicConvBlock(nn.Module):

@@ -21,7 +21,7 @@ trainer:
       init_args:
         monitor: val/loss
         patience: 100
-  max_epochs: 5
+  max_epochs: 1
   check_val_every_n_epoch: 1
   log_every_n_steps: 20
   enable_checkpointing: true
@@ -95,11 +95,11 @@ model:
     model_args:
       backbone: "UNet"
       backbone_in_channels: 6
-      backbone_base_channels: 64
+      backbone_base_channels: 16
       decoder: "ASPPRegressionHead"
       decoder_dilations: [1, 6, 12, 18]
       decoder_channels: 256
-      decoder_in_channels: 64
+      decoder_in_channels: 16
       decoder_out_channels: 1
       bands:
         - BLUE

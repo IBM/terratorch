@@ -28,7 +28,7 @@ class ConvModule(nn.Module):
         self.act = nn.ReLU(inplace=inplace)
 
     def forward(self, x):
-        print(x.shape)
+  
         return self.act(self.norm(self.conv(x)))
 
 
