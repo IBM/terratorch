@@ -38,6 +38,7 @@ class ASPPModule(nn.Module):
                     1 if dilation == 1 else 3,
                     dilation=dilation,
                     padding=0 if dilation == 1 else dilation,)
+
                     # TODO Extend it to support more possible configurations
                     # for convolution, normalization and activation.
                     #conv_cfg=self.conv_cfg,
@@ -103,6 +104,7 @@ class ASPPHead(nn.Module):
                 self.in_channels,
                 self.channels,
                 1,
+
                 # TODO Extend it to support more possible configurations
                 # for convolution, normalization and activation.
                 #self.conv_cfg,
@@ -237,30 +239,6 @@ class ASPPSegmentationHead(ASPPHead):
         if head_dropout_ratio > 0:
             self.dropout = nn.Dropout2d(head_dropout_ratio)
 
-    def _forward_feature(self, inputs):
-        """Forward function.
-
-        Args:
-            inputs (list[Tensor]): List of multi-level img features.
-
-        Returns:
-            feats (Tensor): A tensor of shape (batch_size, self.channels,
-                H, W) which is feature map for last layer of decoder head.
-        """
-        inputs = self._transform_inputs(inputs)
-        aspp_outs = [
-            resize(
-                self.image_pool(inputs),
-                size=inputs.size()[2:],
-                mode='bilinear',
-                align_corners=self.align_corners)
-        ]
-        aspp_outs.extend(self.aspp_modules(inputs))
-        aspp_outs = torch.cat(aspp_outs, dim=1)
-        feats = self.bottleneck(aspp_outs)
-
-        return feats
-
     def segmentation_head(self, features):
 
         """PixelWise classification"""
@@ -311,31 +289,6 @@ class ASPPRegressionHead(ASPPHead):
 
         self.out_channels = out_channels
         self.conv_reg = nn.Conv2d(self.channels, self.out_channels, kernel_size=1)
-
-    def _forward_feature(self, inputs):
-        """Forward function.
-
-        Args:
-            inputs (list[Tensor]): List of multi-level img features.
-
-        Returns:
-            feats (Tensor): A tensor of shape (batch_size, self.channels,
-                H, W) which is feature map for last layer of decoder head.
-        """
-        inputs = inputs[0]
-        x = self._transform_inputs(inputs)
-        aspp_outs = [
-            resize(
-                self.image_pool(inputs),
-                size=inputs.size()[2:],
-                mode='bilinear',
-                align_corners=self.align_corners)
-        ]
-        aspp_outs.extend(self.aspp_modules(inputs))
-        aspp_outs = torch.cat(aspp_outs, dim=1)
-        feats = self.bottleneck(aspp_outs)
-
-        return feats
 
     def regression_head(self, features):
 

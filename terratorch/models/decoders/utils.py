@@ -7,7 +7,12 @@ from torch import Tensor, nn
 Adapted from https://github.com/yassouali/pytorch-segmentation/blob/master/models/upernet.py
 """
 class ConvModule(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size=3, padding=0, dilation=1, stride=1, inplace=False, transpose=False, scale_factor=None) -> None:  # noqa: FBT002
+    def __init__(self, in_channels, out_channels,
+                 kernel_size=3, padding=0,
+                 dilation=1, stride=1,
+                 inplace=False, transpose=False,
+                 scale_factor=None) -> None:
+
         super().__init__()
 
         if transpose:
@@ -23,7 +28,7 @@ class ConvModule(nn.Module):
             padding = (kernel_size - scale_factor) // 2
 
         conv_template = getattr(nn, conv_name)
-        self.conv = conv_template(in_channels, out_channels, kernel_size, padding=padding, dilation=dilation, stride=stride, bias=False)
+        self.conv= conv_template(in_channels, out_channels, kernel_size, padding=padding, dilation=dilation, stride=stride, bias=False)
         self.norm = nn.BatchNorm2d(out_channels)
         self.act = nn.ReLU(inplace=inplace)
 
