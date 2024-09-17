@@ -24,14 +24,15 @@ def build_upsample_layer(cfg: Dict, **kwargs) -> nn.Module:
     Returns:
         nn.Module: Created upsample layer.
     """
-    upsample = Upsample
+    # This config will allow the convolution to keep the input dimensions.
+    standard_config = {"kernel_size": 3, "stride": 1, "padding": 1}
 
+    upsample = Upsample
+    
     upsample_layer = upsample(**cfg)
     conv_layer = ConvModule(
         **kwargs,
-        kernel_size=3,
-        stride=1,
-        padding=1,)
+        **standard_config)
 
     layer = nn.Sequential(upsample_layer, conv_layer)
 
