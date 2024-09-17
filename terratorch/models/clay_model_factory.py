@@ -50,7 +50,6 @@ class ModelWrapper(nn.Module):
         datacube['timestep'] = None
         datacube['latlon'] = None
         return self.model.forward(datacube)
->>>>>>> main
 
 @register_factory
 class ClayModelFactory(ModelFactory):
