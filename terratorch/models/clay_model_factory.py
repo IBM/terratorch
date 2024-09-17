@@ -1,3 +1,5 @@
+import importlib
+import sys
 from collections.abc import Callable
 
 import timm
@@ -15,6 +17,7 @@ from terratorch.models.model import (
 )
 from terratorch.models.pixel_wise_model import PixelWiseModel
 from terratorch.models.scalar_output_model import ScalarOutputModel
+from terratorch.models.utils import DecoderNotFoundError
 
 PIXEL_WISE_TASKS = ["segmentation", "regression"]
 SCALAR_TASKS = ["classification"]
@@ -24,6 +27,30 @@ SUPPORTED_TASKS = PIXEL_WISE_TASKS + SCALAR_TASKS
 class DecoderNotFoundError(Exception):
     pass
 
+class ModelWrapper(nn.Module):
+
+    def __init__(self, model: nn.Module = None) -> None:
+
+        super(ModelWrapper, self).__init__()
+
+        self.model = model
+
+        self.embedding_shape = self.model.model.state_dict()['decoder.embed_to_pixels.dem.bias'].shape[0]
+
+    def channels(self):
+        return (1, self.embedding_shape)
+
+    @property
+    def parameters(self):
+        return self.model.parameters
+
+    def forward(self, args, **kwargs):
+        datacube = {}
+        datacube['pixels'] = args
+        datacube['timestep'] = None
+        datacube['latlon'] = None
+        return self.model.forward(datacube)
+>>>>>>> main
 
 @register_factory
 class ClayModelFactory(ModelFactory):
