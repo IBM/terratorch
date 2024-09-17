@@ -2,18 +2,17 @@
 requires = [ "setuptools" ]
 build-backend = 'setuptools.build_meta'
 
-# It allows installation via `pip install -e`
-[tool.setuptools]
-py-modules = []
+[tool.setuptools.packages.find]
+include = ["terratorch*"]
 
 [project]
 name = "terratorch"
-version = "0.99.1"
+version = "0.99.3"
 description = "TerraTorch - A model training toolkit for geospatial tasks"
 license = { "text" = "Apache License, Version 2.0" }
 readme = "README.md"
 requires-python = ">=3.10"
-keywords = ["fine-tuning", "geospatial foundation models", "artificial inteligence"]
+keywords = ["fine-tuning", "geospatial foundation models", "artificial intelligence"]
 authors = [
   { name = "Carlos Gomes", email = "carlos.gomes@ibm.com" },
   { name = "Joao Lucas de Sousa Almeida", email = "joao.lucas.sousa.almeida@ibm.com"}
@@ -131,18 +130,18 @@ ban-relative-imports = "all"
 # Tests can use magic values, assertions, and relative imports
 "tests/**/*" = ["PLR2004", "S101", "TID252"]
 # Tasks rely on torch lightning saving args to hparams dict
-"src/terratorch/tasks/*" = ["ARG002"]
+"terratorch/tasks/*" = ["ARG002"]
 
 [tool.coverage.run]
 source_pkgs = ["terratorch", "tests"]
 branch = true
 parallel = true
 omit = [
-  "src/terratorch/__about__.py",
+  "terratorch/__about__.py",
 ]
 
 [tool.coverage.paths]
-terratorch = ["src/terratorch"]
+terratorch = ["terratorch"]
 tests = ["tests"]
 
 [tool.coverage.report]
@@ -153,7 +152,7 @@ exclude_lines = [
 ]
 
 [tool.bumpver]
-current_version = "0.99.1"
+current_version = "0.99.3"
 version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
 commit_message = "Bump version {old_version} -> {new_version}"
 commit = true

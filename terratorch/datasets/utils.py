@@ -37,6 +37,22 @@ class HLSBands(Enum):
 def default_transform(**batch):
     return to_tensor(batch)
 
+def generate_bands_intervals(bands_intervals: list[int | str | HLSBands | tuple[int]] | None = None):
+        if bands_intervals is None:
+            return None
+        bands = []
+        for element in bands_intervals:
+            # if its an interval
+            if isinstance(element, tuple):
+                if len(element) != 2:  # noqa: PLR2004
+                    msg = "When defining an interval, a tuple of two integers should be passed,\
+                        defining start and end indices inclusive"
+                    raise Exception(msg)
+                expanded_element = list(range(element[0], element[1] + 1))
+                bands.extend(expanded_element)
+            else:
+                bands.append(element)
+        return bands
 
 def filter_valid_files(
     files, valid_files: Iterator[str] | None = None, ignore_extensions: bool = False, allow_substring: bool = True
