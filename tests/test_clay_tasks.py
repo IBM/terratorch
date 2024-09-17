@@ -32,6 +32,7 @@ def test_create_segmentation_task(backbone, decoder, loss, model_factory: ClayMo
         "pretrained": False,
         "num_classes": NUM_CLASSES,
         "bands": list(WAVELENGTHS.keys()),
+        "backbone_device": "cpu",
     }
 
     if decoder == "UperNetDecoder":
@@ -54,6 +55,7 @@ def test_create_regression_task(backbone, decoder, loss, model_factory: ClayMode
         "in_channels": NUM_CHANNELS,
         "pretrained": False,
         "bands": list(WAVELENGTHS.keys()),
+        "backbone_device": "cpu",
     }
 
     if decoder == "UperNetDecoder":
@@ -78,6 +80,7 @@ def test_create_classification_task(backbone, decoder, loss, model_factory: Clay
         "pretrained": False,
         "num_classes": NUM_CLASSES,
         "bands": list(WAVELENGTHS.keys()),
+        "backbone_device": "cpu",
     }
 
     if decoder == "UperNetDecoder":
