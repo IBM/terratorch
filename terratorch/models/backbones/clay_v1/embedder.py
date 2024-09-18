@@ -31,7 +31,6 @@ class Embedder(nn.Module):
                  img_size=256,
                  num_frames=1,
                  ckpt_path=None,
-                 device="cuda",
                  bands=["blue", "green", "red", "nir", "swir16", "swir22"],
                  **kwargs):
         super().__init__()
@@ -55,7 +54,7 @@ class Embedder(nn.Module):
                 heads=12,
                 dim_head=64,
                 mlp_ratio=4.0,
-            ).to(device)
+            )
         )
 
         # for use in features list. Single layer feature for simplicity
@@ -63,13 +62,13 @@ class Embedder(nn.Module):
             {"num_chs": 768, "reduction": 1, "module": f"clay_encoder"})
 
         # assuming this is used to fine tune a network on top of the embeddings
-        self.device = torch.device(device)
+
         if ckpt_path:
             self.load_clay_weights(ckpt_path)
 
     def load_clay_weights(self, ckpt_path):
         "Load the weights from the Clay model encoder."
-        ckpt = torch.load(ckpt_path, map_location=self.device)
+        ckpt = torch.load(ckpt_path)
         state_dict = ckpt.get("state_dict")
         state_dict = {
             re.sub(r"^model\.encoder\.", "", name): param
@@ -119,7 +118,7 @@ class Embedder(nn.Module):
             "waves": torch.randn(3),
             "gsd": torch.randn(1),
         }
-        dummy_datacube = {k: v.to(self.device)
+        dummy_datacube = {k: v
                           for k, v in dummy_datacube.items()}
         return dummy_datacube
 
