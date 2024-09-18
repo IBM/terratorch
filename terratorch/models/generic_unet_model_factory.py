@@ -5,12 +5,14 @@ This is just an example of a possible structure to include SMP models
 Right now it always returns a UNET, but could easily be extended to many of the models provided by SMP.
 """
 
-from torch import nn
+import importlib
+
 import torch
+from torch import nn
+
 from terratorch.models.model import Model, ModelFactory, ModelOutput, register_factory
 from terratorch.tasks.segmentation_tasks import to_segmentation_prediction
 
-import importlib
 
 def freeze_module(module: nn.Module):
     for param in module.parameters():
@@ -73,7 +75,7 @@ class GenericUnetModelFactory(ModelFactory):
             model, relu=task == "regression" and regression_relu, squeeze_single_class=task == "regression"
         )
 
-class GenericUnetModelWrapper(Model, nn.Module):
+class GenericUnetModelWrapper(Model):
     def __init__(self, unet_model, relu=False, squeeze_single_class=False) -> None:
         super().__init__()
         self.unet_model = unet_model

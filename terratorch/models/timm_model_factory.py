@@ -64,7 +64,7 @@ class TimmModelFactory(ModelFactory):
         return TimmModelWrapper(model)
 
 
-class TimmModelWrapper(Model, nn.Module):
+class TimmModelWrapper(Model):
     def __init__(self, timm_model) -> None:
         super().__init__()
         self.timm_model = timm_model

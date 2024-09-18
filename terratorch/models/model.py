@@ -14,18 +14,15 @@ class ModelOutput:
     auxiliary_heads: dict[str, Tensor] = None
 
 
-class Model(ABC):
-    @abstractmethod
+class Model(nn.Module):
     def freeze_encoder(self):
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
     def freeze_decoder(self):
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
-    def forward(self) -> ModelOutput:
-        pass
+    def forward(self, *args, **kwargs) -> ModelOutput:
+        raise NotImplementedError
 
 
 class ModelFactory(ABC):

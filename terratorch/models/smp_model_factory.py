@@ -13,7 +13,7 @@ from terratorch.datasets import HLSBands
 from terratorch.models.model import Model, ModelFactory, ModelOutput, register_factory
 
 
-class SMPModelWrapper(Model, nn.Module):
+class SMPModelWrapper(Model):
     """
     Wrapper class for SMP models.
 

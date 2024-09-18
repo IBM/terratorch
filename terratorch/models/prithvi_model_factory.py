@@ -50,7 +50,7 @@ class PrithviModelFactory(ModelFactory):
         `backbone_`, `decoder_` and `head_` respectively.
 
         Args:
-            task (str): Task to be performed. Currently supports "segmentation" and "regression".
+            task (str): Task to be performed. Currently supports "segmentation", "regression" and "classification".
             backbone (str, nn.Module): Backbone to be used. If string, should be able to be parsed
                 by the specified factory. Defaults to "prithvi_100".
             decoder (Union[str, nn.Module], optional): Decoder to be used for the segmentation model.
@@ -58,9 +58,8 @@ class PrithviModelFactory(ModelFactory):
                     If an nn.Module, we expect it to expose a property `decoder.output_embed_dim`.
                     Will be concatenated with a Conv2d for the final convolution. Defaults to "FCNDecoder".
             in_channels (int, optional): Number of input channels. Defaults to 3.
-            bands (list[terratorch.datasets.HLSBands], optional): Bands the model will be trained on.
-                    Should be a list of terratorch.datasets.HLSBands.
-                    Defaults to [HLSBands.RED, HLSBands.GREEN, HLSBands.BLUE].
+            bands (list[terratorch.datasets.HLSBands | int]): Bands the model will be trained on.
+                    Should be a list of terratorch.datasets.HLSBands or ints.
             num_classes (int, optional): Number of classes. None for regression tasks.
             pretrained (Union[bool, Path], optional): Whether to load pretrained weights for the backbone, if available.
                 Defaults to True.

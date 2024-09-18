@@ -17,6 +17,29 @@ def patch_embed_weights_are_compatible(model_patch_embed: torch.Tensor, checkpoi
     checkpoint_shape = [checkpoint_patch_embed.shape[i] for i in range(len(checkpoint_patch_embed.shape)) if i != 1]
     return model_shape == checkpoint_shape
 
+
+def create_appropriate_patch_embed_from_pretrained(
+    new_patch_embed_weight: torch.Tensor,
+    pretrained_patch_embed_weight: torch.Tensor,
+    pretrained_bands: list[HLSBands | int],
+    model_bands: list[HLSBands | int],
+):
+    """Injects appropriate layers from a pretrained patch embedding layer
+    into a new model by matching channels appropriately
+
+    Args:
+        new_patch_embed_weight (torch.Tensor): Weights from the new patch embed layer
+        pretrained_patch_embed_weight (torch.Tensor): Weights from the patch embed layer that will
+            be injected into the new layer
+        pretrained_bands (list[HLSBands | int]): List of bands corresponding to each of the channels of
+            the pretrained patch embedding in the correct order.
+        model_bands (list[HLSBands | int]): List of bands the model is going to be finetuned on, in the correct order.
+    """
+    for index, band in enumerate(model_bands):
+        if band in pretrained_bands:
+            new_patch_embed_weight[:, index] = pretrained_patch_embed_weight[:, pretrained_bands.index(band)]
+
+
 def select_patch_embed_weights(
     state_dict: dict, model: nn.Module, pretrained_bands: list[HLSBands | int], model_bands: list[HLSBands | int]
 ) -> dict:
@@ -57,9 +80,7 @@ def select_patch_embed_weights(
     # only do this if the patch size and tubelet size match. If not, start with random weights
     if patch_embed_weights_are_compatible(temp_weight, patch_embed_weight):
         torch.nn.init.xavier_uniform_(temp_weight.view([temp_weight.shape[0], -1]))
-        for index, band in enumerate(model_bands):
-            if band in pretrained_bands:
-                temp_weight[:, index] = patch_embed_weight[:, pretrained_bands.index(band)]
+        create_appropriate_patch_embed_from_pretrained(temp_weight, patch_embed_weight, pretrained_bands, model_bands)
     else:
         warnings.warn(
             f"Incompatible shapes between patch embedding of model {temp_weight.shape} and\
