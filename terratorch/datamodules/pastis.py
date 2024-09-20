@@ -2,7 +2,6 @@ from typing import Any
 
 import albumentations as A  # noqa: N812
 from torchgeo.datamodules import NonGeoDataModule
-from torchgeo.transforms import AugmentationSequential
 
 from terratorch.datamodules.utils import wrap_in_compose_is_list
 from terratorch.datasets import PASTIS
@@ -19,14 +18,12 @@ class PASTISDataModule(NonGeoDataModule):
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
         val_transform: A.Compose | None | list[A.BasicTransform] = None,
         test_transform: A.Compose | None | list[A.BasicTransform] = None,
-        aug: AugmentationSequential = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
             PASTIS,
             batch_size=batch_size,
             num_workers=num_workers,
-            aug=aug,
             **kwargs,
         )
         self.truncate_image = truncate_image

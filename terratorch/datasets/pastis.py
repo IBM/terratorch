@@ -21,11 +21,12 @@ class PASTIS(NonGeoDataset):
         target="semantic",
         folds=None,
         reference_date="2018-09-01",
+        date_interval = (-200,600),
         class_mapping=None,
         transform = None,
         truncate_image = None,
         pad_image = None,
-        sats=["S2"],  # noqa: B006
+        satellites=["S2"],  # noqa: B006
     ):
         """
         Pytorch Dataset class to load samples from the PASTIS dataset, for semantic and
@@ -65,20 +66,20 @@ class PASTIS(NonGeoDataset):
                 a specified number of timesteps. If None, no truncation is performed.
             pad_image (int, optional): Pad the time dimension of the image to a specified 
                 number of timesteps. If None, no padding is applied.
-            sats (list): Defines the satellites to use. If you are using PASTIS-R, you
+            satellites (list): Defines the satellites to use. If you are using PASTIS-R, you
                 have access to Sentinel-2 imagery and Sentinel-1 observations in Ascending
                 and Descending orbits, respectively S2, S1A, and S1D. For example, use
-                sats=['S2', 'S1A'] for Sentinel-2 + Sentinel-1 ascending time series,
-                or sats=['S2', 'S1A', 'S1D'] to retrieve all time series. If you are using
+                satellites=['S2', 'S1A'] for Sentinel-2 + Sentinel-1 ascending time series,
+                or satellites=['S2', 'S1A', 'S1D'] to retrieve all time series. If you are using
                 PASTIS, only S2 observations are available.
         """
         if target not in ["semantic", "instance"]:
             msg = f"Target '{target}' not recognized. Use 'semantic', or 'instance'."
             raise ValueError(msg)
-        valid_sats = {"S2", "S1A", "S1D"}
-        for sat in sats:
-            if sat not in valid_sats:
-                msg = f"Satellite '{sat}' not recognized. Valid options are {valid_sats}."
+        valid_satellites = {"S2", "S1A", "S1D"}
+        for sat in satellites:
+            if sat not in valid_satellites:
+                msg = f"Satellite '{sat}' not recognized. Valid options are {valid_satellites}."
                 raise ValueError(msg)
 
         super().__init__()
@@ -91,7 +92,7 @@ class PASTIS(NonGeoDataset):
             else class_mapping
         )
         self.target = target
-        self.sats = sats
+        self.satellites = satellites
         self.transform = transform
         self.truncate_image = truncate_image
         self.pad_image = pad_image
@@ -99,11 +100,12 @@ class PASTIS(NonGeoDataset):
         self.meta_patch = gpd.read_file(os.path.join(data_root, "metadata.geojson"))
         self.meta_patch.index = self.meta_patch["ID_PATCH"].astype(int)
         self.meta_patch.sort_index(inplace=True)
-
         # stores table for each satalite date
-        self.date_tables = {s: None for s in sats}
-        self.date_range = np.array(range(-200, 600)) # date interval
-        for s in sats:
+        self.date_tables = {s: None for s in satellites}
+        # date interval used in the PASTIS benchmark paper.
+        date_interval_begin, date_interval_end = date_interval
+        self.date_range = np.array(range(date_interval_begin, date_interval_end))
+        for s in satellites:
             # maps patches to its observation dates
             dates = self.meta_patch[f"dates-{s}"]
             date_table = pd.DataFrame(
@@ -139,7 +141,7 @@ class PASTIS(NonGeoDataset):
         # loads normalization values
         if norm:
             self.norm = {}
-            for s in self.sats:
+            for s in self.satellites:
                 with open(
                     os.path.join(data_root, f"NORM_{s}_patch.json")
                 ) as file:
@@ -164,8 +166,8 @@ class PASTIS(NonGeoDataset):
     def __getitem__(self, item):
         id_patch = self.id_patches[item]
         output = {}
-
-        for satellite in self.sats:
+        satellites = {}
+        for satellite in self.satellites:
             data = np.load(
                 os.path.join(
                     self.data_root,
@@ -184,7 +186,7 @@ class PASTIS(NonGeoDataset):
             if self.pad_image and data.shape[0] < self.pad_image:
                 data = pad_numpy(data, self.pad_image)
 
-            output[satellite] = data.astype(np.float32)
+            satellites[satellite] = data.astype(np.float32)
 
 
         if self.target == "semantic":
@@ -227,7 +229,7 @@ class PASTIS(NonGeoDataset):
                 ], axis=-1).astype(np.float32)
 
         dates = {}
-        for satellite in self.sats:
+        for satellite in self.satellites:
             date = np.array(self.get_dates(id_patch, satellite))
 
             if self.truncate_image and len(date) > self.truncate_image:
@@ -238,12 +240,14 @@ class PASTIS(NonGeoDataset):
 
             dates[satellite] = torch.from_numpy(date)
 
-        output["image"] = output["S2"].transpose(0, 2, 3, 1)
-        output["dates"] = dates
+        output["image"] = satellites["S2"].transpose(0, 2, 3, 1)
         output["mask"] = target
 
         if self.transform:
             output = self.transform(**output)
+
+        output.update(satellites)
+        output["dates"] = dates
 
         return output
 

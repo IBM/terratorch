@@ -2,7 +2,6 @@ from typing import Any
 
 import albumentations as A  # noqa: N812
 from torchgeo.datamodules import NonGeoDataModule
-from torchgeo.transforms import AugmentationSequential
 
 from terratorch.datamodules.utils import wrap_in_compose_is_list
 from terratorch.datasets import OpenSentinelMap
@@ -18,23 +17,21 @@ class OpenSentinelMapDataModule(NonGeoDataModule):
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
         val_transform: A.Compose | None | list[A.BasicTransform] = None,
         test_transform: A.Compose | None | list[A.BasicTransform] = None,
-        interpolate_and_concat_bands: bool = True,  # noqa: FBT001, FBT002
+        spatial_interpolate_and_stack_temporally: bool = True,  # noqa: FBT001, FBT002
         pad_image: int | None = None,
         truncate_image: int | None = None,
         target: int = 0,
         pick_random_pair: bool = True,  # noqa: FBT002, FBT001
-        aug: AugmentationSequential = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
             OpenSentinelMap,
             batch_size=batch_size,
             num_workers=num_workers,
-            aug=aug,
             **kwargs,
         )
         self.bands = bands
-        self.interpolate_and_concat_bands = interpolate_and_concat_bands
+        self.spatial_interpolate_and_stack_temporally = spatial_interpolate_and_stack_temporally
         self.pad_image = pad_image
         self.truncate_image = truncate_image
         self.target = target
@@ -52,7 +49,7 @@ class OpenSentinelMapDataModule(NonGeoDataModule):
                 data_root=self.data_root,
                 transform=self.train_transform,
                 bands=self.bands,
-                interpolate_and_concat_bands = self.interpolate_and_concat_bands,
+                spatial_interpolate_and_stack_temporally = self.spatial_interpolate_and_stack_temporally,
                 pad_image = self.pad_image,
                 truncate_image = self.truncate_image,
                 target = self.target,
@@ -65,7 +62,7 @@ class OpenSentinelMapDataModule(NonGeoDataModule):
                 data_root=self.data_root,
                 transform=self.val_transform,
                 bands=self.bands,
-                 interpolate_and_concat_bands = self.interpolate_and_concat_bands,
+                spatial_interpolate_and_stack_temporally = self.spatial_interpolate_and_stack_temporally,
                 pad_image = self.pad_image,
                 truncate_image = self.truncate_image,
                 target = self.target,
@@ -78,7 +75,7 @@ class OpenSentinelMapDataModule(NonGeoDataModule):
                 data_root=self.data_root,
                 transform=self.test_transform,
                 bands=self.bands,
-                interpolate_and_concat_bands = self.interpolate_and_concat_bands,
+                spatial_interpolate_and_stack_temporally = self.spatial_interpolate_and_stack_temporally,
                 pad_image = self.pad_image,
                 truncate_image = self.truncate_image,
                 target = self.target,

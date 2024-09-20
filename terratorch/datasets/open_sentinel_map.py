@@ -14,7 +14,7 @@ from PIL import Image
 from torch import Tensor
 from torchgeo.datasets import NonGeoDataset
 
-from terratorch.datasets.utils import to_tensor, pad_numpy
+from terratorch.datasets.utils import pad_numpy, to_tensor
 
 
 class OpenSentinelMap(NonGeoDataset):
@@ -24,11 +24,12 @@ class OpenSentinelMap(NonGeoDataset):
         split: str = "train",
         bands: list[str] | None = None,
         transform: A.Compose | None = None,
-        interpolate_and_concat_bands: bool = True,  # noqa: FBT001, FBT002
+        spatial_interpolate_and_stack_temporally: bool = True,  # noqa: FBT001, FBT002
         pad_image: int | None = None,
         truncate_image: int | None = None,
         target: int = 0,
         pick_random_pair: bool = True,  # noqa: FBT002, FBT001
+        output_size: tuple[int, int] = (192, 192),
     ) -> None:
         """
         Pytorch Dataset class to load samples from the OpenSentinelMap dataset, supporting
@@ -39,11 +40,16 @@ class OpenSentinelMap(NonGeoDataset):
             split (str): Dataset split to load. Options are 'train', 'val', or 'test'. Defaults to 'train'.
             bands (list of str, optional): List of band names to load. Defaults to ['gsd_10', 'gsd_20', 'gsd_60'].
             transform (albumentations.Compose, optional): Albumentations transformations to apply to the data.
-            interpolate_and_concat_bands (bool): If True, the bands are interpolated and concatenated over time. Default is True.
-            pad_image (int, optional): Number of timesteps to pad the time dimension of the image. If None, no padding is applied.
-            truncate_image (int, optional): Number of timesteps to truncate the time dimension of the image. If None, no truncation is performed.
+            spatial_interpolate_and_stack_temporally (bool): If True, the bands are interpolated and concatenated over time.
+                Default is True.
+            pad_image (int, optional): Number of timesteps to pad the time dimension of the image.
+                If None, no padding is applied.
+            truncate_image (int, optional): Number of timesteps to truncate the time dimension of the image.
+                If None, no truncation is performed.
             target (int): Specifies which target class to use from the mask. Default is 0.
             pick_random_pair (bool): If True, selects two random images from the temporal sequence. Default is True.
+            output_size (tuple of int, optional): Desired output size (H, W) for the interpolated images.
+                Only used if spatial_interpolate_and_stack_temporally is True. Default is (192, 192).
         """
         split = "test"
         if bands is None:
@@ -70,11 +76,12 @@ class OpenSentinelMap(NonGeoDataset):
         self.transform = transform if transform else lambda **batch: to_tensor(batch)
         self.label_mappings = self._load_label_mappings()
         self.split_data = self.auxiliary_data[self.auxiliary_data["split"] == split]
-        self.interpolate_and_concat_bands = interpolate_and_concat_bands
+        self.spatial_interpolate_and_stack_temporally = spatial_interpolate_and_stack_temporally
         self.pad_image = pad_image
         self.truncate_image = truncate_image
         self.target = target
         self.pick_random_pair = pick_random_pair
+        self.output_size = output_size
 
         self.image_files = []
         self.label_files = []
@@ -165,7 +172,7 @@ class OpenSentinelMap(NonGeoDataset):
 
         output = {}
 
-        if self.interpolate_and_concat_bands:
+        if self.spatial_interpolate_and_stack_temporally:
             images_over_time = []
             for _, npz_file in enumerate(npz_files):
                 data = np.load(npz_file)
@@ -175,7 +182,7 @@ class OpenSentinelMap(NonGeoDataset):
                     band_frame = torch.from_numpy(band_frame).float()
                     band_frame = band_frame.permute(2, 0, 1)
                     interpolated = F.interpolate(
-                        band_frame.unsqueeze(0), size=(192, 192), mode="bilinear", align_corners=False
+                        band_frame.unsqueeze(0), size=self.output_size, mode="bilinear", align_corners=False
                     ).squeeze(0)
                     interpolated_bands.append(interpolated)
                 concatenated_bands = torch.cat(interpolated_bands, dim=0)
@@ -212,6 +219,8 @@ class OpenSentinelMap(NonGeoDataset):
 
         label_file = self.label_files[index]
         mask = np.array(Image.open(label_file)).astype(int)
+
+        # Map 'unlabel' (254) and 'none' (255) to unused classes 15 and 16 for processing
         mask[mask == 254] = 15  # noqa: PLR2004
         mask[mask == 255] = 16  # noqa: PLR2004
         output["mask"] = mask[:, :, self.target]

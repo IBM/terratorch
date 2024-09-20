@@ -19,7 +19,7 @@ tasks:
       class_path: terratorch.datamodules.PASTISDataModule
       init_args:
         data_root: "/dccstor/geofm-finetuning/datasets/PASTIS/PASTIS-R"
-        sats:
+        satellites:
           - "S2"
         target: "semantic"
         pad_image: 10
