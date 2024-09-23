@@ -29,6 +29,9 @@ from terratorch.datamodules.m_so2sat import MSo2SatNonGeoDataModule
 from terratorch.datamodules.sen1floods11 import Sen1Floods11NonGeoDataModule
 from terratorch.datamodules.torchgeo_data_module import TorchGeoDataModule, TorchNonGeoDataModule
 
+# miscellaneous datamodules
+from terratorch.datamodules.openearthmap import OpenEarthMapNonGeoDataModule
+
 __all__ = (
     "GenericNonGeoSegmentationDataModule",
     "GenericNonGeoPixelwiseRegressionDataModule",
@@ -50,5 +53,6 @@ __all__ = (
     "MChesapeakeLandcoverNonGeoDataModule",
     "MPv4gerSegNonGeoDataModule",
     "MSACropTypeNonGeoDataModule",
-    "MNeonTreeNonGeoDataModule"
+    "MNeonTreeNonGeoDataModule",
+    "OpenEarthMapModule"
 )
