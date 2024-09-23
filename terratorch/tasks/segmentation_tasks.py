@@ -125,7 +125,7 @@ class SemanticSegmentationTask(BaseTask):
         if optimizer is None:
             optimizer = "Adam"
         return optimizer_factory(
-            optimizer,
+            self.hparams["optimizer"],
             self.hparams["lr"],
             self.parameters(),
             self.hparams["optimizer_hparams"],
