@@ -15,6 +15,8 @@ from terratorch.datasets.utils import pad_numpy, to_tensor
 CAT_TILES = ["31TBF", "31TCF", "31TCG", "31TDF", "31TDG"]
 FR_TILES = ["31TCJ", "31TDK", "31TCL", "31TDM", "31UCP", "31UDR"]
 
+MAX_TEMPORAL_IMAGE_SIZE = (366,366)
+
 SELECTED_CLASSES = [
     110,   # 'Wheat'
     120,   # 'Maize'
@@ -41,7 +43,6 @@ class Sen4AgriNet(NonGeoDataset):
         pad_image: int | None = 4,
         spatial_interpolate_and_stack_temporally: bool = True,  # noqa: FBT001, FBT002
         seed: int = 42,
-        output_size: tuple[int, int] = (366, 366),
     ):
         """
         Pytorch Dataset class to load samples from the Sen4AgriNet dataset, supporting
@@ -62,8 +63,6 @@ class Sen4AgriNet(NonGeoDataset):
                 If None, no padding is applied. Default is 4.
             spatial_interpolate_and_stack_temporally (bool): Whether to interpolate bands and concatenate them over time
             seed (int): Random seed used for data splitting.
-            output_size (tuple of int, optional): Desired output size (H, W) for the interpolated images.
-                Only used if spatial_interpolate_and_stack_temporally is True. Default is (366, 366).
         """
         self.data_root = Path(data_root) / "data"
         self.transform = transform if transform else lambda **batch: to_tensor(batch)
@@ -72,7 +71,6 @@ class Sen4AgriNet(NonGeoDataset):
         self.truncate_image = truncate_image
         self.pad_image = pad_image
         self.spatial_interpolate_and_stack_temporally = spatial_interpolate_and_stack_temporally
-        self.output_size = output_size
 
         if bands is None:
             bands = ["B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B09", "B10", "B11", "B12", "B8A"]
@@ -153,7 +151,7 @@ class Sen4AgriNet(NonGeoDataset):
                     band_data = band_data.clone().detach()
 
                     interpolated = F.interpolate(
-                        band_data.unsqueeze(0), size=self.output_size, mode="bilinear", align_corners=False
+                        band_data.unsqueeze(0), size=MAX_TEMPORAL_IMAGE_SIZE, mode="bilinear", align_corners=False
                     ).squeeze(0)
                     images_over_time.append(interpolated)
                 else:

@@ -16,6 +16,7 @@ from torchgeo.datasets import NonGeoDataset
 
 from terratorch.datasets.utils import pad_numpy, to_tensor
 
+MAX_TEMPORAL_IMAGE_SIZE = (192, 192)
 
 class OpenSentinelMap(NonGeoDataset):
     def __init__(
@@ -29,7 +30,6 @@ class OpenSentinelMap(NonGeoDataset):
         truncate_image: int | None = None,
         target: int = 0,
         pick_random_pair: bool = True,  # noqa: FBT002, FBT001
-        output_size: tuple[int, int] = (192, 192),
     ) -> None:
         """
         Pytorch Dataset class to load samples from the OpenSentinelMap dataset, supporting
@@ -48,8 +48,6 @@ class OpenSentinelMap(NonGeoDataset):
                 If None, no truncation is performed.
             target (int): Specifies which target class to use from the mask. Default is 0.
             pick_random_pair (bool): If True, selects two random images from the temporal sequence. Default is True.
-            output_size (tuple of int, optional): Desired output size (H, W) for the interpolated images.
-                Only used if spatial_interpolate_and_stack_temporally is True. Default is (192, 192).
         """
         split = "test"
         if bands is None:
@@ -81,7 +79,6 @@ class OpenSentinelMap(NonGeoDataset):
         self.truncate_image = truncate_image
         self.target = target
         self.pick_random_pair = pick_random_pair
-        self.output_size = output_size
 
         self.image_files = []
         self.label_files = []
@@ -182,7 +179,7 @@ class OpenSentinelMap(NonGeoDataset):
                     band_frame = torch.from_numpy(band_frame).float()
                     band_frame = band_frame.permute(2, 0, 1)
                     interpolated = F.interpolate(
-                        band_frame.unsqueeze(0), size=self.output_size, mode="bilinear", align_corners=False
+                        band_frame.unsqueeze(0), size=MAX_TEMPORAL_IMAGE_SIZE, mode="bilinear", align_corners=False
                     ).squeeze(0)
                     interpolated_bands.append(interpolated)
                 concatenated_bands = torch.cat(interpolated_bands, dim=0)
