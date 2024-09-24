@@ -29,6 +29,10 @@ class WxCModuleWrapper(Model, nn.Module):
     def forward(self, x) -> ModelOutput:
         mo = self.module.forward(x)
         return ModelOutput(mo)
+    
+    def load_state_dict(self, state_dict: os.Mapping[str, torch.Any], strict: bool = True, assign: bool = False):
+        return self.module.load_state_dict(state_dict, strict, assign)
+
 
 @register_factory
 class WxCModelFactory(ModelFactory):
@@ -38,9 +42,5 @@ class WxCModelFactory(ModelFactory):
         aux_decoders,
         **kwargs,
     ) -> Model:
-        #wxc_config_path = os.environ.get('wxc_config_path')
-        #if wxc_config_path is None:
-        #    raise EnvironmentError("WXC model path not set")
-        #config = get_config(wxc_config_path)
         module = get_finetune_model(kwargs['model_config'])
         return WxCModuleWrapper(module)

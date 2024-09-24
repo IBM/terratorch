@@ -1,7 +1,7 @@
 import torch
 from torch import Tensor, nn
 from torchgeo.trainers import BaseTask
-from typing import Any
+from typing import Any, Mapping
 
 from terratorch.models.model import Model, get_factory
 from terratorch.tasks.loss_handler import LossHandler
