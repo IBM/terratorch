@@ -10,7 +10,7 @@ lightly==1.4.25
 h5py==3.10.0
 geobench==1.0.0
 mlflow==2.14.3
-lightning==2.2.5
+lightning==2.4.0
 
 # These dependencies are optional
 # and must be installed just in case 
