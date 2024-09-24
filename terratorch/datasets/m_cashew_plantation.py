@@ -82,9 +82,10 @@ class MBeninSmallHolderCashewsNonGeo(NonGeoDataset):
             date = self._get_date(h5file)
             mask = np.array(h5file["label"])
 
-        output = {"image": image.astype(np.float32), "date": date, "mask": mask}
+        output = {"image": image.astype(np.float32), "mask": mask}
 
         output = self.transform(**output)
+        output["date"] = date
         output["mask"] = output["mask"].long()
 
         return output
