@@ -6,6 +6,7 @@ from terratorch.models.scalemae_model_factory import ScaleMAEModelFactory
 from terratorch.models.smp_model_factory import SMPModelFactory
 from terratorch.models.timm_model_factory import TimmModelFactory
 from terratorch.models.generic_unet_model_factory import GenericUnetModelFactory
+from terratorch.models.wxc_model_factory import WxCModelFactory
 
 __all__ = (
     "PrithviModelFactory",
@@ -17,4 +18,5 @@ __all__ = (
     "TimmModelFactory",
     "AuxiliaryHead",
     "AuxiliaryHeadWithDecoderWithoutInstantiatedHead",
+    "WxCModelFactory",
 )
