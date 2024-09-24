@@ -7,7 +7,7 @@ include = ["terratorch*"]
 
 [project]
 name = "terratorch"
-version = "0.99.1"
+version = "0.99.3"
 description = "TerraTorch - A model training toolkit for geospatial tasks"
 license = { "text" = "Apache License, Version 2.0" }
 readme = "README.md"
@@ -31,10 +31,11 @@ classifiers = [
 dependencies = [
   "torch>=2.1.0",
   "torchvision>=0.16.0",
-  "torchgeo>=0.5.1",
+  "torchgeo>=0.6.0",
   "rioxarray>=0.15.0",
   # see issue #64
   "albumentations>=1.3.1, <=1.4.10",
+  "albucore<=0.0.16",
   "rasterio>=1.3.9",
   "torchmetrics<=1.3.1",
   "geopandas>=0.14.2",
@@ -56,6 +57,13 @@ dev = [
 test = [
   "coverage",
   "pytest"
+]
+
+mmseg = [
+  "mmcv",
+  "ftfy",
+  "regex",
+  "openmim"
 ]
 
 [project.urls]
@@ -152,7 +160,7 @@ exclude_lines = [
 ]
 
 [tool.bumpver]
-current_version = "0.99.1"
+current_version = "0.99.3"
 version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
 commit_message = "Bump version {old_version} -> {new_version}"
 commit = true

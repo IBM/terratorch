@@ -41,7 +41,7 @@ By passing a list of bands being used to the constructor, we automatically filte
     
     Besides `file`, you can also pass `url`, `hf_hub_id`, amongst others. Check timm's documentation for full details.
 
-:::terratorch.models.backbones.prithvi_select_patch_embed_weights
+:::terratorch.models.backbones.select_patch_embed_weights
 
 ## Decoders
 ### :::terratorch.models.decoders.fcn_decoder

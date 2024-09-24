@@ -2,6 +2,7 @@
 
 import logging  # noqa: I001
 import os
+import shutil
 import warnings
 from datetime import timedelta
 from pathlib import Path
@@ -176,6 +177,13 @@ class StudioDeploySaveConfigCallback(SaveConfigCallback):
         super().__init__(parser, config, config_filename, overwrite, multifile, save_to_log_dir)
         set_dumper("deploy_config", clean_config_for_deployment_and_dump)
 
+        # Preparing information to save config file to log dir
+        config_dict = config.as_dict()
+        self.config_path_original = str(config_dict["config"][0])
+        _, self.config_file_original = os.path.split(self.config_path_original)         
+        
+        self.deploy_config_file = config_dict["deploy_config_file"]
+
     def setup(self, trainer: Trainer, pl_module: LightningModule, stage: str) -> None:
         if self.already_saved:
             return
@@ -207,29 +215,36 @@ class StudioDeploySaveConfigCallback(SaveConfigCallback):
                 # the `log_dir` needs to be created as we rely on the logger to do it usually
                 # but it hasn't logged anything at this point
                 fs.makedirs(log_dir, exist_ok=True)
-                self.parser.save(
-                    self.config, config_path, skip_none=True, overwrite=self.overwrite, multifile=self.multifile
-                )
+
+                if self.deploy_config_file:
+                    self.parser.save(
+                        self.config, config_path, skip_none=True, overwrite=self.overwrite, multifile=self.multifile
+                    )
 
         if trainer.is_global_zero:
-            # also save the config that will be deployed
-            config_name, config_ext = os.path.splitext(self.config_filename)
-            config_name += "_deploy"
-            config_name += config_ext
-            config_path = os.path.join(log_dir, config_name)
-            self.parser.save(
-                self.config,
-                config_path,
-                format="deploy_config",
-                skip_none=True,
-                overwrite=self.overwrite,
-                multifile=self.multifile,
-            )
-            self.already_saved = True
+            if self.deploy_config_file:
+                # also save the config that will be deployed
+                config_name, config_ext = os.path.splitext(self.config_filename)
+                config_name += "_deploy"
+                config_name += config_ext
+                config_path = os.path.join(log_dir, config_name)
+                self.parser.save(
+                    self.config,
+                    config_path,
+                    format="deploy_config",
+                    skip_none=True,
+                    overwrite=self.overwrite,
+                    multifile=self.multifile,
+                )
+                self.already_saved = True
+
+        config_path_dir, config_path_file = os.path.split(config_path)
+        self.config_path_new = os.path.join(config_path_dir, self.config_file_original)
 
         # broadcast so that all ranks are in sync on future calls to .setup()
         self.already_saved = trainer.strategy.broadcast(self.already_saved)
-
+        # Copying config file to log dir
+        shutil.copyfile(self.config_path_original, self.config_path_new)
 
 class StateDictAwareModelCheckpoint(ModelCheckpoint):
     # necessary as we wish to have one model checkpoint with only state dict and one with standard lightning checkpoints
@@ -284,6 +299,7 @@ class MyLightningCLI(LightningCLI):
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:
         parser.add_argument("--predict_output_dir", default=None)
         parser.add_argument("--out_dtype", default="int16")
+        parser.add_argument("--deploy_config_file", type=bool, default=True)
 
         # parser.set_defaults({"trainer.enable_checkpointing": False})
 
@@ -313,6 +329,10 @@ class MyLightningCLI(LightningCLI):
         
         if hasattr(config, "out_dtype"):
             self.trainer.out_dtype = config.out_dtype
+
+        if hasattr(config, "deploy_config_file"):
+            self.trainer.deploy_config = config.deploy_config_file
+
 
 def build_lightning_cli(
     args: ArgsType = None,

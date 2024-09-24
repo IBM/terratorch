@@ -65,6 +65,7 @@ class FireScarsNonGeo(NonGeoDataset):
         return self._plot_sample(
             image,
             label_mask,
+            num_classes=2,
             prediction=prediction_mask if showing_predictions else None,
             suptitle=suptitle,
         )

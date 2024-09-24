@@ -5,14 +5,13 @@ import logging
 from functools import partial
 from pathlib import Path
 
-import torch
 from timm.models import FeatureInfo
 from timm.models._builder import build_model_with_cfg
 from timm.models._registry import generate_default_cfgs, register_model
 from torch import nn
 
 from terratorch.datasets import HLSBands
-from terratorch.models.backbones.prithvi_select_patch_embed_weights import prithvi_select_patch_embed_weights
+from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
 from terratorch.models.backbones.vit_encoder_decoder import TemporalViTEncoder
 
 PRETRAINED_BANDS = [
@@ -61,7 +60,7 @@ def checkpoint_filter_fn(
             encoder_only_dict[k] = v
         state_dict = encoder_only_dict
 
-    state_dict = prithvi_select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands)
+    state_dict = select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands)
 
     return state_dict
 
