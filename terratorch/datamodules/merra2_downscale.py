@@ -12,13 +12,13 @@ class Merra2DownscaleDatasetTerraTorch(Merra2DownscaleDataset):
         self.split = split
 
     def __getitem__(self, index) -> dict[Tensor | int]:
-        the_way_it_is = super().__getitem__(index)
-        the_way_it_should_be = {}
-        the_way_it_should_be['image'] = the_way_it_is
-        the_way_it_should_be['mask'] = the_way_it_is
-        the_way_it_should_be['filename'] = f'{index}.tif'
+        batch = super().__getitem__(index)
+        batch_extended = {}
+        batch_extended['image'] = batch
+        batch_extended['mask'] = batch
+        batch_extended['filename'] = f'{index}.tif'
 
-        return the_way_it_should_be
+        return batch_extended
 
 class Merra2DownscaleNonGeoDataModule(NonGeoDataModule):
 
