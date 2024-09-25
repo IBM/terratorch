@@ -21,10 +21,10 @@ class WxCModuleWrapper(Model, nn.Module):
         self.module = module
         
     def freeze_encoder(self):
-        pass
+        raise NotImplementedError("This function is not yet implemented.")
 
     def freeze_decoder(self):
-        pass
+        raise NotImplementedError("This function is not yet implemented.")
 
     def forward(self, x) -> ModelOutput:
         mo = self.module.forward(x)
