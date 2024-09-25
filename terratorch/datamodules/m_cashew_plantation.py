@@ -50,6 +50,7 @@ class MBeninSmallHolderCashewsNonGeoDataModule(GeobenchDataModule):
         test_transform: A.Compose | None | list[A.BasicTransform] = None,
         aug: AugmentationSequential = None,
         partition: str = "default",
+        use_metadata: bool = False,  # noqa: FBT002, FBT001
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -64,5 +65,6 @@ class MBeninSmallHolderCashewsNonGeoDataModule(GeobenchDataModule):
             test_transform=test_transform,
             aug=aug,
             partition=partition,
+            use_metadata=use_metadata,
             **kwargs,
         )

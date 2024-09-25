@@ -26,6 +26,7 @@ class MPv4gerNonGeoDataModule(GeobenchDataModule):
         test_transform: A.Compose | None | list[A.BasicTransform] = None,
         aug: AugmentationSequential = None,
         partition: str = "default",
+        use_metada: bool = False,  # noqa: FBT002, FBT001
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -40,5 +41,6 @@ class MPv4gerNonGeoDataModule(GeobenchDataModule):
             test_transform=test_transform,
             aug=aug,
             partition=partition,
+            use_metada=use_metada,
             **kwargs,
         )

@@ -1,11 +1,9 @@
-# Copyright contributors to the Terratorch project
-
-import dataclasses
 import glob
 import os
 from pathlib import Path
 from typing import Any
 
+import albumentations as A
 import geopandas
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -19,13 +17,20 @@ from matplotlib.patches import Rectangle
 from torch import Tensor
 from torchgeo.datasets import NonGeoDataset
 
-from terratorch.datasets.utils import filter_valid_files
+from terratorch.datasets.utils import default_transform, filter_valid_files
 
 
 class Sen1Floods11NonGeo(NonGeoDataset):
-    """NonGeo dataset implementation for fire scars."""
+    """NonGeo dataset implementation for sen1floods11."""
 
-    def __init__(self, data_root: str, split="train", bands: None | list[int] = None) -> None:
+    def __init__(
+        self,
+        data_root: str,
+        split="train",
+        bands: None | list[int] = None,
+        transform: A.Compose | None = None,
+        use_metadata: bool = False,  # noqa: FBT001, FBT002
+    ) -> None:
         super().__init__()
         if split not in ["train", "test", "val"]:
             msg = "Split must be one of train, test, val."
@@ -39,9 +44,12 @@ class Sen1Floods11NonGeo(NonGeoDataset):
         input_directory = data_directory / "S2Hand"
         label_directory = data_directory / "LabelHand"
 
+        # split_file = data_root / f"splits/splits/flood_handlabeled/flood_bolivia_data_S2.txt"
         split_file = data_root / f"splits/splits/flood_handlabeled/flood_{split}_data_S2_geodn.txt"
+        # split_file = data_root / f"splits/splits/flood_handlabeled/flood_bolivia_data_S2.txt"
         metadata_file = data_root / "Sen1Floods11_Metadata.geojson"
         self.metadata = geopandas.read_file(metadata_file)
+        self.use_metadata = use_metadata
 
         self.image_files = sorted(glob.glob(os.path.join(input_directory, "*.tif")))
         self.segmentation_mask_files = sorted(glob.glob(os.path.join(label_directory, "*.tif")))
@@ -63,6 +71,7 @@ class Sen1Floods11NonGeo(NonGeoDataset):
         )
 
         self.rgb_indices = [2, 1, 0]
+        self.transform = transform if transform else default_transform
 
     def __len__(self) -> int:
         return len(self.image_files)
@@ -72,24 +81,43 @@ class Sen1Floods11NonGeo(NonGeoDataset):
         file_name = self.image_files[index]
         location = os.path.basename(file_name).split("_")[0]
         if self.metadata[self.metadata["location"] == location].shape[0] != 1:
+            # msg = f"No date found for sample {file_name}"
+            # raise Exception(msg)
             date = pd.to_datetime("13-10-1998", dayfirst=True)
         else:
             date = pd.to_datetime(self.metadata[self.metadata["location"] == location]["s2_date"].item())
         date_np = np.zeros((1, 3))
         date_np[0, 0] = date.year
         date_np[0, 1] = date.dayofyear - 1  # base 0
-        date_np[0, 2] = date.hour
-        return date_np
+        # date_np[0, 2] = date.hour
+        return torch.tensor(date_np)
+
+    def _get_coords(self, index) -> np.ndarray:
+        file_name = self.image_files[index]
+        image = rioxarray.open_rasterio(file_name)
+        # lons_lats = np.meshgrid(image.x / 180, image.y / 90)
+        # coords = np.stack([np.stack(lon_lat) for lon_lat in lons_lats])
+        # coords shape: batch_size, 2 (lon, lat), height, width
+
+        lat_lon = np.array([image.y[image.shape[0]//2], image.x[image.shape[1]//2]])
+        return torch.tensor(lat_lon)
 
     def __getitem__(self, index: int) -> dict[str, Any]:
         image = self._load_file(self.image_files[index]).astype(np.float32) * 0.0001
         if self.bands:
             image = image[self.bands, ...]
+        image = np.moveaxis(image, 0, -1)
         output = {
             "image": image,
-            "timestamp": self._get_date(index).astype(np.float32),
-            "mask": self._load_file(self.segmentation_mask_files[index]).astype(np.int64),
+            "mask": self._load_file(self.segmentation_mask_files[index]).astype(np.int64)[0],
         }
+        if self.transform:
+            output = self.transform(**output)
+
+        if self.use_metadata:
+            output["location_coords"] = np.moveaxis(self._get_coords(index).astype(np.float32), 0, -1)
+            output["temporal_coords"] = self._get_date(index).astype(np.float32)
+
         return output
 
     def _load_file(self, path: Path):
@@ -154,7 +182,7 @@ class Sen1Floods11NonGeo(NonGeoDataset):
             ax[4].title.set_text("Predicted Mask")
             ax[4].imshow(prediction, cmap="jet", norm=norm)
 
-        cmap = plt.get_cmap("jet")
+        cmap = cm.get_cmap("jet")
         legend_data = []
         for i, _ in enumerate(range(num_classes)):
             class_name = class_names[i] if class_names else str(i)

@@ -3,6 +3,8 @@
 import dataclasses
 import glob
 import os
+import re
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -10,6 +12,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import rioxarray
+import torch
 from matplotlib import cm
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
@@ -20,20 +23,34 @@ from torchgeo.datasets import NonGeoDataset, RasterDataset
 class FireScarsNonGeo(NonGeoDataset):
     """NonGeo dataset implementation for fire scars."""
 
-    def __init__(self, data_root: Path) -> None:
+    def __init__(self, data_root: Path, use_metadata: bool) -> None:  # noqa: FBT001
         super().__init__()
         self.image_files = sorted(glob.glob(os.path.join(data_root, "subsetted*_merged.tif")))
         self.segmentation_mask_files = sorted(glob.glob(os.path.join(data_root, "subsetted*.mask.tif")))
         self.rgb_indices = [0, 1, 2]
+        self.use_metadata = use_metadata
 
     def __len__(self) -> int:
         return len(self.image_files)
+
+    def _get_date(self, filename: str) -> torch.Tensor:
+        filename_regex = r"subsetted_512x512_HLS\..30\..{6}\.(?P<date>[0-9]*)\.v1.4_merged.tif"
+        match = re.match(filename_regex, filename)
+        date_str = match.group("date")
+        year = int(date_str[:4])
+        julian_day = int(date_str[4:])
+
+        temporal_coords = torch.tensor([year, julian_day], dtype=torch.float32).reshape(1, 2)
+        return temporal_coords
 
     def __getitem__(self, index: int) -> dict[str, Any]:
         output = {
             "image": self._load_file(self.image_files[index]).astype(np.float32),
             "mask": self._load_file(self.segmentation_mask_files[index]).astype(np.int64),
         }
+        if self.use_metadata:
+            output["temporal_coords"] = self._get_date(self.image_files[index])
+
         return output
 
     def _load_file(self, path: Path):

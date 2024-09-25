@@ -50,15 +50,25 @@ def checkpoint_filter_fn(
     if "decoder_pos_embed" in state_dict:
         del state_dict["decoder_pos_embed"]
 
-    if model.encoder_only:
-        encoder_only_dict = {}
-        for k, v in state_dict.items():
+
+    clean_dict = {}
+    for k, v in state_dict.items():
+        if model.encoder_only:
             if "decoder" in k:
                 continue
             if "mask_token" in k:
                 continue
-            encoder_only_dict[k] = v
-        state_dict = encoder_only_dict
+            if "temporal_embed_dec" in k:
+                continue
+            if "location_embed_dec" in k:
+                continue
+        if not model.temporal_encoding and "temporal_embed_enc" in k:
+            continue
+        if not model.location_encoding and "location_embed_enc" in k:
+            continue
+        clean_dict[k] = v
+
+        state_dict = clean_dict
 
     state_dict = select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands)
 

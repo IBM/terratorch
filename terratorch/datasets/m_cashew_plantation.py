@@ -37,7 +37,7 @@ class MBeninSmallHolderCashewsNonGeo(NonGeoDataset):
 
     rgb_bands = ("RED", "GREEN", "BLUE")
 
-    BAND_SETS = {"all": all_band_names, "rgb": rgb_bands}
+    BAND_SETS = {"all": all_band_names, "rgb": rgb_bands}  # noqa: RUF012
 
     def __init__(
         self,
@@ -46,10 +46,12 @@ class MBeninSmallHolderCashewsNonGeo(NonGeoDataset):
         transform: A.Compose | None = None,
         split="train",
         partition="default",
+        use_metadata=False,  # noqa: FBT002
     ) -> None:
         super().__init__()
         if split not in ["train", "test", "val"]:
-            raise ValueError("Split must be one of 'train', 'test', 'val'.")
+            msg = "Split must be one of 'train', 'test', 'val'."
+            raise ValueError(msg)
         if split == "val":
             split = "valid"
 
@@ -58,17 +60,39 @@ class MBeninSmallHolderCashewsNonGeo(NonGeoDataset):
         self.bands = bands
         self.band_indices = np.array([self.all_band_names.index(b) for b in bands if b in self.all_band_names])
         self.split = split
+        self.use_metadata = use_metadata
         data_root = Path(data_root)
         self.data_directory = data_root / "m-cashew-plant"
 
         partition_file = self.data_directory / f"{partition}_partition.json"
-        with open(partition_file, "r") as file:
+        with open(partition_file) as file:
             partitions = json.load(file)
 
         if split not in partitions:
-            raise ValueError(f"Split '{split}' not found in partition file.")
+            msg = f"Split '{split}' not found in partition file."
+            raise ValueError(msg)
 
         self.image_files = [self.data_directory / (filename + ".hdf5") for filename in partitions[split]]
+
+    def _get_date(self, keys) -> np.ndarray:
+        date_pattern = re.compile(r"\d{4}-\d{2}-\d{2}")
+        date = None
+
+        for key in keys:
+            match = date_pattern.search(key)
+            if match:
+                date = match.group()
+                break
+
+        if date:
+            date = pd.to_datetime(date)
+            date_np = np.zeros((1, 2), dtype=np.float32)
+            date_np[0, 0] = date.year
+            date_np[0, 1] = date.dayofyear - 1
+        else:
+            date_np = np.zeros((1, 2), dtype=np.float32)
+
+        return torch.tensor(date_np)
 
     def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
         file_path = self.image_files[index]
@@ -79,38 +103,24 @@ class MBeninSmallHolderCashewsNonGeo(NonGeoDataset):
             bands = [np.array(h5file[key]) for key in keys]
 
             image = np.stack(bands, axis=-1)
-            date = self._get_date(h5file)
+            temporal_coords = self._get_date(h5file)
             mask = np.array(h5file["label"])
 
-        output = {"image": image.astype(np.float32), "date": date, "mask": mask}
+        output = {"image": image.astype(np.float32), "mask": mask}
 
         output = self.transform(**output)
         output["mask"] = output["mask"].long()
+        if self.use_metadata:
+            output["temporal_coords"] = temporal_coords
 
         return output
-
-    def _get_date(self, file) -> np.ndarray:
-        date = None
-        date_pattern = re.compile(r"\d{4}-\d{2}-\d{2}")
-
-        for key in file.keys():
-            match = date_pattern.search(key)
-            if match:
-                date = match.group()
-                break
-
-        date = pd.to_datetime(date)
-        date_np = np.zeros((1, 3))
-        date_np[0, 0] = date.year
-        date_np[0, 1] = date.dayofyear - 1
-        date_np[0, 2] = date.hour
-        return date_np
 
     def _validate_bands(self, bands: Sequence[str]) -> None:
         assert isinstance(bands, Sequence), "'bands' must be a sequence"
         for band in bands:
             if band not in self.all_band_names:
-                raise ValueError(f"'{band}' is an invalid band name.")
+                msg = f"'{band}' is an invalid band name."
+                raise ValueError(msg)
 
     def __len__(self):
         return len(self.image_files)
@@ -121,7 +131,8 @@ class MBeninSmallHolderCashewsNonGeo(NonGeoDataset):
         elif isinstance(arg, dict):
             sample = arg
         else:
-            raise TypeError("Argument must be an integer index or a sample dictionary.")
+            msg = "Argument must be an integer index or a sample dictionary."
+            raise TypeError(msg)
 
         showing_predictions = sample["prediction"] if "prediction" in sample else None
 
@@ -133,7 +144,8 @@ class MBeninSmallHolderCashewsNonGeo(NonGeoDataset):
             if band in self.bands:
                 rgb_indices.append(self.bands.index(band))
             else:
-                raise ValueError("Dataset doesn't contain some of the RGB bands")
+                msg = "Dataset doesn't contain some of the RGB bands"
+                raise ValueError(msg)
 
         image = sample["image"].numpy()
         image = image[rgb_indices, :, :]

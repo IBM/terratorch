@@ -31,7 +31,7 @@ STDS = [
 class FireScarsNonGeoDataModule(NonGeoDataModule):
     """NonGeo Fire Scars data module implementation"""
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, use_metadata: False, **kwargs: Any) -> None:  # noqa: ARG002
         super().__init__(FireScarsNonGeo, 16, 8, **kwargs)
         # applied for training
         self.train_aug = AugmentationSequential(
@@ -40,19 +40,23 @@ class FireScarsNonGeoDataModule(NonGeoDataModule):
             data_keys=["image", "mask"],
         )
         self.aug = AugmentationSequential(K.Normalize(MEANS, STDS), data_keys=["image", "mask"])
+        self.use_metadata = use_metadata
 
     def setup(self, stage: str) -> None:
         if stage in ["fit"]:
             self.train_dataset = self.dataset_class(
-                "/dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/training/"
+                data_root="/dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/training/",
+                use_metadata=self.use_metadata
             )
         if stage in ["fit", "validate"]:
             self.val_dataset = self.dataset_class(
-                "/dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/validation/"
+                data_root="/dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/validation/",
+                use_metadata=self.use_metadata
             )
         if stage in ["test"]:
             self.test_dataset = self.dataset_class(
-                "/dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/validation/"
+                data_root="/dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/validation/",
+                use_metadata=self.use_metadata
             )
 
 

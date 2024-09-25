@@ -20,7 +20,7 @@ class MPv4gerNonGeo(NonGeoDataset):
 
     rgb_bands = ("RED", "GREEN", "BLUE")
 
-    BAND_SETS = {"all": all_band_names, "rgb": rgb_bands}
+    BAND_SETS = {"all": all_band_names, "rgb": rgb_bands}  # noqa: RUF012
 
     def __init__(
         self,
@@ -29,6 +29,7 @@ class MPv4gerNonGeo(NonGeoDataset):
         transform: A.Compose | None = None,
         split="train",
         partition="default",
+        use_metadata=False,  # noqa: FBT002
     ) -> None:
         super().__init__()
         if split not in ["train", "test", "val"]:
@@ -42,17 +43,27 @@ class MPv4gerNonGeo(NonGeoDataset):
         self.bands = bands
         self.band_indices = np.array([self.all_band_names.index(b) for b in bands if b in self.all_band_names])
         self.split = split
+        self.use_metadata = use_metadata
         data_root = Path(data_root)
         self.data_directory = data_root / "m-pv4ger"
 
         partition_file = self.data_directory / f"{partition}_partition.json"
-        with open(partition_file, "r") as file:
+        with open(partition_file) as file:
             partitions = json.load(file)
 
         if split not in partitions:
-            raise ValueError(f"Split '{split}' not found.")
+            msg = f"Split '{split}' not found."
+            raise ValueError(msg)
 
         self.image_files = [self.data_directory / (filename + ".hdf5") for filename in partitions[split]]
+
+    def _get_coords(self, image_id: str) -> torch.Tensor:
+        lat_str, lon_str = image_id.split(",")
+        latitude = float(lat_str)
+        longitude = float(lon_str)
+
+        location_coords = np.array([latitude, longitude], dtype=np.float32)
+        return torch.tensor(location_coords)
 
     def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
         file_path = self.image_files[index]
@@ -64,7 +75,7 @@ class MPv4gerNonGeo(NonGeoDataset):
             bands = [np.array(h5file[key]) for key in keys]
 
             image = np.stack(bands, axis=-1)
-            attr_dict = pickle.loads(ast.literal_eval(h5file.attrs["pickle"]))
+            attr_dict = pickle.loads(ast.literal_eval(h5file.attrs["pickle"]))  # noqa: S301
             class_index = attr_dict["label"]
 
         output = {"image": image.astype(np.float32)}
@@ -73,13 +84,17 @@ class MPv4gerNonGeo(NonGeoDataset):
 
         output["label"] = class_index
 
+        if self.use_metadata:
+            output["location_coords"] = self._get_coords(image_id)
+
         return output
 
     def _validate_bands(self, bands: Sequence[str]) -> None:
-        assert isinstance(bands, Sequence), "'bands' must be a sequence"
+        assert isinstance(bands, Sequence), "'bands' must be a sequence"  # noqa: S101
         for band in bands:
             if band not in self.all_band_names:
-                raise ValueError(f"'{band}' is an invalid band name.")
+                msg = f"'{band}' is an invalid band name."
+                raise ValueError(msg)
 
     def __len__(self):
         return len(self.image_files)
@@ -90,7 +105,8 @@ class MPv4gerNonGeo(NonGeoDataset):
         elif isinstance(arg, dict):
             sample = arg
         else:
-            raise TypeError("Argument must be an integer index or a sample dictionary.")
+            msg = "Argument must be an integer index or a sample dictionary."
+            raise TypeError(msg)
 
         image = sample["image"].numpy()
         label_index = sample["label"].numpy()
@@ -100,7 +116,8 @@ class MPv4gerNonGeo(NonGeoDataset):
             if band in self.bands:
                 rgb_indices.append(self.bands.index(band))
             else:
-                raise ValueError("Dataset doesn't contain some of the RGB bands")
+                msg = "Dataset doesn't contain some of the RGB bands"
+                raise ValueError(msg)
 
         rgb_image = image[rgb_indices, :, :]
         rgb_image = np.transpose(rgb_image, (1, 2, 0))
