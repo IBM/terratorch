@@ -45,6 +45,9 @@ dependencies = [
   "mlflow>=2.12.1",
   # broken due to https://github.com/Lightning-AI/pytorch-lightning/issues/19977
   "lightning[pytorch-extra]>=2,!=2.3.*",
+  # Dependencies not available on PyPI
+  "prithviwxc @ git+https://github.com/NASA-IMPACT/Prithvi-WxC.git",
+  "granitewxc @ git+https://github.com/IBM/granite-wxc.git",
 ]
 
 [project.optional-dependencies]
