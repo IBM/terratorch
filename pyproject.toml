@@ -63,7 +63,7 @@ mmseg = [
   "openmim"
 ]
 
-wcx = [
+wxc = [
   "prithviwxc @ git+https://github.com/NASA-IMPACT/Prithvi-WxC.git",
   "granitewxc @ git+https://github.com/IBM/granite-wxc.git"
 ]
