@@ -1,5 +1,5 @@
 # Copyright contributors to the Terratorch project
-
+from typing import Optional
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
@@ -12,6 +12,7 @@ FACTORY_REGISTRY = {}
 class ModelOutput:
     output: Tensor
     auxiliary_heads: dict[str, Tensor] = None
+    mask: Optional[Tensor] = None
 
 
 class Model(ABC):
