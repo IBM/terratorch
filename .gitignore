@@ -9,3 +9,4 @@ dist/*
 **/*pth
 .venv/*
 venv/*
+tests/all_ecos_random/*
