@@ -104,7 +104,8 @@ max_batch_size: 16
 
 path_experiment: experiment
 
-#backbone_freeze: True
+freeze_backbone: True
+freeze_decoder: True
 backbone_prefix: encoder.
 finetune_w_static: True
 strict_matching: true

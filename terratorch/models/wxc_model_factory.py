@@ -21,16 +21,21 @@ class WxCModuleWrapper(Model, nn.Module):
         self.module = module
         
     def freeze_encoder(self):
-        raise NotImplementedError("This function is not yet implemented.")
+        print("freeze encoder")
+        for param in self.module.backbone.parameters():
+            param.requires_grad = True
 
     def freeze_decoder(self):
-        raise NotImplementedError("This function is not yet implemented.")
+        print("freeze decoder")
+        for param in self.module.head.parameters():
+            param.requires_grad = True
 
     def forward(self, x) -> ModelOutput:
         mo = self.module.forward(x)
         return ModelOutput(mo)
     
     def load_state_dict(self, state_dict: os.Mapping[str, torch.Any], strict: bool = True, assign: bool = False):
+
         return self.module.load_state_dict(state_dict, strict, assign)
 
 
