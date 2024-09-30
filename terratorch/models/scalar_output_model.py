@@ -28,7 +28,7 @@ class ScalarOutputModel(Model, SegmentationModel):
         decoder: nn.Module,
         head_kwargs: dict,
         auxiliary_heads: dict[str, nn.Module] | None = None,
-        prepare_features_for_image_model: Callable | None = None,
+        post_backbone_ops: list[Callable] | None = None,
     ) -> None:
         """Constructor
 
@@ -38,7 +38,7 @@ class ScalarOutputModel(Model, SegmentationModel):
             decoder (nn.Module): Decoder to be used
             head_kwargs (dict): Arguments to be passed at instantiation of the head.
             auxiliary_heads (dict[str, nn.Module] | None, optional): Names mapped to auxiliary heads. Defaults to None.
-            prepare_features_for_image_model (Callable | None, optional): Function applied to encoder outputs.
+            post_backbone_ops (list[Callable] | None, optional): Functions applied to encoder outputs.
                 Defaults to None.
         """
         super().__init__()
@@ -59,7 +59,7 @@ class ScalarOutputModel(Model, SegmentationModel):
             aux_heads = {}
         self.aux_heads = nn.ModuleDict(aux_heads)
 
-        self.prepare_features_for_image_model = prepare_features_for_image_model
+        self.post_backbone_ops = post_backbone_ops
 
     def freeze_encoder(self):
         freeze_module(self.encoder)
@@ -78,13 +78,13 @@ class ScalarOutputModel(Model, SegmentationModel):
         self.check_input_shape(x)
         features = self.encoder(x)
 
-        # some models need their features reshaped
-
-        if self.prepare_features_for_image_model:
-            prepare = self.prepare_features_for_image_model
+        if self.post_backbone_ops:
+            prepare = self.post_backbone_ops
         else:
-            prepare = getattr(self.encoder, "prepare_features_for_image_model", lambda x: x)
-        features = prepare(features)
+            prepare = [getattr(self.encoder, "prepare_features_for_image_model", lambda x: x)]
+
+        for f in prepare:
+            features = f(features)
 
         decoder_output = self.decoder([f.clone() for f in features])
         mask = self.head(decoder_output)

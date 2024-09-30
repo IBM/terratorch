@@ -1,5 +1,6 @@
 # Copyright contributors to the Terratorch project
 
+import itertools
 from collections.abc import Callable
 
 import torch
@@ -29,7 +30,7 @@ class PixelWiseModel(Model, SegmentationModel):
         decoder: nn.Module,
         head_kwargs: dict,
         auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
-        prepare_features_for_image_model: Callable | None = None,
+        post_backbone_ops: list[Callable] | None = None,
         rescale: bool = True,  # noqa: FBT002, FBT001
     ) -> None:
         """Constructor
@@ -41,7 +42,7 @@ class PixelWiseModel(Model, SegmentationModel):
             head_kwargs (dict): Arguments to be passed at instantiation of the head.
             auxiliary_heads (list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None, optional): List of
                 AuxiliaryHeads with heads to be instantiated. Defaults to None.
-            prepare_features_for_image_model (Callable | None, optional): Function applied to encoder outputs.
+            post_backbone_ops (list[Callable] | None, optional): Functions applied to encoder outputs.
                 Defaults to None.
             rescale (bool, optional): Rescale the output of the model if it has a different size than the ground truth.
                 Uses bilinear interpolation. Defaults to True.
@@ -70,7 +71,7 @@ class PixelWiseModel(Model, SegmentationModel):
             aux_heads = {}
         self.aux_heads = nn.ModuleDict(aux_heads)
 
-        self.prepare_features_for_image_model = prepare_features_for_image_model
+        self.post_backbone_ops = post_backbone_ops
         self.rescale = rescale
 
         # Defining the method for dealing withe the encoder embedding
@@ -112,16 +113,13 @@ class PixelWiseModel(Model, SegmentationModel):
         input_size = x.shape[-2:]
         features = self.encoder(x)
 
-        # some models need their features reshaped
-
-        if self.prepare_features_for_image_model:
-            prepare = self.prepare_features_for_image_model
+        if self.post_backbone_ops:
+            prepare = self.post_backbone_ops
         else:
-            prepare = getattr(self.encoder, "prepare_features_for_image_model", lambda x: x)
+            prepare = [getattr(self.encoder, "prepare_features_for_image_model", lambda x: x)]
 
-        # Dealing with cases in which the encoder returns more than one
-        # output
-        features = prepare(features)
+        for f in prepare:
+            features = f(features)
 
         decoder_output = self.embed_handler(features=features)
         mask = self.head(decoder_output)
