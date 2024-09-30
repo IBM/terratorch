@@ -104,7 +104,7 @@ mask_ratio_targets: 0.0
 max_batch_size: 16
 
 path_experiment: experiment
-
+loss: rmse
 freeze_backbone: True
 freeze_decoder: False
 backbone_prefix: encoder.
