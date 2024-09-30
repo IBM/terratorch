@@ -14,8 +14,8 @@ class Merra2DownscaleDatasetTerraTorch(Merra2DownscaleDataset):
     def __getitem__(self, index) -> dict[Tensor | int]:
         batch = super().__getitem__(index)
         batch_extended = {}
+        batch_extended['mask'] = batch.pop("y")
         batch_extended['image'] = batch
-        batch_extended['mask'] = batch
         batch_extended['filename'] = f'{index}.tif'
       
         return batch_extended

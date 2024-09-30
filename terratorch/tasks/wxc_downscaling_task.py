@@ -103,7 +103,7 @@ class WxCDownscalingTask(BaseTask):
         x = batch["image"]
         mask = batch["mask"]
         model_output: ModelOutput = self(x)
-
+        print(x.keys())
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, None)
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat = model_output.output
@@ -123,7 +123,7 @@ class WxCDownscalingTask(BaseTask):
             dataloader_idx: Index of the current dataloader.
         """
         x = batch["image"]
-        y = batch["mask"]['y']
+        y = batch["mask"]
         model_output: ModelOutput = self(x)
 
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, None)
