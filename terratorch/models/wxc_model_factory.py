@@ -23,12 +23,12 @@ class WxCModuleWrapper(Model, nn.Module):
     def freeze_encoder(self):
         print("freeze encoder")
         for param in self.module.backbone.parameters():
-            param.requires_grad = True
+            param.requires_grad = False
 
     def freeze_decoder(self):
         print("freeze decoder")
         for param in self.module.head.parameters():
-            param.requires_grad = True
+            param.requires_grad = False
 
     def forward(self, x) -> ModelOutput:
         mo = self.module.forward(x)
@@ -48,4 +48,5 @@ class WxCModelFactory(ModelFactory):
         **kwargs,
     ) -> Model:
         module = get_finetune_model(kwargs['model_config'])
+        print("Using wrapper.")
         return WxCModuleWrapper(module)

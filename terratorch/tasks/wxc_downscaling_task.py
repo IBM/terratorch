@@ -31,6 +31,8 @@ class WxCDownscalingTask(BaseTask):
 
         self.model_factory = get_factory(model_factory)
         self.model_config = model_config
+        # TODO Unify it with self.hparams
+        self.hparams_ = self.model_config.to_dict()
         super().__init__()
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
         self.test_loss_handler = LossHandler(self.test_metrics.prefix)
@@ -42,9 +44,9 @@ class WxCDownscalingTask(BaseTask):
         self.model: Model = self.model_factory.build_model(
             "regression", aux_decoders=None, model_config=self.model_config, **self.hparams["model_args"]
         )
-        if self.hparams["freeze_backbone"]:
+        if self.hparams_["freeze_backbone"]:
             self.model.freeze_encoder()
-        if self.hparams["freeze_decoder"]:
+        if self.hparams_["freeze_decoder"]:
             self.model.freeze_decoder()
 
     def configure_optimizers(
@@ -97,10 +99,41 @@ class WxCDownscalingTask(BaseTask):
         self.test_metrics = MetricCollection(instantiate_metrics(), prefix="test/")
 
     def training_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
-        raise NotImplementedError("This function is not yet implemented.")
+
+        x = batch["image"]
+        mask = batch["mask"]
+        model_output: ModelOutput = self(x)
+        loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
+        self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
+        y_hat = model_output.output
+        self.train_metrics(y_hat, y)
+        self.log_dict(self.train_metrics, on_epoch=True)
+
+        return loss["loss"]
+
+        #raise NotImplementedError("This function is not yet implemented.")
 
     def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
-        raise NotImplementedError("This function is not yet implemented.")
+        """Compute the train loss and additional metrics.
+
+        Args:
+            batch: The output of your DataLoader.
+            batch_idx: Integer displaying index of this batch.
+            dataloader_idx: Index of the current dataloader.
+        """
+        x = batch["image"]
+        y = batch["mask"]
+        model_output: ModelOutput = self(x)
+        loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
+        self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
+        y_hat = model_output.output
+        self.train_metrics(y_hat, y)
+        self.log_dict(self.train_metrics, on_epoch=True)
+
+        return loss["loss"]
+
+
+        #raise NotImplementedError("This function is not yet implemented.")
 
     def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         raise NotImplementedError("This function is not yet implemented.")
@@ -108,7 +141,7 @@ class WxCDownscalingTask(BaseTask):
     def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         x = batch["image"]
         file_names = batch["filename"]
-
+        
         def model_forward(x):
             return self(x).output
 

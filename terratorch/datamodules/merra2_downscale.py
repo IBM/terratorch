@@ -17,7 +17,7 @@ class Merra2DownscaleDatasetTerraTorch(Merra2DownscaleDataset):
         batch_extended['image'] = batch
         batch_extended['mask'] = batch
         batch_extended['filename'] = f'{index}.tif'
-
+      
         return batch_extended
 
 class Merra2DownscaleNonGeoDataModule(NonGeoDataModule):
@@ -30,8 +30,22 @@ class Merra2DownscaleNonGeoDataModule(NonGeoDataModule):
         return super()._dataloader_factory(split)
     
     def setup(self, stage: str) -> None:
+
+        if (stage == 'train'):
+            self.train_dataset = self.dataset_class(  # type: ignore[call-arg]
+                split='train', **self.kwargs
+            ) 
+        if (stage == 'val'):
+            self.val_dataset = self.dataset_class(  # type: ignore[call-arg]
+                split='val', **self.kwargs
+            ) 
+        if (stage == 'test'):
+            self.test_dataset = self.dataset_class(  # type: ignore[call-arg]
+                split='test', **self.kwargs
+            ) 
         if (stage == 'predict'):
             self.predict_dataset = self.dataset_class(  # type: ignore[call-arg]
                 split='predict', **self.kwargs
             ) 
+
         return super().setup(stage)
