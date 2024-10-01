@@ -43,7 +43,9 @@ class PixelWiseModel(Model, SegmentationModel):
             auxiliary_heads (list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None, optional): List of
                 AuxiliaryHeads with heads to be instantiated. Defaults to None.
             post_backbone_ops (list[Callable]): Functions to be called in succession on encoder features
-                before passing them to the decoder. Defaults to None, which applies the identity function.
+                before passing them to the decoder.
+                Each function should accept a list of embeddings, representing different feature levels.
+                Defaults to None, which applies the identity function.
             rescale (bool, optional): Rescale the output of the model if it has a different size than the ground truth.
                 Uses bilinear interpolation. Defaults to True.
         """
