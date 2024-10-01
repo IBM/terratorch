@@ -1,34 +1,37 @@
 import itertools
 import logging
+import typing
 from collections import OrderedDict
 from collections.abc import Callable, Mapping
-from typing import Protocol
 
 import timm
 from torch import nn
 
+V = typing.TypeVar("V")
 
-class RegistryMapping(Protocol, Mapping[str, Callable]):
-    def build(self, name: str, *args, **kwargs) -> nn.Module:
-        ...
+class BuildableRegistry(typing.Protocol):
+    def __getitem__(self, name: str): ...
+    def __iter__(self): ...
+    def __len__(self) -> int: ...
+    def build(self, name: str, *args, **kwargs): ...
 
-class MultiSourceRegistry(RegistryMapping):
+class MultiSourceRegistry(Mapping):
     def __init__(self) -> None:
-        self._sources: OrderedDict[str, RegistryMapping] = OrderedDict()
+        self._sources: OrderedDict[str, BuildableRegistry] = OrderedDict()
 
-    def _parse_prefix(self, name) -> tuple[str, str] | None:
+    def _parse_prefix(self, name) -> tuple[BuildableRegistry, str] | None:
         split = name.split("_")
         if len(split) > 1 and split[0] in self._sources:
-            prefix = self._sources[split[0]]
+            registry = self._sources[split[0]]
             name_without_prefix = "_".join(split[1:])
-            return prefix, name_without_prefix
+            return registry, name_without_prefix
         return None
 
-    def build(self, name: str, *constructor_args, **constructor_kwargs) -> nn.Module:
+    def build(self, name: str, *constructor_args, **constructor_kwargs):
         parsed_prefix = self._parse_prefix(name)
         if parsed_prefix:
-            prefix, name_without_prefix = parsed_prefix
-            return self._sources[prefix].build(name_without_prefix, *constructor_args, **constructor_kwargs)
+            registry, name_without_prefix = parsed_prefix
+            return registry.build(name_without_prefix, *constructor_args, **constructor_kwargs)
 
         # if no prefix
         for source in self._sources.values():
@@ -40,7 +43,7 @@ class MultiSourceRegistry(RegistryMapping):
         msg = f"Could not instantiate Model {name} not from any source."
         raise Exception(msg)
 
-    def register_source(self, prefix: str, registry) -> None:
+    def register_source(self, prefix: str, registry: BuildableRegistry) -> None:
         """Register a source in the registry
 
         """
@@ -58,8 +61,8 @@ class MultiSourceRegistry(RegistryMapping):
     def __getitem__(self, name):
         parsed_prefix = self._parse_prefix(name)
         if parsed_prefix:
-            prefix, name_without_prefix = parsed_prefix
-            return self._sources[prefix][name_without_prefix]
+            registry, name_without_prefix = parsed_prefix
+            return registry[name_without_prefix]
 
         # if no prefix is given, go through all sources in order
         for source in self._sources.values():
@@ -69,7 +72,7 @@ class MultiSourceRegistry(RegistryMapping):
                 logging.debug(e)
 
         msg = f"Could not find Model {name} not from any source."
-        raise Exception(msg)
+        raise KeyError(msg)
 
     def __contains__(self, name):
         parsed_prefix = self._parse_prefix(name)
@@ -78,7 +81,7 @@ class MultiSourceRegistry(RegistryMapping):
             return name_without_prefix in self._sources[prefix]
         return any(name in source for source in self._sources)
 
-class Registry(RegistryMapping):
+class Registry(Mapping):
     """Registry holding model constructors and multiple additional sources.
 
     This registry behaves as a dictionary from strings, which are model names,
@@ -118,7 +121,7 @@ class Registry(RegistryMapping):
         self._registry[constructor.__name__] = constructor
         return constructor
 
-    def build(self, name: str, *constructor_args, **constructor_kwargs) -> nn.Module:
+    def build(self, name: str, *constructor_args, **constructor_kwargs):
         """Build and return the component.
         Use prefixes ending with _ to forward to a specific source
         """
@@ -136,13 +139,13 @@ class Registry(RegistryMapping):
     def __contains__(self, key):
         return key in self._registry
 
-class TimmRegistry(RegistryMapping):
+class TimmRegistry(Mapping):
     """Registry wrapper for timm
     """
     def register(self, constructor: Callable | type) -> Callable:
         raise NotImplementedError()
 
-    def build(self, name: str, *constructor_args, **constructor_kwargs):
+    def build(self, name: str, *constructor_args, **constructor_kwargs) -> nn.Module:
         """Build and return the component.
         Use prefixes ending with _ to forward to a specific source
         """
@@ -175,6 +178,8 @@ BACKBONE_REGISTRY.register_source("timm", TIMM_BACKBONE_REGISTRY)
 TERRATORCH_DECODER_REGISTRY = Registry()
 DECODER_REGISTRY = MultiSourceRegistry()
 DECODER_REGISTRY.register_source("terratorch", TERRATORCH_DECODER_REGISTRY)
+
+POST_BACKBONE_OPS_REGISTRY = Registry()
 #TODO: add smp decoders
 # @DECODER_REGISTRY.register_source("")
 # def _build_smp_decoder(decoder_identifier: str, *args, **kwargs) -> nn.Module:

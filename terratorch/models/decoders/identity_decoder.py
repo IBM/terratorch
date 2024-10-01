@@ -5,7 +5,10 @@
 
 from torch import Tensor, nn
 
+from terratorch.models.registry import TERRATORCH_DECODER_REGISTRY
 
+
+@TERRATORCH_DECODER_REGISTRY.register
 class IdentityDecoder(nn.Module):
     """Identity decoder. Useful to pass the feature straight to the head."""
 

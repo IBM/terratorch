@@ -19,7 +19,7 @@ from terratorch.models.model import (
 from terratorch.models.pixel_wise_model import PixelWiseModel
 from terratorch.models.scalar_output_model import ScalarOutputModel
 from terratorch.models.smp_model_factory import make_smp_encoder, register_custom_encoder
-from terratorch.models.utils import DecoderNotFoundError
+from terratorch.models.utils import DecoderNotFoundError, extract_prefix_keys
 
 PIXEL_WISE_TASKS = ["segmentation", "regression"]
 SCALAR_TASKS = ["classification"]
@@ -91,7 +91,7 @@ class PrithviModelFactory(ModelFactory):
                 msg = f"Task {task} not supported. Please choose one of {SUPPORTED_TASKS}"
                 raise NotImplementedError(msg)
 
-            backbone_kwargs, kwargs = _extract_prefix_keys(kwargs, "backbone_")
+            backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
             # These params are used in case we need a SMP decoder
             # but should not be used for timm encoder
             output_stride = backbone_kwargs.pop("output_stride", None)
@@ -107,7 +107,7 @@ class PrithviModelFactory(ModelFactory):
                 **backbone_kwargs,
             )
 
-        decoder_kwargs, kwargs = _extract_prefix_keys(kwargs, "decoder_")
+        decoder_kwargs, kwargs = extract_prefix_keys(kwargs, "decoder_")
         # TODO: remove this
         if decoder.startswith("smp_"):
             decoder: nn.Module = _get_smp_decoder(
@@ -125,7 +125,7 @@ class PrithviModelFactory(ModelFactory):
             decoder: nn.Module = decoder_cls(backbone.feature_info.channels(), **decoder_kwargs)
             # decoder: nn.Module = decoder_cls([128, 256, 512, 1024], **decoder_kwargs)
 
-        head_kwargs, kwargs = _extract_prefix_keys(kwargs, "head_")
+        head_kwargs, kwargs = extract_prefix_keys(kwargs, "head_")
         if num_classes:
             head_kwargs["num_classes"] = num_classes
         if aux_decoders is None:
@@ -137,10 +137,10 @@ class PrithviModelFactory(ModelFactory):
         for aux_decoder in aux_decoders:
             args = aux_decoder.decoder_args if aux_decoder.decoder_args else {}
             aux_decoder_cls: nn.Module = _get_decoder(aux_decoder.decoder)
-            aux_decoder_kwargs, kwargs = _extract_prefix_keys(args, "decoder_")
+            aux_decoder_kwargs, kwargs = extract_prefix_keys(args, "decoder_")
             aux_decoder_instance = aux_decoder_cls(backbone.feature_info.channels(), **aux_decoder_kwargs)
 
-            aux_head_kwargs, kwargs = _extract_prefix_keys(args, "head_")
+            aux_head_kwargs, kwargs = extract_prefix_keys(args, "head_")
             if num_classes:
                 aux_head_kwargs["num_classes"] = num_classes
             to_be_aux_decoders.append(
@@ -268,8 +268,8 @@ def _get_smp_decoder(
     # Little hack to make SMP model accept our encoder.
     # passes a dummy encoder to be changed later.
     # this is needed to pass encoder params.
-    aux_kwargs, decoder_kwargs = _extract_prefix_keys(decoder_kwargs, "aux_")
-    smp_kwargs, decoder_kwargs = _extract_prefix_keys(decoder_kwargs, "smp_")
+    aux_kwargs, decoder_kwargs = extract_prefix_keys(decoder_kwargs, "aux_")
+    smp_kwargs, decoder_kwargs = extract_prefix_keys(decoder_kwargs, "smp_")
     backbone_kwargs["out_channels"] = out_channels
     backbone_kwargs["output_stride"] = output_stride
     aux_kwargs = None if aux_kwargs == {} else aux_kwargs
@@ -316,15 +316,3 @@ def _get_decoder(decoder: str | nn.Module) -> nn.Module:
             raise DecoderNotFoundError(msg) from decoder_not_found_exception
     msg = "Decoder must be str or nn.Module"
     raise Exception(msg)
-
-
-def _extract_prefix_keys(d: dict, prefix: str) -> dict:
-    extracted_dict = {}
-    remaining_dict = {}
-    for k, v in d.items():
-        if k.startswith(prefix):
-            extracted_dict[k[len(prefix) :]] = v
-        else:
-            remaining_dict[k] = v
-
-    return extracted_dict, remaining_dict
