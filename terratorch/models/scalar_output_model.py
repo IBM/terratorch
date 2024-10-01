@@ -8,6 +8,7 @@ from torch import nn
 
 from terratorch.models.heads import ClassificationHead
 from terratorch.models.model import Model, ModelOutput
+from terratorch.models.post_backbone_ops import apply_ops
 
 
 def freeze_module(module: nn.Module):
@@ -28,7 +29,7 @@ class ScalarOutputModel(Model, SegmentationModel):
         decoder: nn.Module,
         head_kwargs: dict,
         auxiliary_heads: dict[str, nn.Module] | None = None,
-        prepare_features_for_image_model: Callable | None = None,
+        post_backbone_ops: list[Callable] | None = None,
     ) -> None:
         """Constructor
 
@@ -38,8 +39,10 @@ class ScalarOutputModel(Model, SegmentationModel):
             decoder (nn.Module): Decoder to be used
             head_kwargs (dict): Arguments to be passed at instantiation of the head.
             auxiliary_heads (dict[str, nn.Module] | None, optional): Names mapped to auxiliary heads. Defaults to None.
-            prepare_features_for_image_model (Callable | None, optional): Function applied to encoder outputs.
-                Defaults to None.
+            post_backbone_ops (list[Callable]): Functions to be called in succession on encoder features
+                before passing them to the decoder.
+                Each function should accept a list of embeddings, representing different feature levels.
+                Defaults to None, which applies the identity function.
         """
         super().__init__()
         self.task = task
@@ -59,7 +62,7 @@ class ScalarOutputModel(Model, SegmentationModel):
             aux_heads = {}
         self.aux_heads = nn.ModuleDict(aux_heads)
 
-        self.prepare_features_for_image_model = prepare_features_for_image_model
+        self.post_backbone_ops = post_backbone_ops
 
     def freeze_encoder(self):
         freeze_module(self.encoder)
@@ -78,13 +81,13 @@ class ScalarOutputModel(Model, SegmentationModel):
         self.check_input_shape(x)
         features = self.encoder(x)
 
-        # some models need their features reshaped
-
-        if self.prepare_features_for_image_model:
-            prepare = self.prepare_features_for_image_model
+        if self.post_backbone_ops:
+            prepare = self.post_backbone_ops
         else:
-            prepare = getattr(self.encoder, "prepare_features_for_image_model", lambda x: x)
-        features = prepare(features)
+            # for backwards compatibility, if this is defined in the encoder, use it
+            prepare = [getattr(self.encoder, "prepare_features_for_image_model", lambda x: x)]
+
+        features = apply_ops(prepare, features)
 
         decoder_output = self.decoder([f.clone() for f in features])
         mask = self.head(decoder_output)

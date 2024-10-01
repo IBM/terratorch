@@ -9,6 +9,7 @@ from torch import nn
 
 from terratorch.models.heads import RegressionHead, SegmentationHead
 from terratorch.models.model import AuxiliaryHeadWithDecoderWithoutInstantiatedHead, Model, ModelOutput
+from terratorch.models.post_backbone_ops import apply_ops
 
 
 def freeze_module(module: nn.Module):
@@ -29,7 +30,7 @@ class PixelWiseModel(Model, SegmentationModel):
         decoder: nn.Module,
         head_kwargs: dict,
         auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
-        prepare_features_for_image_model: Callable | None = None,
+        post_backbone_ops: list[Callable] | None = None,
         rescale: bool = True,  # noqa: FBT002, FBT001
     ) -> None:
         """Constructor
@@ -41,17 +42,12 @@ class PixelWiseModel(Model, SegmentationModel):
             head_kwargs (dict): Arguments to be passed at instantiation of the head.
             auxiliary_heads (list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None, optional): List of
                 AuxiliaryHeads with heads to be instantiated. Defaults to None.
-            prepare_features_for_image_model (Callable | None, optional): Function applied to encoder outputs.
-                Defaults to None.
+            post_backbone_ops (list[Callable]): Functions to be called in succession on encoder features
+                before passing them to the decoder. Defaults to None, which applies the identity function.
             rescale (bool, optional): Rescale the output of the model if it has a different size than the ground truth.
                 Uses bilinear interpolation. Defaults to True.
         """
         super().__init__()
-
-        if "multiple_embed" in head_kwargs:
-            self.multiple_embed = head_kwargs.pop("multiple_embed")
-        else:
-            self.multiple_embed = False
 
         self.task = task
         self.encoder = encoder
@@ -70,14 +66,9 @@ class PixelWiseModel(Model, SegmentationModel):
             aux_heads = {}
         self.aux_heads = nn.ModuleDict(aux_heads)
 
-        self.prepare_features_for_image_model = prepare_features_for_image_model
+        self.post_backbone_ops = post_backbone_ops
         self.rescale = rescale
 
-        # Defining the method for dealing withe the encoder embedding
-        if self.multiple_embed:
-            self.embed_handler = self._multiple_embedding_outputs
-        else:
-            self.embed_handler = self._single_embedding_output
 
     def freeze_encoder(self):
         freeze_module(self.encoder)
@@ -85,16 +76,6 @@ class PixelWiseModel(Model, SegmentationModel):
     def freeze_decoder(self):
         freeze_module(self.encoder)
         freeze_module(self.head)
-
-    def _single_embedding_output(self, features: torch.Tensor) -> torch.Tensor:
-        decoder_output = self.decoder([f.clone() for f in features])
-
-        return decoder_output
-
-    def _multiple_embedding_outputs(self, features: tuple[torch.Tensor]) -> torch.Tensor:
-        decoder_output = self.decoder(*features)
-
-        return decoder_output
 
     # TODO: do this properly
     def check_input_shape(self, x: torch.Tensor) -> bool:  # noqa: ARG002
@@ -112,18 +93,17 @@ class PixelWiseModel(Model, SegmentationModel):
         input_size = x.shape[-2:]
         features = self.encoder(x)
 
-        # some models need their features reshaped
-
-        if self.prepare_features_for_image_model:
-            prepare = self.prepare_features_for_image_model
+        if self.post_backbone_ops:
+            prepare = self.post_backbone_ops
         else:
-            prepare = getattr(self.encoder, "prepare_features_for_image_model", lambda x: x)
+            # for backwards compatibility, if this is defined in the encoder, use it
+            prepare = [getattr(self.encoder, "prepare_features_for_image_model", lambda x: x)]
 
         # Dealing with cases in which the encoder returns more than one
         # output
-        features = prepare(features)
+        features = apply_ops(prepare, features)
 
-        decoder_output = self.embed_handler(features=features)
+        decoder_output = self.decoder([f.clone() for f in features])
         mask = self.head(decoder_output)
         if self.rescale and mask.shape[-2:] != input_size:
             mask = F.interpolate(mask, size=input_size, mode="bilinear")
