@@ -100,7 +100,7 @@ class EncoderDecoderFactory(ModelFactory):
             head_kwargs["num_classes"] = num_classes
         if post_backbone_ops is None:
             post_backbone_ops = []
-        post_backbone_ops = [
+        post_backbone_ops: list[Callable] = [
             POST_BACKBONE_OPS_REGISTRY.build(op["name"], **{k: v for k, v in op.items() if k != "name"})
             for op in post_backbone_ops
         ]

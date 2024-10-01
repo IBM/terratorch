@@ -7,7 +7,7 @@ from segmentation_models_pytorch.base import SegmentationModel
 from torch import nn
 
 from terratorch.models.heads import ClassificationHead
-from terratorch.models.model import Model, ModelOutput
+from terratorch.models.model import AuxiliaryHeadWithDecoderWithoutInstantiatedHead, Model, ModelOutput
 from terratorch.models.post_backbone_ops import apply_ops
 
 
@@ -28,7 +28,7 @@ class ScalarOutputModel(Model, SegmentationModel):
         encoder: nn.Module,
         decoder: nn.Module,
         head_kwargs: dict,
-        auxiliary_heads: dict[str, nn.Module] | None = None,
+        auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
         post_backbone_ops: list[Callable] | None = None,
     ) -> None:
         """Constructor
@@ -38,7 +38,8 @@ class ScalarOutputModel(Model, SegmentationModel):
             encoder (nn.Module): Encoder to be used
             decoder (nn.Module): Decoder to be used
             head_kwargs (dict): Arguments to be passed at instantiation of the head.
-            auxiliary_heads (dict[str, nn.Module] | None, optional): Names mapped to auxiliary heads. Defaults to None.
+            auxiliary_heads (list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None, optional): List of
+                AuxiliaryHeads with heads to be instantiated. Defaults to None.
             post_backbone_ops (list[Callable]): Functions to be called in succession on encoder features
                 before passing them to the decoder.
                 Each function should accept a list of embeddings, representing different feature levels.
