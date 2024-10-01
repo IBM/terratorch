@@ -68,10 +68,6 @@ wxc = [
   "granitewxc @ git+https://github.com/IBM/granite-wxc.git"
 ]
 
-geobench = [
-  "geobench>=1.0.0",
-]
-
 [project.urls]
 Documentation = "https://github.com/IBM/terratorch#readme"
 Issues = "https://github.com/IBM/terratorch/issues"
