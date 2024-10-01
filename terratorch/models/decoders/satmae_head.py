@@ -4,7 +4,10 @@ import torch
 import torch.nn as nn
 from timm.models.vision_transformer import Block, PatchEmbed
 
+from terratorch.models.registry import TERRATORCH_DECODER_REGISTRY
 
+
+@TERRATORCH_DECODER_REGISTRY.register
 class SatMAEHead(nn.Module):
 
     def __init__(self, embed_dim:int=None, output_embed_dim:int=None, bias:bool=True,

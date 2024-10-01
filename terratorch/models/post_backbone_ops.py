@@ -4,6 +4,8 @@ import numpy as np
 import torch
 from einops import rearrange
 
+from terratorch.models.registry import POST_BACKBONE_OPS_REGISTRY
+
 
 def apply_ops(ops: list[Callable], embeddings: list[torch.Tensor]) -> list[torch.Tensor]:
     cloned_embeddings = [e.clone() for e in embeddings]
@@ -11,6 +13,7 @@ def apply_ops(ops: list[Callable], embeddings: list[torch.Tensor]) -> list[torch
         cloned_embeddings = op(cloned_embeddings)
     return cloned_embeddings
 
+@POST_BACKBONE_OPS_REGISTRY.register
 class SelectIndices(Callable):
     def __init__(self, indices: list[int]):
         self.indices = indices
@@ -18,7 +21,7 @@ class SelectIndices(Callable):
     def __call__(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
         return [features[i] for i in self.indices]
 
-
+@POST_BACKBONE_OPS_REGISTRY.register
 class ReshapeTokensToImage(Callable):
     def __init__(self, remove_cls_token=True, effective_time_dim: int = 1):  # noqa: FBT002
         """Reshape output of transformer encoder so it can be passed to a conv net.
@@ -49,13 +52,13 @@ class ReshapeTokensToImage(Callable):
             else:
                 x_no_token = x
             number_of_tokens = x_no_token.shape[1]
-            tokens_per_timestep = number_of_tokens // self.patch_embed.effective_time_dim
+            tokens_per_timestep = number_of_tokens // self.effective_time_dim
             h = int(np.sqrt(tokens_per_timestep))
             encoded = rearrange(
                 x_no_token,
                 "batch (t h w) e -> batch (t e) h w",
-                e=self.embed_dim,
-                t=self.patch_embed.effective_time_dim,
+                batch=x_no_token.shape[0],
+                t=self.effective_time_dim,
                 h=h,
             )
             out.append(encoded)

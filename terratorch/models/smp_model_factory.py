@@ -11,6 +11,7 @@ from torch import nn
 
 from terratorch.datasets import HLSBands
 from terratorch.models.model import Model, ModelFactory, ModelOutput, register_factory
+from terratorch.models.utils import extract_prefix_keys
 
 
 class SMPModelWrapper(Model, nn.Module):
@@ -135,9 +136,9 @@ class SMPModelFactory(ModelFactory):
             msg = f"Decoder {model} is not supported in SMP."
             raise ValueError(msg)
 
-        backbone_kwargs = _extract_prefix_keys(kwargs, "backbone_")  # Encoder params should be prefixed backbone_
-        smp_kwargs = _extract_prefix_keys(backbone_kwargs, "smp_")  # Smp model params should be prefixed smp_
-        aux_params = _extract_prefix_keys(backbone_kwargs, "aux_")  # Auxiliary head params should be prefixed aux_
+        backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")  # Encoder params should be prefixed backbone_
+        smp_kwargs, kwargs = extract_prefix_keys(backbone_kwargs, "smp_")  # Smp model params should be prefixed smp_
+        aux_params, kwargs = extract_prefix_keys(backbone_kwargs, "aux_")  # Auxiliary head params should be prefixed aux_
         aux_params = None if aux_params == {} else aux_params
 
         if isinstance(pretrained, bool):
@@ -263,20 +264,6 @@ def make_smp_encoder(encoder=None):
                 pass
 
     return SMPEncoderWrapperWithPFFIM
-
-
-def _extract_prefix_keys(d: dict, prefix: str) -> dict:
-    extracted_dict = {}
-    keys_to_del = []
-    for k, v in d.items():
-        if k.startswith(prefix):
-            extracted_dict[k.split(prefix)[1]] = v
-            keys_to_del.append(k)
-
-    for k in keys_to_del:
-        del d[k]
-
-    return extracted_dict
 
 
 def _get_class_from_string(class_path):
