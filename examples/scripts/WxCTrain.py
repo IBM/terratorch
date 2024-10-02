@@ -36,7 +36,7 @@ from huggingface_hub import hf_hub_download, snapshot_download
 # In[ ]:
 
 
-config = get_config('../confs/granite-wxc-merra2-downscale-config.yaml')
+config = get_config('../confs/granite-wxc-merra2-downscale-small-config.yaml')
 config.download_path = './'
 
 config.data.data_path_surface = os.path.join(config.download_path,'merra-2')
@@ -132,7 +132,6 @@ task = WxCDownscalingTask(model_args = {}, model_factory = 'WxCModelFactory', mo
 
 # In[ ]:
 
-
 if torch.cuda.is_available():
     accelerator = 'cuda'
 else:
@@ -140,20 +139,21 @@ else:
 accelerator
 
 
-# In[ ]:
-
-
-hf_hub_download(
-    repo_id="ibm-granite/granite-geospatial-wxc-downscaling",
-    filename=f"pytorch_model.bin",
-    local_dir=".",
-)
-
-
+"""
 # In[ ]:
 
 if not os.path.isfile("pytorch_model.bin"):
-    task.model.load_state_dict(torch.load('./pytorch_model.bin', weights_only=True, map_location=torch.device(accelerator)))
+    hf_hub_download(
+        repo_id="ibm-granite/granite-geospatial-wxc-downscaling",
+        filename=f"pytorch_model.bin",
+        local_dir=".",
+    )
+"""
+
+# In[ ]:
+
+#if not os.path.isfile("pytorch_model.bin"):
+#    task.model.load_state_dict(torch.load('./pytorch_model.bin', weights_only=True, map_location=torch.device(accelerator)))
 
 
 # In[ ]:
@@ -199,7 +199,6 @@ plt.show()
 
 
 # In[ ]:
-
 
 
 

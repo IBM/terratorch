@@ -71,14 +71,17 @@ class WxCDownscalingTask(BaseTask):
         Raises:
             ValueError: If *loss* is invalid.
         """
+        #TODO 'reduction' should be chosen using the config and 
+        # a similar class as IgnoreIndex should be defined for this class
+
         loss: str = self.hparams["loss"].lower()
         if loss == "mse":
-            self.criterion: nn.Module = nn.MSELoss(reduction="none")
+            self.criterion: nn.Module = nn.MSELoss(reduction="mean")
         elif loss == "mae":
-            self.criterion = nn.L1Loss(reduction="none")
+            self.criterion = nn.L1Loss(reduction="mean")
         elif loss == "rmse":
             # IMPORTANT! Root is done only after ignore index! Otherwise the mean taken is incorrect
-            self.criterion = RootLossWrapper(nn.MSELoss(reduction="none"), reduction=None)
+            self.criterion = RootLossWrapper(nn.MSELoss(reduction="none"), reduction="mean")
         elif loss == "huber":
             self.criterion = nn.HuberLoss(reduction="none")
         else:
@@ -86,7 +89,7 @@ class WxCDownscalingTask(BaseTask):
             raise ValueError(exception_message)
 
     def configure_metrics(self) -> None:
-        
+
         def instantiate_metrics():
             return {
                 "RMSE": MeanSquaredError(squared=False),
@@ -103,9 +106,9 @@ class WxCDownscalingTask(BaseTask):
         x = batch["image"]
         mask = batch["mask"]
         model_output: ModelOutput = self(x)
-        print(x.keys())
+        y = mask
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, None)
-        self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
+        #self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat = model_output.output
         self.train_metrics(y_hat, y)
         self.log_dict(self.train_metrics, on_epoch=True)
