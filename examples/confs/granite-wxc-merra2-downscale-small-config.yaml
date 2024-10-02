@@ -82,7 +82,7 @@ model:
     encoder_decoder_conv_channels: 128
     freeze_backbone: True
     freeze_decoder: False
-
+    ignore_index: -1
 
 
 job_id: inference-test

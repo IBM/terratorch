@@ -108,14 +108,12 @@ class WxCDownscalingTask(BaseTask):
         model_output: ModelOutput = self(x)
         y = mask
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, None)
-        #self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
+        self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat = model_output.output
         self.train_metrics(y_hat, y)
         self.log_dict(self.train_metrics, on_epoch=True)
 
         return loss["loss"]
-
-        #raise NotImplementedError("This function is not yet implemented.")
 
     def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         """Compute the train loss and additional metrics.
@@ -130,15 +128,12 @@ class WxCDownscalingTask(BaseTask):
         model_output: ModelOutput = self(x)
 
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, None)
-        #self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x['y'].shape[0])
+        self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat = model_output.output
         self.train_metrics(y_hat, y)
         self.log_dict(self.train_metrics, on_epoch=True)
 
         return loss["loss"]
-
-
-        #raise NotImplementedError("This function is not yet implemented.")
 
     def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         raise NotImplementedError("This function is not yet implemented.")

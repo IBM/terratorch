@@ -14,7 +14,7 @@
 # git clone https://github.com/IBM/terratorch.git  
 # And you run this notebook from terratorch/examples/notebooks  
 
-# In[ ]:
+# 
 
 import terratorch # this import is needed to initialize TT's factories
 from lightning.pytorch import Trainer
@@ -33,7 +33,7 @@ from huggingface_hub import hf_hub_download, snapshot_download
 # We provide a configuration file that is used to configure data variables and model parameters. For inference most of these configurations are used as is. This includes the variables that the model is trained on, the variables that we downscale, the number of input timesteps, the amount of downscaling, the embedding dimensions for the model. When necessary, we will show which configurations need to be specified or changed outside of what is set in this file already.
 # 
 
-# In[ ]:
+# 
 
 
 config = get_config('../confs/granite-wxc-merra2-downscale-small-config.yaml')
@@ -60,20 +60,23 @@ config.model.output_scalers_vertical_path = os.path.join(config.download_path,'c
 # Note: With config.download_path = './' the files are downloaded in the current working directory
 # 
 
-# In[ ]:
+# 
 
+files = glob.glob("merra-2/*")
 
-snapshot_download(
-    repo_id="Prithvi-WxC/prithvi.wxc.2300m.v1",
-    allow_patterns="merra-2/MERRA2_sfc_2020010[1].nc",
-    local_dir=".",
-)
+if not len(files):
 
-snapshot_download(
-    repo_id="Prithvi-WxC/prithvi.wxc.2300m.v1",
-    allow_patterns="merra-2/MERRA_pres_2020010[1].nc",
-    local_dir=".",
-)
+    snapshot_download(
+        repo_id="Prithvi-WxC/prithvi.wxc.2300m.v1",
+        allow_patterns="merra-2/MERRA2_sfc_2020010[1].nc",
+        local_dir=".",
+    )
+
+    snapshot_download(
+        repo_id="Prithvi-WxC/prithvi.wxc.2300m.v1",
+        allow_patterns="merra-2/MERRA_pres_2020010[1].nc",
+        local_dir=".",
+    )
 
 
 # 
@@ -82,7 +85,7 @@ snapshot_download(
 # The PrithviWxC model was trained to calculate the output by producing a perturbation to the climatology at the target time. This mode of operation is set via the residual=climate option. This was chosen as climatology is typically a strong prior for long-range prediction. When using the residual=climate option, we have to provide the dataloader with the path of the climatology data.
 # 
 
-# In[ ]:
+# 
 
 files = glob.glob("climatology/*")
 
@@ -123,14 +126,14 @@ if not len(files):
         local_dir=".",
     )
 
-# In[ ]:
+# 
 
 print("This is our config:")
 print(config.to_dict())
 task = WxCDownscalingTask(model_args = {}, model_factory = 'WxCModelFactory', model_config=config, optimizer='AdamW', optimizer_hparams={'weight_decay': 0.05})
 
 
-# In[ ]:
+# 
 
 if torch.cuda.is_available():
     accelerator = 'cuda'
@@ -140,7 +143,7 @@ accelerator
 
 
 """
-# In[ ]:
+# 
 
 if not os.path.isfile("pytorch_model.bin"):
     hf_hub_download(
@@ -150,13 +153,10 @@ if not os.path.isfile("pytorch_model.bin"):
     )
 """
 
-# In[ ]:
+# 
 
-#if not os.path.isfile("pytorch_model.bin"):
+#if os.path.isfile("pytorch_model.bin"):
 #    task.model.load_state_dict(torch.load('./pytorch_model.bin', weights_only=True, map_location=torch.device(accelerator)))
-
-
-# In[ ]:
 
 
 datamodule = Merra2DownscaleNonGeoDataModule(
@@ -175,17 +175,17 @@ datamodule = Merra2DownscaleNonGeoDataModule(
 datamodule.setup('predict')
 
 
-# In[ ]:
+# 
 
 trainer = Trainer(
     accelerator=accelerator,
     max_epochs=1,
 )
 
-results = trainer.fit(model=task, datamodule=datamodule)
-#results = trainer.predict(model=task, datamodule=datamodule, return_predictions=True)
+trainer.fit(model=task, datamodule=datamodule)
+results = trainer.predict(model=task, datamodule=datamodule, return_predictions=True)
 
-# In[ ]:
+# 
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -198,7 +198,7 @@ plt.title(f"2M air temperature")
 plt.show()
 
 
-# In[ ]:
+# 
 
 
 
