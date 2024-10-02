@@ -24,7 +24,7 @@ class Model(ABC):
         pass
 
     @abstractmethod
-    def forward(self) -> ModelOutput:
+    def forward(self, *args, **kwargs) -> ModelOutput:
         pass
 
 

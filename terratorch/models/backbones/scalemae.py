@@ -12,6 +12,7 @@
 # --------------------------------------------------------
 
 import logging
+from collections.abc import Callable
 from functools import partial
 
 import numpy as np
@@ -25,7 +26,7 @@ from torch import nn
 from terratorch.datasets.utils import HLSBands
 from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
 
-scalemae_model_registry = {}
+scalemae_model_registry: dict[str, Callable] = {}
 
 PRETRAINED_BANDS = [
     HLSBands.RED,
@@ -33,7 +34,7 @@ PRETRAINED_BANDS = [
     HLSBands.BLUE,
 ]
 
-def register_scalemae_model(constructor: callable):
+def register_scalemae_model(constructor: Callable):
     scalemae_model_registry[constructor.__name__] = constructor
     return constructor
 
@@ -289,13 +290,19 @@ def load_scalemae_weights(model: nn.Module, ckpt_data: str, model_bands: list[HL
 def create_model(model_name: str, ckpt_path: str | None = None, bands: list[HLSBands | int | str] | None = None, **kwargs):
     input_size = kwargs.pop("input_size", 224)
     try:
-        constructor = scalemae_model_registry[model_name]
+        constructor: Callable = scalemae_model_registry[model_name]
     except KeyError as e:
         msg = f"Model {model_name} not in registry. Possible models are {list(scalemae_model_registry.keys())}"
         raise Exception(msg) from e
 
     if bands is None:
-        bands = PRETRAINED_BANDS
+        bands: list[HLSBands | int | str] = PRETRAINED_BANDS
+        logging.info(
+            f"Model bands not passed. Assuming bands are ordered in the same way as {PRETRAINED_BANDS}.\
+            Pretrained patch_embed layer may be misaligned with current bands"
+        )
+    else:
+        bands = [HLSBands.try_convert_to_hls_bands_enum(b) for b in bands]
     kwargs["in_chans"] = len(bands)
     model = constructor(**kwargs)
 
