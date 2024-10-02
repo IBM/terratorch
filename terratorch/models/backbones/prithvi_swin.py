@@ -6,12 +6,11 @@
 import logging
 import warnings
 from collections import OrderedDict
-from pathlib import Path
 
 import torch
 from timm.models import SwinTransformer
 from timm.models._builder import build_model_with_cfg
-from timm.models._registry import register_model
+from timm.models._registry import generate_default_cfgs, register_model
 
 from terratorch.datasets.utils import HLSBands
 from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
@@ -27,14 +26,12 @@ PRETRAINED_BANDS = [
 ]
 
 
-def _cfg(file: Path = "", **kwargs) -> dict:
-    return {
-        "file": file,
-        "source": "file",
-        "license": "mit",
-        # "first_conv": "patch_embed.proj",
-        **kwargs,
+default_cfgs = generate_default_cfgs(
+    {
+        "prithvi_swin_B": {},
+        "prithvi_swin_L": {},
     }
+)
 
 def convert_weights_swin2mmseg(ckpt):
     # from https://github.com/open-mmlab/mmsegmentation/blob/main/tools/model_converters/swin2mmseg.py
@@ -161,11 +158,22 @@ def checkpoint_filter_fn(state_dict: dict[str, torch.Tensor], model: torch.nn.Mo
 
 def _create_swin_mmseg_transformer(
     variant: str,
-    pretrained_bands: list[HLSBands],
-    model_bands: list[HLSBands],
+    pretrained_bands: list[HLSBands] | None = None,
+    model_bands: list[HLSBands | int] | None = None,
     pretrained: bool = False,  # noqa: FBT002, FBT001
     **kwargs,
 ):
+    if pretrained_bands is None:
+        pretrained_bands = PRETRAINED_BANDS
+
+    if model_bands is None:
+        model_bands: list[HLSBands | int] = pretrained_bands
+        logging.info(
+            f"Model bands not passed. Assuming bands are ordered in the same way as {PRETRAINED_BANDS}.\
+            Pretrained patch_embed layer may be misaligned with current bands"
+        )
+    else:
+        model_bands = [HLSBands.try_convert_to_hls_bands_enum(b) for b in model_bands]
     default_out_indices = tuple(i for i, _ in enumerate(kwargs.get("depths", (1, 1, 3, 1))))
     out_indices = kwargs.pop("out_indices", default_out_indices)
 
@@ -210,7 +218,7 @@ def _create_swin_mmseg_transformer(
 def prithvi_swin_B(
     pretrained: bool = False,  # noqa: FBT002, FBT001
     pretrained_bands: list[HLSBands] | None = None,
-    bands: list[int] | None = None,
+    bands: list[HLSBands | int] | None = None,
     **kwargs,
 ) -> SwinTransformer:
     """Prithvi Swin B"""
@@ -241,7 +249,7 @@ def prithvi_swin_B(
 def prithvi_swin_L(
     pretrained: bool = False,  # noqa: FBT002, FBT001
     pretrained_bands: list[HLSBands] | None = None,
-    bands: list[int] | None = None,
+    bands: list[HLSBands | int] | None = None,
     **kwargs,
 ) -> SwinTransformer:
     """Prithvi Swin L"""
