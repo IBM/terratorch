@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from einops import rearrange
 
-from terratorch.models.registry import POST_BACKBONE_OPS_REGISTRY
+from terratorch.registry import POST_BACKBONE_OPS_REGISTRY
 
 
 def apply_ops(ops: list[Callable], embeddings: list[torch.Tensor]) -> list[torch.Tensor]:
