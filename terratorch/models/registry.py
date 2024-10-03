@@ -1,3 +1,4 @@
+import imp
 import itertools
 import logging
 import typing
@@ -9,11 +10,13 @@ from torch import nn
 
 V = typing.TypeVar("V")
 
+
 class BuildableRegistry(typing.Protocol):
     def __getitem__(self, name: str): ...
     def __iter__(self): ...
     def __len__(self) -> int: ...
     def build(self, name: str, *args, **kwargs): ...
+
 
 class MultiSourceRegistry(Mapping):
     def __init__(self) -> None:
@@ -44,9 +47,7 @@ class MultiSourceRegistry(Mapping):
         raise Exception(msg)
 
     def register_source(self, prefix: str, registry: BuildableRegistry) -> None:
-        """Register a source in the registry
-
-        """
+        """Register a source in the registry"""
         if prefix in self._sources:
             msg = f"Source for prefix {prefix} already exists."
             raise KeyError(msg)
@@ -56,7 +57,7 @@ class MultiSourceRegistry(Mapping):
         return itertools.chain(*[iter(source) for source in self._sources])
 
     def __len__(self):
-        return sum(len(source) for source in self.sources)
+        return sum(len(source) for source in self._sources)
 
     def __getitem__(self, name):
         parsed_prefix = self._parse_prefix(name)
@@ -80,6 +81,15 @@ class MultiSourceRegistry(Mapping):
             prefix, name_without_prefix = parsed_prefix
             return name_without_prefix in self._sources[prefix]
         return any(name in source for source in self._sources)
+
+    def __repr__(self):
+        repr_dict = {prefix: repr(source) for prefix, source in self._sources.items()}
+        return repr(repr_dict)
+
+    def __str__(self):
+        sources_str = str(" - ".join([f"{prefix}: {source!s}" for prefix, source in self._sources.items()]))
+        return f"Multi source registry with {len(self)} items: {sources_str}"
+
 
 class Registry(Mapping):
     """Registry holding model constructors and multiple additional sources.
@@ -106,7 +116,8 @@ class Registry(Mapping):
     True
     >>> model_instance = registry.build("model")
     """
-    def __init__(self):
+
+    def __init__(self) -> None:
         self._registry: dict[str, Callable] = {}
 
     def register(self, constructor: Callable | type) -> Callable:
@@ -139,9 +150,16 @@ class Registry(Mapping):
     def __contains__(self, key):
         return key in self._registry
 
+    def __repr__(self):
+        return repr(self._registry)
+
+    def __str__(self):
+        return f"Registry with {len(self)} registered items"
+
+
 class TimmRegistry(Mapping):
-    """Registry wrapper for timm
-    """
+    """Registry wrapper for timm"""
+
     def register(self, constructor: Callable | type) -> Callable:
         raise NotImplementedError()
 
@@ -150,11 +168,11 @@ class TimmRegistry(Mapping):
         Use prefixes ending with _ to forward to a specific source
         """
         return timm.create_model(
-                name,
-                *constructor_args,
-                features_only=True,
-                **constructor_kwargs,
-            )
+            name,
+            *constructor_args,
+            features_only=True,
+            **constructor_kwargs,
+        )
 
     def __iter__(self):
         return iter(timm.list_models())
@@ -168,27 +186,25 @@ class TimmRegistry(Mapping):
     def __getitem__(self, name):
         return timm.model_entrypoint(name)
 
+    def __repr__(self):
+        return repr(timm.list_models())
+
+    def __str__(self):
+        return f"timm registry with {len(self)} registered backbones"
+
+## Declare library level registries below
+
+### Backbone Registry
 TERRATORCH_BACKBONE_REGISTRY = Registry()
 TIMM_BACKBONE_REGISTRY = TimmRegistry()
 BACKBONE_REGISTRY = MultiSourceRegistry()
 BACKBONE_REGISTRY.register_source("terratorch", TERRATORCH_BACKBONE_REGISTRY)
 BACKBONE_REGISTRY.register_source("timm", TIMM_BACKBONE_REGISTRY)
 
-
+### Decoder Registry
 TERRATORCH_DECODER_REGISTRY = Registry()
 DECODER_REGISTRY = MultiSourceRegistry()
 DECODER_REGISTRY.register_source("terratorch", TERRATORCH_DECODER_REGISTRY)
 
+### Post Backbone Ops Registry
 POST_BACKBONE_OPS_REGISTRY = Registry()
-#TODO: add smp decoders
-# @DECODER_REGISTRY.register_source("")
-# def _build_smp_decoder(decoder_identifier: str, *args, **kwargs) -> nn.Module:
-#     return _get_smp_decoder(
-#                 decoder_identifier,
-#                 backbone_kwargs,
-#                 decoder_kwargs,
-#                 out_channels,
-#                 in_channels,
-#                 num_classes,
-#                 output_stride,
-#             )

@@ -1,11 +1,9 @@
 # Copyright contributors to the Terratorch project
-"""
-This module should be removed when PrithviModelFactory is removed. For now, this tests backwards compatibility.
-"""
+
 import pytest
 import torch
 
-from terratorch.models import PrithviModelFactory
+from terratorch.models import EncoderDecoderFactory
 from terratorch.models.backbones.prithvi_vit import PRETRAINED_BANDS
 from terratorch.models.model import AuxiliaryHead
 
@@ -20,9 +18,10 @@ PIXELWISE_TASK_EXPECTED_OUTPUT = [
     ("segmentation", EXPECTED_SEGMENTATION_OUTPUT_SHAPE),
 ]
 
+
 @pytest.fixture(scope="session")
-def model_factory() -> PrithviModelFactory:
-    return PrithviModelFactory()
+def model_factory() -> EncoderDecoderFactory:
+    return EncoderDecoderFactory()
 
 
 @pytest.fixture(scope="session")
@@ -31,14 +30,13 @@ def model_input() -> torch.Tensor:
 
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
-def test_create_classification_model(backbone, model_factory: PrithviModelFactory, model_input):
+def test_create_classification_model(backbone, model_factory: EncoderDecoderFactory, model_input):
     model = model_factory.build_model(
         "classification",
         backbone=backbone,
         decoder="IdentityDecoder",
-        in_channels=NUM_CHANNELS,
-        bands=PRETRAINED_BANDS,
-        pretrained=False,
+        backbone_bands=PRETRAINED_BANDS,
+        backbone_pretrained=False,
         num_classes=NUM_CLASSES,
     )
     model.eval()
@@ -48,13 +46,13 @@ def test_create_classification_model(backbone, model_factory: PrithviModelFactor
 
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
-def test_create_classification_model_no_in_channels(backbone, model_factory: PrithviModelFactory, model_input):
+def test_create_classification_model_no_in_channels(backbone, model_factory: EncoderDecoderFactory, model_input):
     model = model_factory.build_model(
         "classification",
         backbone=backbone,
         decoder="IdentityDecoder",
-        bands=PRETRAINED_BANDS,
-        pretrained=False,
+        backbone_bands=PRETRAINED_BANDS,
+        backbone_pretrained=False,
         num_classes=NUM_CLASSES,
     )
     model.eval()
@@ -66,14 +64,13 @@ def test_create_classification_model_no_in_channels(backbone, model_factory: Pri
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
-def test_create_pixelwise_model(backbone, task, expected, decoder, model_factory: PrithviModelFactory, model_input):
+def test_create_pixelwise_model(backbone, task, expected, decoder, model_factory: EncoderDecoderFactory, model_input):
     model_args = {
         "task": task,
         "backbone": backbone,
         "decoder": decoder,
-        "in_channels": NUM_CHANNELS,
-        "bands": PRETRAINED_BANDS,
-        "pretrained": False,
+        "backbone_bands": PRETRAINED_BANDS,
+        "backbone_pretrained": False,
     }
 
     if task == "segmentation":
@@ -93,14 +90,14 @@ def test_create_pixelwise_model(backbone, task, expected, decoder, model_factory
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
 def test_create_pixelwise_model_no_in_channels(
-    backbone, task, expected, decoder, model_factory: PrithviModelFactory, model_input
+    backbone, task, expected, decoder, model_factory: EncoderDecoderFactory, model_input
 ):
     model_args = {
         "task": task,
         "backbone": backbone,
         "decoder": decoder,
-        "bands": PRETRAINED_BANDS,
-        "pretrained": False,
+        "backbone_bands": PRETRAINED_BANDS,
+        "backbone_pretrained": False,
     }
 
     if task == "segmentation":
@@ -120,16 +117,16 @@ def test_create_pixelwise_model_no_in_channels(
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
 def test_create_pixelwise_model_with_aux_heads(
-    backbone, task, expected, decoder, model_factory: PrithviModelFactory, model_input
+    backbone, task, expected, decoder, model_factory: EncoderDecoderFactory, model_input
 ):
     aux_heads_name = ["first_aux", "second_aux"]
     model_args = {
         "task": task,
         "backbone": backbone,
         "decoder": decoder,
-        "in_channels": NUM_CHANNELS,
-        "bands": PRETRAINED_BANDS,
-        "pretrained": False,
+        "backbone_in_chans": NUM_CHANNELS,
+        "backbone_bands": PRETRAINED_BANDS,
+        "backbone_pretrained": False,
         "aux_decoders": [AuxiliaryHead(name, "FCNDecoder", None) for name in aux_heads_name],
     }
     if task == "segmentation":
@@ -154,14 +151,16 @@ def test_create_pixelwise_model_with_aux_heads(
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
-def test_create_pixelwise_model_with_extra_bands(backbone, task, expected, decoder, model_factory: PrithviModelFactory):
+def test_create_pixelwise_model_with_extra_bands(
+    backbone, task, expected, decoder, model_factory: EncoderDecoderFactory
+):
     model_args = {
         "task": task,
         "backbone": backbone,
         "decoder": decoder,
-        "in_channels": NUM_CHANNELS + 1,
-        "bands": [*PRETRAINED_BANDS, 7],
-        "pretrained": False,
+        "backbone_in_chans": NUM_CHANNELS + 1,
+        "backbone_bands": [*PRETRAINED_BANDS, 7],
+        "backbone_pretrained": False,
     }
     if task == "segmentation":
         model_args["num_classes"] = NUM_CLASSES
