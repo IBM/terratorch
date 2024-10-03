@@ -1,12 +1,8 @@
-import imp
 import itertools
 import logging
 import typing
 from collections import OrderedDict
 from collections.abc import Callable, Mapping
-
-import timm
-from torch import nn
 
 V = typing.TypeVar("V")
 
@@ -15,6 +11,7 @@ class BuildableRegistry(typing.Protocol):
     def __getitem__(self, name: str): ...
     def __iter__(self): ...
     def __len__(self) -> int: ...
+    def __contains__(self, name: str) -> bool: ...
     def build(self, name: str, *args, **kwargs): ...
 
 
@@ -22,18 +19,19 @@ class MultiSourceRegistry(Mapping):
     def __init__(self) -> None:
         self._sources: OrderedDict[str, BuildableRegistry] = OrderedDict()
 
-    def _parse_prefix(self, name) -> tuple[BuildableRegistry, str] | None:
+    def _parse_prefix(self, name) -> tuple[str, str] | None:
         split = name.split("_")
         if len(split) > 1 and split[0] in self._sources:
-            registry = self._sources[split[0]]
+            prefix = split[0]
             name_without_prefix = "_".join(split[1:])
-            return registry, name_without_prefix
+            return prefix, name_without_prefix
         return None
 
     def build(self, name: str, *constructor_args, **constructor_kwargs):
         parsed_prefix = self._parse_prefix(name)
         if parsed_prefix:
-            registry, name_without_prefix = parsed_prefix
+            prefix, name_without_prefix = parsed_prefix
+            registry = self._sources[prefix]
             return registry.build(name_without_prefix, *constructor_args, **constructor_kwargs)
 
         # if no prefix
@@ -62,7 +60,8 @@ class MultiSourceRegistry(Mapping):
     def __getitem__(self, name):
         parsed_prefix = self._parse_prefix(name)
         if parsed_prefix:
-            registry, name_without_prefix = parsed_prefix
+            prefix, name_without_prefix = parsed_prefix
+            registry = self._sources[prefix]
             return registry[name_without_prefix]
 
         # if no prefix is given, go through all sources in order
@@ -80,14 +79,14 @@ class MultiSourceRegistry(Mapping):
         if parsed_prefix:
             prefix, name_without_prefix = parsed_prefix
             return name_without_prefix in self._sources[prefix]
-        return any(name in source for source in self._sources)
+        return any(name in source for source in self._sources.values())
 
     def __repr__(self):
         repr_dict = {prefix: repr(source) for prefix, source in self._sources.items()}
         return repr(repr_dict)
 
     def __str__(self):
-        sources_str = str(" - ".join([f"{prefix}: {source!s}" for prefix, source in self._sources.items()]))
+        sources_str = str(" | ".join([f"{prefix}: {source!s}" for prefix, source in self._sources.items()]))
         return f"Multi source registry with {len(self)} items: {sources_str}"
 
 
@@ -156,50 +155,12 @@ class Registry(Mapping):
     def __str__(self):
         return f"Registry with {len(self)} registered items"
 
-
-class TimmRegistry(Mapping):
-    """Registry wrapper for timm"""
-
-    def register(self, constructor: Callable | type) -> Callable:
-        raise NotImplementedError()
-
-    def build(self, name: str, *constructor_args, **constructor_kwargs) -> nn.Module:
-        """Build and return the component.
-        Use prefixes ending with _ to forward to a specific source
-        """
-        return timm.create_model(
-            name,
-            *constructor_args,
-            features_only=True,
-            **constructor_kwargs,
-        )
-
-    def __iter__(self):
-        return iter(timm.list_models())
-
-    def __len__(self):
-        return len(timm.list_models())
-
-    def __contains__(self, key):
-        return key in timm.list_models()
-
-    def __getitem__(self, name):
-        return timm.model_entrypoint(name)
-
-    def __repr__(self):
-        return repr(timm.list_models())
-
-    def __str__(self):
-        return f"timm registry with {len(self)} registered backbones"
-
 ## Declare library level registries below
 
 ### Backbone Registry
 TERRATORCH_BACKBONE_REGISTRY = Registry()
-TIMM_BACKBONE_REGISTRY = TimmRegistry()
 BACKBONE_REGISTRY = MultiSourceRegistry()
 BACKBONE_REGISTRY.register_source("terratorch", TERRATORCH_BACKBONE_REGISTRY)
-BACKBONE_REGISTRY.register_source("timm", TIMM_BACKBONE_REGISTRY)
 
 ### Decoder Registry
 TERRATORCH_DECODER_REGISTRY = Registry()

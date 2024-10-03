@@ -16,9 +16,9 @@ from terratorch.models.model import (
     register_factory,
 )
 from terratorch.models.pixel_wise_model import PixelWiseModel
-from terratorch.models.registry import BACKBONE_REGISTRY, DECODER_REGISTRY, POST_BACKBONE_OPS_REGISTRY
 from terratorch.models.scalar_output_model import ScalarOutputModel
 from terratorch.models.utils import extract_prefix_keys
+from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY, POST_BACKBONE_OPS_REGISTRY
 
 PIXEL_WISE_TASKS = ["segmentation", "regression"]
 SCALAR_TASKS = ["classification"]

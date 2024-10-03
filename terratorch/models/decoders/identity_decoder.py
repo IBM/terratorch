@@ -5,7 +5,7 @@
 
 from torch import Tensor, nn
 
-from terratorch.models.registry import TERRATORCH_DECODER_REGISTRY
+from terratorch.registry import TERRATORCH_DECODER_REGISTRY
 
 
 @TERRATORCH_DECODER_REGISTRY.register

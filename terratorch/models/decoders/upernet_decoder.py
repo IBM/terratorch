@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F  # noqa: N812
 from torch import Tensor, nn
 
-from terratorch.models.registry import TERRATORCH_DECODER_REGISTRY
+from terratorch.registry import TERRATORCH_DECODER_REGISTRY
 
 """
 Adapted from https://github.com/yassouali/pytorch-segmentation/blob/master/models/upernet.py
