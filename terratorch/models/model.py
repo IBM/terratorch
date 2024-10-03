@@ -14,7 +14,7 @@ class ModelOutput:
     auxiliary_heads: dict[str, Tensor] = None
 
 
-class Model(ABC):
+class Model(ABC, nn.Module):
     @abstractmethod
     def freeze_encoder(self):
         pass
