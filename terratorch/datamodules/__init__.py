@@ -24,12 +24,13 @@ from terratorch.datamodules.m_pv4ger import MPv4gerNonGeoDataModule
 from terratorch.datamodules.m_pv4ger_seg import MPv4gerSegNonGeoDataModule
 from terratorch.datamodules.m_SA_crop_type import MSACropTypeNonGeoDataModule
 from terratorch.datamodules.m_so2sat import MSo2SatNonGeoDataModule
+from terratorch.datamodules.multi_temporal_crop_classification import MultiTemporalCropClassificationDataModule
 from terratorch.datamodules.open_sentinel_map import OpenSentinelMapDataModule
 from terratorch.datamodules.pastis import PASTISDataModule
-from terratorch.datamodules.sen4agrinet import Sen4AgriNetDataModule
 
 # GenericNonGeoRegressionDataModule,
 from terratorch.datamodules.sen1floods11 import Sen1Floods11NonGeoDataModule
+from terratorch.datamodules.sen4agrinet import Sen4AgriNetDataModule
 from terratorch.datamodules.torchgeo_data_module import TorchGeoDataModule, TorchNonGeoDataModule
 
 __all__ = (
@@ -40,6 +41,7 @@ __all__ = (
     # "GenericNonGeoRegressionDataModule",
     "Sen1Floods11NonGeoDataModule",
     "FireScarsNonGeoDataModule",
+    "MultiTemporalCropClassificationDataModule",
     "TorchGeoDataModule",
     "TorchNonGeoDataModule",
     "MEuroSATNonGeoDataModule",

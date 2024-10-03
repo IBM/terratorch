@@ -1,13 +1,13 @@
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-
-import albumentations as A
 import numpy as np
 import pandas as pd
 import torch
-from torchgeo.datasets import GenericNonGeoSegmentationDataset
+from einops import rearrange
+import albumentations as A
 
+from terratorch.datasets import GenericNonGeoSegmentationDataset
 from terratorch.datasets.utils import HLSBands
 
 
@@ -20,8 +20,9 @@ class MultiTemporalCropClassification(GenericNonGeoSegmentationDataset):
     def __init__(
         self,
         data_root: Path,
-        label_column: str,
-        image_grep: str = "*",
+        num_classes: int,
+        image_grep: str = "*_merged.tif",
+        label_grep: str = "*.mask.tif",
         split: Path | None = None,
         ignore_split_file_extensions: bool = True,
         allow_substring_split_file: bool = True,
@@ -35,13 +36,14 @@ class MultiTemporalCropClassification(GenericNonGeoSegmentationDataset):
         metadata_file: Path | str | None = None,
         metadata_columns: list[str] | None = None,
         metadata_index_col: str | None = "chip_id",
-        **kwargs: Any,
+        reduce_zero_label: bool = False,
     ) -> None:
         super().__init__(
             data_root=data_root,
-            label_data_root=None,
+            num_classes=num_classes,
+            label_data_root=data_root,
             image_grep=image_grep,
-            label_grep=None,
+            label_grep=label_grep,
             split=split,
             ignore_split_file_extensions=ignore_split_file_extensions,
             allow_substring_split_file=allow_substring_split_file,
@@ -55,13 +57,16 @@ class MultiTemporalCropClassification(GenericNonGeoSegmentationDataset):
             expand_temporal_dimension=expand_temporal_dimension,
         )
 
-        self.label_column = label_column
+        self.metadata_file = metadata_file
+        self.metadata_columns = metadata_columns
+        self.metadata_index_col = metadata_index_col
+        self.reduce_zero_label = reduce_zero_label
 
         if metadata_file:
-            self.metadata_file = metadata_file
-            self.metadata_columns = metadata_columns
-            self.metadata_index_col = metadata_index_col
             self._load_metadata()
+            self._build_image_metadata_mapping()
+        else:
+            self.metadata_df = None
 
     def _load_metadata(self):
         """Load metadata CSV file."""
@@ -71,61 +76,60 @@ class MultiTemporalCropClassification(GenericNonGeoSegmentationDataset):
             msg = f"Metadata file must contain column '{self.metadata_index_col}'"
             raise ValueError(msg)
 
-        if self.label_column not in self.metadata_df.columns:
-            msg = f"Metadata file must contain column '{self.label_column}'"
-            raise ValueError(msg)
+    def _build_image_metadata_mapping(self):
+        """Build a mapping from image filenames to metadata indices."""
+        self.image_to_metadata_index = {}
+
+        for idx, image_file in enumerate(self.image_files):
+            image_filename = Path(image_file).name
+            image_id = image_filename.replace("_merged.tif", "").replace(".tif", "")
+            metadata_indices = self.metadata_df.index[
+                self.metadata_df[self.metadata_index_col] == image_id
+            ].tolist()
+            self.image_to_metadata_index[idx] = metadata_indices[0]
+
 
     def __getitem__(self, index: int) -> dict[str, Any]:
-        row = self.data_df.iloc[index]
-        image_file = row["image_file"]
-        label = row[self.label_column]
+        image_file = self.image_files[index]
+        mask_file = str(image_file).replace("_merged.tif", ".mask.tif")
 
-        image = self._load_file(image_file, nan_replace=self.no_data_replace).to_numpy()
-
-        # Handle temporal dimension if required
-        if self.expand_temporal_dimension:
-            image = self._expand_temporal_dimension(image)
-        else:
-            image = np.moveaxis(image, 0, -1)  # Move channels to the last dimension
-
-        if self.filter_indices:
-            image = image[..., self.filter_indices]
+        image = self._load_file(image_file, nan_replace=self.no_data_replace).to_numpy().transpose(1, 2, 0)
+        mask = self._load_file(mask_file, nan_replace=self.no_label_replace).to_numpy()[0]
 
         output = {
             "image": image.astype(np.float32) * self.constant_scale,
-            "label": label,
+            "mask": mask,
         }
+
+        if self.reduce_zero_label:
+            output["mask"] -= 1
 
         if self.transform:
             output = self.transform(**output)
 
-        output["filename"] = image_file
+        output["mask"] = output["mask"].long()
+        output["filename"] = str(image_file)
 
-        if self.metadata_file:
-            temporal_coords = self._get_temporal_coords(row)
-            output["temporal_coords"] = temporal_coords
+        if self.metadata_df is not None:
+            metadata_idx = self.image_to_metadata_index.get(index, None)
+            if metadata_idx is not None:
+                row = self.metadata_df.iloc[metadata_idx]
+                temporal_coords = self._get_temporal_coords(row)
+                output["temporal_coords"] = temporal_coords
 
-        if self.metadata_columns:
-            metadata = row[self.metadata_columns].to_dict()
-            output.update(metadata)
+                if self.metadata_columns:
+                    metadata = row[self.metadata_columns].to_dict()
+                    output.update(metadata)
 
         return output
 
     def _get_temporal_coords(self, row) -> torch.Tensor:
-        """Extract and format temporal coordinates (year, day_of_year) from metadata."""
+        """Extract and format temporal coordinates (T, date) from metadata."""
         date_columns = ["first_img_date", "middle_img_date", "last_img_date"]
         temporal_coords = []
-        for col in date_columns:
+        for idx, col in enumerate(date_columns):
             date_str = row[col]
             date = datetime.strptime(date_str, "%Y-%m-%d")  # noqa: DTZ007
-            year = date.year
-            day_of_year = date.timetuple().tm_yday
-            temporal_coords.append([year, day_of_year])
+            temporal_coords.append([idx, date.timestamp()])
         temporal_coords = np.array(temporal_coords, dtype=np.float32)
-        return torch.tensor(temporal_coords)
-
-    def _expand_temporal_dimension(self, image: np.ndarray) -> np.ndarray:
-        """Reshape the image to separate the temporal dimension if required."""
-        channels = len(self.output_bands) if self.output_bands else image.shape[0]
-        time_steps = image.shape[0] // channels
-        return image.reshape((channels, time_steps, *image.shape[1:]))
+        return torch.from_numpy(temporal_coords)

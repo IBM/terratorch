@@ -4,10 +4,10 @@ from typing import Any
 import albumentations as A
 import torch
 
+from terratorch.datamodules import GenericNonGeoSegmentationDataModule
 from terratorch.datasets import (
-    GenericNonGeoPixelwiseRegressionDataset,
-    GenericNonGeoSegmentationDataModule,
     HLSBands,
+    MultiTemporalCropClassification,
 )
 from terratorch.io.file import load_from_file_or_attribute
 
@@ -49,13 +49,12 @@ class MultiTemporalCropClassificationDataModule(GenericNonGeoSegmentationDataMod
         self,
         batch_size: int,
         num_workers: int,
-        train_data_root: Path,
-        val_data_root: Path,
-        test_data_root: Path,
+        data_root: Path,
         img_grep: str,
-        label_column: str,
+        label_grep: str,
         means: list[float] | str,
         stds: list[float] | str,
+        num_classes: int,
         predict_data_root: Path | None = None,
         train_split: Path | None = None,
         val_split: Path | None = None,
@@ -72,26 +71,27 @@ class MultiTemporalCropClassificationDataModule(GenericNonGeoSegmentationDataMod
         val_transform: A.Compose | None | list[A.BasicTransform] = None,
         test_transform: A.Compose | None | list[A.BasicTransform] = None,
         expand_temporal_dimension: bool = False,
+        reduce_zero_label: bool = False,
         no_data_replace: float | None = None,
         drop_last: bool = True,
         metadata_file: Path | str | None = None,
         metadata_columns: list[str] | None = None,
         metadata_index_col: str | None = "chip_id",
-        filename_regex: str | None = None,
         **kwargs: Any,
     ) -> None:
+        self.data_root = data_root
         super().__init__(
             batch_size=batch_size,
             num_workers=num_workers,
-            train_data_root=train_data_root,
-            val_data_root=val_data_root,
-            test_data_root=test_data_root,
+            train_data_root=self.data_root / "training_chips",
+            val_data_root=self.data_root / "validation_chips",
+            test_data_root=self.data_root / "validation_chips",
             predict_data_root=predict_data_root,
             img_grep=img_grep,
-            label_grep=None,
+            label_grep=label_grep,
             means=means,
             stds=stds,
-            num_classes=None,
+            num_classes=num_classes,
             train_label_data_root=None,
             val_label_data_root=None,
             test_label_data_root=None,
@@ -110,21 +110,18 @@ class MultiTemporalCropClassificationDataModule(GenericNonGeoSegmentationDataMod
             val_transform=val_transform,
             test_transform=test_transform,
             expand_temporal_dimension=expand_temporal_dimension,
-            reduce_zero_label=False,
+            reduce_zero_label=reduce_zero_label,
             no_data_replace=no_data_replace,
             no_label_replace=None,
             drop_last=drop_last,
             **kwargs,
         )
 
-        # Specify the dataset_class as GenericNonGeoPixelwiseRegressionDataset
-        self.dataset_class = GenericNonGeoPixelwiseRegressionDataset
+        self.dataset_class = MultiTemporalCropClassification
 
-        self.label_column = label_column
         self.metadata_file = metadata_file
         self.metadata_columns = metadata_columns
         self.metadata_index_col = metadata_index_col
-        self.filename_regex = filename_regex
 
         # Load means and standard deviations for normalization
         self.means = load_from_file_or_attribute(means)
@@ -134,9 +131,10 @@ class MultiTemporalCropClassificationDataModule(GenericNonGeoSegmentationDataMod
     def setup(self, stage: str) -> None:
         if stage in ["fit"]:
             self.train_dataset = self.dataset_class(
-                data_root=self.train_root,
-                label_column=self.label_column,
+                num_classes=self.num_classes,
+                data_root=self.data_root / "training_chips",
                 image_grep=self.img_grep,
+                label_grep=self.label_grep,
                 split=self.train_split,
                 ignore_split_file_extensions=self.ignore_split_file_extensions,
                 allow_substring_split_file=self.allow_substring_split_file,
@@ -147,16 +145,17 @@ class MultiTemporalCropClassificationDataModule(GenericNonGeoSegmentationDataMod
                 transform=self.train_transform,
                 no_data_replace=self.no_data_replace,
                 expand_temporal_dimension=self.expand_temporal_dimension,
+                reduce_zero_label=self.reduce_zero_label,
                 metadata_file=self.metadata_file,
                 metadata_columns=self.metadata_columns,
                 metadata_index_col=self.metadata_index_col,
-                filename_regex=self.filename_regex,
             )
         if stage in ["fit", "validate"]:
             self.val_dataset = self.dataset_class(
-                data_root=self.val_root,
-                label_column=self.label_column,
+                num_classes=self.num_classes,
+                data_root=self.data_root / "validation_chips",
                 image_grep=self.img_grep,
+                label_grep=self.label_grep,
                 split=self.val_split,
                 ignore_split_file_extensions=self.ignore_split_file_extensions,
                 allow_substring_split_file=self.allow_substring_split_file,
@@ -167,16 +166,17 @@ class MultiTemporalCropClassificationDataModule(GenericNonGeoSegmentationDataMod
                 transform=self.val_transform,
                 no_data_replace=self.no_data_replace,
                 expand_temporal_dimension=self.expand_temporal_dimension,
+                reduce_zero_label=self.reduce_zero_label,
                 metadata_file=self.metadata_file,
                 metadata_columns=self.metadata_columns,
                 metadata_index_col=self.metadata_index_col,
-                filename_regex=self.filename_regex,
             )
         if stage in ["test"]:
             self.test_dataset = self.dataset_class(
-                data_root=self.test_root,
-                label_column=self.label_column,
+                num_classes=self.num_classes,
+                data_root=self.data_root / "validation_chips",
                 image_grep=self.img_grep,
+                label_grep=self.label_grep,
                 split=self.test_split,
                 ignore_split_file_extensions=self.ignore_split_file_extensions,
                 allow_substring_split_file=self.allow_substring_split_file,
@@ -187,16 +187,17 @@ class MultiTemporalCropClassificationDataModule(GenericNonGeoSegmentationDataMod
                 transform=self.test_transform,
                 no_data_replace=self.no_data_replace,
                 expand_temporal_dimension=self.expand_temporal_dimension,
+                reduce_zero_label=self.reduce_zero_label,
                 metadata_file=self.metadata_file,
                 metadata_columns=self.metadata_columns,
                 metadata_index_col=self.metadata_index_col,
-                filename_regex=self.filename_regex,
             )
         if stage in ["predict"] and self.predict_root:
             self.predict_dataset = self.dataset_class(
+                num_classes=self.num_classes,
                 data_root=self.predict_root,
-                label_column=self.label_column,
                 image_grep=self.img_grep,
+                label_grep=self.label_grep,
                 dataset_bands=self.predict_dataset_bands,
                 output_bands=self.predict_output_bands,
                 constant_scale=self.constant_scale,
@@ -207,5 +208,4 @@ class MultiTemporalCropClassificationDataModule(GenericNonGeoSegmentationDataMod
                 metadata_file=self.metadata_file,
                 metadata_columns=self.metadata_columns,
                 metadata_index_col=self.metadata_index_col,
-                filename_regex=self.filename_regex,
             )

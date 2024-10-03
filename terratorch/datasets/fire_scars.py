@@ -23,19 +23,24 @@ from torchgeo.datasets import NonGeoDataset, RasterDataset
 class FireScarsNonGeo(NonGeoDataset):
     """NonGeo dataset implementation for fire scars."""
 
-    def __init__(self, data_root: Path, use_metadata: bool) -> None:  # noqa: FBT001
+    def __init__(self, transform, bands, data_root: Path, use_metadata: bool) -> None:  # noqa: FBT001
         super().__init__()
+        self.data_root = data_root
+        self.bands = bands
         self.image_files = sorted(glob.glob(os.path.join(data_root, "subsetted*_merged.tif")))
         self.segmentation_mask_files = sorted(glob.glob(os.path.join(data_root, "subsetted*.mask.tif")))
         self.rgb_indices = [0, 1, 2]
         self.use_metadata = use_metadata
+        self.transform = transform
 
     def __len__(self) -> int:
         return len(self.image_files)
 
     def _get_date(self, filename: str) -> torch.Tensor:
-        filename_regex = r"subsetted_512x512_HLS\..30\..{6}\.(?P<date>[0-9]*)\.v1.4_merged.tif"
-        match = re.match(filename_regex, filename)
+        base_filename = os.path.basename(filename)
+
+        filename_regex = r"subsetted_512x512_HLS\.S30\.T[0-9A-Z]{5}\.(?P<date>[0-9]+)\.v1\.4_merged\.tif"
+        match = re.match(filename_regex, base_filename)
         date_str = match.group("date")
         year = int(date_str[:4])
         julian_day = int(date_str[4:])
@@ -45,9 +50,13 @@ class FireScarsNonGeo(NonGeoDataset):
 
     def __getitem__(self, index: int) -> dict[str, Any]:
         output = {
-            "image": self._load_file(self.image_files[index]).astype(np.float32),
-            "mask": self._load_file(self.segmentation_mask_files[index]).astype(np.int64),
+            "image": self._load_file(self.image_files[index]).astype(np.float32).transpose(1, 2, 0),
+            "mask": self._load_file(self.segmentation_mask_files[index]).astype(np.int64).squeeze(),
         }
+        if self.bands:
+            output["image"] =  output["image"][..., self.bands]
+        output = self.transform(**output)
+        output["mask"] = output["mask"].long()
         if self.use_metadata:
             output["temporal_coords"] = self._get_date(self.image_files[index])
 

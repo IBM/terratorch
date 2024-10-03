@@ -2,11 +2,13 @@
 
 from typing import Any
 
+import albumentations as A
 import kornia.augmentation as K  # noqa: N812
 from torchgeo.datamodules import GeoDataModule, NonGeoDataModule
 from torchgeo.samplers import GridGeoSampler, RandomBatchGeoSampler
 from torchgeo.transforms import AugmentationSequential
 
+from terratorch.datamodules.utils import wrap_in_compose_is_list
 from terratorch.datasets import FireScarsHLS, FireScarsNonGeo, FireScarsSegmentationMask
 
 MEANS = [
@@ -31,32 +33,48 @@ STDS = [
 class FireScarsNonGeoDataModule(NonGeoDataModule):
     """NonGeo Fire Scars data module implementation"""
 
-    def __init__(self, use_metadata: False, **kwargs: Any) -> None:  # noqa: ARG002
-        super().__init__(FireScarsNonGeo, 16, 8, **kwargs)
-        # applied for training
-        self.train_aug = AugmentationSequential(
-            K.Normalize(MEANS, STDS),
-            K.RandomCrop((224, 224)),
-            data_keys=["image", "mask"],
-        )
-        self.aug = AugmentationSequential(K.Normalize(MEANS, STDS), data_keys=["image", "mask"])
+    def __init__(
+        self,
+        data_root: str,
+        bands: list[int],
+        batch_size: int = 4,
+        num_workers: int = 0,
+        use_metadata: bool = False,  # noqa: FBT001, FBT002
+        train_transform: A.Compose | None | list[A.BasicTransform] = None,
+        val_transform: A.Compose | None | list[A.BasicTransform] = None,
+        test_transform: A.Compose | None | list[A.BasicTransform] = None,
+        **kwargs: Any
+    ) -> None:
+        super().__init__(FireScarsNonGeo, batch_size, num_workers, **kwargs)
+
+        self.bands = bands
+        self.train_transform = wrap_in_compose_is_list(train_transform)
+        self.val_transform = wrap_in_compose_is_list(val_transform)
+        self.test_transform = wrap_in_compose_is_list(test_transform)
         self.use_metadata = use_metadata
+        self.data_root = data_root
 
     def setup(self, stage: str) -> None:
         if stage in ["fit"]:
             self.train_dataset = self.dataset_class(
-                data_root="/dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/training/",
-                use_metadata=self.use_metadata
+                data_root=self.data_root + "/" + "training",
+                use_metadata=self.use_metadata,
+                transform = self.train_transform,
+                bands=self.bands
             )
         if stage in ["fit", "validate"]:
             self.val_dataset = self.dataset_class(
-                data_root="/dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/validation/",
-                use_metadata=self.use_metadata
+                data_root=self.data_root + "/" + "validation",
+                use_metadata=self.use_metadata,
+                transform = self.val_transform,
+                bands=self.bands
             )
         if stage in ["test"]:
             self.test_dataset = self.dataset_class(
-                data_root="/dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/validation/",
-                use_metadata=self.use_metadata
+                data_root=self.data_root + "/" + "validation",
+                use_metadata=self.use_metadata,
+                transform = self.test_transform,
+                bands=self.bands
             )
 
 

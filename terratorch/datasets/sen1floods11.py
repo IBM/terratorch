@@ -90,7 +90,7 @@ class Sen1Floods11NonGeo(NonGeoDataset):
         date_np[0, 0] = date.year
         date_np[0, 1] = date.dayofyear - 1  # base 0
         # date_np[0, 2] = date.hour
-        return torch.tensor(date_np)
+        return torch.tensor(date_np.astype(np.float32))
 
     def _get_coords(self, index) -> np.ndarray:
         file_name = self.image_files[index]
@@ -100,6 +100,7 @@ class Sen1Floods11NonGeo(NonGeoDataset):
         # coords shape: batch_size, 2 (lon, lat), height, width
 
         lat_lon = np.array([image.y[image.shape[0]//2], image.x[image.shape[1]//2]])
+        lat_lon = np.moveaxis(lat_lon.astype(np.float32), 0, -1)
         return torch.tensor(lat_lon)
 
     def __getitem__(self, index: int) -> dict[str, Any]:
@@ -113,10 +114,11 @@ class Sen1Floods11NonGeo(NonGeoDataset):
         }
         if self.transform:
             output = self.transform(**output)
+        output["mask"] = output["mask"].long()
 
         if self.use_metadata:
-            output["location_coords"] = np.moveaxis(self._get_coords(index).astype(np.float32), 0, -1)
-            output["temporal_coords"] = self._get_date(index).astype(np.float32)
+            output["location_coords"] = self._get_coords(index)
+            output["temporal_coords"] = self._get_date(index)
 
         return output
 

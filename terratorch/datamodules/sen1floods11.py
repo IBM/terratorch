@@ -48,6 +48,8 @@ class Sen1Floods11NonGeoDataModule(NonGeoDataModule):
 
     def __init__(
         self,
+        data_root: str,
+        bands: list[int],
         batch_size: int = 4,
         num_workers: int = 0,
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
@@ -57,7 +59,8 @@ class Sen1Floods11NonGeoDataModule(NonGeoDataModule):
         **kwargs: Any,
     ) -> None:
         super().__init__(Sen1Floods11NonGeo, batch_size, num_workers, **kwargs)
-        bands = kwargs["bands"]
+        self.data_root = data_root
+        self.bands = bands
         if bands is not None:
             means = [MEANS[b] for b in bands]
             stds = [STDS[b] for b in bands]
@@ -81,8 +84,8 @@ class Sen1Floods11NonGeoDataModule(NonGeoDataModule):
             self.val_dataset = self.dataset_class(
                 split="val",
                 data_root=self.data_root,
+                bands=self.bands,
                 transform=self.val_transform,
-                partition=self.partition,
                 use_metadata=self.use_metadata,
                 **self.kwargs,
             )
@@ -90,8 +93,8 @@ class Sen1Floods11NonGeoDataModule(NonGeoDataModule):
             self.test_dataset = self.dataset_class(
                 split="test",
                 data_root=self.data_root,
+                bands=self.bands,
                 transform=self.test_transform,
-                partition=self.partition,
                 use_metadata=self.use_metadata,
                 **self.kwargs,
             )
