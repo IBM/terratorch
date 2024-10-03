@@ -24,25 +24,20 @@ class SMPDecoderWrapper(nn.Module):
             Forward pass for embeddings with specified indices.
     """
 
-    def __init__(self, decoder, in_index=-1) -> None:
+    def __init__(self, decoder, out_channels: int) -> None:
         """
         Args:
             decoder (nn.Module): The SMP decoder module to be wrapped.
-            in_index (Union[int, List[int]], optional): Index or indices of the input embeddings to pass to
-                the decoder.
+            out_channels (int): Output channels of the decoder, needed for terratorch head.
+                Necessary since not all smp decoders have the `out_channels` attribute.
             Defaults to -1.
         """
         super().__init__()
         self._smp_decoder = decoder
-        self.in_index = in_index
-
-    @property
-    def output_embed_dim(self):
-        return self._smp_decoder.out_channels
+        self.output_embed_dim = out_channels
 
     def forward(self, x):
-        selected_inputs = x[self.in_index]
-        return self._smp_decoder(*selected_inputs)
+        return self._smp_decoder(*x)
 
 
 class SMPRegistry(Mapping):
@@ -103,8 +98,10 @@ class SMPRegistry(Mapping):
         model = decoder_module(**model_args, aux_params=aux_kwargs)
 
         smp_decoder = SMPDecoderWrapper(
-            decoder=model.decoder,
-            in_index=decoder_kwargs.get("in_index", -1),
+            model.decoder,
+            model.segmentation_head[
+                0
+            ].in_channels,  # not all decoders have a out_channels property. get it from the segmentation head that the model creates
         )
 
         return smp_decoder
