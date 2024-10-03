@@ -51,6 +51,10 @@ dev = [
   "mkdocstrings[python]"
 ]
 
+geobench = [
+  "geobench"
+]
+
 test = [
   "coverage",
   "pytest"
