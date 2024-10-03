@@ -16,6 +16,7 @@ from terratorch.models.model import (
     register_factory,
 )
 from terratorch.models.pixel_wise_model import PixelWiseModel
+from terratorch.models.post_backbone_ops import apply_ops_to_channel_list
 from terratorch.models.scalar_output_model import ScalarOutputModel
 from terratorch.models.utils import extract_prefix_keys
 from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY, POST_BACKBONE_OPS_REGISTRY
@@ -92,18 +93,21 @@ class EncoderDecoderFactory(ModelFactory):
         backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
         backbone = _get_backbone(backbone, **backbone_kwargs)
 
-        decoder_kwargs, kwargs = extract_prefix_keys(kwargs, "decoder_")
-        decoder = _get_decoder(decoder, backbone.feature_info.channels(), **decoder_kwargs)
-
-        head_kwargs, kwargs = extract_prefix_keys(kwargs, "head_")
-        if num_classes:
-            head_kwargs["num_classes"] = num_classes
         if post_backbone_ops is None:
             post_backbone_ops = []
         post_backbone_ops: list[Callable] = [
             POST_BACKBONE_OPS_REGISTRY.build(op["name"], **{k: v for k, v in op.items() if k != "name"})
             for op in post_backbone_ops
         ]
+
+        # find how backbone_ops affect the channel list
+        channel_list = apply_ops_to_channel_list(post_backbone_ops, backbone.feature_info.channels())
+        decoder_kwargs, kwargs = extract_prefix_keys(kwargs, "decoder_")
+        decoder = _get_decoder(decoder, channel_list, **decoder_kwargs)
+
+        head_kwargs, kwargs = extract_prefix_keys(kwargs, "head_")
+        if num_classes:
+            head_kwargs["num_classes"] = num_classes
 
         if aux_decoders is None:
             return _build_appropriate_model(task, backbone, decoder, head_kwargs, post_backbone_ops, rescale=rescale)
@@ -113,7 +117,7 @@ class EncoderDecoderFactory(ModelFactory):
             args = aux_decoder.decoder_args if aux_decoder.decoder_args else {}
             aux_decoder_cls: nn.Module = DECODER_REGISTRY[aux_decoder.decoder]
             aux_decoder_kwargs, kwargs = extract_prefix_keys(args, "decoder_")
-            aux_decoder_instance = aux_decoder_cls(backbone.feature_info.channels(), **aux_decoder_kwargs)
+            aux_decoder_instance = aux_decoder_cls(channel_list, **aux_decoder_kwargs)
 
             aux_head_kwargs, kwargs = extract_prefix_keys(args, "head_")
             if num_classes:
