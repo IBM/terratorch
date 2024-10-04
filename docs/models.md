@@ -66,9 +66,9 @@ By passing a list of bands being used to the constructor, we automatically filte
 # Adding new model types
 Adding new model types is as simple as creating a new factory that produces models. See for instance the example below for a potential `SMPModelFactory`
 ```python
-from terratorch.models.model import register_factory
+from terratorch.registry import MODEL_FACTORY_REGISTRY
 
-@register_factory
+@MODEL_FACTORY_REGISTRY.register
 class SMPModelFactory(ModelFactory):
     def build_model(
         self,
@@ -82,7 +82,7 @@ class SMPModelFactory(ModelFactory):
         model = smp.Unet(encoder_name="resnet34", encoder_weights=None, in_channels=in_channels, classes=1)
         return SMPModelWrapper(model)
 
-@register_factory
+@MODEL_FACTORY_REGISTRY.register
 class SMPModelWrapper(Model, nn.Module):
     def __init__(self, smp_model) -> None:
         super().__init__()
