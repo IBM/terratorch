@@ -81,7 +81,7 @@ class ScalarOutputModel(Model, SegmentationModel):
             prepare = self.neck
         else:
             # for backwards compatibility, if this is defined in the encoder, use it
-            prepare = [getattr(self.encoder, "prepare_features_for_image_model", lambda x: x)]
+            prepare = getattr(self.encoder, "prepare_features_for_image_model", lambda x: x)
 
         features = prepare(features)
 
