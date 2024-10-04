@@ -3,8 +3,8 @@
 import pytest
 import torch
 
-from terratorch.models import PrithviModelFactory
 from terratorch.models.backbones.prithvi_vit import PRETRAINED_BANDS
+from terratorch.models.model import ModelFactory
 from terratorch.tasks import ClassificationTask, PixelwiseRegressionTask, SemanticSegmentationTask
 
 NUM_CHANNELS = 6
@@ -14,7 +14,7 @@ EXPECTED_SEGMENTATION_OUTPUT_SHAPE = (1, NUM_CLASSES, 224, 224)
 
 @pytest.fixture(scope="session")
 def model_factory() -> str:
-    return "PrithviModelFactory"
+    return "EncoderDecoderFactory"
 
 
 @pytest.fixture(scope="session")
@@ -25,7 +25,7 @@ def model_input() -> torch.Tensor:
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300", "prithvi_swin_B"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
 @pytest.mark.parametrize("loss", ["ce", "jaccard", "focal", "dice"])
-def test_create_segmentation_task(backbone, decoder, loss, model_factory: PrithviModelFactory):
+def test_create_segmentation_task(backbone, decoder, loss, model_factory: ModelFactory):
     model_args = {
         "backbone": backbone,
         "decoder": decoder,
@@ -48,7 +48,7 @@ def test_create_segmentation_task(backbone, decoder, loss, model_factory: Prithv
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300", "prithvi_swin_B"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
 @pytest.mark.parametrize("loss", ["mae", "rmse", "huber"])
-def test_create_regression_task(backbone, decoder, loss, model_factory: PrithviModelFactory):
+def test_create_regression_task(backbone, decoder, loss, model_factory: ModelFactory):
     model_args = {
         "backbone": backbone,
         "decoder": decoder,
@@ -71,7 +71,7 @@ def test_create_regression_task(backbone, decoder, loss, model_factory: PrithviM
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300", "prithvi_swin_B"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
 @pytest.mark.parametrize("loss", ["ce", "bce", "jaccard", "focal"])
-def test_create_classification_task(backbone, decoder, loss, model_factory: PrithviModelFactory):
+def test_create_classification_task(backbone, decoder, loss, model_factory: ModelFactory):
     model_args = {
         "backbone": backbone,
         "decoder": decoder,

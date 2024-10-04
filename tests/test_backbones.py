@@ -4,8 +4,8 @@ import pytest
 import timm
 import torch
 
-from terratorch.models import BACKBONE_REGISTRY
 from terratorch.models.backbones import scalemae
+from terratorch.registry import BACKBONE_REGISTRY
 
 NUM_CHANNELS = 6
 NUM_FRAMES = 4
