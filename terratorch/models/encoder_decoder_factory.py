@@ -23,7 +23,7 @@ from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY, MODEL_FACTO
 PIXEL_WISE_TASKS = ["segmentation", "regression"]
 SCALAR_TASKS = ["classification"]
 SUPPORTED_TASKS = PIXEL_WISE_TASKS + SCALAR_TASKS
-
+import pdb
 
 def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
     if isinstance(backbone, nn.Module):
@@ -91,18 +91,26 @@ class EncoderDecoderFactory(ModelFactory):
 
         backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
         backbone = _get_backbone(backbone, **backbone_kwargs)
-
+        
         if necks is None:
             necks = []
         neck_list, channel_list = build_neck_list(necks, backbone.feature_info.channels())
 
-        decoder_kwargs, kwargs = extract_prefix_keys(kwargs, "decoder_")
-        decoder = _get_decoder(decoder, channel_list, **decoder_kwargs)
-
+        decoder_sources = DECODER_REGISTRY.find_model_sources(decoder)
+    
         head_kwargs, kwargs = extract_prefix_keys(kwargs, "head_")
+        decoder_kwargs, kwargs = extract_prefix_keys(kwargs, "decoder_")
+        
         if num_classes:
-            head_kwargs["num_classes"] = num_classes
+            if decoder_sources[0] != "mmseg":
+                head_kwargs["num_classes"] = num_classes
+            else:
+                decoder_kwargs["num_classes"] = num_classes
 
+        
+        decoder = _get_decoder(decoder, channel_list, **decoder_kwargs)
+        pdb.set_trace()
+        
         if aux_decoders is None:
             return _build_appropriate_model(task, backbone, decoder, head_kwargs, neck_list, rescale=rescale)
 

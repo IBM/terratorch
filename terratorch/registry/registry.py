@@ -3,7 +3,7 @@ import logging
 import typing
 from collections import OrderedDict
 from collections.abc import Callable, Mapping
-
+import pdb
 V = typing.TypeVar("V")
 
 
@@ -87,6 +87,22 @@ class MultiSourceRegistry(Mapping):
         sources_str = str(" | ".join([f"{prefix}: {source!s}" for prefix, source in self._sources.items()]))
         return f"Multi source registry with {len(self)} items: {sources_str}"
 
+    def find_model_sources(self, name):
+
+        parsed_prefix = self._parse_prefix(name)
+        if parsed_prefix:
+            prefix, name_without_prefix = parsed_prefix
+            return name_without_prefix in self._sources[prefix]
+
+        model_sources = []
+        sources_name =  [key for key in self._sources.keys()]
+
+        for i, source in enumerate(self._sources.values()): 
+            if name in source:
+                model_sources.append(sources_name[i])
+
+        return model_sources
+        
 
 class Registry(Mapping):
     """Registry holding model constructors and multiple additional sources.

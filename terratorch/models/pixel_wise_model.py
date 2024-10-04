@@ -49,7 +49,9 @@ class PixelWiseModel(Model, SegmentationModel):
         self.task = task
         self.encoder = encoder
         self.decoder = decoder
-        self.head = self._get_head(task, decoder.output_embed_dim, head_kwargs)
+        final_head_needed = False
+        final_head_needed = getattr(self.decoder, "final_head_needed", False)
+        self.head = self._get_head(task, decoder.output_embed_dim, head_kwargs) if final_head_needed else nn.Identity()
 
         if auxiliary_heads is not None:
             aux_heads = {}

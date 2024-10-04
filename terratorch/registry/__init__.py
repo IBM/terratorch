@@ -11,6 +11,7 @@ from terratorch.registry.registry import (  # noqa: I001 dont sort, import order
 )
 import terratorch.registry.smp_registry  # register smp registry
 import terratorch.registry.timm_registry  # register timm registry  # noqa: F401
+import terratorch.registry.mmseg_registry
 
 __all__ = [
     "MultiSourceRegistry",
