@@ -10,8 +10,9 @@ import importlib
 import torch
 from torch import nn
 
-from terratorch.models.model import Model, ModelFactory, ModelOutput, register_factory
+from terratorch.models.model import Model, ModelFactory, ModelOutput
 from terratorch.models.utils import extract_prefix_keys
+from terratorch.registry import MODEL_FACTORY_REGISTRY
 from terratorch.tasks.segmentation_tasks import to_segmentation_prediction
 
 
@@ -19,7 +20,7 @@ def freeze_module(module: nn.Module):
     for param in module.parameters():
         param.requires_grad_(False)
 
-@register_factory
+@MODEL_FACTORY_REGISTRY.register
 class GenericUnetModelFactory(ModelFactory):
     def build_model(
         self,

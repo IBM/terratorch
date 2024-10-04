@@ -13,13 +13,12 @@ from terratorch.models.model import (
     AuxiliaryHeadWithDecoderWithoutInstantiatedHead,
     Model,
     ModelFactory,
-    register_factory,
 )
+from terratorch.models.necks import build_neck_list
 from terratorch.models.pixel_wise_model import PixelWiseModel
-from terratorch.models.post_backbone_ops import apply_ops_to_channel_list
 from terratorch.models.scalar_output_model import ScalarOutputModel
 from terratorch.models.utils import extract_prefix_keys
-from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY, POST_BACKBONE_OPS_REGISTRY
+from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY, MODEL_FACTORY_REGISTRY
 
 PIXEL_WISE_TASKS = ["segmentation", "regression"]
 SCALAR_TASKS = ["classification"]
@@ -32,13 +31,13 @@ def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
     return BACKBONE_REGISTRY.build(backbone, **backbone_kwargs)
 
 
-def _get_decoder(decoder: str | nn.Module, input_dim: int, **decoder_kwargs) -> nn.Module:
+def _get_decoder(decoder: str | nn.Module, channel_list: list[int], **decoder_kwargs) -> nn.Module:
     if isinstance(decoder, nn.Module):
         return decoder
-    return DECODER_REGISTRY.build(decoder, input_dim, **decoder_kwargs)
+    return DECODER_REGISTRY.build(decoder, channel_list, **decoder_kwargs)
 
 
-@register_factory
+@MODEL_FACTORY_REGISTRY.register
 class EncoderDecoderFactory(ModelFactory):
     def build_model(
         self,
@@ -46,7 +45,7 @@ class EncoderDecoderFactory(ModelFactory):
         backbone: str | nn.Module,
         decoder: str | nn.Module,
         num_classes: int | None = None,
-        post_backbone_ops: list[dict] | None = None,
+        necks: list[dict] | None = None,
         aux_decoders: list[AuxiliaryHead] | None = None,
         rescale: bool = True,  # noqa: FBT002, FBT001
         **kwargs,
@@ -71,8 +70,8 @@ class EncoderDecoderFactory(ModelFactory):
             pretrained (Union[bool, Path], optional): Whether to load pretrained weights for the backbone, if available.
                 Defaults to True.
             num_frames (int, optional): Number of timesteps for the model to handle. Defaults to 1.
-            post_backbone_ops (list[dict]): Functions to be called in succession on encoder features
-                before passing them to the decoder. Should be registered in the POST_BACKBONE_OPS registry.
+            necks (list[dict]): nn.Modules to be called in succession on encoder features
+                before passing them to the decoder. Should be registered in the NECKS_REGISTRY registry.
                 Expects each one to have a key "name" and subsequent keys for arguments, if any.
                 Defaults to None, which applies the identity function.
             aux_decoders (list[AuxiliaryHead] | None): List of AuxiliaryHead decoders to be added to the model.
@@ -93,15 +92,10 @@ class EncoderDecoderFactory(ModelFactory):
         backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
         backbone = _get_backbone(backbone, **backbone_kwargs)
 
-        if post_backbone_ops is None:
-            post_backbone_ops = []
-        post_backbone_ops: list[Callable] = [
-            POST_BACKBONE_OPS_REGISTRY.build(op["name"], **{k: v for k, v in op.items() if k != "name"})
-            for op in post_backbone_ops
-        ]
+        if necks is None:
+            necks = []
+        neck_list, channel_list = build_neck_list(necks, backbone.feature_info.channels())
 
-        # find how backbone_ops affect the channel list
-        channel_list = apply_ops_to_channel_list(post_backbone_ops, backbone.feature_info.channels())
         decoder_kwargs, kwargs = extract_prefix_keys(kwargs, "decoder_")
         decoder = _get_decoder(decoder, channel_list, **decoder_kwargs)
 
@@ -110,7 +104,7 @@ class EncoderDecoderFactory(ModelFactory):
             head_kwargs["num_classes"] = num_classes
 
         if aux_decoders is None:
-            return _build_appropriate_model(task, backbone, decoder, head_kwargs, post_backbone_ops, rescale=rescale)
+            return _build_appropriate_model(task, backbone, decoder, head_kwargs, neck_list, rescale=rescale)
 
         to_be_aux_decoders: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] = []
         for aux_decoder in aux_decoders:
@@ -132,7 +126,7 @@ class EncoderDecoderFactory(ModelFactory):
             backbone,
             decoder,
             head_kwargs,
-            post_backbone_ops,
+            neck_list,
             rescale=rescale,
             auxiliary_heads=to_be_aux_decoders,
         )
@@ -143,17 +137,19 @@ def _build_appropriate_model(
     backbone: nn.Module,
     decoder: nn.Module,
     head_kwargs: dict,
-    post_backbone_ops: list[Callable] | None = None,
+    necks: list[nn.Module] | None = None,
     rescale: bool = True,  # noqa: FBT001, FBT002
     auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
 ):
+    if necks is not None:
+        necks = nn.Sequential(*necks)
     if task in PIXEL_WISE_TASKS:
         return PixelWiseModel(
             task,
             backbone,
             decoder,
             head_kwargs,
-            post_backbone_ops=post_backbone_ops,
+            neck=necks,
             rescale=rescale,
             auxiliary_heads=auxiliary_heads,
         )
@@ -163,6 +159,6 @@ def _build_appropriate_model(
             backbone,
             decoder,
             head_kwargs,
-            post_backbone_ops=post_backbone_ops,
+            neck=necks,
             auxiliary_heads=auxiliary_heads,
         )

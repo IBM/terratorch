@@ -1,14 +1,11 @@
 # Copyright contributors to the Terratorch project
 
-from collections.abc import Callable
-
 import torch
 from segmentation_models_pytorch.base import SegmentationModel
 from torch import nn
 
 from terratorch.models.heads import ClassificationHead
 from terratorch.models.model import AuxiliaryHeadWithDecoderWithoutInstantiatedHead, Model, ModelOutput
-from terratorch.models.post_backbone_ops import apply_ops
 
 
 def freeze_module(module: nn.Module):
@@ -29,7 +26,7 @@ class ScalarOutputModel(Model, SegmentationModel):
         decoder: nn.Module,
         head_kwargs: dict,
         auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
-        post_backbone_ops: list[Callable] | None = None,
+        neck: nn.Module | None = None,
     ) -> None:
         """Constructor
 
@@ -40,10 +37,8 @@ class ScalarOutputModel(Model, SegmentationModel):
             head_kwargs (dict): Arguments to be passed at instantiation of the head.
             auxiliary_heads (list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None, optional): List of
                 AuxiliaryHeads with heads to be instantiated. Defaults to None.
-            post_backbone_ops (list[Callable]): Functions to be called in succession on encoder features
-                before passing them to the decoder.
-                Each function should accept a list of embeddings, representing different feature levels.
-                Defaults to None, which applies the identity function.
+             neck (nn.Module | None): Module applied between backbone and decoder.
+                Defaults to None, which applies the identity.
         """
         super().__init__()
         self.task = task
@@ -63,7 +58,7 @@ class ScalarOutputModel(Model, SegmentationModel):
             aux_heads = {}
         self.aux_heads = nn.ModuleDict(aux_heads)
 
-        self.post_backbone_ops = post_backbone_ops
+        self.neck = neck
 
     def freeze_encoder(self):
         freeze_module(self.encoder)
@@ -82,13 +77,13 @@ class ScalarOutputModel(Model, SegmentationModel):
         self.check_input_shape(x)
         features = self.encoder(x)
 
-        if self.post_backbone_ops:
-            prepare = self.post_backbone_ops
+        if self.neck:
+            prepare = self.neck
         else:
             # for backwards compatibility, if this is defined in the encoder, use it
             prepare = [getattr(self.encoder, "prepare_features_for_image_model", lambda x: x)]
 
-        features = apply_ops(prepare, features)
+        features = prepare(features)
 
         decoder_output = self.decoder([f.clone() for f in features])
         mask = self.head(decoder_output)

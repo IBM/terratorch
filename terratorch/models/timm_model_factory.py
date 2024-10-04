@@ -12,11 +12,12 @@ from torchgeo.models import get_weight
 from torchgeo.trainers import utils
 from torchvision.models._api import WeightsEnum
 
-from terratorch.models.model import Model, ModelFactory, ModelOutput, register_factory
+from terratorch.models.model import Model, ModelFactory, ModelOutput
 from terratorch.models.utils import extract_prefix_keys
+from terratorch.registry import MODEL_FACTORY_REGISTRY
 
 
-@register_factory
+@MODEL_FACTORY_REGISTRY.register
 class TimmModelFactory(ModelFactory):
     def build_model(
         self,

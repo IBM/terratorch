@@ -16,19 +16,19 @@ from terratorch.models.model import (
     AuxiliaryHeadWithDecoderWithoutInstantiatedHead,
     Model,
     ModelFactory,
-    register_factory,
 )
 from terratorch.models.pixel_wise_model import PixelWiseModel
 from terratorch.models.scalar_output_model import ScalarOutputModel
 from terratorch.models.smp_model_factory import make_smp_encoder, register_custom_encoder
 from terratorch.models.utils import DecoderNotFoundError, extract_prefix_keys
+from terratorch.registry import MODEL_FACTORY_REGISTRY
 
 PIXEL_WISE_TASKS = ["segmentation", "regression"]
 SCALAR_TASKS = ["classification"]
 SUPPORTED_TASKS = PIXEL_WISE_TASKS + SCALAR_TASKS
 
 
-@register_factory
+@MODEL_FACTORY_REGISTRY.register
 class PrithviModelFactory(ModelFactory):
     def __init__(self) -> None:
         self._factory: EncoderDecoderFactory = EncoderDecoderFactory()

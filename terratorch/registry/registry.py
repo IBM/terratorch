@@ -162,10 +162,15 @@ TERRATORCH_BACKBONE_REGISTRY = Registry()
 BACKBONE_REGISTRY = MultiSourceRegistry()
 BACKBONE_REGISTRY.register_source("terratorch", TERRATORCH_BACKBONE_REGISTRY)
 
+### Neck Registry
+NECK_REGISTRY = MultiSourceRegistry()
+TERRATORCH_NECK_REGISTRY = Registry()
+NECK_REGISTRY.register_source("terratorch", TERRATORCH_NECK_REGISTRY)
+
 ### Decoder Registry
 TERRATORCH_DECODER_REGISTRY = Registry()
 DECODER_REGISTRY = MultiSourceRegistry()
 DECODER_REGISTRY.register_source("terratorch", TERRATORCH_DECODER_REGISTRY)
 
-### Post Backbone Ops Registry
-POST_BACKBONE_OPS_REGISTRY = Registry()
+### Model Factory Registry
+MODEL_FACTORY_REGISTRY = Registry()

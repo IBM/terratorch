@@ -10,8 +10,9 @@ from segmentation_models_pytorch.encoders import encoders as smp_encoders
 from torch import nn
 
 from terratorch.datasets import HLSBands
-from terratorch.models.model import Model, ModelFactory, ModelOutput, register_factory
+from terratorch.models.model import Model, ModelFactory, ModelOutput
 from terratorch.models.utils import extract_prefix_keys
+from terratorch.registry import MODEL_FACTORY_REGISTRY
 
 
 class SMPModelWrapper(Model, nn.Module):
@@ -74,7 +75,7 @@ class SMPModelWrapper(Model, nn.Module):
         freeze_module(self.smp_model.decoder)
 
 
-@register_factory
+@MODEL_FACTORY_REGISTRY.register
 class SMPModelFactory(ModelFactory):
     def build_model(
         self,

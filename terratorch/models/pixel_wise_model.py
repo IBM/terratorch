@@ -1,7 +1,5 @@
 # Copyright contributors to the Terratorch project
 
-from collections.abc import Callable
-
 import torch
 import torch.nn.functional as F  # noqa: N812
 from segmentation_models_pytorch.base import SegmentationModel
@@ -9,7 +7,6 @@ from torch import nn
 
 from terratorch.models.heads import RegressionHead, SegmentationHead
 from terratorch.models.model import AuxiliaryHeadWithDecoderWithoutInstantiatedHead, Model, ModelOutput
-from terratorch.models.post_backbone_ops import apply_ops
 
 
 def freeze_module(module: nn.Module):
@@ -30,7 +27,7 @@ class PixelWiseModel(Model, SegmentationModel):
         decoder: nn.Module,
         head_kwargs: dict,
         auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
-        post_backbone_ops: list[Callable] | None = None,
+        neck: nn.Module | None = None,
         rescale: bool = True,  # noqa: FBT002, FBT001
     ) -> None:
         """Constructor
@@ -42,10 +39,8 @@ class PixelWiseModel(Model, SegmentationModel):
             head_kwargs (dict): Arguments to be passed at instantiation of the head.
             auxiliary_heads (list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None, optional): List of
                 AuxiliaryHeads with heads to be instantiated. Defaults to None.
-            post_backbone_ops (list[Callable]): Functions to be called in succession on encoder features
-                before passing them to the decoder.
-                Each function should accept a list of embeddings, representing different feature levels.
-                Defaults to None, which applies the identity function.
+            neck (nn.Module | None): Module applied between backbone and decoder.
+                Defaults to None, which applies the identity.
             rescale (bool, optional): Rescale the output of the model if it has a different size than the ground truth.
                 Uses bilinear interpolation. Defaults to True.
         """
@@ -68,7 +63,7 @@ class PixelWiseModel(Model, SegmentationModel):
             aux_heads = {}
         self.aux_heads = nn.ModuleDict(aux_heads)
 
-        self.post_backbone_ops = post_backbone_ops
+        self.neck = neck
         self.rescale = rescale
 
 
@@ -95,16 +90,13 @@ class PixelWiseModel(Model, SegmentationModel):
         input_size = x.shape[-2:]
         features = self.encoder(x)
 
-        if self.post_backbone_ops:
-            prepare = self.post_backbone_ops
+        if self.neck:
+            prepare = self.neck
         else:
             # for backwards compatibility, if this is defined in the encoder, use it
-            prepare = [getattr(self.encoder, "prepare_features_for_image_model", lambda x: x)]
+            prepare = getattr(self.encoder, "prepare_features_for_image_model", lambda x: x)
 
-        # Dealing with cases in which the encoder returns more than one
-        # output
-        features = apply_ops(prepare, features)
-
+        features = prepare(features)
         decoder_output = self.decoder([f.clone() for f in features])
         mask = self.head(decoder_output)
         if self.rescale and mask.shape[-2:] != input_size:

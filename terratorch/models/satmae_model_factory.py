@@ -16,11 +16,11 @@ from terratorch.models.model import (
     AuxiliaryHeadWithDecoderWithoutInstantiatedHead,
     Model,
     ModelFactory,
-    register_factory,
 )
 from terratorch.models.pixel_wise_model import PixelWiseModel
 from terratorch.models.scalar_output_model import ScalarOutputModel
 from terratorch.models.utils import DecoderNotFoundError, extract_prefix_keys
+from terratorch.registry import MODEL_FACTORY_REGISTRY
 
 PIXEL_WISE_TASKS = ["segmentation", "regression"]
 SCALAR_TASKS = ["classification"]
@@ -93,7 +93,7 @@ class ModelWrapper(nn.Module):
     def summary(self):
         print(self)
 
-@register_factory
+@MODEL_FACTORY_REGISTRY.register
 class SatMAEModelFactory(ModelFactory):
     def build_model(
         self,
