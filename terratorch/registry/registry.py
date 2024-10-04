@@ -36,10 +36,8 @@ class MultiSourceRegistry(Mapping):
 
         # if no prefix
         for source in self._sources.values():
-            try:
+            if name in source:
                 return source.build(name, *constructor_args, **constructor_kwargs)
-            except Exception as e:
-                logging.debug(e)
 
         msg = f"Could not instantiate Model {name} not from any source."
         raise Exception(msg)
