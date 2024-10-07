@@ -157,10 +157,7 @@ class VisionTransformer(timm.models.vision_transformer.VisionTransformer):
 
         self.out_indices = out_indices if out_indices else [-1]
 
-        self.feature_info = []
-        for i, _ in enumerate(self.blocks):
-            self.feature_info.append({"num_chs": embed_dim, "reduction": 1, "module": f"blocks.{i}"})
-        self.feature_info = FeatureInfo(self.feature_info, self.out_indices)
+        self.out_channels = [embed_dim] * len(self.out_indices)
 
         del self.fc_norm
         del self.head_drop

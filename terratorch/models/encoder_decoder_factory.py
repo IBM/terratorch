@@ -1,13 +1,8 @@
 # Copyright contributors to the Terratorch project
 
-from collections.abc import Callable
 
-import segmentation_models_pytorch as smp
-import timm
-import torch
 from torch import nn
 
-from terratorch.datasets import HLSBands
 from terratorch.models.model import (
     AuxiliaryHead,
     AuxiliaryHeadWithDecoderWithoutInstantiatedHead,
@@ -35,8 +30,6 @@ def _get_decoder(decoder: str | nn.Module, channel_list: list[int], **decoder_kw
         return decoder
     return DECODER_REGISTRY.build(decoder, channel_list, **decoder_kwargs)
 
-
-
 @MODEL_FACTORY_REGISTRY.register
 class EncoderDecoderFactory(ModelFactory):
     def build_model(
@@ -59,7 +52,7 @@ class EncoderDecoderFactory(ModelFactory):
             task (str): Task to be performed. Currently supports "segmentation" and "regression".
             backbone (str, nn.Module): Backbone to be used. If a string, will look for such models in the different
                 registries supported (internal terratorch registry, timm, ...). If a torch nn.Module, will use it
-                directly. In this case, it should have a timm FeautureInfo under an attribute named `feature_info`.
+                directly. The backbone should have and `out_channels` attribute.
             decoder (Union[str, nn.Module], optional): Decoder to be used for the segmentation model.
                     If a string, will look for such decoders in the different
                     registries supported (internal terratorch registry, smp, ...).
@@ -91,21 +84,30 @@ class EncoderDecoderFactory(ModelFactory):
 
         backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
         backbone = _get_backbone(backbone, **backbone_kwargs)
+
+        try:
+            out_channels = backbone.out_channels
+        except AttributeError as e:
+            msg = "backbone must have out_channels attribute"
+            raise AttributeError(msg) from e
+
         if necks is None:
             necks = []
-        neck_list, channel_list = build_neck_list(necks, backbone.feature_info.channels())
-        decoder_sources = DECODER_REGISTRY.find_model_sources(decoder)
-    
-        head_kwargs, kwargs = extract_prefix_keys(kwargs, "head_")
+        neck_list, channel_list = build_neck_list(necks, out_channels)
+
         decoder_kwargs, kwargs = extract_prefix_keys(kwargs, "decoder_")
-        
-        if num_classes:
-            if decoder_sources[0] != "mmseg":
-                head_kwargs["num_classes"] = num_classes
-            else:
-                decoder_kwargs["num_classes"] = num_classes
         decoder = _get_decoder(decoder, channel_list, **decoder_kwargs)
-        
+
+        decoder_kwargs, kwargs = extract_prefix_keys(kwargs, "decoder_")
+        head_kwargs, kwargs = extract_prefix_keys(kwargs, "head_")
+
+        # if num_classes:
+        #     if decoder_sources[0] != "mmseg":
+        #         head_kwargs["num_classes"] = num_classes
+        #     else:
+        #         decoder_kwargs["num_classes"] = num_classes
+        decoder = _get_decoder(decoder, channel_list, **decoder_kwargs)
+
         if aux_decoders is None:
             return _build_appropriate_model(task, backbone, decoder, head_kwargs, neck_list, rescale=rescale)
 

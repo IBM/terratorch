@@ -1,9 +1,23 @@
 from collections.abc import Callable, Mapping
 
 import timm
+import torch
 from torch import nn
 
 from terratorch.registry import BACKBONE_REGISTRY
+
+
+class TimmModelWrapper(nn.Module):
+    def __init__(self, timm_module: nn.Module) -> None:
+        super().__init__()
+        self._timm_module = timm_module
+
+    @property
+    def out_channels(self):
+        return self._timm_module.feature_info.channels()
+
+    def forward(self, *args, **kwargs) -> list[torch.Tensor]:
+        return self._timm_module(*args, **kwargs)
 
 
 class TimmRegistry(Mapping):
@@ -16,11 +30,13 @@ class TimmRegistry(Mapping):
         """Build and return the component.
         Use prefixes ending with _ to forward to a specific source
         """
-        return timm.create_model(
-            name,
-            *constructor_args,
-            features_only=True,
-            **constructor_kwargs,
+        return TimmModelWrapper(
+            timm.create_model(
+                name,
+                *constructor_args,
+                features_only=True,
+                **constructor_kwargs,
+            )
         )
 
     def __iter__(self):
@@ -40,6 +56,7 @@ class TimmRegistry(Mapping):
 
     def __str__(self):
         return f"timm registry with {len(self)} registered backbones"
+
 
 TIMM_BACKBONE_REGISTRY = TimmRegistry()
 BACKBONE_REGISTRY.register_source("timm", TIMM_BACKBONE_REGISTRY)
