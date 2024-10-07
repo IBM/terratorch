@@ -1,0 +1,8 @@
+geobench==1.0.0
+#mmcv==2.0.0
+#ftfy
+#regex
+#openmim
+
+# Lastly, install mmsegmentation using mim:
+# mim mmsegmentation
