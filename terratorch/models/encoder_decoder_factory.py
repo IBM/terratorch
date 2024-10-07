@@ -23,7 +23,6 @@ from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY, MODEL_FACTO
 PIXEL_WISE_TASKS = ["segmentation", "regression"]
 SCALAR_TASKS = ["classification"]
 SUPPORTED_TASKS = PIXEL_WISE_TASKS + SCALAR_TASKS
-import pdb
 
 def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
     if isinstance(backbone, nn.Module):
@@ -34,7 +33,8 @@ def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
 def _get_decoder(decoder: str | nn.Module, channel_list: list[int], **decoder_kwargs) -> nn.Module:
     if isinstance(decoder, nn.Module):
         return decoder
-    return DECODER_REGISTRY.build(decoder, channel_list, **decoder_kwargs) if channel_list is not None else DECODER_REGISTRY.build(decoder, **decoder_kwargs) 
+    return DECODER_REGISTRY.build(decoder, channel_list, **decoder_kwargs)
+
 
 
 @MODEL_FACTORY_REGISTRY.register
@@ -91,11 +91,9 @@ class EncoderDecoderFactory(ModelFactory):
 
         backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
         backbone = _get_backbone(backbone, **backbone_kwargs)
-        pdb.set_trace()
         if necks is None:
             necks = []
         neck_list, channel_list = build_neck_list(necks, backbone.feature_info.channels())
-
         decoder_sources = DECODER_REGISTRY.find_model_sources(decoder)
     
         head_kwargs, kwargs = extract_prefix_keys(kwargs, "head_")
@@ -106,11 +104,7 @@ class EncoderDecoderFactory(ModelFactory):
                 head_kwargs["num_classes"] = num_classes
             else:
                 decoder_kwargs["num_classes"] = num_classes
-                if "in_channels" not in decoder_kwargs: decoder_kwargs["in_channels"] = channel_list
-
-        decoder = _get_decoder(decoder, channel_list, **decoder_kwargs) if decoder_sources[0] != "mmseg" else _get_decoder(decoder, None, **decoder_kwargs)
-        
-        # pdb.set_trace()
+        decoder = _get_decoder(decoder, channel_list, **decoder_kwargs)
         
         if aux_decoders is None:
             return _build_appropriate_model(task, backbone, decoder, head_kwargs, neck_list, rescale=rescale)
