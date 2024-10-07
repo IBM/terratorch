@@ -36,10 +36,12 @@ class SelectIndices(Neck):
         self.indices = indices
 
     def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
-        return [features[i] for i in self.indices]
+        features = [features[i] for i in self.indices]
+        return features
 
     def process_channel_list(self, channel_list: list[int]) -> list[int]:
-        return [channel_list[i] for i in self.indices]
+        channel_list = [channel_list[i] for i in self.indices]
+        return channel_list
 
 
 @TERRATORCH_NECK_REGISTRY.register
