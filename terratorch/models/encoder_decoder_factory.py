@@ -180,8 +180,10 @@ def _build_appropriate_model(
     rescale: bool = True,  # noqa: FBT001, FBT002
     auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
 ):
-    if necks is not None:
+    if necks:
         necks: nn.Module = nn.Sequential(*necks)
+    else:
+        necks = None
     if task in PIXEL_WISE_TASKS:
         return PixelWiseModel(
             task,

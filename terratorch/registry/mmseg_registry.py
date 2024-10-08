@@ -5,13 +5,7 @@ from collections.abc import Callable, Mapping
 
 from torch import nn
 
-from terratorch.models.smp_model_factory import make_smp_encoder, register_custom_encoder
-from terratorch.models.utils import extract_prefix_keys
 from terratorch.registry import DECODER_REGISTRY
-
-import importlib
-import inspect
-import pdb
 
 
 class MMsegDecoderWrapper(nn.Module):
@@ -28,6 +22,8 @@ class MMsegDecoderWrapper(nn.Module):
             Forward pass for embeddings with specified indices.
     """
 
+    includes_head: bool = True
+
     def __init__(self, decoder) -> None:
         """
         Args:
@@ -38,21 +34,21 @@ class MMsegDecoderWrapper(nn.Module):
         """
         super().__init__()
         self.decoder = decoder
-        self.final_head_needed = False
 
     def forward(self, x):
         return self.decoder(x)
 
 
-class MmsegDecoderRegistry(Mapping):
-    """Registry wrapper for mmseg
-    """
+class MMSegRegistry(Mapping):
+    """Registry wrapper for mmseg"""
 
     def __init__(self):
+        if not importlib.util.find_spec("mmseg"):
+            msg = "mmsegmentation must be installed to instantiate an MMSegRegistry"
+            raise ImportError(msg)
+        self.mmseg_reg = importlib.import_module("mmseg.models.decode_heads")
+        self.mmseg_decoder_names = {x for x, _ in inspect.getmembers(self.mmseg_reg, inspect.isclass)}
 
-        self.mmseg_reg=importlib.import_module("mmseg.models.decode_heads")
-        self.mmseg_decoder_names = [x for x, y in inspect.getmembers(self.mmseg_reg, inspect.isclass)]
-    
     def register(self, constructor: Callable | type) -> Callable:
         raise NotImplementedError()
 
@@ -61,9 +57,14 @@ class MmsegDecoderRegistry(Mapping):
         Use prefixes ending with _ to forward to a specific source
         """
         decoder = self[name]
-        if len(in_channels) == 1: in_channels = in_channels[0]
-        if "num_classes" not in constructor_kwargs: raise Exception("Error: num_classes is a required argument for mmseg decoders. If you are using a mmseg decoder for a regression task please include num_classes=1.")
-        decoder = decoder(in_channels=in_channels, *constructor_args, **constructor_kwargs)
+        if len(in_channels) == 1:
+            in_channels = in_channels[0]
+        if "num_classes" not in constructor_kwargs:
+            msg = "num_classes is a required argument for mmseg decoders. If you are using an mmseg decoder for a regression task please include num_classes=1."
+            raise ValueError(
+                msg
+            )  # noqa: EM101
+        decoder = decoder(*constructor_args, in_channels=in_channels, **constructor_kwargs)
         return MMsegDecoderWrapper(decoder)
 
     def __iter__(self):
@@ -83,17 +84,14 @@ class MmsegDecoderRegistry(Mapping):
             raise KeyError(msg) from e
 
     def __repr__(self):
-        return repr(self.mmseg_reg)
+        return repr(self.mmseg_decoder_names)
 
     def __str__(self):
         return f"Mmseg registry with {len(self)} registered backbones"
 
 
 if importlib.util.find_spec("mmseg"):
-    import mmseg
-
-    MMSEG_DECODER_REGISTRY = MmsegDecoderRegistry()
+    MMSEG_DECODER_REGISTRY = MMSegRegistry()
     DECODER_REGISTRY.register_source("mmseg", MMSEG_DECODER_REGISTRY)
 else:
     logging.debug("mmseg not installed, so MmsegDecoderRegistry not created")
-

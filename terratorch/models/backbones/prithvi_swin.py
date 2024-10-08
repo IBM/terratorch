@@ -199,12 +199,6 @@ def _create_swin_mmseg_transformer(
 
     def prepare_features_for_image_model(x):
         return [
-            # layer_output.reshape(
-            #     -1,
-            #     int(math.sqrt(layer_output.shape[1])),
-            #     int(math.sqrt(layer_output.shape[1])),
-            #     layer_output.shape[2],
-            # )
             layer_output.permute(0, 3, 1, 2).contiguous()
             for layer_output in x
         ]

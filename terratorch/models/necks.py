@@ -43,6 +43,18 @@ class SelectIndices(Neck):
         channel_list = [channel_list[i] for i in self.indices]
         return channel_list
 
+@TERRATORCH_NECK_REGISTRY.register
+class PermuteDims(Neck):
+    def __init__(self, channel_list: list[int], new_order: list[int]):
+        super().__init__(channel_list)
+        self.new_order = new_order
+
+    def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
+        features = [feat.permute(*self.new_order).contiguous() for feat in features]
+        return features
+
+    def process_channel_list(self, channel_list: list[int]) -> list[int]:
+        return super().process_channel_list(channel_list)
 
 @TERRATORCH_NECK_REGISTRY.register
 class InterpolateToPyramidal(Neck):

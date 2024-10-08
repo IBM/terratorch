@@ -74,7 +74,7 @@ def test_build_without_prefix(multi_source_registry, simple_registry):
 def test_build_fails_if_not_found(multi_source_registry):
     with pytest.raises(Exception) as excinfo:
         multi_source_registry.build("nonexistent_model")
-    assert "Could not instantiate Model" in str(excinfo.value)
+    assert "Could not instantiate model" in str(excinfo.value)
 
 
 def test_register_duplicate_source(multi_source_registry, simple_registry):
