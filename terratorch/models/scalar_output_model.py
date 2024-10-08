@@ -44,7 +44,10 @@ class ScalarOutputModel(Model, SegmentationModel):
         self.task = task
         self.encoder = encoder
         self.decoder = decoder
-        self.head = self._get_head(task, decoder.output_embed_dim, head_kwargs)
+        final_head_included = getattr(self.decoder, "includes_head", False)  # some models already include a head
+        self.head = (
+            self._get_head(task, decoder.output_embed_dim, head_kwargs) if not final_head_included else nn.Identity()
+        )
 
         if auxiliary_heads is not None:
             aux_heads = {}
