@@ -1,7 +1,7 @@
 import importlib
 import inspect
 import logging
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Set
 
 from torch import nn
 
@@ -40,7 +40,7 @@ class SMPDecoderWrapper(nn.Module):
         return self._smp_decoder(*x)
 
 
-class SMPRegistry(Mapping):
+class SMPRegistry(Set):
     """Registry wrapper for segmentation_models_pytorch.
 
     smp does not seem to have the set of supported models / decoders exposed at all in the API.
@@ -51,7 +51,7 @@ class SMPRegistry(Mapping):
 
     This will have to be updated manually when SMP is updated...
     """
-
+    includes_head: bool = False
     def __init__(self):
         if not importlib.util.find_spec("segmentation_models_pytorch"):
             msg = "segmentation_models_pytorch must be installed to instantiate an SMPRegistry"
@@ -63,7 +63,11 @@ class SMPRegistry(Mapping):
         raise NotImplementedError()
 
     def build(self, name: str, out_channels: list[int], **decoder_kwargs) -> nn.Module:
-        decoder_module = self[name]
+        try:
+            decoder_module = getattr(smp, name)
+        except AttributeError as e:
+            msg = f"Decoder {name} not found"
+            raise KeyError(msg) from e
 
         # Little hack to make SMP model accept our encoder.
         # passes a dummy encoder to be changed later.
@@ -112,15 +116,15 @@ class SMPRegistry(Mapping):
     def __contains__(self, key):
         return key in self.smp_decoders
 
-    def __getitem__(self, name):
-        try:
-            return getattr(smp, name)
-        except AttributeError as e:
-            msg = f"Decoder {name} not found"
-            raise KeyError(msg) from e
+    # def __getitem__(self, name):
+    #     try:
+    #         return getattr(smp, name)
+    #     except AttributeError as e:
+    #         msg = f"Decoder {name} not found"
+    #         raise KeyError(msg) from e
 
     def __repr__(self):
-        return repr(self.smp_decoders)
+        return f"{self.__class__.__name__}()"
 
     def __str__(self):
         return f"SMP registry with {len(self)} registered backbones"

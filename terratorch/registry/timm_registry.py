@@ -1,4 +1,4 @@
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, KeysView, Mapping, Set
 
 import timm
 import torch
@@ -17,13 +17,13 @@ class TimmModelWrapper(nn.Module):
     @property
     def out_channels(self):
         return self._timm_module.feature_info.channels()
-    
+
 
     def forward(self, *args, **kwargs) -> list[torch.Tensor]:
         return self._timm_module(*args, **kwargs)
 
 
-class TimmRegistry(Mapping):
+class TimmRegistry(Set):
     """Registry wrapper for timm"""
 
     def register(self, constructor: Callable | type) -> Callable:
@@ -57,14 +57,15 @@ class TimmRegistry(Mapping):
     def __contains__(self, key):
         return key in timm.list_models()
 
-    def __getitem__(self, name):
-        return timm.model_entrypoint(name)
+    # def __getitem__(self, name):
+    #     return timm.model_entrypoint(name)
 
     def __repr__(self):
-        return repr(timm.list_models())
+        return f"{self.__class__.__name__}()"
 
     def __str__(self):
         return f"timm registry with {len(self)} registered backbones"
+
 
 
 TIMM_BACKBONE_REGISTRY = TimmRegistry()

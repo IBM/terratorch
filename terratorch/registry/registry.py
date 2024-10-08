@@ -1,15 +1,11 @@
-import itertools
-import logging
 import typing
 from collections import OrderedDict
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Set
 from contextlib import suppress
-
-V = typing.TypeVar("V")
+from reprlib import recursive_repr as _recursive_repr
 
 
 class BuildableRegistry(typing.Protocol):
-    def __getitem__(self, name: str): ...
     def __iter__(self): ...
     def __len__(self) -> int: ...
     def __contains__(self, name: str) -> bool: ...
@@ -18,13 +14,17 @@ class BuildableRegistry(typing.Protocol):
         """
 
 
-class MultiSourceRegistry(Mapping):
+class DecoderRegistry(BuildableRegistry, typing.Protocol):
+    includes_head: bool
+
+T = typing.TypeVar("T", bound=BuildableRegistry)
+class MultiSourceRegistry(Mapping[str, T], typing.Generic[T]):
     """Registry that searches in multiple sources
 
         Correct functioning of this class depends on registries raising a KeyError when the model is not found.
     """
-    def __init__(self) -> None:
-        self._sources: OrderedDict[str, BuildableRegistry] = OrderedDict()
+    def __init__(self, **sources) -> None:
+        self._sources: OrderedDict[str, T] = OrderedDict(sources)
 
     def _parse_prefix(self, name) -> tuple[str, str] | None:
         split = name.split("_")
@@ -33,6 +33,20 @@ class MultiSourceRegistry(Mapping):
             name_without_prefix = "_".join(split[1:])
             return prefix, name_without_prefix
         return None
+
+    def find_registry(self, name: str) -> T:
+        parsed_prefix = self._parse_prefix(name)
+        if parsed_prefix:
+            prefix, name_without_prefix = parsed_prefix
+            registry = self._sources[prefix]
+            return registry
+
+        # if no prefix is given, go through all sources in order
+        for registry in self._sources.values():
+            if name in registry:
+                return registry
+        msg = f"Model {name} not found in any registry"
+        raise KeyError(msg)
 
     def build(self, name: str, *constructor_args, **constructor_kwargs):
         parsed_prefix = self._parse_prefix(name)
@@ -49,7 +63,7 @@ class MultiSourceRegistry(Mapping):
         msg = f"Could not instantiate model {name} not from any source."
         raise Exception(msg)
 
-    def register_source(self, prefix: str, registry: BuildableRegistry) -> None:
+    def register_source(self, prefix: str, registry: T) -> None:
         """Register a source in the registry"""
         if prefix in self._sources:
             msg = f"Source for prefix {prefix} already exists."
@@ -57,27 +71,32 @@ class MultiSourceRegistry(Mapping):
         self._sources[prefix] = registry
 
     def __iter__(self):
-        return itertools.chain(*[iter(source) for source in self._sources])
+        for prefix in self._sources:
+            for element in self._sources[prefix]:
+                yield prefix + "_" + element
 
     def __len__(self):
-        return sum(len(source) for source in self._sources)
+        return sum(len(source) for source in self._sources.values())
+
+    # def __getitem__(self, name):
+    #     parsed_prefix = self._parse_prefix(name)
+    #     if parsed_prefix:
+    #         prefix, name_without_prefix = parsed_prefix
+    #         registry = self._sources[prefix]
+    #         return registry[name_without_prefix]
+
+    #     # if no prefix is given, go through all sources in order
+    #     for source in self._sources.values():
+    #         try:
+    #             return source[name]
+    #         except Exception as e:
+    #             logging.debug(e)
+
+    #     msg = f"Could not find Model {name} not from any source."
+    #     raise KeyError(msg)
 
     def __getitem__(self, name):
-        parsed_prefix = self._parse_prefix(name)
-        if parsed_prefix:
-            prefix, name_without_prefix = parsed_prefix
-            registry = self._sources[prefix]
-            return registry[name_without_prefix]
-
-        # if no prefix is given, go through all sources in order
-        for source in self._sources.values():
-            try:
-                return source[name]
-            except Exception as e:
-                logging.debug(e)
-
-        msg = f"Could not find Model {name} not from any source."
-        raise KeyError(msg)
+        return self._sources[name]
 
     def __contains__(self, name):
         parsed_prefix = self._parse_prefix(name)
@@ -86,41 +105,32 @@ class MultiSourceRegistry(Mapping):
             return name_without_prefix in self._sources[prefix]
         return any(name in source for source in self._sources.values())
 
+    @_recursive_repr()
     def __repr__(self):
-        repr_dict = {prefix: repr(source) for prefix, source in self._sources.items()}
-        return repr(repr_dict)
+        args = [f"{name}={source!r}" for name, source in self._sources.items()]
+        return f'{self.__class__.__name__}({", ".join(args)})'
 
     def __str__(self):
         sources_str = str(" | ".join([f"{prefix}: {source!s}" for prefix, source in self._sources.items()]))
         return f"Multi source registry with {len(self)} items: {sources_str}"
 
-    def find_model_sources(self, name):
-        parsed_prefix = self._parse_prefix(name)
-        if parsed_prefix:
-            prefix, name_without_prefix = parsed_prefix
-            if name_without_prefix in self._sources[prefix]:
-                return[prefix]
-
-        model_sources = [source_name for source_name, source in self._sources.items() if name in source]
-        return model_sources
+    def keys(self):
+        keys = []
+        for prefix, d in self._sources.items():
+            source_keys = d.keys()
+            keys.extend([prefix + "_" + k for k in source_keys])
+        return keys
 
 
-class Registry(Mapping):
+class Registry(Set):
     """Registry holding model constructors and multiple additional sources.
 
-    This registry behaves as a dictionary from strings, which are model names,
+    This registry behaves as a set of strings, which are model names,
     to model classes or functions which instantiate model classes.
 
-    In addition, it supports the addition of other sources from which it can instantiate models. These sources require
-    a prefix and a function that instantiates models given a name and *args and **kwargs.
+    In addition, it can instantiate models with the build method.
 
     Add constructors to the registry by annotating them with @registry.register.
-
-    Add sources by annotating them with @registry.register_source(prefix)
-
-    Build models with registry.build(name, *args, **kwargs). If the name has a prefix separated with _, that
-    will be taken as the source to instantiate from.
-    If not, sources will be tried in the order they were added, starting with the internal registry.
 
     >>> registry = Registry()
     >>> @registry.register
@@ -131,8 +141,8 @@ class Registry(Mapping):
     >>> model_instance = registry.build("model")
     """
 
-    def __init__(self) -> None:
-        self._registry: dict[str, Callable] = {}
+    def __init__(self, **elements) -> None:
+        self._registry: dict[str, Callable] = dict(elements)
 
     def register(self, constructor: Callable | type) -> Callable:
         """Register a component in the registry. Used as a decorator.
@@ -155,8 +165,8 @@ class Registry(Mapping):
     def __iter__(self):
         return iter(self._registry)
 
-    def __getitem__(self, key):
-        return self._registry[key]
+    # def __getitem__(self, key):
+    #     return self._registry[key]
 
     def __len__(self):
         return len(self._registry)
@@ -165,7 +175,7 @@ class Registry(Mapping):
         return key in self._registry
 
     def __repr__(self):
-        return repr(self._registry)
+        return f"{self.__class__.__name__}({self._registry!r})"
 
     def __str__(self):
         return f"Registry with {len(self)} registered items"
@@ -174,17 +184,18 @@ class Registry(Mapping):
 
 ### Backbone Registry
 TERRATORCH_BACKBONE_REGISTRY = Registry()
-BACKBONE_REGISTRY = MultiSourceRegistry()
+BACKBONE_REGISTRY: MultiSourceRegistry[BuildableRegistry] = MultiSourceRegistry()
 BACKBONE_REGISTRY.register_source("terratorch", TERRATORCH_BACKBONE_REGISTRY)
 
 ### Neck Registry
-NECK_REGISTRY = MultiSourceRegistry()
+NECK_REGISTRY: MultiSourceRegistry[BuildableRegistry] = MultiSourceRegistry()
 TERRATORCH_NECK_REGISTRY = Registry()
 NECK_REGISTRY.register_source("terratorch", TERRATORCH_NECK_REGISTRY)
 
 ### Decoder Registry
-TERRATORCH_DECODER_REGISTRY = Registry()
-DECODER_REGISTRY = MultiSourceRegistry()
+TERRATORCH_DECODER_REGISTRY = typing.cast(DecoderRegistry, Registry())
+TERRATORCH_DECODER_REGISTRY.includes_head = False
+DECODER_REGISTRY: MultiSourceRegistry[DecoderRegistry] = MultiSourceRegistry()
 DECODER_REGISTRY.register_source("terratorch", TERRATORCH_DECODER_REGISTRY)
 
 ### Model Factory Registry
