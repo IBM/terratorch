@@ -58,8 +58,10 @@ class AuxiliaryHeadWithDecoderWithoutInstantiatedHead:
         name (str): Name of the head. Should match the name given to the auxiliary loss.
         decoder (nn.Module): Instantiated decoder.
         head_args (dict | None): parameters to be passed to the head constructor.
+        decoder_includes_head (bool): Whether the decoder already includes a head
     """
 
     name: str
     decoder: nn.Module
     head_args: dict | None
+    decoder_includes_head: bool = False
