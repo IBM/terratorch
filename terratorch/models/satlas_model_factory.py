@@ -75,6 +75,19 @@ FINETUNED_MODELS_DICT = {
     },
 }
 
+def adapt_weights_for_satlas_pretrained_models(weights: dict) -> dict:
+    new_weights = {}
+    for name, val in weights.items():
+        new_name = name
+        if "intermediates" in name:
+            if "fpn" in name:
+                new_name = "fpn." + new_name[new_name.find("fpn"):]
+            else:
+                new_name = "upsample." + new_name[new_name.find("layers"):]
+        elif "heads" in name:
+            new_name = "head." + new_name[new_name.find("layers"):]
+        new_weights[new_name] = val
+    return new_weights
 
 class SatlasModelWrapper(Model):
     def __init__(self, satlas_model: satlaspretrain_models.Model, rescale: bool = True):
@@ -259,39 +272,53 @@ class SatlasModelFactory(ModelFactory):
             msg = f"Model number of channels {model_info['num_channels']} not known from pretraining"
             raise Exception(msg)
 
-        # Adjust the first conv / patch embed layer for the appropriate number of channels
-        if model_info["backbone"] in [Backbone.SWINB, Backbone.SWINT]:
-            pretrained_patch_embed_weights = weights["backbone.backbone.features.0.0.weight"]
-            patch_embed_out_channels = pretrained_patch_embed_weights.shape[0]
-            temp_weight = torch.nn.Conv2d(
-                in_channels, patch_embed_out_channels, kernel_size=(4, 4), stride=(4, 4)
-            ).state_dict()["weight"]
-            create_appropriate_patch_embed_from_pretrained(
-                temp_weight, pretrained_patch_embed_weights, pretrained_bands, bands
-            )
-            weights["backbone.backbone.features.0.0.weight"] = temp_weight
-        elif model_info["backbone"] in [Backbone.RESNET152, Backbone.RESNET50]:
-            pretrained_patch_embed_weights = weights["backbone.resnet.conv1.weight"]
-            patch_embed_out_channels = pretrained_patch_embed_weights.shape[0]
-            temp_weight = torch.nn.Conv2d(
-                in_channels, patch_embed_out_channels, kernel_size=7, stride=2, padding=3, bias=False
-            ).state_dict()["weight"]
-            create_appropriate_patch_embed_from_pretrained(
-                temp_weight, pretrained_patch_embed_weights, pretrained_bands, bands
-            )
-            weights["backbone.resnet.conv1.weight"] = temp_weight
+        if model_identifier not in FINETUNED_MODELS_DICT:
+            # Adjust the first conv / patch embed layer for the appropriate number of channels
+            if model_info["backbone"] in [Backbone.SWINB, Backbone.SWINT]:
+                patch_embed_weights_name = "backbone.backbone.features.0.0.weight"
+                pretrained_patch_embed_weights = weights[patch_embed_weights_name]
+                patch_embed_out_channels = pretrained_patch_embed_weights.shape[0]
+                temp_weight = torch.nn.Conv2d(
+                    in_channels, patch_embed_out_channels, kernel_size=(4, 4), stride=(4, 4)
+                ).state_dict()["weight"]
+                create_appropriate_patch_embed_from_pretrained(
+                    temp_weight, pretrained_patch_embed_weights, pretrained_bands, bands
+                )
+                weights[patch_embed_weights_name] = temp_weight
+            elif model_info["backbone"] in [Backbone.RESNET152, Backbone.RESNET50]:
+                patch_embed_weights_name = "backbone.resnet.conv1.weight"
+                pretrained_patch_embed_weights = weights[patch_embed_weights_name]
+                patch_embed_out_channels = pretrained_patch_embed_weights.shape[0]
+                temp_weight = torch.nn.Conv2d(
+                    in_channels, patch_embed_out_channels, kernel_size=7, stride=2, padding=3, bias=False
+                ).state_dict()["weight"]
+                create_appropriate_patch_embed_from_pretrained(
+                    temp_weight, pretrained_patch_embed_weights, pretrained_bands, bands
+                )
+                weights[patch_embed_weights_name] = temp_weight
+            else:
+                warnings.warn("Backbone type not Swin or ResNet. Patch embed weights may not match\
+                            or be aligned with input data channels", stacklevel=1)
+            # Initialize a pretrained model using the Model() class.
+            model = satlaspretrain_models.Model(
+                in_channels,
+                model_info["multi_image"],
+                model_info["backbone"],
+                fpn=fpn,
+                head=head,
+                num_categories=num_classes,
+                weights=weights)
         else:
-            warnings.warn("Backbone type not Swin or ResNet. Patch embed weights may not match\
-                          or be aligned with input data channels", stacklevel=1)
+            # for finetuned models, weights must be loaded like this
+            model = satlaspretrain_models.Model(
+                in_channels,
+                model_info["multi_image"],
+                model_info["backbone"],
+                fpn=fpn,
+                head=head,
+                num_categories=num_classes,
+                weights=None)
+            weights = adapt_weights_for_satlas_pretrained_models(weights)
+            model.load_state_dict(weights)
 
-        # Initialize a pretrained model using the Model() class.
-        model = satlaspretrain_models.Model(
-            in_channels,
-            model_info["multi_image"],
-            model_info["backbone"],
-            fpn=fpn,
-            head=head,
-            num_categories=num_classes,
-            weights=weights,
-        )
         return SatlasModelWrapper(model, rescale=rescale and task in ["segmentation", "regression"])
