@@ -9,7 +9,7 @@ from terratorch.models.model import (
     Model,
     ModelFactory,
 )
-from terratorch.models.necks import build_neck_list
+from terratorch.models.necks import Neck, build_neck_list
 from terratorch.models.pixel_wise_model import PixelWiseModel
 from terratorch.models.scalar_output_model import ScalarOutputModel
 from terratorch.models.utils import extract_prefix_keys
@@ -19,16 +19,49 @@ PIXEL_WISE_TASKS = ["segmentation", "regression"]
 SCALAR_TASKS = ["classification"]
 SUPPORTED_TASKS = PIXEL_WISE_TASKS + SCALAR_TASKS
 
+
 def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
     if isinstance(backbone, nn.Module):
         return backbone
     return BACKBONE_REGISTRY.build(backbone, **backbone_kwargs)
 
 
-def _get_decoder(decoder: str | nn.Module, channel_list: list[int], **decoder_kwargs) -> nn.Module:
+def _get_decoder_and_head_kwargs(
+    decoder: str | nn.Module,
+    channel_list: list[int],
+    decoder_kwargs: dict,
+    head_kwargs: dict,
+    num_classes: int | None = None,
+) -> tuple[nn.Module, dict]:
+    # if its already an nn Module, check if it includes a head. if it doesnt, pass num classes to head kwargs
     if isinstance(decoder, nn.Module):
-        return decoder
-    return DECODER_REGISTRY.build(decoder, channel_list, **decoder_kwargs)
+        if not getattr(decoder, "includes_head", False) and num_classes is not None:
+            head_kwargs["num_classes"] = num_classes
+        elif head_kwargs:
+            msg = "Decoder already includes a head, but `head_` arguments were specified. These should be removed."
+            raise Exception(msg)
+        return decoder, head_kwargs
+
+    # if its not an nn module, check if the class includes a head
+    # depending on that, pass num classes to either head kwrags or decoder
+    decoder_includes_head = getattr(DECODER_REGISTRY[decoder], "includes_head", False)
+    if num_classes is not None:
+        if decoder_includes_head:
+            decoder_kwargs["num_classes"] = num_classes
+            if head_kwargs:
+                msg = "Decoder already includes a head, but `head_` arguments were specified. These should be removed."
+                raise Exception(msg)
+        else:
+            head_kwargs["num_classes"] = num_classes
+
+    return DECODER_REGISTRY.build(decoder, channel_list, **decoder_kwargs), head_kwargs
+
+
+def _check_all_args_used(kwargs):
+    if kwargs:
+        msg = f"arguments {kwargs} were passed but not used."
+        raise Exception(msg)
+
 
 @MODEL_FACTORY_REGISTRY.register
 class EncoderDecoderFactory(ModelFactory):
@@ -95,36 +128,37 @@ class EncoderDecoderFactory(ModelFactory):
             necks = []
         neck_list, channel_list = build_neck_list(necks, out_channels)
 
-        decoder_kwargs, kwargs = extract_prefix_keys(kwargs, "decoder_")
-        decoder = _get_decoder(decoder, channel_list, **decoder_kwargs)
-
+        # some decoders already include a head
+        # for these, we pass the num_classes to them
+        # others dont include a head
+        # for those, we dont pass num_classes
         decoder_kwargs, kwargs = extract_prefix_keys(kwargs, "decoder_")
         head_kwargs, kwargs = extract_prefix_keys(kwargs, "head_")
 
-        # if num_classes:
-        #     if decoder_sources[0] != "mmseg":
-        #         head_kwargs["num_classes"] = num_classes
-        #     else:
-        #         decoder_kwargs["num_classes"] = num_classes
-        decoder = _get_decoder(decoder, channel_list, **decoder_kwargs)
+        decoder, head_kwargs = _get_decoder_and_head_kwargs(
+            decoder, channel_list, decoder_kwargs, head_kwargs, num_classes=num_classes
+        )
 
         if aux_decoders is None:
+            _check_all_args_used(kwargs)
             return _build_appropriate_model(task, backbone, decoder, head_kwargs, neck_list, rescale=rescale)
 
         to_be_aux_decoders: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] = []
         for aux_decoder in aux_decoders:
             args = aux_decoder.decoder_args if aux_decoder.decoder_args else {}
-            aux_decoder_cls: nn.Module = DECODER_REGISTRY[aux_decoder.decoder]
             aux_decoder_kwargs, kwargs = extract_prefix_keys(args, "decoder_")
-            aux_decoder_instance = aux_decoder_cls(channel_list, **aux_decoder_kwargs)
-
             aux_head_kwargs, kwargs = extract_prefix_keys(args, "head_")
-            if num_classes:
-                aux_head_kwargs["num_classes"] = num_classes
+
+            aux_decoder_instance, aux_head_kwargs = _get_decoder_and_head_kwargs(
+                aux_decoder.decoder, channel_list, aux_decoder_kwargs, aux_head_kwargs, num_classes=num_classes
+            )
             to_be_aux_decoders.append(
                 AuxiliaryHeadWithDecoderWithoutInstantiatedHead(aux_decoder.name, aux_decoder_instance, aux_head_kwargs)
             )
 
+        if kwargs:
+            msg = f"arguments {kwargs} were passed but not used."
+            raise Exception(msg)
 
         return _build_appropriate_model(
             task,
@@ -142,12 +176,12 @@ def _build_appropriate_model(
     backbone: nn.Module,
     decoder: nn.Module,
     head_kwargs: dict,
-    necks: list[nn.Module] | None = None,
+    necks: list[Neck] | None = None,
     rescale: bool = True,  # noqa: FBT001, FBT002
     auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
 ):
     if necks is not None:
-        necks = nn.Sequential(*necks)
+        necks: nn.Module = nn.Sequential(*necks)
     if task in PIXEL_WISE_TASKS:
         return PixelWiseModel(
             task,
