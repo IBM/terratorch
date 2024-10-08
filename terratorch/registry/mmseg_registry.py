@@ -42,7 +42,7 @@ class MMsegDecoderWrapper(nn.Module):
 class MMSegRegistry(Set):
     """Registry wrapper for mmseg"""
 
-    includes_head: bool = False
+    includes_head: bool = True
 
     def __init__(self):
         if not importlib.util.find_spec("mmseg"):

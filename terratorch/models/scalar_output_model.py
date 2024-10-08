@@ -25,6 +25,7 @@ class ScalarOutputModel(Model, SegmentationModel):
         encoder: nn.Module,
         decoder: nn.Module,
         head_kwargs: dict,
+        decoder_includes_head: bool = False,
         auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
         neck: nn.Module | None = None,
     ) -> None:
@@ -35,6 +36,7 @@ class ScalarOutputModel(Model, SegmentationModel):
             encoder (nn.Module): Encoder to be used
             decoder (nn.Module): Decoder to be used
             head_kwargs (dict): Arguments to be passed at instantiation of the head.
+            decoder_includes_head (bool): Whether the decoder already incldes a head. If true, a head will not be added. Defaults to False.
             auxiliary_heads (list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None, optional): List of
                 AuxiliaryHeads with heads to be instantiated. Defaults to None.
              neck (nn.Module | None): Module applied between backbone and decoder.
@@ -44,9 +46,8 @@ class ScalarOutputModel(Model, SegmentationModel):
         self.task = task
         self.encoder = encoder
         self.decoder = decoder
-        final_head_included = getattr(self.decoder, "includes_head", False)  # some models already include a head
         self.head = (
-            self._get_head(task, decoder.output_embed_dim, head_kwargs) if not final_head_included else nn.Identity()
+            self._get_head(task, decoder.output_embed_dim, head_kwargs) if not decoder_includes_head else nn.Identity()
         )
 
         if auxiliary_heads is not None:
@@ -54,7 +55,7 @@ class ScalarOutputModel(Model, SegmentationModel):
             for aux_head_to_be_instantiated in auxiliary_heads:
                 aux_head: nn.Module = self._get_head(
                     task, aux_head_to_be_instantiated.decoder.output_embed_dim, **head_kwargs
-                )
+                ) if not aux_head_to_be_instantiated.decoder_includes_head else nn.Identity()
                 aux_head = nn.Sequential(aux_head_to_be_instantiated.decoder, aux_head)
                 aux_heads[aux_head_to_be_instantiated.name] = aux_head
         else:

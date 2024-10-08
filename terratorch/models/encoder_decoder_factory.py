@@ -32,7 +32,7 @@ def _get_decoder_and_head_kwargs(
     decoder_kwargs: dict,
     head_kwargs: dict,
     num_classes: int | None = None,
-) -> tuple[nn.Module, dict]:
+) -> tuple[nn.Module, dict, bool]:
     # if its already an nn Module, check if it includes a head. if it doesnt, pass num classes to head kwargs
     if isinstance(decoder, nn.Module):
         if not getattr(decoder, "includes_head", False) and num_classes is not None:
@@ -40,7 +40,7 @@ def _get_decoder_and_head_kwargs(
         elif head_kwargs:
             msg = "Decoder already includes a head, but `head_` arguments were specified. These should be removed."
             raise Exception(msg)
-        return decoder, head_kwargs
+        return decoder, head_kwargs, False
 
     # if its not an nn module, check if the class includes a head
     # depending on that, pass num classes to either head kwrags or decoder
@@ -54,7 +54,7 @@ def _get_decoder_and_head_kwargs(
         else:
             head_kwargs["num_classes"] = num_classes
 
-    return DECODER_REGISTRY.build(decoder, channel_list, **decoder_kwargs), head_kwargs
+    return DECODER_REGISTRY.build(decoder, channel_list, **decoder_kwargs), head_kwargs, decoder_includes_head
 
 
 def _check_all_args_used(kwargs):
@@ -135,13 +135,13 @@ class EncoderDecoderFactory(ModelFactory):
         decoder_kwargs, kwargs = extract_prefix_keys(kwargs, "decoder_")
         head_kwargs, kwargs = extract_prefix_keys(kwargs, "head_")
 
-        decoder, head_kwargs = _get_decoder_and_head_kwargs(
+        decoder, head_kwargs, decoder_includes_head = _get_decoder_and_head_kwargs(
             decoder, channel_list, decoder_kwargs, head_kwargs, num_classes=num_classes
         )
 
         if aux_decoders is None:
             _check_all_args_used(kwargs)
-            return _build_appropriate_model(task, backbone, decoder, head_kwargs, neck_list, rescale=rescale)
+            return _build_appropriate_model(task, backbone, decoder, head_kwargs, necks=neck_list, decoder_includes_head=decoder_includes_head, rescale=rescale)
 
         to_be_aux_decoders: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] = []
         for aux_decoder in aux_decoders:
@@ -149,7 +149,7 @@ class EncoderDecoderFactory(ModelFactory):
             aux_decoder_kwargs, kwargs = extract_prefix_keys(args, "decoder_")
             aux_head_kwargs, kwargs = extract_prefix_keys(args, "head_")
 
-            aux_decoder_instance, aux_head_kwargs = _get_decoder_and_head_kwargs(
+            aux_decoder_instance, aux_head_kwargs, aux_decoder_includes_head = _get_decoder_and_head_kwargs(
                 aux_decoder.decoder, channel_list, aux_decoder_kwargs, aux_head_kwargs, num_classes=num_classes
             )
             to_be_aux_decoders.append(
@@ -165,7 +165,8 @@ class EncoderDecoderFactory(ModelFactory):
             backbone,
             decoder,
             head_kwargs,
-            neck_list,
+            necks=neck_list,
+            decoder_includes_head=decoder_includes_head,
             rescale=rescale,
             auxiliary_heads=to_be_aux_decoders,
         )
@@ -176,21 +177,23 @@ def _build_appropriate_model(
     backbone: nn.Module,
     decoder: nn.Module,
     head_kwargs: dict,
+    decoder_includes_head: bool = False,
     necks: list[Neck] | None = None,
     rescale: bool = True,  # noqa: FBT001, FBT002
     auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
 ):
     if necks:
-        necks: nn.Module = nn.Sequential(*necks)
+        neck_module: nn.Module = nn.Sequential(*necks)
     else:
-        necks = None
+        neck_module = None
     if task in PIXEL_WISE_TASKS:
         return PixelWiseModel(
             task,
             backbone,
             decoder,
             head_kwargs,
-            neck=necks,
+            decoder_includes_head=decoder_includes_head,
+            neck=neck_module,
             rescale=rescale,
             auxiliary_heads=auxiliary_heads,
         )
@@ -200,6 +203,7 @@ def _build_appropriate_model(
             backbone,
             decoder,
             head_kwargs,
-            neck=necks,
+            decoder_includes_head=decoder_includes_head,
+            neck=neck_module,
             auxiliary_heads=auxiliary_heads,
         )
