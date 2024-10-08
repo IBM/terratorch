@@ -86,15 +86,16 @@ class PrithviModelFactory(ModelFactory):
             in_channels = len(bands)
         # TODO: support auxiliary heads
         kwargs["backbone_bands"] = bands
-        kwargs["backbone_in_channels"] = in_channels
+        kwargs["backbone_in_chans"] = in_channels
         kwargs["backbone_pretrained"] = pretrained
         kwargs["backbone_num_frames"] = num_frames
         if prepare_features_for_image_model:
             msg = (
                 "This functionality is no longer supported. Please migrate to EncoderDecoderFactory\
-                         and use post_backbone_ops."
+                         and use necks."
             )
             raise RuntimeError(msg)
+
 
         if not isinstance(backbone, nn.Module):
             if not backbone.startswith("prithvi_"):
@@ -105,7 +106,7 @@ class PrithviModelFactory(ModelFactory):
                                          backbone,
                                          decoder,
                                          num_classes=num_classes,
-                                         post_backbone_ops=None,
+                                         necks=None,
                                          aux_decoders=aux_decoders,
                                          rescale=rescale,
                                          **kwargs)

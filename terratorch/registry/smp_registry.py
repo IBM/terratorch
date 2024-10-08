@@ -63,10 +63,7 @@ class SMPRegistry(Mapping):
         raise NotImplementedError()
 
     def build(self, name: str, out_channels: list[int], **decoder_kwargs) -> nn.Module:
-        decoder_module = getattr(smp, name, None)
-        if decoder_module is None:
-            msg = f"Decoder {name} is not supported in SMP."
-            raise ValueError(msg)
+        decoder_module = self[name]
 
         # Little hack to make SMP model accept our encoder.
         # passes a dummy encoder to be changed later.

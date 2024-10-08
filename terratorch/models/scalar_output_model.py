@@ -80,6 +80,7 @@ class ScalarOutputModel(Model, SegmentationModel):
         self.check_input_shape(x)
         features = self.encoder(x)
 
+        ## only for backwards compatibility with pre-neck times.
         if self.neck:
             prepare = self.neck
         else:

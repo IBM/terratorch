@@ -11,10 +11,13 @@ class TimmModelWrapper(nn.Module):
     def __init__(self, timm_module: nn.Module) -> None:
         super().__init__()
         self._timm_module = timm_module
+        # for backwards compatibility for times before necks
+        self.prepare_features_for_image_model = getattr(self._timm_module, "prepare_features_for_image_model", lambda x: x)
 
     @property
     def out_channels(self):
         return self._timm_module.feature_info.channels()
+    
 
     def forward(self, *args, **kwargs) -> list[torch.Tensor]:
         return self._timm_module(*args, **kwargs)
@@ -30,14 +33,20 @@ class TimmRegistry(Mapping):
         """Build and return the component.
         Use prefixes ending with _ to forward to a specific source
         """
-        return TimmModelWrapper(
-            timm.create_model(
-                name,
-                *constructor_args,
-                features_only=True,
-                **constructor_kwargs,
+        try:
+            return TimmModelWrapper(
+                timm.create_model(
+                    name,
+                    *constructor_args,
+                    features_only=True,
+                    **constructor_kwargs,
+                )
             )
-        )
+        except RuntimeError as e:
+            if "Unknown model" in str(e):
+                msg = f"Unknown model {name}"
+                raise KeyError(msg) from e
+            raise e
 
     def __iter__(self):
         return iter(timm.list_models())

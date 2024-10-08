@@ -92,6 +92,7 @@ class PixelWiseModel(Model, SegmentationModel):
         input_size = x.shape[-2:]
         features = self.encoder(x)
 
+        ## only for backwards compatibility with pre-neck times.
         if self.neck:
             prepare = self.neck
         else:

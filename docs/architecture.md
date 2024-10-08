@@ -3,7 +3,8 @@
 The main goal of the design is to extend TorchGeo's existing tasks to be able to handle Prithvi backbones with appropriate decoders and heads.
 At the same time, we wish to keep the existing TorchGeo functionality intact so it can be leveraged with pretrained models that are already included.
 
-We achieve this by making new tasks that accept model factory classes, containing a `build_model` method.. This strategy in principle allows arbitrary models to be trained for these tasks, given they respect some reasonable minimal interface.
+We achieve this by making new tasks that accept model factory classes, containing a `build_model` method. This strategy in principle allows arbitrary models to be trained for these tasks, given they respect some reasonable minimal interface.
+Together with this, we provide the [EncoderDecoderFactory][terratorch.models.encoder_decoder_factory.EncoderDecoderFactory], which should enable users to plug together different Encoders and Decoders, with the aid of Necks for intermediate operations.
 
 Additionally, we extend TorchGeo with generic datasets and datamodules which can be defined at runtime, rather than requiring classes to be defined beforehand.
 
@@ -16,16 +17,17 @@ Initial reading for a full understanding of the platform includes:
 - Familiarity with [LightningCLI](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.cli.LightningCLI.html#lightning.pytorch.cli.LightningCLI)
 
 ## Tasks
+
 Tasks are the main coordinators for training and inference for specific tasks. They are LightningModules that contain a model and abstract away all the logic for training steps, metric computation and inference.
 
 One of the most important design decisions was delegating the model construction to a model factory. This has a few advantages:
-    
+
 - Avoids code repetition among tasks - different tasks can use the same factory
 - Prefers composition over inheritance
-- Allows new models to be easily added by introducing new factories
+- Allows new ways of building models to be added through new factories
 
 Models are expected to be `torch.nn.Module`s and implement the [Model][terratorch.models.model.Model] interface, providing:
-    
+
 - `freeze_encoder()`
 - `freeze_decoder()`
 - `forward()`
@@ -37,7 +39,8 @@ Additionally, the `forward()` method is expected to return an object of type [Mo
 ### :::terratorch.models.model.ModelOutput
 
 ### Models
-In the currently existing model implementations, we explicitly divide the models into backbones, decoders and heads. This structure is provided by the [PixelWiseModel][terratorch.models.pixel_wise_model.PixelWiseModel] and [ScalarOutputModel][terratorch.models.scalar_output_model.ScalarOutputModel] classes.
+
+Models constructed by the [EncoderDecoderFactory][terratorch.models.encoder_decoder_factory.EncoderDecoderFactory] have an internal structure explicitly divided into backbones, necks, decoders and heads. This structure is provided by the [PixelWiseModel][terratorch.models.pixel_wise_model.PixelWiseModel] and [ScalarOutputModel][terratorch.models.scalar_output_model.ScalarOutputModel] classes.
 
 However, as long as models implement the [Model][terratorch.models.model.Model] interface, and return [ModelOutput][terratorch.models.model.ModelOutput] in their forward method, they can take on any structure.
 
@@ -45,18 +48,25 @@ However, as long as models implement the [Model][terratorch.models.model.Model] 
 #### :::terratorch.models.scalar_output_model.ScalarOutputModel
 
 
-### Backbones
-We decide to leverage `timm` for handling backbones. It is important to understand the advantages and disadvantages of this decision:
+### EncoderDecoderFactory
 
-#### Advantages
-1. `timm` provides an incredibly rich variety of already implemented and validated architectures.
-2. `timm` provides an API for creating backbones directly as feature extractors, with the `features_only=True` argument.
-3. `timm` provides an existing and powerful model registry and factory.
+We expect this factory to be widely employed by users. With that in mind, we dive deeper into it here.
 
-#### Disadvantages
-1. The documentation on using `timm` is reasonable, but the documentation on how to develop with `timm`, particularly for adding new models, is not great.
-2. A few hacks had to be put in place to make our existing model architectures play nicely with the `features_only=True` functionality.
-    1. In particular, we allow models to define a `prepare_features_for_image_model` function, which is called on the model features just before they are passed to the decoder. This function can be defined on the backbone code itself, or passed to the [PixelWiseModel][terratorch.models.pixel_wise_model.PixelWiseModel] constructor.
+#### Encoders (aka Backbones)
+
+Encoders can be any `nn.Module`, with the additional attribute `out_channels`. This is required by the factory in order to build a decoder which is compatible with the features output by the encoder
+
+When instantiating encoders, the factory makes use of the `BACKBONE_REGISTRY`, which will search different model registries to build the desired encoder .
+
+#### Necks
+
+Sometimes intermediate operations between the encoder and decoder are required to make them compatible. Examples could be selecting certain indices from the backbone output, or reshaping the output of a transformer backbone so that it can be processed by a CNN decoder. 
+
+These operations should be handled by [Necks][terratorch.models.necks.Neck]. 
+
+Necks are `nn.Modules` which may or may not have internal state / torch parameters.
+
+Additionally, they must provide the method `process_channel_list`, which details the effect of the neck on the channel list representing its input.
 
 ### Decoders
 Currently, we have implemented a simple Fully Convolutional Decoder as well as an UperNetDecoder, which exactly match the definitions in the MMSeg framework.

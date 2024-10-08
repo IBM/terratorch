@@ -3,6 +3,7 @@ import logging
 import typing
 from collections import OrderedDict
 from collections.abc import Callable, Mapping
+from contextlib import suppress
 
 V = typing.TypeVar("V")
 
@@ -12,10 +13,16 @@ class BuildableRegistry(typing.Protocol):
     def __iter__(self): ...
     def __len__(self) -> int: ...
     def __contains__(self, name: str) -> bool: ...
-    def build(self, name: str, *args, **kwargs): ...
+    def build(self, name: str, *args, **kwargs):
+        """Should raise KeyError if model not found.
+        """
 
 
 class MultiSourceRegistry(Mapping):
+    """Registry that searches in multiple sources
+
+        Correct functioning of this class depends on registries raising a KeyError when the model is not found.
+    """
     def __init__(self) -> None:
         self._sources: OrderedDict[str, BuildableRegistry] = OrderedDict()
 
@@ -34,12 +41,12 @@ class MultiSourceRegistry(Mapping):
             registry = self._sources[prefix]
             return registry.build(name_without_prefix, *constructor_args, **constructor_kwargs)
 
-        # if no prefix
+        # if no prefix, try to build in order
         for source in self._sources.values():
-            if name in source:
+            with suppress(KeyError):
                 return source.build(name, *constructor_args, **constructor_kwargs)
 
-        msg = f"Could not instantiate Model {name} not from any source."
+        msg = f"Could not instantiate model {name} not from any source."
         raise Exception(msg)
 
     def register_source(self, prefix: str, registry: BuildableRegistry) -> None:
