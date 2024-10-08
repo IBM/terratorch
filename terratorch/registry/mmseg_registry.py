@@ -1,7 +1,7 @@
 import importlib
 import inspect
 import logging
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Set
 
 from torch import nn
 
@@ -39,8 +39,10 @@ class MMsegDecoderWrapper(nn.Module):
         return self.decoder(x)
 
 
-class MMSegRegistry(Mapping):
+class MMSegRegistry(Set):
     """Registry wrapper for mmseg"""
+
+    includes_head: bool = False
 
     def __init__(self):
         if not importlib.util.find_spec("mmseg"):
@@ -56,14 +58,17 @@ class MMSegRegistry(Mapping):
         """Build and return the component.
         Use prefixes ending with _ to forward to a specific source
         """
-        decoder = self[name]
+        try:
+            decoder = getattr(self.mmseg_reg, name)
+        except AttributeError as e:
+            msg = f"Decoder {name} not found"
+            raise KeyError(msg) from e
+
         if len(in_channels) == 1:
             in_channels = in_channels[0]
         if "num_classes" not in constructor_kwargs:
             msg = "num_classes is a required argument for mmseg decoders. If you are using an mmseg decoder for a regression task please include num_classes=1."
-            raise ValueError(
-                msg
-            )  # noqa: EM101
+            raise ValueError(msg)
         decoder = decoder(*constructor_args, in_channels=in_channels, **constructor_kwargs)
         return MMsegDecoderWrapper(decoder)
 
@@ -76,15 +81,15 @@ class MMSegRegistry(Mapping):
     def __contains__(self, key):
         return key in self.mmseg_decoder_names
 
-    def __getitem__(self, name):
-        try:
-            return getattr(self.mmseg_reg, name)
-        except AttributeError as e:
-            msg = f"Decoder {name} not found"
-            raise KeyError(msg) from e
+    # def __getitem__(self, name):
+    #     try:
+    #         return getattr(self.mmseg_reg, name)
+    #     except AttributeError as e:
+    #         msg = f"Decoder {name} not found"
+    #         raise KeyError(msg) from e
 
     def __repr__(self):
-        return repr(self.mmseg_decoder_names)
+        return f"{self.__class__.__name__}()"
 
     def __str__(self):
         return f"Mmseg registry with {len(self)} registered backbones"
