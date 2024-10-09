@@ -1,3 +1,4 @@
+import os
 from typing import Any
 
 import lightning
@@ -16,7 +17,7 @@ from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
 from terratorch.tasks.tiled_inference import TiledInferenceParameters, tiled_inference
 
-BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
+BATCH_IDX_FOR_VALIDATION_PLOTTING = os.getenv('TERRATORCH_NUM_VAL_PLOTS', 10)
 
 
 def to_segmentation_prediction(y: ModelOutput) -> Tensor:
