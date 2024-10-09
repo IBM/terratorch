@@ -86,6 +86,7 @@ def adapt_weights_for_satlas_pretrained_models(weights: dict) -> dict:
                 new_name = "upsample." + new_name[new_name.find("layers"):]
         elif "heads" in name:
             new_name = "head." + new_name[new_name.find("layers"):]
+
         new_weights[new_name] = val
     return new_weights
 
@@ -130,10 +131,11 @@ class SatlasModelWrapper(Model):
     def forward(self, x, *args, **kwargs) -> ModelOutput:
         # returns a tuple with output and loss
         output, _ = self.model.forward(x, *args, **kwargs)
-
         # interpolate to patch image size
         if self.rescale and output.shape[-2:] != x.shape[-2:]:
+            output = output.unsqueeze(1) # simulate channels dimension
             output = F.interpolate(output, size=x.shape[-2:], mode="bilinear")
+            output = output.squeeze(1) # remove simulated channels dimension
         return ModelOutput(output)
 
 
