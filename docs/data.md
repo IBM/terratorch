@@ -11,6 +11,7 @@ TorchGeo provides `GeoDataset` and `NonGeoDataset`.
 - If your data consists of large GeoTiffs you would like to sample from during training, you can leverage the powerful `GeoDataset` from torch. This will automatically align your input data and labels and enable a variety of geo-aware samplers.
 
 ## Using Datasets already implemented in TorchGeo
+
 Using existing TorchGeo DataModules is very easy! Just plug them in!
 For instance, to use the `EuroSATDataModule`, in your config file, set the data as:
 ```yaml
@@ -54,20 +55,26 @@ You can also do this outside of config files! Simply instantiate the data module
 
 :::terratorch.datamodules.torchgeo_data_module
 
-
 ## Generic datasets and data modules
+
 For the `NonGeoDataset` case, we also provide "generic" datasets and datamodules. These can be used when you would like to load data from given directories, in a style similar to the [MMLab](https://github.com/open-mmlab) libraries.
 
 ### Generic Datasets
+
 #### :::terratorch.datasets.generic_pixel_wise_dataset
+
 #### :::terratorch.datasets.generic_scalar_label_dataset
 
 ### Generic Data Modules
+
 #### :::terratorch.datamodules.generic_pixel_wise_data_module
+
 #### :::terratorch.datamodules.generic_scalar_label_data_module
+
 ## Custom datasets and data modules
+
 Below is a documented example of how a custom dataset and data module class can be implemented.
 
-#### :::terratorch.datasets.fire_scars
+### :::terratorch.datasets.fire_scars
 
-#### :::terratorch.datamodules.fire_scars
+### :::terratorch.datamodules.fire_scars

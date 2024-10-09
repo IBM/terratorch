@@ -1,4 +1,4 @@
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Set
 
 import pytest
 
@@ -6,7 +6,7 @@ from terratorch.registry import MultiSourceRegistry
 
 
 # Define a simple BuildableRegistry mock
-class SimpleRegistry(Mapping):
+class SimpleRegistry(Set):
     def __init__(self):
         self._registry = {}
 
@@ -16,8 +16,6 @@ class SimpleRegistry(Mapping):
     def build(self, name: str, *args, **kwargs):
         return self._registry[name](*args, **kwargs)
 
-    def __getitem__(self, name):
-        return self._registry[name]
 
     def __iter__(self):
         return iter(self._registry)
@@ -72,7 +70,7 @@ def test_build_without_prefix(multi_source_registry, simple_registry):
 
 
 def test_build_fails_if_not_found(multi_source_registry):
-    with pytest.raises(Exception) as excinfo:
+    with pytest.raises(KeyError) as excinfo:
         multi_source_registry.build("nonexistent_model")
     assert "Could not instantiate model" in str(excinfo.value)
 
@@ -108,7 +106,13 @@ def test_getitem_method(multi_source_registry, simple_registry):
     multi_source_registry.register_source("simple", simple_registry)
 
     # Get item by prefixed name
-    assert multi_source_registry["simple_my_model"] is model_constructor
+    assert multi_source_registry["simple"] is simple_registry
 
-    # Get item by unprefixed name
-    assert multi_source_registry["my_model"] is model_constructor
+def test_find_registry_method(multi_source_registry, simple_registry):
+    def model_constructor():
+        return "constructed_model"
+    simple_registry.register("my_model", model_constructor)
+
+    multi_source_registry.register_source("simple", simple_registry)
+
+    assert multi_source_registry.find_registry("my_model") is simple_registry

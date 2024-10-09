@@ -21,13 +21,13 @@ Initial reading for a full understanding of the platform includes:
 Tasks are the main coordinators for training and inference for specific tasks. They are LightningModules that contain a model and abstract away all the logic for training steps, metric computation and inference.
 
 One of the most important design decisions was delegating the model construction to a model factory. This has a few advantages:
-
+    
 - Avoids code repetition among tasks - different tasks can use the same factory
 - Prefers composition over inheritance
-- Allows new ways of building models to be added through new factories
+- Allows new models to be easily added by introducing new factories
 
 Models are expected to be `torch.nn.Module`s and implement the [Model][terratorch.models.model.Model] interface, providing:
-
+    
 - `freeze_encoder()`
 - `freeze_decoder()`
 - `forward()`
@@ -56,31 +56,33 @@ We expect this factory to be widely employed by users. With that in mind, we div
 
 Encoders can be any `nn.Module`, with the additional attribute `out_channels`. This is required by the factory in order to build a decoder which is compatible with the features output by the encoder
 
-When instantiating encoders, the factory makes use of the `BACKBONE_REGISTRY`, which will search different model registries to build the desired encoder.
-
-An example of how to add a new source of backbones is the[TimmRegistry][terratorch.registry.timm_registry.TimmRegistry].
+When instantiating encoders, the factory makes use of the `BACKBONE_REGISTRY`, which will search different model registries to build the desired encoder .
 
 #### Necks
 
-Sometimes intermediate operations between the encoder and decoder are required to make them compatible. Examples could be selecting certain indices from the backbone output, or reshaping the output of a transformer backbone so that it can be processed by a CNN decoder. 
+Sometimes intermediate operations between the encoder and decoder are required to make them compatible. Examples could be selecting certain indices from the backbone output, or reshaping the output of a transformer backbone so that it can be processed by a CNN decoder.
 
-These operations should be handled by [Necks][terratorch.models.necks.Neck].
+These operations should be handled by [Necks][terratorch.models.necks.Neck]. 
 
 Necks are `nn.Modules` which may or may not have internal state / torch parameters.
 
 Additionally, they must provide the method `process_channel_list`, which details the effect of the neck on the channel list representing its input.
 
 ### Decoders
+Currently, we have implemented a simple Fully Convolutional Decoder as well as an UperNetDecoder, which exactly match the definitions in the MMSeg framework.
+This was mostly done to ensure we could replicate the results from that framework.
 
-Decoders are also any `nn.Module` that accepts a list of `torch.Tensor` as its input.
+However, libraries such as [pytorch-segmentation](https://github.com/yassouali/pytorch-segmentation) or [segmentation_models.pytorch](https://github.com/qubvel/segmentation_models.pytorch) provide a large set of already implemented decoders that can be leveraged. 
 
-Its constructor should accept as the first argument a list of ints representing the channel size of each embedding passed to it in the list above.
-
-An example of how to add a new source of decoders is the [SMPRegistry][terratorch.registry.smp_registry.SMPRegistry].
+This is probably a reasonable next step in the implementation. In order to do this, a new factory can simply be created which leverages these libraries. See as an example [this section](models.md#adding-new-model-types)
 
 ### Heads
 In the current implementation, the heads perform the final step in going from the output of the decoder to the final desired output. Often this can just be e.g. a single convolutional head going from the final decoder depth to the number of classes, in the case of segmentation, or to a depth of 1, in the case of regression.
 
+### Loss
+For convenience, we provide a loss handler that can be used to compute the full loss (from the main head and auxiliary heads as well).
+
+:::terratorch.tasks.loss_handler
 
 ## Generic datasets / datamodules
 Refer to the section on [data](data.md)

@@ -61,7 +61,7 @@ class MultiSourceRegistry(Mapping[str, T], typing.Generic[T]):
                 return source.build(name, *constructor_args, **constructor_kwargs)
 
         msg = f"Could not instantiate model {name} not from any source."
-        raise Exception(msg)
+        raise KeyError(msg)
 
     def register_source(self, prefix: str, registry: T) -> None:
         """Register a source in the registry"""

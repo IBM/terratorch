@@ -52,6 +52,7 @@ The name passed to `build` is used to find the appropriate model constructor, wh
 To explicitly determine the registry that will build the model, you may prepend a prefix such as `timm_` to the model name. In this case, the `timm` model registry will be exclusively searched for the model.
 
 ## Directly creating a full model
+
 We also provide a model factory for a task specific model built on one a backbones:
 
 ```python title="Building a full model, with task specific decoder"

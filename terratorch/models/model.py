@@ -1,5 +1,6 @@
 # Copyright contributors to the Terratorch project
 
+import typing
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
@@ -28,10 +29,8 @@ class Model(ABC, nn.Module):
         pass
 
 
-class ModelFactory(ABC):
-    @abstractmethod
-    def build_model(self, *args, **kwargs) -> Model:
-        pass
+class ModelFactory(typing.Protocol):
+    def build_model(self, *args, **kwargs) -> Model:...
 
 @dataclass
 class AuxiliaryHead:

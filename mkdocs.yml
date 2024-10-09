@@ -6,6 +6,7 @@ theme:
   features:
     - content.code.copy
     - content.code.select
+    - navigation.tabs
 plugins:
   - autorefs
   - mkdocstrings:
@@ -21,12 +22,14 @@ extra:
 repo_url: https://github.com/IBM/terratorch
 nav:
   - index.md
-  - quick_start.md
-  - data.md
-  - tasks.md
-  - models.md
-  - architecture.md
-  - examples.md
+  - Getting Started: quick_start.md
+  - Components:
+    - Tasks: tasks.md
+    - Modekls: models.md
+    - Data: data.md
+  - For Developers: architecture.md
+  - Examples: examples.md
+  - FAQ: faq.md
 
 markdown_extensions:
   - pymdownx.highlight:
