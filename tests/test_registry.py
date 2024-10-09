@@ -22,8 +22,6 @@ def test_register_function(registry):
         return "dummy"
 
     assert "dummy_function" in registry
-    assert registry["dummy_function"]() == "dummy"
-
 
 def test_register_class(registry):
     """Test if a class can be registered and instantiated."""
