@@ -43,13 +43,14 @@ class SMPDecoderWrapper(nn.Module):
 class SMPRegistry(Set):
     """Registry wrapper for segmentation_models_pytorch.
 
-    smp does not seem to have the set of supported models / decoders exposed at all in the API.
-    The cleanest way I've found to handle this is to just enumerate this im this module.
-    Unfortunately, this means there might be models that this registry can
-    instantiate (they will work when the user calls .build with them), but
-    will report `False` when tested with `in` and will not count towards the `len()` of the registry.
+    Not all decoders are guaranteed to work with all encoders without additional necks.
+    Please check smp documentation to understand the embedding spatial dimensions expected by each decoder.
 
-    This will have to be updated manually when SMP is updated...
+    In particular, smp seems to assume the first feature in the passed feature list has the same spatial resolution
+    as the input, which may not always be true, and may break some decoders.
+
+    In addition, for some decoders, the final 2 features have the same spatial resolution.
+    Adding the AddBottleneckLayer neck will make this compatible.
     """
     includes_head: bool = False
     def __init__(self):
@@ -83,8 +84,8 @@ class SMPRegistry(Set):
         dummy_encoder = make_smp_encoder()
 
         register_custom_encoder(dummy_encoder, dummy_backbone_kwargs, None)
-
-        dummy_encoder = dummy_encoder(depth=len(out_channels), **dummy_backbone_kwargs)
+        encoder_depth = len(out_channels) - 1
+        dummy_encoder = dummy_encoder(depth=encoder_depth, **dummy_backbone_kwargs)
 
         # encoder parameters are dummies so are hardcoded to 1 here
         model_args = {
@@ -92,6 +93,7 @@ class SMPRegistry(Set):
             "encoder_weights": None,
             "in_channels": 1,
             "classes": 1,
+            "encoder_depth": encoder_depth,
             **decoder_kwargs,
         }
 

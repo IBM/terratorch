@@ -157,6 +157,25 @@ class ReshapeTokensToImage(Neck):
         return super().process_channel_list(channel_list)
 
 @TERRATORCH_NECK_REGISTRY.register
+class AddBottleneckLayer(Neck):
+    """Add a layer that reduces the channel dimension of the final embedding by half, and concatenates it
+
+    Useful for compatibility with some smp decoders.
+    """
+
+    def __init__(self, channel_list: list[int]):
+        super().__init__(channel_list)
+        self.bottleneck = nn.Conv2d(channel_list[-1], channel_list[-1]//2, kernel_size=1)
+
+    def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
+        new_embedding = self.bottleneck(features[-1])
+        features.append(new_embedding)
+        return features
+
+    def process_channel_list(self, channel_list: list[int]) -> list[int]:
+        return channel_list + [channel_list[-1] // 2]
+
+@TERRATORCH_NECK_REGISTRY.register
 class LearnedInterpolateToPyramidal(Neck):
     """Use learned convolutions to transform the output of a non-pyramidal encoder into pyramidal ones
 
