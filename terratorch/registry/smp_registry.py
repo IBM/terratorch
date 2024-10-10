@@ -34,7 +34,7 @@ class SMPDecoderWrapper(nn.Module):
         """
         super().__init__()
         self._smp_decoder = decoder
-        self.output_embed_dim = out_channels
+        self.out_channels = out_channels
 
     def forward(self, x):
         return self._smp_decoder(*x)

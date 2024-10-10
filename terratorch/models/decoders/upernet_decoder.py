@@ -60,7 +60,7 @@ class UperNetDecoder(nn.Module):
         else:
             self.embed_dim = embed_dim
 
-        self.output_embed_dim = channels
+        self.out_channels = channels
         self.channels = channels
         self.align_corners = align_corners
         # PSP Module

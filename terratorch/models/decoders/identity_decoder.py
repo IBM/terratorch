@@ -24,7 +24,7 @@ class IdentityDecoder(nn.Module):
         self.dim = out_index
 
     @property
-    def output_embed_dim(self):
+    def out_channels(self):
         return self.embed_dim[self.dim]
 
     def forward(self, x: list[Tensor]):

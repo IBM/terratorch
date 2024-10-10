@@ -85,11 +85,11 @@ class EncoderDecoderFactory(ModelFactory):
             task (str): Task to be performed. Currently supports "segmentation" and "regression".
             backbone (str, nn.Module): Backbone to be used. If a string, will look for such models in the different
                 registries supported (internal terratorch registry, timm, ...). If a torch nn.Module, will use it
-                directly. The backbone should have and `out_channels` attribute.
+                directly. The backbone should have and `out_channels` attribute and its `forward` should return a list[Tensor].
             decoder (Union[str, nn.Module], optional): Decoder to be used for the segmentation model.
                     If a string, will look for such decoders in the different
                     registries supported (internal terratorch registry, smp, ...).
-                    If an nn.Module, we expect it to expose a property `decoder.output_embed_dim`.
+                    If an nn.Module, we expect it to expose a property `decoder.out_channels`.
                     Pixel wise tasks will be concatenated with a Conv2d for the final convolution.
                     Defaults to "FCNDecoder".
             num_classes (int, optional): Number of classes. None for regression tasks.
