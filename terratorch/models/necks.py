@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from collections.abc import Callable
 
 import numpy as np
 import torch
@@ -13,8 +12,7 @@ from terratorch.registry import NECK_REGISTRY, TERRATORCH_NECK_REGISTRY
 class Neck(ABC, nn.Module):
     """Base class for Neck
 
-    If the operation has an effect on the length of embeddings or their number, it must implement
-    `self.process_channel_list` which returns the new channel list.
+    A neck must must implement `self.process_channel_list` which returns the new channel list.
     """
 
     def __init__(self, channel_list: list[int]) -> None:
@@ -173,7 +171,7 @@ class AddBottleneckLayer(Neck):
         return features
 
     def process_channel_list(self, channel_list: list[int]) -> list[int]:
-        return channel_list + [channel_list[-1] // 2]
+        return [*channel_list, channel_list[-1] // 2]
 
 @TERRATORCH_NECK_REGISTRY.register
 class LearnedInterpolateToPyramidal(Neck):

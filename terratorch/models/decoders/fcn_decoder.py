@@ -71,7 +71,7 @@ class FCNDecoder(nn.Module):
         self.convs = nn.Sequential(*convs)
 
     @property
-    def output_embed_dim(self):
+    def out_channels(self):
         return self.channels
 
     def forward(self, x: list[Tensor]):

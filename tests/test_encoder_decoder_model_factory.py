@@ -36,7 +36,7 @@ def model_input() -> torch.Tensor:
 
 def test_unused_args_raise_exception(model_factory: EncoderDecoderFactory):
     with pytest.raises(ValueError) as excinfo:
-        model = model_factory.build_model(
+        model_factory.build_model(
             "classification",
             backbone="prithvi_vit_100",
             decoder="IdentityDecoder",
@@ -106,7 +106,7 @@ def test_create_pixelwise_model(backbone, task, expected, decoder, model_factory
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
-def test_create_model_with_smp_FPN_decoder(backbone, task, expected, model_factory: EncoderDecoderFactory, model_input):
+def test_create_model_with_smp_fpn_decoder(backbone, task, expected, model_factory: EncoderDecoderFactory, model_input):
     model_args = {
         "task": task,
         "backbone": backbone,
@@ -177,7 +177,7 @@ def test_create_model_with_smp_deeplabv3plus_decoder(
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
-def test_create_model_with_mmseg_FCN_decoder(
+def test_create_model_with_mmseg_fcn_decoder(
     backbone, task, expected, model_factory: EncoderDecoderFactory, model_input
 ):
     model_args = {
@@ -206,7 +206,7 @@ def test_create_model_with_mmseg_FCN_decoder(
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
-def test_create_model_with_mmseg_UPerHead_decoder(
+def test_create_model_with_mmseg_uperhead_decoder(
     backbone, task, expected, model_factory: EncoderDecoderFactory, model_input
 ):
     model_args = {

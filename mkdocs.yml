@@ -25,8 +25,10 @@ nav:
   - Getting Started: quick_start.md
   - Components:
     - Tasks: tasks.md
-    - Modekls: models.md
+    - Models: models.md
     - Data: data.md
+    - Registries: registry.md
+    - EncoderDecoderFactory: encoder_decoder_factory.md
   - For Developers: architecture.md
   - Examples: examples.md
   - FAQ: faq.md

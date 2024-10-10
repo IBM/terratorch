@@ -78,7 +78,7 @@ class ClayModelFactory(ModelFactory):
                 by the specified factory. Defaults to "prithvi_100".
             decoder (Union[str, nn.Module], optional): Decoder to be used for the segmentation model.
                     If a string, it will be created from a class exposed in decoder.__init__.py with the same name.
-                    If an nn.Module, we expect it to expose a property `decoder.output_embed_dim`.
+                    If an nn.Module, we expect it to expose a property `decoder.out_channels`.
                     Will be concatenated with a Conv2d for the final convolution. Defaults to "FCNDecoder".
             in_channels (int, optional): Number of input channels. Defaults to 3.
             bands (list[terratorch.datasets.HLSBands], optional): Bands the model will be trained on.

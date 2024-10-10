@@ -52,14 +52,14 @@ class PixelWiseModel(Model, SegmentationModel):
         self.encoder = encoder
         self.decoder = decoder
         self.head = (
-            self._get_head(task, decoder.output_embed_dim, head_kwargs) if not decoder_includes_head else nn.Identity()
+            self._get_head(task, decoder.out_channels, head_kwargs) if not decoder_includes_head else nn.Identity()
         )
 
         if auxiliary_heads is not None:
             aux_heads = {}
             for aux_head_to_be_instantiated in auxiliary_heads:
                 aux_head: nn.Module = self._get_head(
-                    task, aux_head_to_be_instantiated.decoder.output_embed_dim, head_kwargs
+                    task, aux_head_to_be_instantiated.decoder.out_channels, head_kwargs
                 ) if not aux_head_to_be_instantiated.decoder_includes_head else nn.Identity()
                 aux_head = nn.Sequential(aux_head_to_be_instantiated.decoder, aux_head)
                 aux_heads[aux_head_to_be_instantiated.name] = aux_head
