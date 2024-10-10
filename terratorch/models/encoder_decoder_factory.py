@@ -39,7 +39,7 @@ def _get_decoder_and_head_kwargs(
             head_kwargs["num_classes"] = num_classes
         elif head_kwargs:
             msg = "Decoder already includes a head, but `head_` arguments were specified. These should be removed."
-            raise Exception(msg)
+            raise ValueError(msg)
         return decoder, head_kwargs, False
 
     # if its not an nn module, check if the class includes a head
@@ -50,7 +50,7 @@ def _get_decoder_and_head_kwargs(
             decoder_kwargs["num_classes"] = num_classes
             if head_kwargs:
                 msg = "Decoder already includes a head, but `head_` arguments were specified. These should be removed."
-                raise Exception(msg)
+                raise ValueError(msg)
         else:
             head_kwargs["num_classes"] = num_classes
 
@@ -60,7 +60,7 @@ def _get_decoder_and_head_kwargs(
 def _check_all_args_used(kwargs):
     if kwargs:
         msg = f"arguments {kwargs} were passed but not used."
-        raise Exception(msg)
+        raise ValueError(msg)
 
 
 @MODEL_FACTORY_REGISTRY.register
@@ -156,9 +156,7 @@ class EncoderDecoderFactory(ModelFactory):
                 AuxiliaryHeadWithDecoderWithoutInstantiatedHead(aux_decoder.name, aux_decoder_instance, aux_head_kwargs)
             )
 
-        if kwargs:
-            msg = f"arguments {kwargs} were passed but not used."
-            raise Exception(msg)
+        _check_all_args_used(kwargs)
 
         return _build_appropriate_model(
             task,

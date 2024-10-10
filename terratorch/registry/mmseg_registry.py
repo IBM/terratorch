@@ -2,6 +2,7 @@ import importlib
 import inspect
 import logging
 from collections.abc import Callable, Set
+import warnings
 
 from torch import nn
 
@@ -15,8 +16,6 @@ class MMsegDecoderWrapper(nn.Module):
     Attributes:
         decoder (nn.Module): The decoder module being wrapped.
         channels (int): The number of output channels of the decoder.
-        in_index (Union[int, List[int]]): Index or indices of the embeddings to pass to the decoder.
-
     Methods:
         forward(x: List[torch.Tensor]) -> torch.Tensor:
             Forward pass for embeddings with specified indices.
@@ -69,7 +68,10 @@ class MMSegRegistry(Set):
         if "num_classes" not in constructor_kwargs:
             msg = "num_classes is a required argument for mmseg decoders. If you are using an mmseg decoder for a regression task please include num_classes=1."
             raise ValueError(msg)
-        decoder = decoder(*constructor_args, in_channels=in_channels, **constructor_kwargs)
+        
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UserWarning) # dont worry about warnings related to loss. we dont use that component.
+            decoder = decoder(*constructor_args, in_channels=in_channels, **constructor_kwargs)
         return MMsegDecoderWrapper(decoder)
 
     def __iter__(self):
@@ -80,13 +82,6 @@ class MMSegRegistry(Set):
 
     def __contains__(self, key):
         return key in self.mmseg_decoder_names
-
-    # def __getitem__(self, name):
-    #     try:
-    #         return getattr(self.mmseg_reg, name)
-    #     except AttributeError as e:
-    #         msg = f"Decoder {name} not found"
-    #         raise KeyError(msg) from e
 
     def __repr__(self):
         return f"{self.__class__.__name__}()"

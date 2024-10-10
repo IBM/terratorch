@@ -18,6 +18,12 @@ PIXELWISE_TASK_EXPECTED_OUTPUT = [
     ("segmentation", EXPECTED_SEGMENTATION_OUTPUT_SHAPE),
 ]
 
+VIT_UPERNET_NECK = [
+    {"name": "SelectIndices", "indices": [0, 1, 2, 3]},
+    {"name": "ReshapeTokensToImage"},
+    {"name": "LearnedInterpolateToPyramidal"},
+]
+
 
 @pytest.fixture(scope="session")
 def model_factory() -> EncoderDecoderFactory:
@@ -27,6 +33,19 @@ def model_factory() -> EncoderDecoderFactory:
 @pytest.fixture(scope="session")
 def model_input() -> torch.Tensor:
     return torch.ones((1, NUM_CHANNELS, 224, 224))
+
+def test_unused_args_raise_exception(model_factory: EncoderDecoderFactory):
+    with pytest.raises(ValueError) as excinfo:
+        model = model_factory.build_model(
+            "classification",
+            backbone="prithvi_vit_100",
+            decoder="IdentityDecoder",
+            backbone_bands=PRETRAINED_BANDS,
+            backbone_pretrained=False,
+            num_classes=NUM_CLASSES,
+            unused_argument="unused_argument"
+        )
+    assert "unused_argument" in str(excinfo.value)
 
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
@@ -75,9 +94,139 @@ def test_create_pixelwise_model(backbone, task, expected, decoder, model_factory
 
     if task == "segmentation":
         model_args["num_classes"] = NUM_CLASSES
-    if decoder == "UperNetDecoder":
-        model_args["backbone_out_indices"] = [1, 2, 3, 4]
-        model_args["decoder_scale_modules"] = True
+    if decoder == "UperNetDecoder" and backbone.startswith("prithvi_vit"):
+        model_args["necks"] = VIT_UPERNET_NECK
+
+    model = model_factory.build_model(**model_args)
+    model.eval()
+
+    with torch.no_grad():
+        assert model(model_input).output.shape == expected
+
+
+@pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
+@pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
+def test_create_model_with_smp_FPN_decoder(backbone, task, expected, model_factory: EncoderDecoderFactory, model_input):
+    model_args = {
+        "task": task,
+        "backbone": backbone,
+        "decoder": "smp_FPN",
+        "backbone_bands": PRETRAINED_BANDS,
+        "backbone_pretrained": False,
+        "necks": VIT_UPERNET_NECK,
+    }
+
+    if task == "segmentation":
+        model_args["num_classes"] = NUM_CLASSES
+
+    model = model_factory.build_model(**model_args)
+    model.eval()
+
+    with torch.no_grad():
+        assert model(model_input).output.shape == expected
+
+
+@pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
+@pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
+def test_create_model_with_smp_unet_decoder(
+    backbone, task, expected, model_factory: EncoderDecoderFactory, model_input
+):
+    model_args = {
+        "task": task,
+        "backbone": backbone,
+        "decoder": "smp_Unet",
+        "backbone_bands": PRETRAINED_BANDS,
+        "backbone_pretrained": False,
+        "decoder_decoder_channels": [256, 128, 64],
+        "necks": VIT_UPERNET_NECK,
+    }
+
+    if task == "segmentation":
+        model_args["num_classes"] = NUM_CLASSES
+
+    model = model_factory.build_model(**model_args)
+    model.eval()
+
+    with torch.no_grad():
+        assert model(model_input).output.shape == expected
+
+
+@pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
+@pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
+def test_create_model_with_smp_deeplabv3plus_decoder(
+    backbone, task, expected, model_factory: EncoderDecoderFactory, model_input
+):
+    model_args = {
+        "task": task,
+        "backbone": backbone,
+        "decoder": "smp_DeepLabV3Plus",
+        "backbone_bands": PRETRAINED_BANDS,
+        "backbone_pretrained": False,
+        "necks": VIT_UPERNET_NECK + [{"name": "AddBottleneckLayer"}],
+    }
+
+    if task == "segmentation":
+        model_args["num_classes"] = NUM_CLASSES
+
+    model = model_factory.build_model(**model_args)
+    model.eval()
+
+    with torch.no_grad():
+        assert model(model_input).output.shape == expected
+
+
+@pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
+@pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
+def test_create_model_with_mmseg_FCN_decoder(
+    backbone, task, expected, model_factory: EncoderDecoderFactory, model_input
+):
+    model_args = {
+        "task": task,
+        "backbone": backbone,
+        "decoder": "mmseg_FCNHead",
+        "decoder_channels": 128,
+        "backbone_bands": PRETRAINED_BANDS,
+        "backbone_pretrained": False,
+        "necks": [{"name": "SelectIndices", "indices": [-1]},
+    {"name": "ReshapeTokensToImage"},
+        ],
+    }
+
+    if task == "segmentation":
+        model_args["num_classes"] = NUM_CLASSES
+    else:
+        model_args["num_classes"] = 1
+
+    model = model_factory.build_model(**model_args)
+    model.eval()
+
+    with torch.no_grad():
+        assert model(model_input).output.shape == expected
+
+
+@pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
+@pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
+def test_create_model_with_mmseg_UPerHead_decoder(
+    backbone, task, expected, model_factory: EncoderDecoderFactory, model_input
+):
+    model_args = {
+        "task": task,
+        "backbone": backbone,
+        "decoder": "mmseg_UPerHead",
+        "backbone_bands": PRETRAINED_BANDS,
+        "backbone_pretrained": False,
+        "decoder_channels": 256,
+        "decoder_in_index": [0, 1, 2, 3],
+        "necks": [
+            {"name": "SelectIndices", "indices": [0, 1, 2, 3]},
+            {"name": "ReshapeTokensToImage"},
+        ],
+    }
+
+    if task == "segmentation":
+        model_args["num_classes"] = NUM_CLASSES
+    else:
+        model_args["num_classes"] = 1
 
     model = model_factory.build_model(**model_args)
     model.eval()
@@ -102,9 +251,8 @@ def test_create_pixelwise_model_no_in_channels(
 
     if task == "segmentation":
         model_args["num_classes"] = NUM_CLASSES
-    if decoder == "UperNetDecoder":
-        model_args["backbone_out_indices"] = [1, 2, 3, 4]
-        model_args["decoder_scale_modules"] = True
+    if decoder == "UperNetDecoder" and backbone.startswith("prithvi_vit"):
+        model_args["necks"] = VIT_UPERNET_NECK
 
     model = model_factory.build_model(**model_args)
     model.eval()
@@ -132,9 +280,8 @@ def test_create_pixelwise_model_with_aux_heads(
     if task == "segmentation":
         model_args["num_classes"] = NUM_CLASSES
 
-    if decoder == "UperNetDecoder":
-        model_args["backbone_out_indices"] = [1, 2, 3, 4]
-        model_args["decoder_scale_modules"] = True
+    if decoder == "UperNetDecoder" and backbone.startswith("prithvi_vit"):
+        model_args["necks"] = VIT_UPERNET_NECK
 
     model = model_factory.build_model(**model_args)
     model.eval()
@@ -165,9 +312,8 @@ def test_create_pixelwise_model_with_extra_bands(
     if task == "segmentation":
         model_args["num_classes"] = NUM_CLASSES
 
-    if decoder == "UperNetDecoder":
-        model_args["backbone_out_indices"] = [1, 2, 3, 4]
-        model_args["decoder_scale_modules"] = True
+    if decoder == "UperNetDecoder" and backbone.startswith("prithvi_vit"):
+        model_args["necks"] = VIT_UPERNET_NECK
     model = model_factory.build_model(**model_args)
     model.eval()
     model_input = torch.ones((1, NUM_CHANNELS + 1, 224, 224))
