@@ -49,10 +49,9 @@ dependencies = [
 dev = [
   "black",
   "mkdocs-material",
-  "mkdocstrings[python]"
+  "mkdocstrings[python]",
   "mike" # for building docs with versions
 ]
-
 test = [
   "coverage",
   "pytest"
