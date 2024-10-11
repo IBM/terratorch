@@ -1,5 +1,7 @@
 # Copyright contributors to the Terratorch project
 
+import importlib
+
 import pytest
 import torch
 
@@ -174,7 +176,7 @@ def test_create_model_with_smp_deeplabv3plus_decoder(
     with torch.no_grad():
         assert model(model_input).output.shape == expected
 
-
+@pytest.mark.skipif(not importlib.util.find_spec("mmseg"), reason="mmsegmentation not installed")
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
 def test_create_model_with_mmseg_fcn_decoder(
@@ -203,7 +205,7 @@ def test_create_model_with_mmseg_fcn_decoder(
     with torch.no_grad():
         assert model(model_input).output.shape == expected
 
-
+@pytest.mark.skipif(not importlib.util.find_spec("mmseg"), reason="mmsegmentation not installed")
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
 def test_create_model_with_mmseg_uperhead_decoder(
