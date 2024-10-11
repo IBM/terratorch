@@ -22,6 +22,7 @@ from torchgeo.datasets import NonGeoDataset
 
 from terratorch.datasets.utils import HLSBands, default_transform, filter_valid_files, generate_bands_intervals
 
+BCHW = 3
 
 class GenericPixelWiseDataset(NonGeoDataset, ABC):
     """
@@ -493,3 +494,162 @@ class GenericNonGeoPixelwiseRegressionDataset(GenericPixelWiseDataset):
         if suptitle is not None:
             plt.suptitle(suptitle)
         return fig
+
+class GenericNonGeoPixelwisePreTrainingDataset(GenericPixelWiseDataset):
+    """GenericNonGeoPixelwisePreTrainingDataset"""
+
+    def __init__(
+        self,
+        data_root: Path,
+        label_data_root: Path | None = None,
+        image_grep: str | None = "*",
+        label_grep: str | None = "*",
+        split: Path | None = None,
+        ignore_split_file_extensions: bool = True,
+        allow_substring_split_file: bool = True,
+        rgb_indices: list[int] | None = None,
+        dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        constant_scale: float = 1,
+        transform: A.Compose | None = None,
+        no_data_replace: float | None = None,
+        no_label_replace: int | None = None,
+        expand_temporal_dimension: bool = False,
+        reduce_zero_label: bool = False,
+    ) -> None:
+        """Constructor
+
+        Args:
+            data_root (Path): Path to data root directory
+            label_data_root (Path, optional): Path to data root directory with labels.
+                If not specified, will use the same as for images.
+            image_grep (str, optional): Regular expression appended to data_root to find input images.
+                Defaults to "*".
+            label_grep (str, optional): Regular expression appended to data_root to find ground truth masks.
+                Defaults to "*".
+            split (Path, optional): Path to file containing files to be used for this split.
+                The file should be a new-line separated prefixes contained in the desired files.
+                Files will be seached using glob with the form Path(data_root).glob(prefix + [image or label grep])
+            ignore_split_file_extensions (bool, optional): Whether to disregard extensions when using the split
+                file to determine which files to include in the dataset.
+                E.g. necessary for Eurosat, since the split files specify ".jpg" but files are
+                actually ".jpg". Defaults to True.
+            allow_substring_split_file (bool, optional): Whether the split files contain substrings
+                that must be present in file names to be included (as in mmsegmentation), or exact
+                matches (e.g. eurosat). Defaults to True.
+            rgb_indices (list[str], optional): Indices of RGB channels. Defaults to [0, 1, 2].
+            dataset_bands (list[HLSBands | int] | None): Bands present in the dataset.
+            output_bands (list[HLSBands | int] | None): Bands that should be output by the dataset.
+            constant_scale (float): Factor to multiply image values by. Defaults to 1.
+            transform (Albumentations.Compose | None): Albumentations transform to be applied.
+                Should end with ToTensorV2(). If used through the generic_data_module,
+                should not include normalization. Not supported for multi-temporal data.
+                Defaults to None, which simply applies ToTensorV2().
+            no_data_replace (float | None): Replace nan values in input images with this value. If none, does no replacement. Defaults to None.
+            no_label_replace (int | None): Replace nan values in label with this value. If none, does no replacement. Defaults to None.
+            expand_temporal_dimension (bool): Go from shape (time*channels, h, w) to (channels, time, h, w).
+                Defaults to False.
+            reduce_zero_label (bool): Subtract 1 from all labels. Useful when labels start from 1 instead of the
+                expected 0. Defaults to False.
+        """
+        super().__init__(
+            data_root,
+            label_data_root=label_data_root,
+            image_grep=image_grep,
+            label_grep=label_grep,
+            split=split,
+            ignore_split_file_extensions=ignore_split_file_extensions,
+            allow_substring_split_file=allow_substring_split_file,
+            rgb_indices=rgb_indices,
+            dataset_bands=dataset_bands,
+            output_bands=output_bands,
+            constant_scale=constant_scale,
+            transform=transform,
+            no_data_replace=no_data_replace,
+            no_label_replace=no_label_replace,
+            expand_temporal_dimension=expand_temporal_dimension,
+            reduce_zero_label=reduce_zero_label,
+        )
+
+    def __getitem__(self, index: int) -> dict[str, Any]:
+        item = super().__getitem__(index)
+        item["mask"] = item["image"]
+        return item
+
+    def plot(self, sample: dict[str, Tensor], suptitle: str | None = None) -> Figure:
+        """Plot a sample from the dataset.
+
+        Args:
+            sample (dict[str, Tensor]): a sample returned by :meth:`__getitem__`
+            suptitle (str|None): optional string to use as a suptitle
+
+        Returns:
+            a matplotlib Figure with the rendered sample
+
+        .. versionadded:: 0.2
+        """
+
+        # Reading the data for 'image', 'mask' (in this context, a repetion of the input image)
+        # and 'prediction' and converting them to arrays in order to produce some plots.
+        image = sample["image"]
+        if len(image.shape) == 5:
+            return
+        if isinstance(image, Tensor):
+            image = image.numpy()
+
+        label_mask = sample["mask"]
+        if isinstance(label_mask, Tensor):
+            label_mask = label_mask.numpy()
+
+        showing_predictions = "prediction" in sample
+        if showing_predictions:
+            prediction_mask = sample["prediction"]
+            if isinstance(prediction_mask, Tensor):
+                prediction_mask = prediction_mask.numpy()
+
+        return self._plot_sample(
+            image,
+            label_mask,
+            prediction=prediction_mask if showing_predictions else None,
+            suptitle=suptitle,
+        )
+       
+
+    @staticmethod
+    def _plot_sample(image, label, prediction=None, suptitle=None):
+
+        assert len(image.shape) ==  BCHW, f"It's expected the image have a channels dimension, but received {image.shape}"
+        
+        n_channels = image.shape[0]
+
+        num_images = 4 if prediction is not None else 3
+        fig, ax = plt.subplots(n_channels, num_images, figsize=(12, 10), layout="compressed")
+        
+        # Plotting sets of results comparison for each channel. 
+        for channel in range(n_channels):
+            
+            norm = mpl.colors.Normalize(vmin=label.min(), vmax=label.max())
+            ax[channel, 0].axis("off")
+            ax[channel, 0].title.set_text(f"Image, channel {channel}")
+            ax[channel, 0].imshow(image[channel])
+
+            ax[channel, 1].axis("off")
+            ax[channel, 1].title.set_text(f"Ground Truth Mask, channel {channel}")
+            ax[channel, 1].imshow(label[channel], cmap="Greens", norm=norm)
+
+            ax[channel, 2].axis("off")
+            ax[channel, 2].title.set_text(f"GT Mask on Image, channel {channel}")
+            ax[channel, 2].imshow(image[channel])
+            ax[channel, 2].imshow(label[channel], cmap="Greens", alpha=0.3, norm=norm)
+
+
+            if prediction is not None:
+                ax[channel, 3].title.set_text(f"Predicted Mask, channel {channel}")
+                ax[channel, 3].imshow(prediction[channel], cmap="Greens", norm=norm)
+
+            if suptitle is not None:
+                plt.suptitle(suptitle)
+
+        return fig
+
+
