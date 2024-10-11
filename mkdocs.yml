@@ -29,9 +29,9 @@ nav:
     - Data: data.md
     - Registries: registry.md
     - EncoderDecoderFactory: encoder_decoder_factory.md
-  - For Developers: architecture.md
   - Examples: examples.md
   - FAQ: faq.md
+  - For Developers: architecture.md
 
 markdown_extensions:
   - pymdownx.highlight:
