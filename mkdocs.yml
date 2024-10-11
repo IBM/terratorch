@@ -19,6 +19,7 @@ extra:
   version:
     provider: mike
 
+site_url: https://ibm.github.io/terratorch/
 repo_url: https://github.com/IBM/terratorch
 nav:
   - index.md

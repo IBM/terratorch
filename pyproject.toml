@@ -7,7 +7,7 @@ include = ["terratorch*"]
 
 [project]
 name = "terratorch"
-version = "0.99.4"
+version = "0.99.5"
 description = "TerraTorch - A model training toolkit for geospatial tasks"
 license = { "text" = "Apache License, Version 2.0" }
 readme = "README.md"
@@ -50,6 +50,7 @@ dev = [
   "black",
   "mkdocs-material",
   "mkdocstrings[python]"
+  "mike" # for building docs with versions
 ]
 
 test = [
