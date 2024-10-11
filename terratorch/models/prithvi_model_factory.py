@@ -3,24 +3,15 @@
 import warnings
 from collections.abc import Callable
 
-import segmentation_models_pytorch as smp
-import timm
-import torch
 from torch import nn
 
-import terratorch.models.decoders as decoder_registry
 from terratorch.datasets import HLSBands
 from terratorch.models import EncoderDecoderFactory
 from terratorch.models.model import (
     AuxiliaryHead,
-    AuxiliaryHeadWithDecoderWithoutInstantiatedHead,
     Model,
     ModelFactory,
 )
-from terratorch.models.pixel_wise_model import PixelWiseModel
-from terratorch.models.scalar_output_model import ScalarOutputModel
-from terratorch.models.smp_model_factory import make_smp_encoder, register_custom_encoder
-from terratorch.models.utils import DecoderNotFoundError, extract_prefix_keys
 from terratorch.registry import MODEL_FACTORY_REGISTRY
 
 PIXEL_WISE_TASKS = ["segmentation", "regression"]

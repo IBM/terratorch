@@ -85,7 +85,6 @@ model:
       backbone_pretrained: True
       backbone: prithvi_vit_100
       backbone_pretrain_img_size: 512
-      backbone_in_channels: 6
       backbone_bands:
         - BLUE
         - GREEN
@@ -93,7 +92,7 @@ model:
         - NIR_NARROW
         - SWIR_1
         - SWIR_2
-      num_frames: 1
+      backbone_num_frames: 1
       num_classes: 2
       head_dropout: 0.1
       head_channel_list:

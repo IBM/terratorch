@@ -36,7 +36,25 @@ Necks are the glue between encoder and decoder. They can perform operations such
 
 Necks are `nn.Modules`, with an additional method `process_channel_list` which informs the [EncoderDecoderFactory][terratorch.models.encoder_decoder_factory.EncoderDecoderFactory] about how it will alter the channel list provided by `encoder.out_channels`.
 
-### :::terratorch.models.necks
+### :::terratorch.models.necks.Neck
+
+### :::terratorch.models.necks.SelectIndices
+
+### :::terratorch.models.necks.PermuteDims
+
+### :::terratorch.models.necks.InterpolateToPyramidal
+
+### :::terratorch.models.necks.MaxpoolToPyramidal
+
+### :::terratorch.models.necks.ReshapeTokensToImage
+
+### :::terratorch.models.necks.AddBottleneckLayer
+
+### :::terratorch.models.necks.LearnedInterpolateToPyramidal
+
+
+
+
 
 ## Decoders
 
@@ -57,7 +75,7 @@ Decoders passed as `nn.Modules` which dont require a head must expose the same a
 
 ## :::terratorch.models.heads.regression_head.RegressionHead
 
-## :::terratorch.models.heads.regression_head.SegmentationHead
+## :::terratorch.models.heads.segmentation_head.SegmentationHead
 
 
 ## Decoder compatibilities

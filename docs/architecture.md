@@ -32,11 +32,7 @@ Models are expected to be `torch.nn.Module`s and implement the [Model][terratorc
 - `freeze_decoder()`
 - `forward()`
 
-### :::terratorch.models.model.Model
-
 Additionally, the `forward()` method is expected to return an object of type [ModelOutput][terratorch.models.model.ModelOutput], containing the main head's output, as well as any additional auxiliary outputs. The names of these auxiliary heads are matched with the names of the provided auxiliary losses.
-
-### :::terratorch.models.model.ModelOutput
 
 ### Models
 
@@ -50,34 +46,7 @@ However, as long as models implement the [Model][terratorch.models.model.Model] 
 
 ### EncoderDecoderFactory
 
-We expect this factory to be widely employed by users. With that in mind, we dive deeper into it here.
-
-#### Encoders (aka Backbones)
-
-Encoders can be any `nn.Module`, with the additional attribute `out_channels`. This is required by the factory in order to build a decoder which is compatible with the features output by the encoder
-
-When instantiating encoders, the factory makes use of the `BACKBONE_REGISTRY`, which will search different model registries to build the desired encoder .
-
-#### Necks
-
-Sometimes intermediate operations between the encoder and decoder are required to make them compatible. Examples could be selecting certain indices from the backbone output, or reshaping the output of a transformer backbone so that it can be processed by a CNN decoder.
-
-These operations should be handled by [Necks][terratorch.models.necks.Neck]. 
-
-Necks are `nn.Modules` which may or may not have internal state / torch parameters.
-
-Additionally, they must provide the method `process_channel_list`, which details the effect of the neck on the channel list representing its input.
-
-### Decoders
-Currently, we have implemented a simple Fully Convolutional Decoder as well as an UperNetDecoder, which exactly match the definitions in the MMSeg framework.
-This was mostly done to ensure we could replicate the results from that framework.
-
-However, libraries such as [pytorch-segmentation](https://github.com/yassouali/pytorch-segmentation) or [segmentation_models.pytorch](https://github.com/qubvel/segmentation_models.pytorch) provide a large set of already implemented decoders that can be leveraged. 
-
-This is probably a reasonable next step in the implementation. In order to do this, a new factory can simply be created which leverages these libraries. See as an example [this section](models.md#adding-new-model-types)
-
-### Heads
-In the current implementation, the heads perform the final step in going from the output of the decoder to the final desired output. Often this can just be e.g. a single convolutional head going from the final decoder depth to the number of classes, in the case of segmentation, or to a depth of 1, in the case of regression.
+We expect this factory to be widely employed by users. With that in mind, we dive deeper into it [here](encoder_decoder_factory.md).
 
 ### Loss
 For convenience, we provide a loss handler that can be used to compute the full loss (from the main head and auxiliary heads as well).

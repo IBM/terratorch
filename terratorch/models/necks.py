@@ -30,6 +30,11 @@ class Neck(ABC, nn.Module):
 @TERRATORCH_NECK_REGISTRY.register
 class SelectIndices(Neck):
     def __init__(self, channel_list: list[int], indices: list[int]):
+        """Select indices from the embedding list
+
+        Args:
+            indices (list[int]): list of indices to select.
+        """
         super().__init__(channel_list)
         self.indices = indices
 
@@ -44,6 +49,11 @@ class SelectIndices(Neck):
 @TERRATORCH_NECK_REGISTRY.register
 class PermuteDims(Neck):
     def __init__(self, channel_list: list[int], new_order: list[int]):
+        """Permute dimensions of each element in the embedding list
+
+        Args:
+            new_order (list[int]): list of indices to be passed to tensor.permute()
+        """
         super().__init__(channel_list)
         self.new_order = new_order
 

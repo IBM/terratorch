@@ -39,7 +39,7 @@ class ScalarOutputModel(Model, SegmentationModel):
             decoder_includes_head (bool): Whether the decoder already incldes a head. If true, a head will not be added. Defaults to False.
             auxiliary_heads (list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None, optional): List of
                 AuxiliaryHeads with heads to be instantiated. Defaults to None.
-             neck (nn.Module | None): Module applied between backbone and decoder.
+            neck (nn.Module | None): Module applied between backbone and decoder.
                 Defaults to None, which applies the identity.
         """
         super().__init__()

@@ -93,9 +93,6 @@ class EncoderDecoderFactory(ModelFactory):
                     Pixel wise tasks will be concatenated with a Conv2d for the final convolution.
                     Defaults to "FCNDecoder".
             num_classes (int, optional): Number of classes. None for regression tasks.
-            pretrained (Union[bool, Path], optional): Whether to load pretrained weights for the backbone, if available.
-                Defaults to True.
-            num_frames (int, optional): Number of timesteps for the model to handle. Defaults to 1.
             necks (list[dict]): nn.Modules to be called in succession on encoder features
                 before passing them to the decoder. Should be registered in the NECKS_REGISTRY registry.
                 Expects each one to have a key "name" and subsequent keys for arguments, if any.
@@ -146,15 +143,15 @@ class EncoderDecoderFactory(ModelFactory):
         to_be_aux_decoders: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] = []
         for aux_decoder in aux_decoders:
             args = aux_decoder.decoder_args if aux_decoder.decoder_args else {}
-            aux_decoder_kwargs, kwargs = extract_prefix_keys(args, "decoder_")
-            aux_head_kwargs, kwargs = extract_prefix_keys(args, "head_")
-
+            aux_decoder_kwargs, args = extract_prefix_keys(args, "decoder_")
+            aux_head_kwargs, args = extract_prefix_keys(args, "head_")
             aux_decoder_instance, aux_head_kwargs, aux_decoder_includes_head = _get_decoder_and_head_kwargs(
                 aux_decoder.decoder, channel_list, aux_decoder_kwargs, aux_head_kwargs, num_classes=num_classes
             )
             to_be_aux_decoders.append(
                 AuxiliaryHeadWithDecoderWithoutInstantiatedHead(aux_decoder.name, aux_decoder_instance, aux_head_kwargs)
             )
+            _check_all_args_used(args)
 
         _check_all_args_used(kwargs)
 

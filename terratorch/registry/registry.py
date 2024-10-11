@@ -115,11 +115,7 @@ class MultiSourceRegistry(Mapping[str, T], typing.Generic[T]):
         return f"Multi source registry with {len(self)} items: {sources_str}"
 
     def keys(self):
-        keys = []
-        for prefix, d in self._sources.items():
-            source_keys = d.keys()
-            keys.extend([prefix + "_" + k for k in source_keys])
-        return keys
+        return self._sources.keys()
 
 
 class Registry(Set):
@@ -148,7 +144,7 @@ class Registry(Set):
         """Register a component in the registry. Used as a decorator.
 
         Args:
-            backbone_constructor (Callable | type): Function or class to be decorated with @register.
+            constructor (Callable | type): Function or class to be decorated with @register.
         """
         if not callable(constructor):
             msg = f"Invalid argument. Decorate a function or class with @{self.__class__.__name__}.register"

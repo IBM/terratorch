@@ -84,23 +84,26 @@ model:
   init_args:
     model_args:
       decoder: FCNDecoder
-      pretrained: true
+      backbone_pretrained: true
       backbone: prithvi_vit_100
       decoder_channels: 256
-      in_channels: 6
-      bands:
+      backbone_bands:
         - BLUE
         - GREEN
         - RED
         - NIR_NARROW
         - SWIR_1
         - SWIR_2
-      num_frames: 1
       num_classes: 2
       head_dropout: 0.1
       decoder_num_convs: 4
       head_channel_list:
         - 256
+      necks:
+        - name: SelectIndices
+          indices:
+            - -1
+        - name: ReshapeTokensToImage
     loss: ce
     aux_heads:
       - name: aux_head
@@ -120,7 +123,7 @@ model:
       - 0.7
     freeze_backbone: false
     freeze_decoder: false
-    model_factory: PrithviModelFactory
+    model_factory: EncoderDecoderFactory
 optimizer:
   class_path: torch.optim.AdamW
   init_args:
