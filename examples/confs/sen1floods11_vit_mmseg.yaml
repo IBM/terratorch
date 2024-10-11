@@ -96,7 +96,6 @@ model:
         - NIR_NARROW
         - SWIR_1
         - SWIR_2
-      num_frames: 1
       num_classes: 2
       necks:
         - name: ReshapeTokensToImage
