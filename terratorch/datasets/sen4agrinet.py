@@ -39,8 +39,8 @@ class Sen4AgriNet(NonGeoDataset):
         scenario: str = "random",
         split: str = "train",
         transform: A.Compose = None,
-        truncate_image: int | None = 4,
-        pad_image: int | None = 4,
+        truncate_image: int | None = 6,
+        pad_image: int | None = 6,
         spatial_interpolate_and_stack_temporally: bool = True,  # noqa: FBT001, FBT002
         seed: int = 42,
     ):
@@ -166,23 +166,25 @@ class Sen4AgriNet(NonGeoDataset):
 
         output["mask"] = labels
 
-        image_shape = output["image"].shape[-2:]
-        mask_shape = output["mask"].shape
+        if self.spatial_interpolate_and_stack_temporally:
+            image_shape = output["image"].shape[-2:]
+            mask_shape = output["mask"].shape
 
-        if image_shape != mask_shape:
-            diff_h = mask_shape[0] - image_shape[0]
-            diff_w = mask_shape[1] - image_shape[1]
+            if image_shape != mask_shape:
+                diff_h = mask_shape[0] - image_shape[0]
+                diff_w = mask_shape[1] - image_shape[1]
 
-            output["image"] = np.pad(output["image"],
-                                [(0, 0), (0, 0),
-                                    (diff_h // 2, diff_h - diff_h // 2),
-                                    (diff_w // 2, diff_w - diff_w // 2)],
-                                mode="constant", constant_values=0)
+                output["image"] = np.pad(output["image"],
+                                    [(0, 0), (0, 0),
+                                        (diff_h // 2, diff_h - diff_h // 2),
+                                        (diff_w // 2, diff_w - diff_w // 2)],
+                                    mode="constant", constant_values=0)
+
+            output["image"] = output["image"].transpose(0, 2, 3, 1)
 
         linear_encoder = {val: i + 1 for i, val in enumerate(sorted(SELECTED_CLASSES))}
         linear_encoder[0] = 0
 
-        output["image"] = output["image"].transpose(0, 2, 3, 1)
         output["mask"] = self.map_mask_to_discrete_classes(output["mask"], linear_encoder)
 
         if self.transform:
@@ -195,38 +197,40 @@ class Sen4AgriNet(NonGeoDataset):
     def plot(self, sample, suptitle=None):
         rgb_bands = ["B04", "B03", "B02"]
 
-        if not all(band in sample for band in rgb_bands):
+        if not all(band in self.bands for band in rgb_bands):
             warnings.warn("No RGB image.")  # noqa: B028
             return None
 
+        sample_image = sample["image"]
         rgb_images = []
-        for t in range(sample["B04"].shape[0]):
-            rgb_image = torch.stack([sample[band][t] for band in rgb_bands])
+        for t in range(sample_image.size(0)):
+            rgb_image = np.array(sample_image[t, 1:4, :, :]).transpose(1, 2, 0)
 
             # Normalization
-            rgb_min = rgb_image.min(dim=1, keepdim=True).values.min(dim=2, keepdim=True).values
-            rgb_max = rgb_image.max(dim=1, keepdim=True).values.max(dim=2, keepdim=True).values
+            rgb_min = rgb_image.min(axis=(0, 1), keepdims=True)
+            rgb_max = rgb_image.max(axis=(0, 1), keepdims=True)
             denom = rgb_max - rgb_min
             denom[denom == 0] = 1
             rgb_image = (rgb_image - rgb_min) / denom
 
-            rgb_image = rgb_image.permute(1, 2, 0).numpy()
             rgb_images.append(np.clip(rgb_image, 0, 1))
 
-        dates = torch.arange(sample["B04"].shape[0])
+        return self._plot_sample(rgb_images, sample.get("labels"), suptitle=suptitle)
 
-        return self._plot_sample(rgb_images, dates, sample.get("labels"), suptitle=suptitle)
-
-    def _plot_sample(self, images, dates, labels=None, suptitle=None):
+    def _plot_sample(self, images, labels=None, suptitle=None):
         num_images = len(images)
         cols = 5
-        rows = (num_images + cols - 1) // cols
+        rows = (num_images + cols) // cols
 
         fig, ax = plt.subplots(rows, cols, figsize=(20, 4 * rows))
+        if rows == 1:
+            ax = np.expand_dims(ax, 0)
+        if cols == 1:
+            ax = np.expand_dims(ax, 1)
 
         for i, image in enumerate(images):
             ax[i // cols, i % cols].imshow(image)
-            ax[i // cols, i % cols].set_title(f"T{i+1} - Day {dates[i].item()}")
+            ax[i // cols, i % cols].set_title(f"Image {i + 1}")
             ax[i // cols, i % cols].axis("off")
 
         if labels is not None:

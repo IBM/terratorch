@@ -112,16 +112,14 @@ class OpenSentinelMap(NonGeoDataset):
         if "gsd_10" not in self.bands:
             return None
 
-        num_images = len([key for key in sample if key.startswith("image")])
         images = []
-
-        for i in range(1, num_images + 1):
-            image_dict = sample[f"image{i}"]
-            image = image_dict["gsd_10"]
+        image_dict = sample["image"]
+        for i in range(image_dict.size(1)):
+            image = image_dict[:,i,:,:]
             if isinstance(image, Tensor):
                 image = image.numpy()
 
-            image = image.take(range(3), axis=2)
+            image = image.take(range(3), axis=0).transpose(1, 2, 0)
             image = image.squeeze()
             image = (image - image.min(axis=(0, 1))) * (1 / image.max(axis=(0, 1)))
             image = np.clip(image, 0, 1)

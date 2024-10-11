@@ -10,7 +10,7 @@ import pandas as pd
 import torch
 from torchgeo.datasets import NonGeoDataset
 
-from terratorch.datasets.utils import pad_dates_numpy, pad_numpy
+from terratorch.datasets.utils import pad_dates_numpy, pad_numpy, to_tensor
 
 
 class PASTIS(NonGeoDataset):
@@ -93,7 +93,7 @@ class PASTIS(NonGeoDataset):
         )
         self.target = target
         self.satellites = satellites
-        self.transform = transform
+        self.transform = transform if transform else lambda **batch: to_tensor(batch)
         self.truncate_image = truncate_image
         self.pad_image = pad_image
         # loads patches metadata
@@ -254,7 +254,7 @@ class PASTIS(NonGeoDataset):
 
     def plot(self, sample, suptitle=None):
         dates = sample["dates"]
-        target = sample["target"]
+        target = sample["mask"]
 
         if "S2" not in sample:
             warnings.warn("No RGB image.", stacklevel=2)
@@ -265,7 +265,7 @@ class PASTIS(NonGeoDataset):
 
         rgb_images = []
         for i in range(image_data.shape[0]):
-            rgb_image = image_data[i, :3, :, :].numpy().transpose(1, 2, 0)
+            rgb_image = image_data[i, :3, :, :].transpose(1, 2, 0)
 
             rgb_min = rgb_image.min(axis=(0, 1), keepdims=True)
             rgb_max = rgb_image.max(axis=(0, 1), keepdims=True)
@@ -289,6 +289,10 @@ class PASTIS(NonGeoDataset):
         rows = (num_images + cols) // cols
 
         fig, ax = plt.subplots(rows, cols, figsize=(20, 4 * rows))
+        if rows == 1:
+            ax = np.expand_dims(ax, 0)
+        if cols == 1:
+            ax = np.expand_dims(ax, 1)
 
         for i, image in enumerate(images):
             ax[i // cols, i % cols].imshow(image)
