@@ -39,6 +39,7 @@ class ViTEncoderWrapper(nn.Module):
         super().__init__()
         self.vit_model = vit_model
         self.weights = weights
+        self.out_channels = self.vit_model.feature_info
 
     def forward(self, x: List[torch.Tensor]) -> torch.Tensor:
         return self.vit_model(x)
@@ -98,3 +99,5 @@ def ssl4eos12_vit_small_patch16_224_sentinel2_all_dino(**kwargs):
 def ssl4eos12_vit_small_patch16_224_sentinel2_all_moco(**kwargs):
     model = vit_small_patch16_224(**kwargs)
     return ViTEncoderWrapper(model, ViTSmall16_Weights.SENTINEL2_ALL_MOCO)
+
+#### to add build model and load weights

@@ -40,6 +40,7 @@ class SwinEncoderWrapper(nn.Module):
         super().__init__()
         self.swin_model = swin_model
         self.weights = weights
+        # self.out_channels TBC
 
     def forward(self, x: List[torch.Tensor]) -> torch.Tensor:
         return self.swin_model(x)
@@ -105,3 +106,4 @@ def satlas_swin_b_landsat_mi_rgb(**kwargs):
     model = swin_v2_b(**kwargs)
     return SatlasEncoderWrapper(model, Swin_V2_B_Weights.LANDSAT_MI_RGB_SATLAS)
 
+#### to add build model and load weights
