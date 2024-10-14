@@ -1,13 +1,11 @@
 # Copyright contributors to the Terratorch project
 
-from collections.abc import Callable
-
 import torch
 from segmentation_models_pytorch.base import SegmentationModel
 from torch import nn
 
 from terratorch.models.heads import ClassificationHead
-from terratorch.models.model import Model, ModelOutput
+from terratorch.models.model import AuxiliaryHeadWithDecoderWithoutInstantiatedHead, Model, ModelOutput
 
 
 def freeze_module(module: nn.Module):
@@ -27,8 +25,9 @@ class ScalarOutputModel(Model, SegmentationModel):
         encoder: nn.Module,
         decoder: nn.Module,
         head_kwargs: dict,
-        auxiliary_heads: dict[str, nn.Module] | None = None,
-        prepare_features_for_image_model: Callable | None = None,
+        decoder_includes_head: bool = False,
+        auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
+        neck: nn.Module | None = None,
     ) -> None:
         """Constructor
 
@@ -37,29 +36,33 @@ class ScalarOutputModel(Model, SegmentationModel):
             encoder (nn.Module): Encoder to be used
             decoder (nn.Module): Decoder to be used
             head_kwargs (dict): Arguments to be passed at instantiation of the head.
-            auxiliary_heads (dict[str, nn.Module] | None, optional): Names mapped to auxiliary heads. Defaults to None.
-            prepare_features_for_image_model (Callable | None, optional): Function applied to encoder outputs.
-                Defaults to None.
+            decoder_includes_head (bool): Whether the decoder already incldes a head. If true, a head will not be added. Defaults to False.
+            auxiliary_heads (list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None, optional): List of
+                AuxiliaryHeads with heads to be instantiated. Defaults to None.
+            neck (nn.Module | None): Module applied between backbone and decoder.
+                Defaults to None, which applies the identity.
         """
         super().__init__()
         self.task = task
         self.encoder = encoder
         self.decoder = decoder
-        self.head = self._get_head(task, decoder.output_embed_dim, head_kwargs)
+        self.head = (
+            self._get_head(task, decoder.out_channels, head_kwargs) if not decoder_includes_head else nn.Identity()
+        )
 
         if auxiliary_heads is not None:
             aux_heads = {}
             for aux_head_to_be_instantiated in auxiliary_heads:
                 aux_head: nn.Module = self._get_head(
-                    task, aux_head_to_be_instantiated.decoder.output_embed_dim, **head_kwargs
-                )
+                    task, aux_head_to_be_instantiated.decoder.out_channels, head_kwargs
+                ) if not aux_head_to_be_instantiated.decoder_includes_head else nn.Identity()
                 aux_head = nn.Sequential(aux_head_to_be_instantiated.decoder, aux_head)
                 aux_heads[aux_head_to_be_instantiated.name] = aux_head
         else:
             aux_heads = {}
         self.aux_heads = nn.ModuleDict(aux_heads)
 
-        self.prepare_features_for_image_model = prepare_features_for_image_model
+        self.neck = neck
 
     def freeze_encoder(self):
         freeze_module(self.encoder)
@@ -78,12 +81,13 @@ class ScalarOutputModel(Model, SegmentationModel):
         self.check_input_shape(x)
         features = self.encoder(x, **kwargs)
 
-        # some models need their features reshaped
-
-        if self.prepare_features_for_image_model:
-            prepare = self.prepare_features_for_image_model
+        ## only for backwards compatibility with pre-neck times.
+        if self.neck:
+            prepare = self.neck
         else:
+            # for backwards compatibility, if this is defined in the encoder, use it
             prepare = getattr(self.encoder, "prepare_features_for_image_model", lambda x: x)
+
         features = prepare(features)
 
         decoder_output = self.decoder([f.clone() for f in features])

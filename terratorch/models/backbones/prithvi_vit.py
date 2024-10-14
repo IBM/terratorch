@@ -5,14 +5,13 @@ import logging
 from functools import partial
 from pathlib import Path
 
-import torch
 from timm.models import FeatureInfo
 from timm.models._builder import build_model_with_cfg
 from timm.models._registry import generate_default_cfgs, register_model
 from torch import nn
 
 from terratorch.datasets import HLSBands
-from terratorch.models.backbones.prithvi_select_patch_embed_weights import prithvi_select_patch_embed_weights
+from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
 from terratorch.models.backbones.vit_encoder_decoder import TemporalViTEncoder
 
 PRETRAINED_BANDS = [
@@ -24,22 +23,14 @@ PRETRAINED_BANDS = [
     HLSBands.SWIR_2,
 ]
 
-def _cfg(file: Path = "", **kwargs) -> dict:
-    return {
-        "file": file,
-        "source": "file",
-        "input_size": (6, 224, 224),
-        "license": "mit",
-        # "first_conv": "patch_embed.proj",
-        **kwargs,
-    }
-
 default_cfgs = generate_default_cfgs(
     {
         "prithvi_vit_100": {
             "hf_hub_id": "ibm-nasa-geospatial/Prithvi-100M",
-            "hf_hub_filename": "Prithvi_100M.pt"
-        }
+            "hf_hub_filename": "Prithvi_100M.pt",
+        },
+        "prithvi_vit_300": {},
+        "prithvi_vit_tiny": {}
     }
 )
 
@@ -71,7 +62,7 @@ def checkpoint_filter_fn(
 
         state_dict = clean_dict
 
-    state_dict = prithvi_select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands)
+    state_dict = select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands)
 
     return state_dict
 
@@ -84,6 +75,15 @@ def _create_prithvi(
 ) -> TemporalViTEncoder:
     if pretrained_bands is None:
         pretrained_bands = PRETRAINED_BANDS
+
+    if model_bands is None:
+        model_bands: list[HLSBands | int] = pretrained_bands
+        logging.info(
+            f"Model bands not passed. Assuming bands are ordered in the same way as {PRETRAINED_BANDS}.\
+            Pretrained patch_embed layer may be misaligned with current bands"
+        )
+    else:
+        model_bands = [HLSBands.try_convert_to_hls_bands_enum(b) for b in model_bands]
 
     # Little hack because VIT does not support timm's features_only
     # so we do it ourselves
@@ -162,7 +162,7 @@ def create_prithvi_vit_100(
 def create_prithvi_vit_300(
     model_name: str,
     pretrained: bool = False,  # noqa: FBT001, FBT002
-    bands: list[HLSBands] | None = None,
+    bands: list[HLSBands | int] | None = None,
     **kwargs,
 ) -> TemporalViTEncoder:
     """Prithvi ViT 300M"""
@@ -197,7 +197,7 @@ def create_prithvi_vit_300(
 
 @register_model
 def prithvi_vit_tiny(
-    bands: list[HLSBands] | None = None,
+    bands: list[HLSBands | int] | None = None,
     **kwargs,
 ) -> TemporalViTEncoder:
     """Prithvi ViT tiny"""

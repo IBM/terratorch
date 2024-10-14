@@ -3,7 +3,7 @@ Tasks provide a convenient abstraction over the training of a model for a specif
 
 They encapsulate the model, optimizer, metrics, loss as well as training, validation and testing steps.
 
-The task expects to be passed a model factory, to which the model_args arguments are passed. The models produced by this model factory should output ModelOutput instances and conform to the Model ABC. This is an easy way to extend these tasks to models other than Pritvhi ones produced by the [PrithviModelFactory][terratorch.models.PrithviModelFactory].
+The task expects to be passed a model factory, to which the model_args arguments are passed to instantiate the model that will be trained. The models produced by this model factory should output ModelOutput instances and conform to the Model ABC.
 
 Tasks are best leveraged using config files. Check out some examples [here](./examples.md).
 

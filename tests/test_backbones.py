@@ -4,7 +4,8 @@ import pytest
 import timm
 import torch
 
-import terratorch  # noqa: F401
+from terratorch.models.backbones import scalemae
+from terratorch.registry import BACKBONE_REGISTRY
 
 NUM_CHANNELS = 6
 NUM_FRAMES = 4
@@ -44,6 +45,12 @@ def test_can_create_backbones_from_timm_features_only(model_name, test_input, re
     backbone = timm.create_model(model_name, pretrained=False, features_only=True)
     input_tensor = request.getfixturevalue(test_input)
     backbone(input_tensor)
+
+@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_vit_300", "prithvi_swin_B"])
+@pytest.mark.parametrize("prefix", ["", "timm_"])
+def test_can_create_timm_backbones_from_registry(model_name, input_224, prefix):
+    backbone = BACKBONE_REGISTRY.build(prefix+model_name, pretrained=False)
+    backbone(input_224)
 
 
 @pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_vit_300"])
@@ -96,3 +103,23 @@ def test_out_indices(model_name, input_224):
 
     for filtered_index, full_index in enumerate(out_indices):
         assert torch.allclose(full_output[full_index], output[filtered_index])
+
+@pytest.mark.parametrize("model_name", ["vit_base_patch16", "vit_large_patch16"])
+def test_scale_mae(model_name):
+    out_indices = [2, 4, 8, 10]
+
+    # default should have 3 channels
+    backbone = scalemae.create_model(model_name, out_indices=out_indices)
+    input_tensor = torch.ones((1, 3, 224, 224))
+    output = backbone(input_tensor)
+
+    assert len(output) == len(out_indices)
+
+@pytest.mark.parametrize("model_name", ["vit_base_patch16", "vit_large_patch16"])
+@pytest.mark.parametrize("bands", [2, 4, 6])
+def test_scale_mae_new_channels(model_name, bands):
+
+    backbone = scalemae.create_model(model_name, bands=list(range(bands)))
+    input_tensor = torch.ones((1, bands, 224, 224))
+    backbone(input_tensor)
+
