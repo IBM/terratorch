@@ -2,14 +2,17 @@
 requires = [ "setuptools" ]
 build-backend = 'setuptools.build_meta'
 
+[tool.setuptools.packages.find]
+include = ["terratorch*"]
+
 [project]
 name = "terratorch"
-version = "0.99.1"
+version = "0.99.4"
 description = "TerraTorch - A model training toolkit for geospatial tasks"
 license = { "text" = "Apache License, Version 2.0" }
 readme = "README.md"
 requires-python = ">=3.10"
-keywords = ["fine-tuning", "geospatial foundation models", "artificial inteligence"]
+keywords = ["fine-tuning", "geospatial foundation models", "artificial intelligence"]
 authors = [
   { name = "Carlos Gomes", email = "carlos.gomes@ibm.com" },
   { name = "Joao Lucas de Sousa Almeida", email = "joao.lucas.sousa.almeida@ibm.com"}
@@ -17,31 +20,28 @@ authors = [
 classifiers = [
   "Development Status :: 2 - Pre-Alpha",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.7",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: Implementation :: CPython",
-  "Programming Language :: Python :: Implementation :: PyPy",
 ]
+
 dependencies = [
   "torch>=2.1.0",
   "torchvision>=0.16.0",
-  "torchgeo>=0.5.1",
+  "torchgeo>=0.6.0",
   "rioxarray>=0.15.0",
-  "albumentations>=1.3.1",
+  # see issue #64
+  "albumentations>=1.3.1, <=1.4.10",
+  "albucore<=0.0.16",
   "rasterio>=1.3.9",
   "torchmetrics<=1.3.1",
   "geopandas>=0.14.2",
   "lightly>=1.4.25",
   "h5py>=3.10.0",
-  "geobench>=1.0.0",
   "mlflow>=2.12.1",
   # broken due to https://github.com/Lightning-AI/pytorch-lightning/issues/19977
-  "lightning>=2, <=2.2.5",
-  # see issue #64
-  "albumentations<=1.4.10"
+  "lightning[pytorch-extra]>=2,!=2.3.*",
+  # Dependencies not available on PyPI
 ]
 
 [project.optional-dependencies]
@@ -51,9 +51,25 @@ dev = [
   "mkdocstrings[python]"
 ]
 
+geobench = [
+  "geobench"
+]
+
 test = [
   "coverage",
   "pytest"
+]
+
+mmseg = [
+  "mmcv",
+  "ftfy",
+  "regex",
+  "openmim"
+]
+
+wxc = [
+  "prithviwxc @ git+https://github.com/NASA-IMPACT/Prithvi-WxC.git",
+  "granitewxc @ git+https://github.com/IBM/granite-wxc.git"
 ]
 
 [project.urls]
@@ -128,18 +144,18 @@ ban-relative-imports = "all"
 # Tests can use magic values, assertions, and relative imports
 "tests/**/*" = ["PLR2004", "S101", "TID252"]
 # Tasks rely on torch lightning saving args to hparams dict
-"src/terratorch/tasks/*" = ["ARG002"]
+"terratorch/tasks/*" = ["ARG002"]
 
 [tool.coverage.run]
 source_pkgs = ["terratorch", "tests"]
 branch = true
 parallel = true
 omit = [
-  "src/terratorch/__about__.py",
+  "terratorch/__about__.py",
 ]
 
 [tool.coverage.paths]
-terratorch = ["src/terratorch"]
+terratorch = ["terratorch"]
 tests = ["tests"]
 
 [tool.coverage.report]
@@ -150,7 +166,7 @@ exclude_lines = [
 ]
 
 [tool.bumpver]
-current_version = "0.99.1"
+current_version = "0.99.4"
 version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
 commit_message = "Bump version {old_version} -> {new_version}"
 commit = true

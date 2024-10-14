@@ -4,7 +4,6 @@
 """
 
 import logging
-import math
 import warnings
 from collections import OrderedDict
 from pathlib import Path
@@ -12,11 +11,10 @@ from pathlib import Path
 import torch
 from timm.models import SwinTransformer
 from timm.models._builder import build_model_with_cfg
-from timm.models._registry import generate_default_cfgs, register_model
-from timm.models.swin_transformer import checkpoint_filter_fn as timm_swin_checkpoint_filter_fn
+from timm.models._registry import register_model
 
 from terratorch.datasets.utils import HLSBands
-from terratorch.models.backbones.prithvi_select_patch_embed_weights import prithvi_select_patch_embed_weights
+from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
 from terratorch.models.backbones.swin_encoder_decoder import MMSegSwinTransformer
 
 PRETRAINED_BANDS = [
@@ -157,7 +155,7 @@ def checkpoint_filter_fn(state_dict: dict[str, torch.Tensor], model: torch.nn.Mo
         state_dict["head.fc.weight"] = model.head.fc.weight.detach().clone()
         state_dict["head.fc.bias"] = model.head.fc.bias.detach().clone()
 
-    state_dict = prithvi_select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands)
+    state_dict = select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands)
     return state_dict
 
 

@@ -37,6 +37,22 @@ class HLSBands(Enum):
 def default_transform(**batch):
     return to_tensor(batch)
 
+def generate_bands_intervals(bands_intervals: list[int | str | HLSBands | tuple[int]] | None = None):
+        if bands_intervals is None:
+            return None
+        bands = []
+        for element in bands_intervals:
+            # if its an interval
+            if isinstance(element, tuple):
+                if len(element) != 2:  # noqa: PLR2004
+                    msg = "When defining an interval, a tuple of two integers should be passed,\
+                        defining start and end indices inclusive"
+                    raise Exception(msg)
+                expanded_element = list(range(element[0], element[1] + 1))
+                bands.extend(expanded_element)
+            else:
+                bands.append(element)
+        return bands
 
 def filter_valid_files(
     files, valid_files: Iterator[str] | None = None, ignore_extensions: bool = False, allow_substring: bool = True
@@ -81,3 +97,23 @@ def to_tensor(d):
                 v = np.moveaxis(v, -1, 0)
             new_dict[k] = torch.from_numpy(v)
     return new_dict
+
+
+def pad_numpy(x, target_length, pad_value=0):
+    padlen = target_length - x.shape[0]
+    if padlen <= 0:
+        return x
+
+    pad_width = [(padlen, 0)] + [(0, 0) for _ in range(len(x.shape) - 1)]
+
+    return np.pad(x, pad_width=pad_width, mode="constant", constant_values=pad_value)
+
+
+def pad_dates_numpy(dates, target_length, pad_value=-1):
+    padlen = target_length - dates.shape[0]
+    if padlen <= 0:
+        return dates
+
+    pad_width = [(padlen, 0)]
+
+    return np.pad(dates, pad_width=pad_width, mode="constant", constant_values=pad_value)

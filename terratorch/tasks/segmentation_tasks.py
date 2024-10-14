@@ -46,7 +46,7 @@ class SemanticSegmentationTask(BaseTask):
         ignore_index: int | None = None,
         lr: float = 0.001,
         # the following are optional so CLI doesnt need to pass them
-        optimizer: str | None = "Adam",
+        optimizer: str | None = None,
         optimizer_hparams: dict | None = None,
         scheduler: str | None = None,
         scheduler_hparams: dict | None = None,
@@ -77,7 +77,7 @@ class SemanticSegmentationTask(BaseTask):
             ignore_index (int | None, optional): Label to ignore in the loss computation. Defaults to None.
             lr (float, optional): Learning rate to be used. Defaults to 0.001.
             optimizer (str | None, optional): Name of optimizer class from torch.optim to be used.
-                Defaults to "Adam". Overriden by config / cli specification through LightningCLI.
+            If None, will use Adam. Defaults to None. Overriden by config / cli specification through LightningCLI.
             optimizer_hparams (dict | None): Parameters to be passed for instantiation of the optimizer.
                 Overriden by config / cli specification through LightningCLI.
             scheduler (str, optional): Name of Torch scheduler class from torch.optim.lr_scheduler
@@ -121,8 +121,11 @@ class SemanticSegmentationTask(BaseTask):
     def configure_optimizers(
         self,
     ) -> "lightning.pytorch.utilities.types.OptimizerLRSchedulerConfig":
+        optimizer = self.hparams["optimizer"]
+        if optimizer is None:
+            optimizer = "Adam"
         return optimizer_factory(
-            self.hparams["optimizer"],
+            optimizer,
             self.hparams["lr"],
             self.parameters(),
             self.hparams["optimizer_hparams"],
@@ -158,7 +161,9 @@ class SemanticSegmentationTask(BaseTask):
         elif loss == "dice":
             self.criterion = smp.losses.DiceLoss("multiclass", ignore_index=ignore_index)
         else:
-            exception_message = f"Loss type '{loss}' is not valid. Currently, supports 'ce', 'jaccard', 'dice' or 'focal' loss."
+            exception_message = (
+                f"Loss type '{loss}' is not valid. Currently, supports 'ce', 'jaccard', 'dice' or 'focal' loss."
+            )
             raise ValueError(exception_message)
 
     def configure_metrics(self) -> None:

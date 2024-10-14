@@ -1,12 +1,10 @@
-from typing import Any, Iterable
-import torch
+from typing import Any
 
 import albumentations as A
-import kornia.augmentation as K  # noqa: N812
-from torchgeo.datamodules import NonGeoDataModule
 from torchgeo.transforms import AugmentationSequential
+
+from terratorch.datamodules.geobench_data_module import GeobenchDataModule
 from terratorch.datasets import MSo2SatNonGeo
-from terratorch.datamodules.utils import wrap_in_compose_is_list
 
 MEANS = {
     "VH_REAL": 0.00030114364926703274,
@@ -26,10 +24,10 @@ MEANS = {
     "VV_LEE_FILTERED_IMAGINARY": -0.00021384705905802548,
     "NIR_NARROW": 0.20517952740192413,
     "SWIR_1": 0.1762811541557312,
-    "SWIR_2": 0.1286638230085373
+    "SWIR_2": 0.1286638230085373,
 }
 
-STDS =  {
+STDS = {
     "VH_REAL": 0.20626230537891388,
     "BLUE": 0.040680479258298874,
     "VH_IMAGINARY": 0.19834314286708832,
@@ -47,43 +45,34 @@ STDS =  {
     "VV_LEE_FILTERED_IMAGINARY": 1.2786953449249268,
     "NIR_NARROW": 0.09248979389667511,
     "SWIR_1": 0.10270608961582184,
-    "SWIR_2": 0.09284552931785583
+    "SWIR_2": 0.09284552931785583,
 }
 
-class MSo2SatNonGeoDataModule(NonGeoDataModule):
+
+class MSo2SatNonGeoDataModule(GeobenchDataModule):
     def __init__(
-        self, 
-        batch_size: int = 8, 
-        num_workers: int = 0, 
+        self,
+        batch_size: int = 8,
+        num_workers: int = 0,
         data_root: str = "./",
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
         val_transform: A.Compose | None | list[A.BasicTransform] = None,
         test_transform: A.Compose | None | list[A.BasicTransform] = None,
         aug: AugmentationSequential = None,
-        **kwargs: Any
+        partition: str = "default",
+        **kwargs: Any,
     ) -> None:
-
-        super().__init__(MSo2SatNonGeo, batch_size, num_workers, **kwargs)
-        
-        bands = kwargs.get("bands", MSo2SatNonGeo.all_band_names)
-        self.means = torch.tensor([MEANS[b] for b in bands])
-        self.stds = torch.tensor([STDS[b] for b in bands])
-        self.train_transform = wrap_in_compose_is_list(train_transform)
-        self.val_transform = wrap_in_compose_is_list(val_transform)
-        self.test_transform = wrap_in_compose_is_list(test_transform)
-        self.data_root = data_root
-        self.aug = AugmentationSequential(K.Normalize(self.means, self.stds), data_keys=["image"]) if aug is None else aug
-    
-    def setup(self, stage: str) -> None:
-        if stage in ["fit"]:
-            self.train_dataset = self.dataset_class(  
-                split="train", data_root=self.data_root, transform=self.train_transform, **self.kwargs
-            )
-        if stage in ["fit", "validate"]:
-            self.val_dataset = self.dataset_class(
-                split="val", data_root=self.data_root, transform=self.val_transform, **self.kwargs
-            )
-        if stage in ["test"]:
-            self.test_dataset = self.dataset_class(
-                split="test",data_root=self.data_root, transform=self.test_transform, **self.kwargs
-            )
+        super().__init__(
+            MSo2SatNonGeo,
+            MEANS,
+            STDS,
+            batch_size=batch_size,
+            num_workers=num_workers,
+            data_root=data_root,
+            train_transform=train_transform,
+            val_transform=val_transform,
+            test_transform=test_transform,
+            aug=aug,
+            partition=partition,
+            **kwargs,
+        )
