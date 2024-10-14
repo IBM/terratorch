@@ -24,6 +24,10 @@ def input_512():
 def input_224_multitemporal():
     return torch.ones((1, NUM_CHANNELS, NUM_FRAMES, 224, 224))
 
+@pytest.fixture
+def input_non_divisible():
+    return torch.ones((1, NUM_CHANNELS, NUM_FRAMES, 220, 230))
+
 
 @pytest.fixture
 def input_386():
@@ -51,6 +55,10 @@ def test_vit_models_accept_multitemporal(model_name, input_224_multitemporal):
     backbone = timm.create_model(model_name, pretrained=False, num_frames=NUM_FRAMES)
     backbone(input_224_multitemporal)
 
+@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_vit_300"])
+def test_vit_models_non_divisible_input(model_name, input_non_divisible):
+    backbone = timm.create_model(model_name, pretrained=False, num_frames=NUM_FRAMES)
+    backbone(input_non_divisible)
 
 @pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_vit_300"])
 @pytest.mark.parametrize("patch_size", [8, 16])
