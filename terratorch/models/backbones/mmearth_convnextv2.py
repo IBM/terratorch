@@ -246,3 +246,11 @@ def convnextv2_large(**kwargs):
 def convnextv2_huge(**kwargs):
     model = ConvNeXtV2(depths=[3, 3, 27, 3], dims=[352, 704, 1408, 2816], **kwargs)
     return model
+
+
+checkpoints = {
+    "pt-S2_atto_1M_64_uncertainty_56-8": "https://sid.erda.dk/share_redirect/g23YOnaaTp/pt-S2_atto_1M_64_uncertainty_56-8/checkpoint-199.pth",
+    "pt-all_mod_atto_100k_128_uncertainty_112-16": "https://sid.erda.dk/share_redirect/g23YOnaaTp/pt-all_mod_atto_100k_128_uncertainty_112-16/checkpoint-199.pth",
+    "pt-all_mod_atto_1M_128_uncertainty_112-16": "https://sid.erda.dk/share_redirect/g23YOnaaTp/pt-all_mod_atto_1M_128_uncertainty_112-16/checkpoint-199.pth",
+    "pt-all_mod_atto_1M_64_uncertainty_56-8": "https://sid.erda.dk/share_redirect/g23YOnaaTp/pt-all_mod_atto_1M_64_uncertainty_56-8/checkpoint-199.pth",
+}

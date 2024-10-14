@@ -98,7 +98,7 @@ def load_dofa_weights(model: nn.Module, ckpt_data: str) -> nn.Module:
 
 
 
-def create_model(model_name: str, ckpt_path: str | None = None, **kwargs):
+def create_model(model_name: str, ckpt_path: str | None = None, pretrained = True, **kwargs):
     try:
         constructor: Callable = dofa_model_registry[model_name]
     except KeyError as e:
