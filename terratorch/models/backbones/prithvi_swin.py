@@ -16,6 +16,7 @@ from timm.models._registry import register_model
 from terratorch.datasets.utils import HLSBands
 from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
 from terratorch.models.backbones.swin_encoder_decoder import MMSegSwinTransformer
+from terratorch.datasets.utils import generate_bands_intervals
 
 PRETRAINED_BANDS = [
     HLSBands.BLUE,
@@ -172,6 +173,8 @@ def _create_swin_mmseg_transformer(
     # the current swin model is not multitemporal
     if "num_frames" in kwargs:
         kwargs = {k: v for k, v in kwargs.items() if k != "num_frames"}
+
+    model_bands = generate_bands_intervals(model_bands)
     kwargs["in_chans"] = len(model_bands)
 
     def checkpoint_filter_wrapper_fn(state_dict, model):

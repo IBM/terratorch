@@ -4,6 +4,7 @@
 import logging
 from functools import partial
 from pathlib import Path
+from collections import defaultdict
 
 from timm.models import FeatureInfo
 from timm.models._builder import build_model_with_cfg
@@ -13,6 +14,7 @@ from torch import nn
 from terratorch.datasets import HLSBands
 from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
 from terratorch.models.backbones.vit_encoder_decoder import TemporalViTEncoder
+from terratorch.datasets.utils import generate_bands_intervals
 
 PRETRAINED_BANDS = [
     HLSBands.BLUE,
@@ -80,6 +82,8 @@ def _create_prithvi(
     if "features_only" in kwargs:
         kwargs = {k: v for k, v in kwargs.items() if k != "features_only"}
 
+    model_bands = generate_bands_intervals(model_bands)
+
     kwargs["in_chans"] = len(model_bands)
 
     def checkpoint_filter_wrapper_fn(state_dict, model):
@@ -138,13 +142,15 @@ def create_prithvi_vit_100(
         "norm_layer": partial(nn.LayerNorm, eps=1e-6),
         "num_frames": 1,
     }
+
     model = _create_prithvi(
         model_name,
         pretrained=pretrained,
         model_bands=bands,
         pretrained_bands=pretrained_bands,
-        **dict(model_args, **kwargs),
+        **dict(model_args,**kwargs),
     )
+    
     return model
 
 
