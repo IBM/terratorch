@@ -333,6 +333,8 @@ class MyLightningCLI(LightningCLI):
         if hasattr(config, "deploy_config_file"):
             self.trainer.deploy_config = config.deploy_config_file
 
+        if hasattr(config, "predict_dataset_bands"):
+            self.trainer.predict_dataset_bands = config.predict_dataset_bands
 
 def build_lightning_cli(
     args: ArgsType = None,
