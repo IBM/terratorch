@@ -1,19 +1,21 @@
 # Copyright contributors to the Terratorch project
+import os
+
 import timm
 import torch
+from granitewxc.utils.config import get_config
+from granitewxc.utils.downscaling_model import get_finetune_model
 from torch import nn
-import os
 
 import terratorch.models.decoders as decoder_registry
 from terratorch.datasets import HLSBands
 from terratorch.models.model import (
-    ModelFactory,
     Model,
+    ModelFactory,
     ModelOutput,
-    register_factory,
 )
-from granitewxc.utils.config import get_config
-from granitewxc.utils.downscaling_model import get_finetune_model
+from terratorch.registry import MODEL_FACTORY_REGISTRY
+
 
 class WxCModuleWrapper(Model, nn.Module):
     def __init__(self, module: nn.Module) -> None:
@@ -34,7 +36,7 @@ class WxCModuleWrapper(Model, nn.Module):
         return self.module.load_state_dict(state_dict, strict, assign)
 
 
-@register_factory
+@MODEL_FACTORY_REGISTRY.register
 class WxCModelFactory(ModelFactory):
     def build_model(
         self,

@@ -1,5 +1,5 @@
 # Copyright contributors to the Terratorch project
 
-# register models with timm
-import terratorch.models
-from terratorch.models.backbones import *  # noqa: F403
+import terratorch.models  # noqa: F401
+from terratorch.models.backbones import *  # register models in registries # noqa: F403
+from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY, MODEL_FACTORY_REGISTRY  # noqa: F401
