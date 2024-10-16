@@ -7,7 +7,7 @@ from torch import nn
 from terratorch.registry import BACKBONE_REGISTRY
 
 
-class TimmModelWrapper(nn.Module):
+class TimmBackboneWrapper(nn.Module):
     def __init__(self, timm_module: nn.Module) -> None:
         super().__init__()
         self._timm_module = timm_module
@@ -34,7 +34,7 @@ class TimmRegistry(Set):
         Use prefixes ending with _ to forward to a specific source
         """
         try:
-            return TimmModelWrapper(
+            return TimmBackboneWrapper(
                 timm.create_model(
                     name,
                     *constructor_args,
