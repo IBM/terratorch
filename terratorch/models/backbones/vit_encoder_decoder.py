@@ -430,7 +430,7 @@ class TemporalViTEncoder(nn.Module):
         latent, mask, ids_restore, dim_info = self.forward_encoder(imgs, mask_ratio)
         pred = self.forward_decoder(latent, ids_restore, dim_info)
         _ = self.forward_loss(imgs, pred, mask)
-        return pred
+        return pred, mask
 
     def forward_features(self, x) -> list[torch.Tensor]:
         if len(x.shape) == B_C_H_W_SHAPE_LEN and self.patch_embed.num_frames == 1:
