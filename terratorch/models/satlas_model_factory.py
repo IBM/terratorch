@@ -143,7 +143,6 @@ class SatlasModelWrapper(Model):
                 output = output.squeeze(1) # remove simulated channels dimension
         return ModelOutput(output)
 
-
 @register_factory
 class SatlasModelFactory(ModelFactory):
     def __init__(self):
@@ -158,6 +157,7 @@ class SatlasModelFactory(ModelFactory):
         aux_decoders: list[AuxiliaryHead] | None = None,
         pretrained: bool | str = True,
         pretrained_task_idx_head: int | None = None,
+        load_upsample_weights: bool = True,
         fpn: bool = True,
         num_classes: int | None = None,
         rescale: bool = True
@@ -180,6 +180,7 @@ class SatlasModelFactory(ModelFactory):
                 If a path, will load the weights from there. Defaults to True.
             pretrained_task_idx_head (int, optional): If pretrained is true, whether to load head weights from a certain task index.
                 Defaults to None, which initializes a head with new weights.
+            load_upsample_weights (bool): Whether to load the upsample weights as well. Defaults to True.
             fpn (bool, optional): Whether or not to feed imagery through the pretrained Feature Pyramid Network
                 after the backbone. Defaults to True.
             num_classes (int, optional): Number of classes. May be 1 or None for regression tasks.
@@ -309,6 +310,9 @@ class SatlasModelFactory(ModelFactory):
                 head=head,
                 num_categories=num_classes,
                 weights=weights)
+            if load_upsample_weights:
+                appropriate_weights = {k.replace(f"intermediates.1.", "", 1): v for k, v in weights.items() if f"intermediates.1." in k}
+                model.upsample.load_state_dict(appropriate_weights)
             if pretrained_task_idx_head:
                 appropriate_weights = {k.replace(f"heads.{pretrained_task_idx_head}.", "", 1): v for k, v in weights.items() if f"heads.{pretrained_task_idx_head}." in k}
                 model.head.load_state_dict(appropriate_weights)
