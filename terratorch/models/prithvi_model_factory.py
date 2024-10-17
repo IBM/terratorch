@@ -6,6 +6,7 @@ from typing import Optional
 
 from torch import nn
 import timm
+import terratorch.models.decoders as decoder_registry
 from terratorch.datasets import HLSBands
 from terratorch.models import EncoderDecoderFactory
 from terratorch.models.model import (
