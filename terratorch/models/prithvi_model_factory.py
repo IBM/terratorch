@@ -5,7 +5,7 @@ from collections.abc import Callable
 from typing import Optional
 
 from torch import nn
-
+import timm
 from terratorch.datasets import HLSBands
 from terratorch.models import EncoderDecoderFactory
 from terratorch.models.model import (
@@ -120,14 +120,14 @@ class PrithviModelFactory(ModelFactory):
                 features_only = False
             else:
                 features_only = True
-
+            print(backbone_kwargs)
             # Instantiating backbone
             backbone: nn.Module = timm.create_model(
                 backbone,
-                pretrained=pretrained,
-                in_chans=in_channels,  # this can be removed, can be derived from bands. But is a breaking change.
-                num_frames=num_frames,
-                bands=bands,
+                #pretrained=pretrained,
+                #in_chans=in_channels,  # this can be removed, can be derived from bands. But is a breaking change.
+                #num_frames=num_frames,
+                #bands=bands,
                 features_only=features_only,
                 **backbone_kwargs,
             )
@@ -374,4 +374,3 @@ def _extract_prefix_keys(d: dict, prefix: str) -> dict:
             remaining_dict[k] = v
 
     return extracted_dict, remaining_dict
->>>>>>> pretraining
