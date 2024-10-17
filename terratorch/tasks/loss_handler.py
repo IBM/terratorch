@@ -8,13 +8,27 @@ from terratorch.models.model import ModelOutput
 class LossHandler:
     """Class to help handle the computation and logging of loss"""
 
-    def __init__(self, loss_prefix: str) -> None:
+    def __init__(self, loss_prefix: str, multiple_inputs:bool=False) -> None:
         """Constructor
 
         Args:
             loss_prefix (str): Prefix to be prepended to all the metrics (e.g. training).
         """
         self.loss_prefix = loss_prefix
+        self.multiple_inputs = multiple_inputs
+
+        if self.multiple_inputs:
+            self._eval_loss = self._eval_loss_multiple_inputs
+        else:
+            self._eval_loss = self._eval_loss_single_input
+
+    def _eval_loss_single_input(self, model_output, ground_truth, criterion):
+        loss = self._compute_loss(model_output.output, ground_truth, criterion)
+        return loss
+
+    def _eval_loss_multiple_inputs(self, model_output, ground_truth, criterion):
+        loss = self._compute_loss(model_output, ground_truth, criterion)
+        return loss
 
     def compute_loss(
         self,
@@ -40,8 +54,9 @@ class LossHandler:
                 If there are auxiliary heads, the main decode head is returned under the key "decode_head".
                 All other heads are returned with the same key as their name.
         """
-        
-        loss = self._compute_loss(model_output.output, ground_truth, criterion)
+
+        loss = self._eval_loss(model_output, ground_truth, criterion)
+
         if not model_output.auxiliary_heads:
             return {"loss": loss}
 
