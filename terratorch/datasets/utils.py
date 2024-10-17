@@ -34,6 +34,47 @@ class HLSBands(Enum):
         except ValueError:
             return x
 
+class OpticalBands(Enum):
+    COASTAL_AEROSOL = "COASTAL_AEROSOL"
+    BLUE = "BLUE"
+    GREEN = "GREEN"
+    RED = "RED"
+    RED_EDGE_1 = "RED_EDGE_1"
+    RED_EDGE_2 = "RED_EDGE_2"
+    RED_EDGE_3 = "RED_EDGE_3"
+    NIR_BROAD = "NIR_BROAD"
+    NIR_NARROW = "NIR_NARROW"
+    SWIR_1 = "SWIR_1"
+    SWIR_2 = "SWIR_2"
+    WATER_VAPOR = "WATER_VAPOR"
+    CIRRUS = "CIRRUS"
+    THEMRAL_INFRARED_1 = "THEMRAL_INFRARED_1"
+    THEMRAL_INFRARED_2 = "THEMRAL_INFRARED_2"
+
+    @classmethod
+    def try_convert_to_optical_bands_enum(cls, x: Any):
+        try:
+            return cls(x)
+        except ValueError:
+            return x
+        
+class SARBands(Enum):
+    VV =  "VV"
+    VH = "VH"
+    ASC_VV = "ASC_VV"
+    ASC_VH = "ASC_VH"
+    DSC_VV = "DSC_VV"
+    DSC_VH = "DSC_VH"
+    VV_VH = "VV_VH"
+
+    @classmethod
+    def try_convert_to_optical_bands_enum(cls, x: Any):
+        try:
+            return cls(x)
+        except ValueError:
+            return x
+
+
 def default_transform(**batch):
     return to_tensor(batch)
 

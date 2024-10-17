@@ -4,3 +4,4 @@
 import terratorch.models.backbones.prithvi_swin
 import terratorch.models.backbones.prithvi_vit
 import terratorch.models.backbones.scalemae
+import terratorch.models.backbones.dofa_vit
