@@ -5,6 +5,7 @@ import timm
 import torch
 
 from terratorch.models.backbones import scalemae
+from terratorch.registry import BACKBONE_REGISTRY
 
 NUM_CHANNELS = 6
 NUM_FRAMES = 4
@@ -44,6 +45,12 @@ def test_can_create_backbones_from_timm_features_only(model_name, test_input, re
     backbone = timm.create_model(model_name, pretrained=False, features_only=True)
     input_tensor = request.getfixturevalue(test_input)
     backbone(input_tensor)
+
+@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_vit_300", "prithvi_swin_B"])
+@pytest.mark.parametrize("prefix", ["", "timm_"])
+def test_can_create_timm_backbones_from_registry(model_name, input_224, prefix):
+    backbone = BACKBONE_REGISTRY.build(prefix+model_name, pretrained=False)
+    backbone(input_224)
 
 
 @pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_vit_300"])
