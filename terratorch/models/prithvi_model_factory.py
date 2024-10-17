@@ -84,7 +84,9 @@ class PrithviModelFactory(ModelFactory):
 
         if in_channels is None:
             in_channels = len(bands)
+
         # TODO: support auxiliary heads
+
         kwargs["backbone_bands"] = bands
         kwargs["backbone_in_chans"] = in_channels
         kwargs["backbone_pretrained"] = pretrained
@@ -120,14 +122,10 @@ class PrithviModelFactory(ModelFactory):
                 features_only = False
             else:
                 features_only = True
-            print(backbone_kwargs)
+
             # Instantiating backbone
             backbone: nn.Module = timm.create_model(
                 backbone,
-                #pretrained=pretrained,
-                #in_chans=in_channels,  # this can be removed, can be derived from bands. But is a breaking change.
-                #num_frames=num_frames,
-                #bands=bands,
                 features_only=features_only,
                 **backbone_kwargs,
             )
@@ -182,17 +180,6 @@ class PrithviModelFactory(ModelFactory):
             head_kwargs = None 
             to_be_aux_decoders = None
 
-        """    
-        return _build_appropriate_model(
-            task,
-            backbone,
-            decoder,
-            head_kwargs,
-            prepare_features_for_image_model,
-            rescale=rescale,
-            auxiliary_heads=to_be_aux_decoders,
-        )
-        """
 
         return self._factory.build_model(task,
                                          backbone,
