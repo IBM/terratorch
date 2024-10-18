@@ -10,7 +10,7 @@ Tasks are best leveraged using config files. Check out some examples [here](./ex
 !!! info "Argument parsing in configs"
     Argument parsing of configs relies on argument names and type hints in the code.
     To pass arguments that do not conform to this (e.g. for classes that make use of **kwargs)
-    put those arguments in `dict_args` instead of `init_args`.
+    put those arguments in `dict_kwargs` instead of `init_args`.
 
 
 ---
