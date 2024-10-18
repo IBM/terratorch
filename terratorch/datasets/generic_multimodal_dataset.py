@@ -21,7 +21,9 @@ from matplotlib.patches import Rectangle
 from torch import Tensor
 from torchgeo.datasets import NonGeoDataset
 
-from terratorch.datasets.utils import HLSBands, default_transform, filter_valid_files, generate_bands_intervals
+from terratorch.datasets.utils import (HLSBands, default_transform, filter_valid_files, generate_bands_intervals,
+                                       to_tensor)
+from terratorch.datasets.transforms import MultiModalTransforms
 
 
 class GenericMultimodalDataset(NonGeoDataset, ABC):
@@ -100,7 +102,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                                 for m, m_root in data_root.items()}
         else:
             self.image_files = {m: sorted(glob.glob(m_root)) for m, m_root in data_root.items()}
-        self.constant_scale = constant_scale or {m: 1. for m in self.modalities}
+        self.constant_scale = {m: constant_scale[m] or 1. for m in self.modalities}
         self.no_data_replace = no_data_replace
         self.no_label_replace = no_label_replace
         if self.label_data_root:
@@ -171,30 +173,42 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         if dataset_bands is not None:
             self.dataset_bands = {m: generate_bands_intervals(m_bands)
                                   for m, m_bands in dataset_bands.items()}
+        else:
+            self.dataset_bands = None
         if output_bands is not None:
             self.output_bands = {m: generate_bands_intervals(m_bands)
                                   for m, m_bands in output_bands.items()}
-
-        for modality in self.modalities:
-            if modality in self.output_bands and modality not in self.dataset_bands:
-                msg = f"If output bands are provided, dataset_bands must also be provided (modality: {modality})"
-                raise Exception(msg)  # noqa: PLE0101
+            for modality in self.modalities:
+                if modality in self.output_bands and modality not in self.dataset_bands:
+                    msg = f"If output bands are provided, dataset_bands must also be provided (modality: {modality})"
+                    raise Exception(msg)  # noqa: PLE0101
+        else:
+            self.output_bands = {}
 
         self.filter_indices = {}
         # There is a special condition if the bands are defined as simple strings.
         if self.output_bands:
             for m in self.output_bands.keys():
+                if m not in self.output_bands or self.output_bands[m] == self.dataset_bands[m]:
+                    continue
                 if len(set(self.output_bands[m]) & set(self.dataset_bands[m])) != len(self.output_bands[m]):
                     msg = f"Output bands must be a subset of dataset bands (Modality: {m})"
                     raise Exception(msg)
-                if self.output_bands[m] == self.dataset_bands[m]:
-                    continue
 
                 self.filter_indices[m] = [self.dataset_bands[m].index(band) for band in self.output_bands[m]]
 
-        # TODO: Implement multi-modal transforms
+
         # If no transform is given, apply only to transform to torch tensor
-        self.transform = transform if transform else default_transform
+        if isinstance(transform, A.Compose):
+            self.transform = MultiModalTransforms(transform)
+        elif transform is None:
+            self.transform = to_tensor
+        else:
+            # TODO: Test transforms per modality
+            # Modality-specific transforms
+            transform = {m: transform[m] if m in transform else default_transform
+                         for m in self.modalities}
+            self.transform = MultiModalTransforms(transform, shared=False)
 
         import warnings
         import rasterio
@@ -233,7 +247,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         if self.reduce_zero_label:
             output["mask"] -= 1
         if self.transform:
-            output = self.transform(**output)
+            output = self.transform(output)
         output["filename"] = self.samples[index]
 
         return output

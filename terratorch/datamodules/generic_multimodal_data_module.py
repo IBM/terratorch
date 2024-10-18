@@ -24,7 +24,7 @@ from terratorch.io.file import load_from_file_or_attribute
 
 def collate_chunk_dicts(batch_list):
     batch = {}
-    for key, value in batch_list[0].items():  # TODO: Handle missing modalities when is allow_missing_modalities set.
+    for key, value in batch_list[0].items():  # TODO: Handle missing modalities when allow_missing_modalities is set.
         if isinstance(value, torch.Tensor):
             batch[key] = torch.concat([chunk[key] for chunk in batch_list])
         else:
@@ -32,9 +32,12 @@ def collate_chunk_dicts(batch_list):
     return batch
 
 
-def wrap_in_compose_is_list(transform_list):
+def wrap_in_compose_is_list(transform_list, additional_targets=None):
     # set check shapes to false because of the multitemporal case
-    return A.Compose(transform_list, is_check_shapes=False) if isinstance(transform_list, Iterable) else transform_list
+    if additional_targets:
+        additional_targets = {m: 'image' for m in additional_targets}
+    return A.Compose(transform_list, is_check_shapes=False, additional_targets=additional_targets) \
+        if isinstance(transform_list, Iterable) else transform_list
 
 
 class Normalize(Callable):
@@ -44,12 +47,6 @@ class Normalize(Callable):
         self.stds = stds
 
     def __call__(self, batch):
-        # min_value = self.means - 2 * self.stds
-        # max_value = self.means + 2 * self.stds
-        # img = (batch["image"] - min_value) / (max_value - min_value)
-        # img = torch.clip(img, 0, 1)
-        # batch["image"] = img
-        # return batch
         image = batch["image"]
         if len(image.shape) == 5:
             means = torch.tensor(self.means, device=image.device).view(1, -1, 1, 1, 1)
@@ -75,6 +72,11 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         batch_size: int,
         num_workers: int,
         modalities: list[str],
+        train_data_root: dict,
+        val_data_root: dict,
+        test_data_root: dict,
+        means: dict,
+        stds: dict,
         task: str | None = None,
         num_classes: int | None = None,
         label_grep: str | None = None,
@@ -87,20 +89,23 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         test_split: Path | None = None,
         ignore_split_file_extensions: bool = True,
         allow_substring_split_file: bool = True, # TODO: Check if covered
+        dataset_bands: dict | None = None,
+        output_bands: dict | None = None,
         predict_dataset_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
         predict_output_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
-        predict_modality: str | None = None,
         rgb_modality: str | None = None,
         rgb_indices: list[int] | None = None,
-        # TODO: Check how to handle transforms
-        train_transform: A.Compose | None | list[A.BasicTransform] = None,
-        val_transform: A.Compose | None | list[A.BasicTransform] = None,
-        test_transform: A.Compose | None | list[A.BasicTransform] = None,
+        constant_scale: dict | float = 1.,
+        train_transform: dict | A.Compose | None | list[A.BasicTransform] = None,
+        val_transform: dict | A.Compose | None | list[A.BasicTransform] = None,
+        test_transform: dict | A.Compose | None | list[A.BasicTransform] = None,
+        shared_transforms: list | bool = True,
         expand_temporal_dimension: bool = False,
         reduce_zero_label: bool = False,
         no_data_replace: float | None = None,
         no_label_replace: int | None = None,
         drop_last: bool = True,
+        pin_memory: bool = False,
         chunk_data: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -164,6 +169,9 @@ class GenericMultiModalDataModule(NonGeoDataModule):
             reduce_zero_label (bool): Subtract 1 from all labels. Useful when labels start from 1 instead of the
                 expected 0. Defaults to False.
             drop_last (bool): Drop the last batch if it is not complete. Defaults to True.
+            pin_memory (bool): If ``True``, the data loader will copy Tensors
+            into device/CUDA pinned memory before returning them. Defaults to False.
+
         """
         if task == 'segmentation':
             dataset_class = GenericMultimodalSegmentationDataset
@@ -179,9 +187,9 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.modalities = modalities
         self.img_grep = {m: kwargs.get('{m}_grep', '*') for m in modalities}
         self.label_grep = label_grep
-        self.train_root = {m: kwargs[f'train_{m}_data_root'] for m in modalities}
-        self.val_root = {m: kwargs[f'val_{m}_data_root'] for m in modalities}
-        self.test_root = {m: kwargs[f'test_{m}_data_root'] for m in modalities}
+        self.train_root = train_data_root
+        self.val_root = val_data_root
+        self.test_root = test_data_root
         self.train_label_data_root = train_label_data_root
         self.val_label_data_root = val_label_data_root
         self.test_label_data_root = test_label_data_root
@@ -191,42 +199,70 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.test_split = test_split
         self.ignore_split_file_extensions = ignore_split_file_extensions
         self.allow_substring_split_file = allow_substring_split_file
-        self.constant_scale = {m: kwargs.get(f'{m}_constant_scale', 1.) for m in modalities}
+        self.constant_scale = constant_scale
+        if isinstance(self.constant_scale, dict):
+            # Fill in missing modalities
+            self.constant_scale = {m: self.constant_scale[m] if m in self.constant_scale else 1.
+                                   for m in modalities}
+        else:
+            # Create dict
+            self.constant_scale = {m: constant_scale for m in modalities}
         self.no_data_replace = no_data_replace
         self.no_label_replace = no_label_replace
         self.drop_last = drop_last
+        self.pin_memory = pin_memory
 
-        self.dataset_bands = {m: kwargs.get(f'{m}_dataset_bands') for m in modalities if f'{m}_dataset_bands' in kwargs}
-        self.output_bands = {m: kwargs.get(f'{m}_output_bands') for m in modalities if f'{m}_output_bands' in kwargs}
-
-        self.predict_dataset_bands = predict_dataset_bands or self.dataset_bands[predict_modality] \
-            if predict_modality in self.dataset_bands else None
-        self.predict_output_bands = predict_output_bands or self.output_bands[predict_modality] \
-            if predict_modality in self.output_bands else None
+        self.dataset_bands = dataset_bands
+        self.output_bands = output_bands
+        self.predict_dataset_bands = predict_dataset_bands
+        self.predict_output_bands = predict_output_bands
 
         self.rgb_modality = rgb_modality or modalities[0]
         self.rgb_indices = rgb_indices
         self.expand_temporal_dimension = expand_temporal_dimension
         self.reduce_zero_label = reduce_zero_label
 
-        assert train_transform is None, "transforms are not implemented yet" # TODO Handle transforms
-        self.train_transform = wrap_in_compose_is_list(train_transform)
-        self.val_transform = wrap_in_compose_is_list(val_transform)
-        self.test_transform = wrap_in_compose_is_list(test_transform)
+        # Transforms can be None (leads to to_tensor default), shared between modalities or individual per modality
+        if shared_transforms:
+            # Applying the same transforms with the same parameters to multiple images
+            shared_transforms = shared_transforms if isinstance(shared_transforms, list) else modalities
+            assert shared_transforms == modalities, "Non-image modalities not yet supported with shared_transforms"
 
-        # self.aug = AugmentationSequential(
-        #     K.Normalize(means, stds),
-        #     data_keys=["image"],
-        # )
-        means = {m: load_from_file_or_attribute(kwargs[f'{m}_means']) for m in modalities}
-        stds = {m: load_from_file_or_attribute(kwargs[f'{m}_stds']) for m in modalities}
+        if isinstance(train_transform, dict):
+            self.train_transform = {m: wrap_in_compose_is_list(train_transform[m]) if m in train_transform else None
+                                    for m in modalities}
+        elif shared_transforms:
+            self.train_transform = wrap_in_compose_is_list(train_transform, additional_targets=shared_transforms)
+        else:
+            self.train_transform = {m: wrap_in_compose_is_list(train_transform)
+                                    for m in modalities}
+
+        if isinstance(val_transform, dict):
+            self.val_transform = {m: wrap_in_compose_is_list(val_transform[m]) if m in val_transform else None
+                                    for m in modalities}
+        elif shared_transforms:
+            self.val_transform = wrap_in_compose_is_list(val_transform, additional_targets=shared_transforms)
+        else:
+            self.val_transform = {m: wrap_in_compose_is_list(val_transform)
+                                    for m in modalities}
+
+        if isinstance(test_transform, dict):
+            self.test_transform = {m: wrap_in_compose_is_list(test_transform[m]) if m in test_transform else None
+                                    for m in modalities}
+        elif shared_transforms:
+            self.test_transform = wrap_in_compose_is_list(test_transform, additional_targets=shared_transforms)
+        else:
+            self.test_transform = {m: wrap_in_compose_is_list(test_transform)
+                                    for m in modalities}
+
+        means = {m: load_from_file_or_attribute(means[m]) for m in means.keys()}
+        stds = {m: load_from_file_or_attribute(stds[m]) for m in stds.keys()}
 
         self.aug = {m: Normalize(means[m], stds[m]) for m in modalities}
 
         self.chunk_data = chunk_data
         if chunk_data:
             self.collate_fn = collate_chunk_dicts
-        # self.collate_fn = collate_fn_list_dicts
 
     def setup(self, stage: str) -> None:
         if stage in ["fit"]:
@@ -330,4 +366,5 @@ class GenericMultiModalDataModule(NonGeoDataModule):
             num_workers=self.num_workers,
             collate_fn=self.collate_fn,
             drop_last=split == "train" and self.drop_last,
+            pin_memory=self.pin_memory,
         )
