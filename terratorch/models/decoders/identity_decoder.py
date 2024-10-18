@@ -5,7 +5,10 @@
 
 from torch import Tensor, nn
 
+from terratorch.registry import TERRATORCH_DECODER_REGISTRY
 
+
+@TERRATORCH_DECODER_REGISTRY.register
 class IdentityDecoder(nn.Module):
     """Identity decoder. Useful to pass the feature straight to the head."""
 
@@ -21,7 +24,7 @@ class IdentityDecoder(nn.Module):
         self.dim = out_index
 
     @property
-    def output_embed_dim(self):
+    def out_channels(self):
         return self.embed_dim[self.dim]
 
     def forward(self, x: list[Tensor]):

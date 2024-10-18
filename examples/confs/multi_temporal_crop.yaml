@@ -89,18 +89,18 @@ model:
   init_args:
     model_args:
       decoder: FCNDecoder
-      pretrained: true
+      backbone_pretrained: true
       backbone: prithvi_vit_100
-      in_channels: 6
+      backbone_in_channels: 6
       rescale: False
-      bands:
+      backbone_bands:
         - BLUE
         - GREEN
         - RED
         - NIR_NARROW
         - SWIR_1
         - SWIR_2
-      num_frames: 3
+      backbone_num_frames: 3
       num_classes: 13
       head_dropout: 0.1
       decoder_channels: 512
@@ -122,17 +122,6 @@ model:
       - Cotton
       - Sorghum
       - Other
-    # aux_heads:
-    # - name: aux_head
-    #     decoder: FCNDecoder
-    #     decoder_args:
-    #       decoder_channels: 256
-    #       decoder_in_index: 2
-    #       decoder_num_convs: 2
-    #       head_channel_list:
-    #         - 64
-    # aux_loss:
-    #   aux_head: 1.0
     class_weights:
       - 0.386375
       - 0.661126
@@ -151,7 +140,7 @@ model:
     ignore_index: -1
     freeze_backbone: false
     freeze_decoder: false
-    model_factory: PrithviModelFactory
+    model_factory: EncoderDecoderFactory
     tiled_inference_parameters:
       h_crop: 224
       h_stride: 196

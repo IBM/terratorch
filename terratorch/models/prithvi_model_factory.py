@@ -1,38 +1,36 @@
 # Copyright contributors to the Terratorch project
 
+import warnings
 from collections.abc import Callable
+from typing import Optional
 
-import segmentation_models_pytorch as smp
-import timm
-import torch
 from torch import nn
-
+import timm
 import terratorch.models.decoders as decoder_registry
 from terratorch.datasets import HLSBands
+from terratorch.models import EncoderDecoderFactory
 from terratorch.models.model import (
     AuxiliaryHead,
-    AuxiliaryHeadWithDecoderWithoutInstantiatedHead,
     Model,
     ModelFactory,
-    register_factory,
 )
+from terratorch.registry import MODEL_FACTORY_REGISTRY
 from terratorch.models.pixel_wise_model import PixelWiseModel
-from terratorch.models.scalar_output_model import ScalarOutputModel
-from terratorch.models.smp_model_factory import make_smp_encoder, register_custom_encoder
-from terratorch.models.utils import DecoderNotFoundError
 
-PIXEL_WISE_TASKS = ["segmentation", "regression"]
+PIXEL_WISE_TASKS = ["segmentation", "regression", "pretraining"]
 SCALAR_TASKS = ["classification"]
 SUPPORTED_TASKS = PIXEL_WISE_TASKS + SCALAR_TASKS
 
 
-@register_factory
+@MODEL_FACTORY_REGISTRY.register
 class PrithviModelFactory(ModelFactory):
+    def __init__(self) -> None:
+        self._factory: EncoderDecoderFactory = EncoderDecoderFactory()
     def build_model(
         self,
         task: str,
         backbone: str | nn.Module,
-        decoder: str | nn.Module,
+        decoder: Optional[str | nn.Module],
         bands: list[HLSBands | int],
         in_channels: int
         | None = None,  # this should be removed, can be derived from bands. But it is a breaking change
@@ -55,7 +53,7 @@ class PrithviModelFactory(ModelFactory):
                 by the specified factory. Defaults to "prithvi_100".
             decoder (Union[str, nn.Module], optional): Decoder to be used for the segmentation model.
                     If a string, it will be created from a class exposed in decoder.__init__.py with the same name.
-                    If an nn.Module, we expect it to expose a property `decoder.output_embed_dim`.
+                    If an nn.Module, we expect it to expose a property `decoder.out_channels`.
                     Will be concatenated with a Conv2d for the final convolution. Defaults to "FCNDecoder".
             in_channels (int, optional): Number of input channels. Defaults to 3.
             bands (list[terratorch.datasets.HLSBands], optional): Bands the model will be trained on.
@@ -77,10 +75,32 @@ class PrithviModelFactory(ModelFactory):
         Returns:
             nn.Module: Full model with encoder, decoder and head.
         """
+        # This factory will replaced by the more general EncoderDecoder factory in the future.
+        warnings.warn("PrithviModelFactory is deprecated. Please switch to EncoderDecoderFactory.", stacklevel=1)
+
+        if task in ["segmentation", "regression", "classification"]:
+            if not decoder:
+                raise ValueError(f"Decoder is required for 'segmentation' and 'regression' tasks, but received {decoder}.")
+
         bands = [HLSBands.try_convert_to_hls_bands_enum(b) for b in bands]
+
         if in_channels is None:
             in_channels = len(bands)
+
         # TODO: support auxiliary heads
+
+        kwargs["backbone_bands"] = bands
+        kwargs["backbone_in_chans"] = in_channels
+        kwargs["backbone_pretrained"] = pretrained
+        kwargs["backbone_num_frames"] = num_frames
+
+        if prepare_features_for_image_model:
+            msg = (
+                "This functionality is no longer supported. Please migrate to EncoderDecoderFactory\
+                         and use necks."
+            )
+            raise RuntimeError(msg)
+
         if not isinstance(backbone, nn.Module):
             if not backbone.startswith("prithvi_"):
                 msg = "This class only handles models for `prithvi` encoders"
@@ -97,65 +117,80 @@ class PrithviModelFactory(ModelFactory):
             output_stride = backbone_kwargs.pop("output_stride", None)
             out_channels = backbone_kwargs.pop("out_channels", None)
 
+            # When the task is "pre-training", the original
+            # decoder is maintained as is and the training is performed from
+            # scratch 
+            if task == "pretraining":
+                features_only = False
+            else:
+                features_only = True
+
+            # Instantiating backbone
             backbone: nn.Module = timm.create_model(
                 backbone,
-                pretrained=pretrained,
-                in_chans=in_channels,  # this can be removed, can be derived from bands. But is a breaking change.
-                num_frames=num_frames,
-                bands=bands,
-                features_only=True,
+                features_only=features_only,
                 **backbone_kwargs,
             )
 
-        decoder_kwargs, kwargs = _extract_prefix_keys(kwargs, "decoder_")
-        # TODO: remove this
-        if decoder.startswith("smp_"):
-            decoder: nn.Module = _get_smp_decoder(
-                decoder,
-                backbone_kwargs,
-                decoder_kwargs,
-                out_channels,
-                in_channels,
-                num_classes,
-                output_stride,
-            )
-        else:
-            # allow decoder to be a module passed directly
-            decoder_cls = _get_decoder(decoder)
-            decoder: nn.Module = decoder_cls(backbone.feature_info.channels(), **decoder_kwargs)
-            # decoder: nn.Module = decoder_cls([128, 256, 512, 1024], **decoder_kwargs)
+        # These steps are necessary just when a fine-tuning task is 
+        # performed (segmentation and regression).
+        if task in ["segmentation", "regression", "classification"]:
 
-        head_kwargs, kwargs = _extract_prefix_keys(kwargs, "head_")
-        if num_classes:
-            head_kwargs["num_classes"] = num_classes
-        if aux_decoders is None:
-            return _build_appropriate_model(
-                task, backbone, decoder, head_kwargs, prepare_features_for_image_model, rescale=rescale
-            )
+            decoder_kwargs, kwargs = _extract_prefix_keys(kwargs, "decoder_")
+            # TODO: remove this
+            if decoder.startswith("smp_"):
+                decoder: nn.Module = _get_smp_decoder(
+                    decoder,
+                    backbone_kwargs,
+                    decoder_kwargs,
+                    out_channels,
+                    in_channels,
+                    num_classes,
+                    output_stride,
+                )
+            else:
+                # allow decoder to be a module passed directly
+                decoder_cls = _get_decoder(decoder)
+                decoder: nn.Module = decoder_cls(backbone.feature_info.channels(), **decoder_kwargs)
+                # decoder: nn.Module = decoder_cls([128, 256, 512, 1024], **decoder_kwargs)
 
-        to_be_aux_decoders: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] = []
-        for aux_decoder in aux_decoders:
-            args = aux_decoder.decoder_args if aux_decoder.decoder_args else {}
-            aux_decoder_cls: nn.Module = _get_decoder(aux_decoder.decoder)
-            aux_decoder_kwargs, kwargs = _extract_prefix_keys(args, "decoder_")
-            aux_decoder_instance = aux_decoder_cls(backbone.feature_info.channels(), **aux_decoder_kwargs)
-
-            aux_head_kwargs, kwargs = _extract_prefix_keys(args, "head_")
+            head_kwargs, kwargs = _extract_prefix_keys(kwargs, "head_")
             if num_classes:
-                aux_head_kwargs["num_classes"] = num_classes
-            to_be_aux_decoders.append(
-                AuxiliaryHeadWithDecoderWithoutInstantiatedHead(aux_decoder.name, aux_decoder_instance, aux_head_kwargs)
-            )
+                head_kwargs["num_classes"] = num_classes
+            if aux_decoders is None:
+                return _build_appropriate_model(
+                    task, backbone, decoder, head_kwargs, prepare_features_for_image_model, rescale=rescale
+                )
 
-        return _build_appropriate_model(
-            task,
-            backbone,
-            decoder,
-            head_kwargs,
-            prepare_features_for_image_model,
-            rescale=rescale,
-            auxiliary_heads=to_be_aux_decoders,
-        )
+            to_be_aux_decoders: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] = []
+            for aux_decoder in aux_decoders:
+                args = aux_decoder.decoder_args if aux_decoder.decoder_args else {}
+                aux_decoder_cls: nn.Module = _get_decoder(aux_decoder.decoder)
+                aux_decoder_kwargs, kwargs = _extract_prefix_keys(args, "decoder_")
+                aux_decoder_instance = aux_decoder_cls(backbone.feature_info.channels(), **aux_decoder_kwargs)
+
+                aux_head_kwargs, kwargs = _extract_prefix_keys(args, "head_")
+                if num_classes:
+                    aux_head_kwargs["num_classes"] = num_classes
+                to_be_aux_decoders.append(
+                    AuxiliaryHeadWithDecoderWithoutInstantiatedHead(aux_decoder.name, aux_decoder_instance, aux_head_kwargs)
+                )
+        else: 
+            # By-passing entities not required for pre-training tasks.
+            decoder = None
+            aux_head_kwargs = None 
+            head_kwargs = None 
+            to_be_aux_decoders = None
+
+
+        return self._factory.build_model(task,
+                                         backbone,
+                                         decoder,
+                                         num_classes=num_classes,
+                                         necks=None,
+                                         aux_decoders=aux_decoders,
+                                         rescale=rescale,
+                                         **kwargs)
 
 
 class SMPDecoderForPrithviWrapper(nn.Module):
