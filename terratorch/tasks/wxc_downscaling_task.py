@@ -32,7 +32,7 @@ class WxCDownscalingTask(BaseTask):
         self.model_factory = get_factory(model_factory)
         self.model_config = model_config
         # TODO Unify it with self.hparams
-        self.hparams_ = self.model_config.to_dict()
+        self.extended_hparams = self.model_config.to_dict()
         super().__init__()
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
         self.test_loss_handler = LossHandler(self.test_metrics.prefix)
@@ -44,9 +44,9 @@ class WxCDownscalingTask(BaseTask):
         self.model: Model = self.model_factory.build_model(
             "regression", aux_decoders=None, model_config=self.model_config, **self.hparams["model_args"]
         )
-        if self.hparams_["freeze_backbone"]:
+        if self.extended_hparams["freeze_backbone"]:
             self.model.freeze_encoder()
-        if self.hparams_["freeze_decoder"]:
+        if self.extended_hparams["freeze_decoder"]:
             self.model.freeze_decoder()
 
     def configure_optimizers(
