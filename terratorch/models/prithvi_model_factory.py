@@ -15,6 +15,7 @@ from terratorch.models.model import (
     ModelFactory,
 )
 from terratorch.registry import MODEL_FACTORY_REGISTRY
+from terratorch.models.pixel_wise_model import PixelWiseModel
 
 PIXEL_WISE_TASKS = ["segmentation", "regression", "pretraining"]
 SCALAR_TASKS = ["classification"]
