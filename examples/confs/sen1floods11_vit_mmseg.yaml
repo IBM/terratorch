@@ -78,17 +78,17 @@ data:
       - 0.09772074
       - 0.07659938
     num_classes: 2
-
 model:
-  class_path: terratorch.tasks.SemanticSegmentationTask 
+  class_path: terratorch.tasks.SemanticSegmentationTask
   init_args:
     model_args:
-      decoder: FCNDecoder
-      backbone_pretrained: true
-      backbone_pretrained_cfg_overlay:
-        file: examples/Prithvi_100M.pt
+      decoder: FCNHead
+      backbone_pretrained: True
       backbone: prithvi_vit_100
+      backbone_pretrain_img_size: 512
+      decoder_num_convs: 4
       decoder_channels: 256
+      decoder_dropout_ratio: 0.1
       backbone_bands:
         - BLUE
         - GREEN
@@ -97,33 +97,18 @@ model:
         - SWIR_1
         - SWIR_2
       num_classes: 2
-      head_dropout: 0.1
-      decoder_num_convs: 4
-      head_channel_list:
-        - 256
       necks:
+        - name: ReshapeTokensToImage
         - name: SelectIndices
           indices:
             - -1
-        - name: ReshapeTokensToImage
     loss: ce
-    aux_heads:
-      - name: aux_head
-        decoder: FCNDecoder
-        decoder_args:
-          decoder_channels: 256
-          decoder_in_index: -1
-          decoder_num_convs: 2
-          head_dropout: 0.1
-          # head_channel_list:
-          #   - 64
-    aux_loss:
-      aux_head: 1.0
+    
     ignore_index: -1
     class_weights:
       - 0.3
       - 0.7
-    freeze_backbone: false
+    freeze_backbone: true
     freeze_decoder: false
     model_factory: EncoderDecoderFactory
 optimizer:
@@ -135,5 +120,3 @@ lr_scheduler:
   class_path: ReduceLROnPlateau
   init_args:
     monitor: val/loss
-
-

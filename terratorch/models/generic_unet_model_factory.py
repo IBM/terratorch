@@ -5,18 +5,22 @@ This is just an example of a possible structure to include SMP models
 Right now it always returns a UNET, but could easily be extended to many of the models provided by SMP.
 """
 
-from torch import nn
+import importlib
+
 import torch
-from terratorch.models.model import Model, ModelFactory, ModelOutput, register_factory
+from torch import nn
+
+from terratorch.models.model import Model, ModelFactory, ModelOutput
+from terratorch.models.utils import extract_prefix_keys
+from terratorch.registry import MODEL_FACTORY_REGISTRY
 from terratorch.tasks.segmentation_tasks import to_segmentation_prediction
 
-import importlib
 
 def freeze_module(module: nn.Module):
     for param in module.parameters():
         param.requires_grad_(False)
 
-@register_factory
+@MODEL_FACTORY_REGISTRY.register
 class GenericUnetModelFactory(ModelFactory):
     def build_model(
         self,
@@ -51,12 +55,12 @@ class GenericUnetModelFactory(ModelFactory):
         mmseg_encoders = importlib.import_module("mmseg.models.backbones")
 
         if backbone:
-            backbone_kwargs = _extract_prefix_keys(kwargs, "backbone_")
+            backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
             model = backbone
             model_kwargs = backbone_kwargs
             mmseg = mmseg_encoders
         elif decoder: 
-            decoder_kwargs = _extract_prefix_keys(kwargs, "decoder_")
+            decoder_kwargs, kwargs = extract_prefix_keys(kwargs, "decoder_")
             model = decoder
             model_kwargs = decoder_kwargs
             mmseg = mmseg_decoders
@@ -101,17 +105,3 @@ class GenericUnetModelWrapper(Model, nn.Module):
 
     def freeze_decoder(self):
         raise freeze_module(self.unet_model)
-
-
-def _extract_prefix_keys(d: dict, prefix: str) -> dict:
-    extracted_dict = {}
-    keys_to_del = []
-    for k, v in d.items():
-        if k.startswith(prefix):
-            extracted_dict[k.split(prefix)[1]] = v
-            keys_to_del.append(k)
-
-    for k in keys_to_del:
-        del d[k]
-
-    return extracted_dict

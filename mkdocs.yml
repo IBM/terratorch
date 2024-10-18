@@ -6,6 +6,7 @@ theme:
   features:
     - content.code.copy
     - content.code.select
+    - navigation.tabs
 plugins:
   - autorefs
   - mkdocstrings:
@@ -14,16 +15,24 @@ plugins:
           paths: [src] # search packages in the src folde
           options:
             show_root_heading: true
+extra:
+  version:
+    provider: mike
 
+site_url: https://ibm.github.io/terratorch/
 repo_url: https://github.com/IBM/terratorch
 nav:
   - index.md
-  - quick_start.md
-  - data.md
-  - tasks.md
-  - models.md
-  - architecture.md
-  - examples.md
+  - Getting Started: quick_start.md
+  - Components:
+    - Tasks: tasks.md
+    - Models: models.md
+    - Data: data.md
+    - Registries: registry.md
+    - EncoderDecoderFactory: encoder_decoder_factory.md
+  - Examples: examples.md
+  - FAQ: faq.md
+  - For Developers: architecture.md
 
 markdown_extensions:
   - pymdownx.highlight:

@@ -62,7 +62,7 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
                 parameter gives identifiers to input channels (bands) so that they can then be refered to by
                 output_bands. Can use the HLSBands enum, ints, int ranges, or strings. Defaults to None.
             output_bands (list[HLSBands | int | tuple[int, int] | str] | None): Bands that should be output by the
-            dataset as named by dataset_bands.
+                dataset as named by dataset_bands.
             constant_scale (float): Factor to multiply image values by. Defaults to 1.
             transform (Albumentations.Compose | None): Albumentations transform to be applied.
                 Should end with ToTensorV2(). If used through the generic_data_module,
@@ -129,6 +129,7 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
         # self.transform = transform if transform else ToTensorV2()
 
         import warnings
+
         import rasterio
         warnings.filterwarnings("ignore", category=rasterio.errors.NotGeoreferencedWarning)
 
