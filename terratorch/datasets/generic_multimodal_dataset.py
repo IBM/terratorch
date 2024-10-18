@@ -204,7 +204,6 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         elif transform is None:
             self.transform = to_tensor
         else:
-            # TODO: Test transforms per modality
             # Modality-specific transforms
             transform = {m: transform[m] if m in transform else default_transform
                          for m in self.modalities}
@@ -219,7 +218,15 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
     def __getitem__(self, index: int) -> dict[str, Any]:
         output = {}
-        for modality, file in self.samples[index].items():
+        if isinstance(index, tuple):
+            # Load only sampled modalities instead of all modalities
+            # (see sample_num_modalities in GenericMultiModalDataModule for details)
+            index, modalities = index
+            sample = {m: self.samples[index][m] for m in modalities}
+        else:
+            sample = self.samples[index]
+
+        for modality, file in sample.items():
             data = self._load_file(
                 file, nan_replace=self.no_label_replace if modality == 'mask' else self.no_data_replace).to_numpy()
 

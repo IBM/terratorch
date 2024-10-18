@@ -6,14 +6,14 @@ This module contains generic data modules for instantiation at runtime.
 import os
 from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 import albumentations as A
 import kornia.augmentation as K
 import numpy as np
 import torch
 from torch import Tensor
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, RandomSampler, BatchSampler, SequentialSampler
 from torchgeo.datamodules import NonGeoDataModule
 from torchgeo.transforms import AugmentationSequential
 
@@ -61,6 +61,42 @@ class Normalize(Callable):
         return batch
 
 
+class MultiModalBatchSampler(BatchSampler):
+    """
+    Sample a defined number of modalities per batch (see sample_num_modalities and sample_replace)
+    """
+    def __init__(self, modalities, sample_num_modalities, sample_replace, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.modalities = modalities
+        self.sample_num_modalities = sample_num_modalities
+        self.sample_replace = sample_replace
+
+    def __iter__(self) -> Iterator[list[int]]:
+        # Select sampled modalities per batch
+        sampled_modalities = np.random.choice(self.modalities, self.sample_num_modalities, replace=self.sample_replace)
+
+        if self.drop_last:
+            sampler_iter = iter(self.sampler)
+            while True:
+                try:
+                    batch = [(next(sampler_iter), sampled_modalities) for _ in range(self.batch_size)]
+                    yield batch
+                except StopIteration:
+                    break
+        else:
+            batch = [0] * self.batch_size
+            idx_in_batch = 0
+            for idx in self.sampler:
+                batch[idx_in_batch] = (idx, sampled_modalities)
+                idx_in_batch += 1
+                if idx_in_batch == self.batch_size:
+                    yield batch
+                    idx_in_batch = 0
+                    batch = [0] * self.batch_size
+            if idx_in_batch > 0:
+                yield batch[:idx_in_batch]
+
+
 class GenericMultiModalDataModule(NonGeoDataModule):
     """
     This is a generic datamodule class for instantiating data modules at runtime.
@@ -88,7 +124,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         val_split: Path | None = None,
         test_split: Path | None = None,
         ignore_split_file_extensions: bool = True,
-        allow_substring_split_file: bool = True, # TODO: Check if covered
+        allow_substring_split_file: bool = True,  # TODO: Check if covered
         dataset_bands: dict | None = None,
         output_bands: dict | None = None,
         predict_dataset_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
@@ -107,6 +143,8 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         drop_last: bool = True,
         pin_memory: bool = False,
         chunk_data: bool = False,
+        sample_num_modalities: int | None = None,
+        sample_replace: bool = False,
         **kwargs: Any,
     ) -> None:
         """Constructor
@@ -211,6 +249,8 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.no_label_replace = no_label_replace
         self.drop_last = drop_last
         self.pin_memory = pin_memory
+        self.sample_num_modalities = sample_num_modalities
+        self.sample_replace = sample_replace
 
         self.dataset_bands = dataset_bands
         self.output_bands = output_bands
@@ -359,12 +399,17 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         """
         dataset = self._valid_attribute(f"{split}_dataset", "dataset")
         batch_size = self._valid_attribute(f"{split}_batch_size", "batch_size")
+        batch_sampler = MultiModalBatchSampler(
+            self.modalities, self.sample_num_modalities, self.sample_replace,
+            RandomSampler(dataset) if split == "train" else SequentialSampler(dataset),
+            batch_size=batch_size, drop_last=split == "train" and self.drop_last)
+
         return DataLoader(
             dataset=dataset,
-            batch_size=batch_size,
-            shuffle=split == "train",
+            batch_sampler=batch_sampler,
+            # shuffle=split == "train",
             num_workers=self.num_workers,
             collate_fn=self.collate_fn,
-            drop_last=split == "train" and self.drop_last,
+            # drop_last=split == "train" and self.drop_last,
             pin_memory=self.pin_memory,
         )
