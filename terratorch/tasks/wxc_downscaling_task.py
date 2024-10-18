@@ -142,9 +142,6 @@ class WxCDownscalingTask(BaseTask):
     def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         x = batch["image"]
         file_names = batch["filename"]
-        
-        def model_forward(x):
-            return self(x).output
 
         y_hat: Tensor = self(x).output
         return y_hat, file_names
