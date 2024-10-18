@@ -1,6 +1,7 @@
 # Copyright contributors to the Terratorch project
 
 import typing
+from typing import Optional
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
@@ -11,6 +12,7 @@ from torch import Tensor, nn
 class ModelOutput:
     output: Tensor
     auxiliary_heads: dict[str, Tensor] = None
+    mask: Optional[Tensor] = None
 
 
 class Model(ABC, nn.Module):
