@@ -34,6 +34,7 @@ class WxCDownscalingTask(BaseTask):
         # TODO Unify it with self.hparams
         self.extended_hparams = self.model_config.to_dict()
         super().__init__()
+        print(type(self.hparams))
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
         self.test_loss_handler = LossHandler(self.test_metrics.prefix)
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)

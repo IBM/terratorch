@@ -52,5 +52,5 @@ class WxCModelFactory(ModelFactory):
         **kwargs,
     ) -> Model:
         module = get_finetune_model(kwargs['model_config'])
-        logger.info("Using wrapper.")
+
         return WxCModuleWrapper(module)

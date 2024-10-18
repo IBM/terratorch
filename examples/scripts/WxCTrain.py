@@ -129,7 +129,7 @@ if not len(files):
 # 
 
 print("This is our config:")
-print(config.to_dict())
+
 task = WxCDownscalingTask(model_args = {}, model_factory = 'WxCModelFactory', model_config=config, optimizer='AdamW', optimizer_hparams={'weight_decay': 0.05})
 
 
