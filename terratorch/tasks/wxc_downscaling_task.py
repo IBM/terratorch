@@ -81,7 +81,7 @@ class WxCDownscalingTask(BaseTask):
             self.criterion = nn.L1Loss(reduction="mean")
         elif loss == "rmse":
             # IMPORTANT! Root is done only after ignore index! Otherwise the mean taken is incorrect
-            self.criterion = RootLossWrapper(nn.MSELoss(reduction="none"), reduction="mean")
+            self.criterion = RootLossWrapper(nn.MSELoss(reduction="none"), reduction="none")
         elif loss == "huber":
             self.criterion = nn.HuberLoss(reduction="none")
         else:
