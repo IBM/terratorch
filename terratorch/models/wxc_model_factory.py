@@ -4,6 +4,7 @@ import timm
 import torch
 from torch import nn
 import os
+import typing 
 
 import terratorch.models.decoders as decoder_registry
 from terratorch.datasets import HLSBands
@@ -37,7 +38,7 @@ class WxCModuleWrapper(Model, nn.Module):
         mo = self.module.forward(x)
         return ModelOutput(mo)
     
-    def load_state_dict(self, state_dict: os.Mapping[str, torch.Any], strict: bool = True, assign: bool = False):
+    def load_state_dict(self, state_dict: os.Mapping[str, typing.Any], strict: bool = True, assign: bool = False):
 
         return self.module.load_state_dict(state_dict, strict, assign)
 
