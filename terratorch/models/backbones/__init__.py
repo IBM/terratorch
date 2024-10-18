@@ -4,3 +4,5 @@
 import terratorch.models.backbones.prithvi_swin
 import terratorch.models.backbones.prithvi_vit
 import terratorch.models.backbones.scalemae
+
+from terratorch.models.backbones.unet import UNet
