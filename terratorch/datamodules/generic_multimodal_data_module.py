@@ -4,6 +4,7 @@
 This module contains generic data modules for instantiation at runtime.
 """
 import os
+import logging
 from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any, Iterator
@@ -72,6 +73,9 @@ class MultiModalBatchSampler(BatchSampler):
         self.sample_replace = sample_replace
 
     def __iter__(self) -> Iterator[list[int]]:
+        """
+        Code similar to BatchSampler but samples tuples in the format (idx, ['m1', 'm2', ...])
+        """
         # Select sampled modalities per batch
         sampled_modalities = np.random.choice(self.modalities, self.sample_num_modalities, replace=self.sample_replace)
 
@@ -115,6 +119,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         stds: dict,
         task: str | None = None,
         num_classes: int | None = None,
+        img_grep: str | dict | None = None,
         label_grep: str | None = None,
         train_label_data_root: Path | None = None,
         val_label_data_root: Path | None = None,
@@ -223,8 +228,11 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         super().__init__(dataset_class, batch_size, num_workers, **kwargs)
         self.num_classes = num_classes
         self.modalities = modalities
-        self.img_grep = {m: kwargs.get('{m}_grep', '*') for m in modalities}
-        self.label_grep = label_grep
+        if isinstance(img_grep, dict):
+            self.img_grep = {m: img_grep[m] if m in img_grep else '*' for m in modalities}
+        else:
+            self.img_grep = {m: img_grep or '*' for m in modalities}
+        self.label_grep = label_grep or '*'
         self.train_root = train_data_root
         self.val_root = val_data_root
         self.test_root = test_data_root
@@ -326,6 +334,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
             )
+            logging.info(f'Train dataset: {len(self.train_dataset)}')
         if stage in ["fit", "validate"]:
             self.val_dataset = self.dataset_class(
                 data_root=self.val_root,
@@ -347,6 +356,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
             )
+            logging.info(f'Val dataset: {len(self.val_dataset)}')
         if stage in ["test"]:
             self.test_dataset = self.dataset_class(
                 data_root=self.test_root,
@@ -368,6 +378,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
             )
+            logging.info(f'Test dataset: {len(self.test_dataset)}')
         if stage in ["predict"] and self.predict_root:
             self.predict_dataset = self.dataset_class(
                 data_root=self.predict_root,
@@ -383,6 +394,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
             )
+            logging.info(f'Predict dataset: {len(self.predict_dataset)}')
 
     def _dataloader_factory(self, split: str) -> DataLoader[dict[str, Tensor]]:
         """Implement one or more PyTorch DataLoaders.
@@ -399,17 +411,25 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         """
         dataset = self._valid_attribute(f"{split}_dataset", "dataset")
         batch_size = self._valid_attribute(f"{split}_batch_size", "batch_size")
-        batch_sampler = MultiModalBatchSampler(
-            self.modalities, self.sample_num_modalities, self.sample_replace,
-            RandomSampler(dataset) if split == "train" else SequentialSampler(dataset),
-            batch_size=batch_size, drop_last=split == "train" and self.drop_last)
+        if self.sample_num_modalities:
+            # Custom batch sampler for sampling modalities per batch
+            batch_sampler = MultiModalBatchSampler(
+                self.modalities, self.sample_num_modalities, self.sample_replace,
+                RandomSampler(dataset) if split == "train" else SequentialSampler(dataset),
+                batch_size=batch_size,
+                drop_last=split == "train" and self.drop_last
+            )
+        else:
+            batch_sampler = BatchSampler(
+                RandomSampler(dataset) if split == "train" else SequentialSampler(dataset),
+                batch_size=batch_size,
+                drop_last=split == "train" and self.drop_last
+            )
 
         return DataLoader(
             dataset=dataset,
             batch_sampler=batch_sampler,
-            # shuffle=split == "train",
             num_workers=self.num_workers,
             collate_fn=self.collate_fn,
-            # drop_last=split == "train" and self.drop_last,
             pin_memory=self.pin_memory,
         )

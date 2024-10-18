@@ -26,6 +26,21 @@ from terratorch.datasets.utils import (HLSBands, default_transform, filter_valid
 from terratorch.datasets.transforms import MultiModalTransforms
 
 
+def load_files(root, grep):
+    if isinstance(root, dict):
+        files = {}
+        for m, m_root in root.items():
+            if isinstance(m_root, list):
+                # Iterate over a list of data folders
+                dir_lists = [glob.glob(os.path.join(r, grep[m])) for r in m_root]
+                files[m] = sorted([p for l in dir_lists for p in l])  # Concatenate
+            else:
+                files[m] = sorted(glob.glob(os.path.join(m_root, grep[m])))
+        return files
+    elif isinstance(root, str):
+        return sorted(glob.glob(os.path.join(root, grep)))
+
+
 class GenericMultimodalDataset(NonGeoDataset, ABC):
     """
     This is a generic dataset class to be used for instantiating datasets from arguments.
@@ -34,8 +49,8 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
     def __init__(
         self,
-        data_root: Path,
-        label_data_root: Path | None = None,
+        data_root: Path | list[Path],
+        label_data_root: Path | list[Path] | None = None,
         image_grep: str | None = "*",
         label_grep: str | None = "*",
         split: Path | None = None,
@@ -95,20 +110,17 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
         self.modalities = list(data_root.keys())
         assert 'mask' not in self.modalities, "Modality cannot be called 'mask'."
-        self.label_data_root = label_data_root
-        # Get files per modality
-        if image_grep:
-            self.image_files = {m: sorted(glob.glob(os.path.join(m_root, image_grep[m])))
-                                for m, m_root in data_root.items()}
+        self.image_files = load_files(data_root, image_grep)
+
+        if label_data_root:
+            self.segmentation_mask_files = load_files(label_data_root, label_grep)
         else:
-            self.image_files = {m: sorted(glob.glob(m_root)) for m, m_root in data_root.items()}
+            # No labels
+            self.segmentation_mask_files = None
+
         self.constant_scale = {m: constant_scale[m] or 1. for m in self.modalities}
         self.no_data_replace = no_data_replace
         self.no_label_replace = no_label_replace
-        if self.label_data_root:
-            self.segmentation_mask_files = sorted(glob.glob(os.path.join(label_data_root, label_grep)))
-        else:
-            self.segmentation_mask_files = None
         self.reduce_zero_label = reduce_zero_label
         self.expand_temporal_dimension = expand_temporal_dimension
 
@@ -146,7 +158,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             else:
                 valid_files = [os.path.splitext(os.path.basename(file))[0]
                                for file in self.image_files[self.modalities[0]]]
-            logging.info(f'Found {len(valid_files)} file names.')
+
 
         # Get multi-modal samples in form: {'modality': path, ..., 'mask': path}
         self.samples = []
