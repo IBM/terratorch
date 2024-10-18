@@ -1,18 +1,18 @@
 # Copyright contributors to the Terratorch project
 
+import importlib.util
+import itertools
+import json
 import logging  # noqa: I001
 import os
 import shutil
+import sys
+import tempfile
 import warnings
+from copy import deepcopy
 from datetime import timedelta
 from pathlib import Path
 from typing import Any, Optional
-import tempfile
-import itertools
-import yaml
-import json
-from jsonargparse import set_dumper
-from copy import deepcopy
 
 import albumentations
 import cv2  # noqa: F401
@@ -22,17 +22,17 @@ import torch
 
 # Allows classes to be referenced using only the class name
 import torchgeo.datamodules
+import yaml
 from albumentations.pytorch import ToTensorV2  # noqa: F401
+from jsonargparse import set_dumper
+from lightning.fabric.utilities.cloud_io import get_filesystem
 from lightning.fabric.utilities.types import _PATH  # noqa: F401
 from lightning.pytorch import LightningDataModule, LightningModule, Trainer  # noqa: F401
 from lightning.pytorch.callbacks import BasePredictionWriter, ModelCheckpoint, RichProgressBar
 from lightning.pytorch.cli import ArgsType, LightningArgumentParser, LightningCLI, SaveConfigCallback  # noqa: F401
 from torchgeo.trainers import BaseTask
 
-from lightning.fabric.utilities.cloud_io import get_filesystem
-
 import terratorch.datamodules
-from terratorch.datasets.utils import HLSBands
 import terratorch.tasks  # noqa: F401
 from terratorch.datamodules import (  # noqa: F401
     GenericNonGeoClassificationDataModule,
@@ -45,6 +45,7 @@ from terratorch.datasets.transforms import (
     SelectBands,  # noqa: F401
     UnflattenTemporalFromChannels,  # noqa: F401
 )
+from terratorch.datasets.utils import HLSBands
 
 # GenericNonGeoRegressionDataModule,
 from terratorch.models import PrithviModelFactory  # noqa: F401
@@ -55,6 +56,7 @@ from terratorch.tasks import (
     SemanticSegmentationTask,  # noqa: F401
 )
 
+CUSTOM_MODULES_DIR_NAME = "custom_modules"
 
 def flatten(list_of_lists):
     return list(itertools.chain.from_iterable(list_of_lists))
@@ -360,6 +362,15 @@ def build_lightning_cli(
                 UserWarning,
                 stacklevel=1,
             )
+
+    # import any custom modules
+    current_working_dir = os.getcwd()
+    custom_modules_path = os.path.join(current_working_dir, CUSTOM_MODULES_DIR_NAME)
+    if os.path.exists(custom_modules_path) and os.path.isdir(custom_modules_path):
+        # Add 'custom_modules' folder to sys.path
+        sys.path.append(os.getcwd())
+        logging.info(f"Found {CUSTOM_MODULES_DIR_NAME}")
+        importlib.import_module(CUSTOM_MODULES_DIR_NAME)
 
     return MyLightningCLI(
         model_class=BaseTask,
