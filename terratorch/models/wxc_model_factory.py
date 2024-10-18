@@ -1,4 +1,5 @@
 # Copyright contributors to the Terratorch project
+import logging
 import timm
 import torch
 from torch import nn
@@ -15,18 +16,20 @@ from terratorch.models.model import (
 from granitewxc.utils.config import get_config
 from granitewxc.utils.downscaling_model import get_finetune_model
 
+logger = logging.getLogger(__name__)
+
 class WxCModuleWrapper(Model, nn.Module):
     def __init__(self, module: nn.Module) -> None:
         super().__init__()
         self.module = module
         
     def freeze_encoder(self):
-        print("freeze encoder")
+        logger.info("freeze encoder")
         for param in self.module.backbone.parameters():
             param.requires_grad = False
 
     def freeze_decoder(self):
-        print("freeze decoder")
+        logger.info("freeze decoder")
         for param in self.module.head.parameters():
             param.requires_grad = False
 
@@ -48,5 +51,5 @@ class WxCModelFactory(ModelFactory):
         **kwargs,
     ) -> Model:
         module = get_finetune_model(kwargs['model_config'])
-        print("Using wrapper.")
+        logger.info("Using wrapper.")
         return WxCModuleWrapper(module)
