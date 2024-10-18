@@ -57,13 +57,13 @@ data:
 model:
     # Platform independent config
     num_static_channels: 7
-    embed_dim: 2560
+    embed_dim: 256 #0
     token_size:
       - 1
       - 1
-    n_blocks_encoder: 12
+    n_blocks_encoder: 6 #12
     mlp_multiplier: 4
-    n_heads: 16
+    n_heads: 8 #16
     dropout_rate: 0.0
     drop_path: 0.05
     
@@ -82,7 +82,7 @@ model:
     encoder_decoder_conv_channels: 128
     freeze_backbone: True
     freeze_decoder: False
-
+    ignore_index: -1
 
 
 job_id: inference-test
