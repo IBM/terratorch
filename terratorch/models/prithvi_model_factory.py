@@ -13,6 +13,7 @@ from terratorch.models.model import (
     AuxiliaryHead,
     Model,
     ModelFactory,
+    AuxiliaryHeadWithDecoderWithoutInstantiatedHead
 )
 from terratorch.registry import MODEL_FACTORY_REGISTRY
 from terratorch.models.pixel_wise_model import PixelWiseModel
@@ -248,7 +249,7 @@ def _build_appropriate_model(
             backbone,
             decoder,
             head_kwargs,
-            prepare_features_for_image_model=prepare_features_for_image_model,
+            #prepare_features_for_image_model=prepare_features_for_image_model,
             rescale=rescale,
             auxiliary_heads=auxiliary_heads,
         )
