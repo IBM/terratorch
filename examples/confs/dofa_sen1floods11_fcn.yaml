@@ -174,7 +174,7 @@ model:
     class_weights:
       - 0.3
       - 0.7
-    freeze_backbone: true
+    freeze_backbone: false
     freeze_decoder: false
     model_factory: EncoderDecoderFactory
     tiled_inference_parameters:
