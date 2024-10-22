@@ -15,7 +15,7 @@ from terratorch.models.scalar_output_model import ScalarOutputModel
 from terratorch.models.utils import extract_prefix_keys
 from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY, MODEL_FACTORY_REGISTRY
 
-PIXEL_WISE_TASKS = ["segmentation", "regression"]
+PIXEL_WISE_TASKS = ["segmentation", "regression", "pretraining"]
 SCALAR_TASKS = ["classification"]
 SUPPORTED_TASKS = PIXEL_WISE_TASKS + SCALAR_TASKS
 
@@ -118,6 +118,7 @@ class EncoderDecoderFactory(ModelFactory):
         try:
             out_channels = backbone.out_channels
         except AttributeError as e:
+            print(backbone)
             msg = "backbone must have out_channels attribute"
             raise AttributeError(msg) from e
 
