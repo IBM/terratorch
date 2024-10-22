@@ -169,7 +169,7 @@ class EncoderDecoderPreTrainingTask(BaseTask):
         self.tiled_inference_parameters = tiled_inference_parameters
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
-        self.model_factory = get_factory(model_factory)
+        self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
         super().__init__()
         self.train_loss_handler = LossHandler(self.train_metrics.prefix, multiple_inputs=True)
         self.test_loss_handler = LossHandler(self.test_metrics.prefix, multiple_inputs=True)
