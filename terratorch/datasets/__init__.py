@@ -31,7 +31,7 @@ from terratorch.datasets.sen4agrinet import Sen4AgriNet
 
 # GenericNonGeoRegressionDataset,
 from terratorch.datasets.sen1floods11_lat_lon import Sen1Floods11NonGeo
-from terratorch.datasets.utils import HLSBands
+from terratorch.datasets.utils import HLSBands, OpticalBands, SARBands
 
 # TorchGeo RasterDatasets
 from terratorch.datasets.wsf import WSF2019, WSFEvolution
@@ -65,4 +65,6 @@ __all__ = (
     "WSFEvolution",
     "HLSL30",
     "HLSS30",
+    "OpticalBands",
+    "SARBands",
 )
