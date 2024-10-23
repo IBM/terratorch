@@ -37,14 +37,6 @@ waves_list= {
   "VV-VH": 3.75
 }
 
-# from collections.abc import Callable
-# dofa_model_registry: dict[str, Callable] = {}
-# def register_dofa_model(constructor: Callable):
-#     dofa_model_registry[constructor.__name__] = constructor
-#     return constructor
-
-
-
 
 class DOFAEncoderWrapper(nn.Module):
 
@@ -102,44 +94,44 @@ def get_wavelenghts(model_bands):
     
 
 @TERRATORCH_BACKBONE_REGISTRY.register
-def dofa_small_patch16_224(model_bands, input_size = 224, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = None, **kwargs):
+def dofa_small_patch16_224(model_bands, input_size = 224, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = None, out_indices: list | None = None, **kwargs):
     model = dofa.dofa_small_patch16_224(**kwargs)
     input_size = kwargs["img_size"] if "img_size" in kwargs else 224
     if pretrained:
         model = load_dofa_weights(model, ckpt_data, weights, input_size)
     wavelengths = get_wavelenghts(model_bands)
     
-    return DOFAEncoderWrapper(model, wavelengths, weights)
+    return DOFAEncoderWrapper(model, wavelengths, weights, out_indices)
 
 @TERRATORCH_BACKBONE_REGISTRY.register
-def dofa_base_patch16_224(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = dofa.DOFABase16_Weights.DOFA_MAE, **kwargs):
+def dofa_base_patch16_224(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = dofa.DOFABase16_Weights.DOFA_MAE, out_indices: list | None = None, **kwargs):
     model = dofa.dofa_base_patch16_224(**kwargs)
     input_size = kwargs["img_size"] if "img_size" in kwargs else 224
     if pretrained:
         model = load_dofa_weights(model, ckpt_data, weights, input_size)
     wavelengths = get_wavelenghts(model_bands)
     
-    return DOFAEncoderWrapper(model, wavelengths, weights)
+    return DOFAEncoderWrapper(model, wavelengths, weights, out_indices)
 
 @TERRATORCH_BACKBONE_REGISTRY.register
-def dofa_large_patch16_224(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = dofa.DOFALarge16_Weights.DOFA_MAE, **kwargs):
+def dofa_large_patch16_224(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = dofa.DOFALarge16_Weights.DOFA_MAE, out_indices: list | None = None, **kwargs):
     model = dofa.dofa_large_patch16_224(**kwargs)
     input_size = kwargs["img_size"] if "img_size" in kwargs else 224
     if pretrained:
         model = load_dofa_weights(model, ckpt_data, weights, input_size)
     wavelengths = get_wavelenghts(model_bands)
     
-    return DOFAEncoderWrapper(model, wavelengths, weights)
+    return DOFAEncoderWrapper(model, wavelengths, weights, out_indices)
 
 @TERRATORCH_BACKBONE_REGISTRY.register
-def dofa_huge_patch16_224(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = None, **kwargs):
+def dofa_huge_patch16_224(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = None, out_indices: list | None = None, **kwargs):
     model = dofa.dofa_huge_patch16_224(**kwargs)
     input_size = kwargs["img_size"] if "img_size" in kwargs else 224
     if pretrained:
         model = load_dofa_weights(model, ckpt_data, weights, input_size)
     wavelengths = get_wavelenghts(model_bands)
     
-    return DOFAEncoderWrapper(model, wavelengths, weights)
+    return DOFAEncoderWrapper(model, wavelengths, weights, out_indices)
 
 def load_dofa_weights(model: nn.Module, ckpt_data: str | None = None,  weights: Weights | None = None, input_size = 224) -> nn.Module:
     state_dict = model.state_dict()
