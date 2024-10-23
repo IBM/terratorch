@@ -15,7 +15,7 @@ from terratorch.models.scalar_output_model import ScalarOutputModel
 from terratorch.models.utils import extract_prefix_keys
 from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY, MODEL_FACTORY_REGISTRY
 
-PIXEL_WISE_TASKS = ["segmentation", "regression"]
+PIXEL_WISE_TASKS = ["segmentation", "regression", "pretraining"]
 SCALAR_TASKS = ["classification"]
 SUPPORTED_TASKS = PIXEL_WISE_TASKS + SCALAR_TASKS
 
@@ -41,6 +41,10 @@ def _get_decoder_and_head_kwargs(
             msg = "Decoder already includes a head, but `head_` arguments were specified. These should be removed."
             raise ValueError(msg)
         return decoder, head_kwargs, False
+
+    # For pretraining tasks, decoder and its attributes are really None
+    if decoder == None:
+        return None, None, None
 
     # if its not an nn module, check if the class includes a head
     # depending on that, pass num classes to either head kwrags or decoder
@@ -118,6 +122,7 @@ class EncoderDecoderFactory(ModelFactory):
         try:
             out_channels = backbone.out_channels
         except AttributeError as e:
+            print(backbone)
             msg = "backbone must have out_channels attribute"
             raise AttributeError(msg) from e
 
