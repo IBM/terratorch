@@ -50,6 +50,7 @@ class SwinEncoderWrapper(nn.Module):
         self.out_channels = [x for i, x in enumerate(self.out_channels) if (i in self.out_indices) | (i == (len(self.out_channels)-1)) & (-1 in self.out_indices)]
 
     def forward(self, x: List[torch.Tensor]) -> torch.Tensor:
+        
         outs = []
         for i, layer in enumerate(self.swin_model.features):
             x = layer(x)
@@ -57,7 +58,7 @@ class SwinEncoderWrapper(nn.Module):
                 outs.append(x)
             elif (i == (len(self.swin_model.features)-1)) & (-1 in self.out_indices):
                 outs.append(x)
-                
+        
         return tuple(outs)
 
 look_up_table = {
@@ -116,6 +117,7 @@ def load_model(load_function, swin_meta, **kwargs):
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_t_sentinel2_mi_ms(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_T_Weights.SENTINEL2_MI_MS_SATLAS, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_t, swin_v2_t_meta, **kwargs)
     if pretrained:
         model = load_swin_weights(model, model_bands, ckpt_data, weights)
@@ -123,96 +125,107 @@ def satlas_swin_t_sentinel2_mi_ms(model_bands, pretrained = False, ckpt_data: st
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_t_sentinel2_mi_rgb(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_T_Weights.SENTINEL2_MI_RGB_SATLAS, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_t, swin_v2_t_meta, **kwargs)
     if pretrained:
         model = load_swin_weights(model, model_bands, ckpt_data, weights)
-    return SatlasEncoderWrapper(model, swin_v2_t_meta, weights, out_indices)
+    return SwinEncoderWrapper(model, swin_v2_t_meta, weights, out_indices)
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_t_sentinel2_si_ms(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_T_Weights.SENTINEL2_SI_MS_SATLAS, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_t, swin_v2_t_meta, **kwargs)
     if pretrained:
         model = load_swin_weights(model, model_bands, ckpt_data, weights)
-    return SatlasEncoderWrapper(model, swin_v2_t_meta, weights, out_indices)
+    return SwinEncoderWrapper(model, swin_v2_t_meta, weights, out_indices)
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_t_sentinel2_si_rgb(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_T_Weights.SENTINEL2_SI_RGB_SATLAS, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_t, swin_v2_t_meta, **kwargs)
     if pretrained:
         model = load_swin_weights(model, model_bands, ckpt_data, weights)
-    return SatlasEncoderWrapper(model, swin_v2_t_meta, weights, out_indices)
+    return SwinEncoderWrapper(model, swin_v2_t_meta, weights, out_indices)
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_b_sentinel2_mi_ms(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_B_Weights.SENTINEL2_MI_MS_SATLAS, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_b, swin_v2_b_meta, **kwargs)
     if pretrained:
         model = load_swin_weights(model, model_bands, ckpt_data, weights)
-    return SatlasEncoderWrapper(model, swin_v2_b_meta, weights, out_indices)
+    return SwinEncoderWrapper(model, swin_v2_b_meta, weights, out_indices)
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_b_sentinel2_mi_rgb(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_B_Weights.SENTINEL2_MI_RGB_SATLAS, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_b, swin_v2_b_meta, **kwargs)
     if pretrained:
         model = load_swin_weights(model, model_bands, ckpt_data, weights)
-    return SatlasEncoderWrapper(model, swin_v2_b_meta, weights, out_indices)
+    return SwinEncoderWrapper(model, swin_v2_b_meta, weights, out_indices)
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_b_sentinel2_si_ms(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_B_Weights.SENTINEL2_SI_MS_SATLAS, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_b, swin_v2_b_meta, **kwargs)
     if pretrained:
         model = load_swin_weights(model, model_bands, ckpt_data, weights)
-    return SatlasEncoderWrapper(model, swin_v2_b_meta, weights, out_indices)
+    return SwinEncoderWrapper(model, swin_v2_b_meta, weights, out_indices)
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_b_sentinel2_si_rgb(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_B_Weights.SENTINEL2_SI_RGB_SATLAS, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_b, swin_v2_b_meta, **kwargs)
     if pretrained:
         model = load_swin_weights(model, model_bands, ckpt_data, weights)
-    return SatlasEncoderWrapper(model, swin_v2_b_meta, weights, out_indices)
+    return SwinEncoderWrapper(model, swin_v2_b_meta, weights, out_indices)
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_b_naip_mi_rgb(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_B_Weights.NAIP_RGB_MI_SATLAS, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_b, swin_v2_b_meta, **kwargs)
     if pretrained:
         model = load_swin_weights(model, model_bands, ckpt_data, weights)
-    return SatlasEncoderWrapper(model, swin_v2_b_meta, weights, out_indices)
+    return SwinEncoderWrapper(model, swin_v2_b_meta, weights, out_indices)
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_b_naip_si_rgb(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_B_Weights.NAIP_RGB_SI_SATLAS, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_b, swin_v2_b_meta, **kwargs)
     if pretrained:
         model = load_swin_weights(model, model_bands, ckpt_data, weights)
-    return SatlasEncoderWrapper(model, swin_v2_b_meta, weights, out_indices)
+    return SwinEncoderWrapper(model, swin_v2_b_meta, weights, out_indices)
    
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_b_landsat_mi_ms(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_B_Weights.LANDSAT_MI_SATLAS, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_b, swin_v2_b_meta, **kwargs)
     if pretrained:
         model = load_swin_weights(model, model_bands, ckpt_data, weights)
-    return SatlasEncoderWrapper(model, swin_v2_b_meta, weights, out_indices)
+    return SwinEncoderWrapper(model, swin_v2_b_meta, weights, out_indices)
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_b_landsat_mi_rgb(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_B_Weights.LANDSAT_SI_SATLAS, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_b, swin_v2_b_meta, **kwargs)
     if pretrained:
         model = load_swin_weights(model, model_bands, ckpt_data, weights)
-    return SatlasEncoderWrapper(model, swin_v2_b_meta, weights, out_indices)
+    return SwinEncoderWrapper(model, swin_v2_b_meta, weights, out_indices)
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_b_sentinel1_mi(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_B_Weights.SENTINEL1_MI_SATLAS, out_indices: list | None = None, **kwargs):
-    
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_b, swin_v2_b_meta, **kwargs)
     if pretrained:
         model = load_swin_weights(model, model_bands, ckpt_data, weights)
-    return SatlasEncoderWrapper(model, swin_v2_b_meta, weights, out_indices)
+    return SwinEncoderWrapper(model, swin_v2_b_meta, weights, out_indices)
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_b_sentinel1_si(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_B_Weights.SENTINEL1_SI_SATLAS, out_indices: list | None = None, **kwargs):
-    
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_b, swin_v2_b_meta, **kwargs)
     if pretrained:
         model = load_swin_weights(model, model_bands, ckpt_data, weights)
-    return SatlasEncoderWrapper(model, swin_v2_b_meta, weights, out_indices)
+    return SwinEncoderWrapper(model, swin_v2_b_meta, weights, out_indices)
 
 
 def load_swin_weights(model: nn.Module, model_bands, ckpt_data: str, weights: Weights, input_size: int = 224, custom_weight_proj: str = "features.0.0.weight") -> nn.Module:
