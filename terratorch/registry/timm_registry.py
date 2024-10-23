@@ -34,11 +34,14 @@ class TimmRegistry(Set):
         Use prefixes ending with _ to forward to a specific source
         """
         try:
+            # workaround to define a default value for features_only.
+            if "features_only" not in constructor_kwargs:
+                constructor_kwargs["features_only"] = True
+
             return TimmBackboneWrapper(
                 timm.create_model(
                     name,
                     *constructor_args,
-                    features_only=True,
                     **constructor_kwargs,
                 )
             )

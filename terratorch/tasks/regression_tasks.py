@@ -182,13 +182,13 @@ class EncoderDecoderPreTrainingTask(BaseTask):
         if len(imgs.shape) < 5:
             imgs = imgs[:,:,None, ...]
 
-        imgs_patch = self.model.encoder.patchify(imgs)
+        imgs_patch = self.model.encoder._timm_module.patchify(imgs)
 
         return imgs_patch
 
     def unpatchify(self, imgs_patch:Tensor) -> Tensor:
 
-        imgs = self.model.encoder.unpatchify(imgs_patch)
+        imgs = self.model.encoder._timm_module.unpatchify(imgs_patch)
 
         return imgs
 

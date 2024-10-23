@@ -17,6 +17,7 @@ from terratorch.models.model import (
 )
 from terratorch.registry import MODEL_FACTORY_REGISTRY
 from terratorch.models.pixel_wise_model import PixelWiseModel
+from .encoder_decoder_factory import _get_backbone 
 
 PIXEL_WISE_TASKS = ["segmentation", "regression", "pretraining"]
 SCALAR_TASKS = ["classification"]
@@ -126,13 +127,16 @@ class PrithviModelFactory(ModelFactory):
             else:
                 features_only = True
 
+            #backbone_kwargs["features_only"] = features_only
             # Instantiating backbone
+            backbone = _get_backbone(backbone, **backbone_kwargs)
+            """
             backbone: nn.Module = timm.create_model(
                 backbone,
                 features_only=features_only,
                 **backbone_kwargs,
             )
-
+            """
         # These steps are necessary just when a fine-tuning task is 
         # performed (segmentation and regression).
         if task in ["segmentation", "regression", "classification"]:
@@ -182,7 +186,6 @@ class PrithviModelFactory(ModelFactory):
             aux_head_kwargs = None 
             head_kwargs = None 
             to_be_aux_decoders = None
-
 
         return self._factory.build_model(task,
                                          backbone,

@@ -42,6 +42,10 @@ def _get_decoder_and_head_kwargs(
             raise ValueError(msg)
         return decoder, head_kwargs, False
 
+    # For pretraining tasks, decoder and its attributes are really None
+    if decoder == None:
+        return None, None, None
+
     # if its not an nn module, check if the class includes a head
     # depending on that, pass num classes to either head kwrags or decoder
     decoder_includes_head = DECODER_REGISTRY.find_registry(decoder).includes_head
