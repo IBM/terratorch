@@ -14,7 +14,7 @@ from terratorch.datasets.utils import OpticalBands, SARBands
 from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
 
 from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
-
+import torch
 
 class ResNetEncoderWrapper(nn.Module):
 
@@ -28,7 +28,7 @@ class ResNetEncoderWrapper(nn.Module):
             Forward pass for embeddings with specified indices.
     """
 
-    def __init__(self, resnet_model, weights=None) -> None:
+    def __init__(self, resnet_model, resnet_meta, weights=None, out_indices=None) -> None:
         """
         Args:
             dofa_model (DOFA): The decoder module to be wrapped.
@@ -40,7 +40,9 @@ class ResNetEncoderWrapper(nn.Module):
         self.out_channels = resnet_model.feature_info
 
     def forward(self, x: List[torch.Tensor]) -> torch.Tensor:
-        return self.resnet_model(x)
+        x = self.resnet_model.forward_intermediates(x, intermediates_only=True)
+        
+        return 
 
 look_up_table = {
     "B01": "COASTAL_AEROSOL",
@@ -64,15 +66,15 @@ look_up_table = {
 }
 
 resnet18_meta = {
-
+    "layers": (2, 2, 2, 2)
     }
 
 resnet50_meta = {
-    
+    "layers": (3, 4, 6, 3)
 }
 
 resnet152_meta = {
-
+     "layers": (3, 8, 36, 3)
 }
 
 
@@ -366,7 +368,7 @@ def satlas_resnet152_sentinel2_si_ms_satlas(model_bands, pretrained = False, ckp
     return ResNetEncoderWrapper(model, resnet152_meta, weights, out_indices)
 
 @TERRATORCH_BACKBONE_REGISTRY.register
-def satlas_resnet152_sentinel2_si_rgb_satlas(**kwargsmodel_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None =  ResNet152_Weights.SENTINEL2_SI_RGB_SATLAS, out_indices: list | None = None, **kwargs):
+def satlas_resnet152_sentinel2_si_rgb_satlas(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None =  ResNet152_Weights.SENTINEL2_SI_RGB_SATLAS, out_indices: list | None = None, **kwargs):
     model = resnet152(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
