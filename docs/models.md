@@ -97,3 +97,9 @@ class SMPModelWrapper(Model, nn.Module):
     def freeze_decoder(self):
         pass
 ```
+
+# Custom modules with CLI
+
+Custom modules must be in the import path in order to be registered in the appropriate registries. 
+
+In order to do this without modifying the code when using the CLI, you may place your modules under a `custom_modules` directory. This must be in the directory from which you execute terratorch.
