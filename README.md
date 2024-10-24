@@ -35,7 +35,8 @@ To get started, check out the [quick start guide](https://ibm.github.io/terrator
 
 ## For developers
 
-Check out the [architecture overview](https://ibm.github.io/terratorch/architecture)
+Check out the [architecture overview](https://ibm.github.io/terratorch/architecture).
+
 A simple hint for any contributor. If you want to met the GitHub DCO checks, just do your commits as below:
 ```
 git commit -s -m <message>
