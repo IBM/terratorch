@@ -74,7 +74,7 @@ class PixelWiseModel(Model, SegmentationModel):
         freeze_module(self.encoder)
 
     def freeze_decoder(self):
-        freeze_module(self.encoder)
+        freeze_module(self.decoder)
         freeze_module(self.head)
 
     # TODO: do this properly

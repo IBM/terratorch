@@ -69,4 +69,73 @@ BasicBackbone(
 Adding a new decoder can be done in the same way with the `TERRATORCH_DECODER_REGISTRY`.
 
 !!! info
+
     All decoders will be passed the channel_list as the first argument for initialization.
+
+    To pass your own path from where to load the weights with the PrithviModelFactory, you can make use of timm's `pretrained_cfg_overlay`.
+    E.g. to pass a local path, you can pass the parameter `backbone_pretrained_cfg_overlay = {"file": "<local_path>"}` to the model factory.
+    
+    Besides `file`, you can also pass `url`, `hf_hub_id`, amongst others. Check timm's documentation for full details.
+
+:::terratorch.models.backbones.select_patch_embed_weights
+
+## Decoders
+### :::terratorch.models.decoders.fcn_decoder
+### :::terratorch.models.decoders.identity_decoder
+### :::terratorch.models.decoders.upernet_decoder
+
+## Heads
+### :::terratorch.models.heads.regression_head
+### :::terratorch.models.heads.segmentation_head
+### :::terratorch.models.heads.classification_head
+
+## Auxiliary Heads
+### :::terratorch.models.model.AuxiliaryHead
+
+## Model Output
+### :::terratorch.models.model.ModelOutput
+
+## Model Factory
+### :::terratorch.models.PrithviModelFactory
+### :::terratorch.models.SMPModelFactory
+
+# Adding new model types
+Adding new model types is as simple as creating a new factory that produces models. See for instance the example below for a potential `SMPModelFactory`
+```python
+from terratorch.models.model import register_factory
+
+@register_factory
+class SMPModelFactory(ModelFactory):
+    def build_model(
+        self,
+        task: str,
+        backbone: str | nn.Module,
+        decoder: str | nn.Module,
+        in_channels: int,
+        **kwargs,
+    ) -> Model:
+       
+        model = smp.Unet(encoder_name="resnet34", encoder_weights=None, in_channels=in_channels, classes=1)
+        return SMPModelWrapper(model)
+
+@register_factory
+class SMPModelWrapper(Model, nn.Module):
+    def __init__(self, smp_model) -> None:
+        super().__init__()
+        self.smp_model = smp_model
+
+    def forward(self, *args, **kwargs):
+        return ModelOutput(self.smp_model(*args, **kwargs).squeeze(1))
+
+    def freeze_encoder(self):
+        pass
+
+    def freeze_decoder(self):
+        pass
+```
+
+# Custom modules with CLI
+
+Custom modules must be in the import path in order to be registered in the appropriate registries. 
+
+In order to do this without modifying the code when using the CLI, you may place your modules under a `custom_modules` directory. This must be in the directory from which you execute terratorch.
