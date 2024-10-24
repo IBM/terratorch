@@ -21,13 +21,13 @@ trainer:
       init_args:
         monitor: val/loss
         patience: 100
-  max_epochs: 2
+  max_epochs: 1
   check_val_every_n_epoch: 1
   log_every_n_steps: 20
   enable_checkpointing: true
   default_root_dir: tests/
 data:
-  class_path: GenericNonGeoSegmentationDataModule
+  class_path: GenericNonGeoPixelwiseRegressionDataModule
   init_args:
     batch_size: 2
     num_workers: 4
@@ -89,17 +89,18 @@ data:
     - 1067.641
     no_label_replace: -1
     no_data_replace: 0
-    num_classes: 2
 model:
-  class_path: terratorch.tasks.SemanticSegmentationTask
+  class_path: terratorch.tasks.PixelwiseRegressionTask
   init_args:
     model_args:
-      decoder: "ASPPSegmentationHead"
+      backbone: "UNet"
+      backbone_in_channels: 6
+      backbone_base_channels: 16
+      decoder: "ASPPRegressionHead"
       decoder_dilations: [1, 6, 12, 18]
       decoder_channels: 256
-      decoder_in_channels: 6
-      decoder_num_classes: 2
-      in_channels: 6
+      decoder_in_channels: 16
+      decoder_out_channels: 1
       bands:
         - BLUE
         - GREEN
@@ -111,8 +112,7 @@ model:
       head_dropout: 0.5708022831486758
       head_final_act: torch.nn.ReLU
       head_learned_upscale_layers: 2
-      num_classes: 2
-    loss: ce
+    loss: rmse
     #aux_heads:
     #  - name: aux_head
     #    decoder: IdentityDecoder

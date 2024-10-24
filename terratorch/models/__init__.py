@@ -21,5 +21,6 @@ __all__ = (
     "TimmModelFactory",
     "AuxiliaryHead",
     "AuxiliaryHeadWithDecoderWithoutInstantiatedHead",
+    "UNet",
     "WxCModelFactory",
 )
