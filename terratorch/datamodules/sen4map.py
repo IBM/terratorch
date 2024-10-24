@@ -23,7 +23,7 @@ class Sen4MapLucasDataModule(pl.LightningDataModule):
             val_hdf5_keys_path = None,
             **kwargs
             ):
-        super(Sen4MapLucasDataModule).__init__()
+        
         self.prepare_data_per_node = False
         self._log_hyperparams = None
         self.allow_zero_length_dataloader_with_multiple_devices = False

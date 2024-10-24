@@ -13,34 +13,46 @@ import pickle
 
 
 class Sen4MapDatasetMonthlyComposites(Dataset):
-    #  This dictionary maps the LUCAS classes to LULC classes. This class currently does not accommodate the crop classification task of sen4map.
-    d={'A10':1, 'A11':1, 'A12':1, 'A13':1, 
-    'A20':1, 'A21':1, 'A30':1, 
-    'A22':2, 'F10':2, 'F20':2, 
-    'F30':2, 'F40':2,
-    'E10':3, 'E20':3, 'E30':3, 'B50':3, 'B51':3, 'B52':3,
-    'B53':3, 'B54':3, 'B55':3,
-    'B10':4, 'B11':4, 'B12':4, 'B13':4, 'B14':4, 'B15':4,
-    'B16':4, 'B17':4, 'B18':4, 'B19':4, 'B10':4, 'B20':4, 
-    'B21':4, 'B22':4, 'B23':4, 'B30':4, 'B31':4, 'B32':4,
-    'B33':4, 'B34':4, 'B35':4, 'B30':4, 'B36':4, 'B37':4,
-    'B40':4, 'B41':4, 'B42':4, 'B43':4, 'B44':4, 'B45':4,
-    'B70':4, 'B71':4, 'B72':4, 'B73':4, 'B74':4, 'B75':4,
-    'B76':4, 'B77':4, 'B80':4, 'B81':4, 'B82':4, 'B83':4,
-    'B84':4, 
-    'BX1':4, 'BX2':4,
-    'C10':5, 'C20':6, 'C21':6, 'C22':6,
-    'C23':6, 'C30':6, 'C31':6, 'C32':6,
-    'C33':6, 
-    'CXX1':6, 'CXX2':6, 'CXX3':6, 'CXX4':6, 'CXX5':6,
-    'CXX5':6, 'CXX6':6, 'CXX7':6, 'CXX8':6, 'CXX9':6,
-    'CXXA':6, 'CXXB':6, 'CXXC':6, 'CXXD':6, 'CXXE':6,
-    'D10':7, 'D20':7, 'D10':7,
-    'G10':8, 'G11':8, 'G12':8, 'G20':8, 'G21':8, 'G22':8, 'G30':8, 
-    'G40':8,
-    'G50':8,
-    'H10':9, 'H11':9, 'H12':9, 'H11':9,'H20':9, 'H21':9,
-    'H22':9, 'H23':9, '': 10}
+    #  This dictionary maps the LUCAS classes to Land-cover classes.
+    land_use_classification_map={'A10':0, 'A11':0, 'A12':0, 'A13':0, 
+    'A20':0, 'A21':0, 'A30':0, 
+    'A22':1, 'F10':1, 'F20':1, 
+    'F30':1, 'F40':1,
+    'E10':2, 'E20':2, 'E30':2, 'B50':2, 'B51':2, 'B52':2,
+    'B53':2, 'B54':2, 'B55':2,
+    'B10':3, 'B11':3, 'B12':3, 'B13':3, 'B14':3, 'B15':3,
+    'B16':3, 'B17':3, 'B18':3, 'B19':3, 'B10':3, 'B20':3, 
+    'B21':3, 'B22':3, 'B23':3, 'B30':3, 'B31':3, 'B32':3,
+    'B33':3, 'B34':3, 'B35':3, 'B30':3, 'B36':3, 'B37':3,
+    'B40':3, 'B41':3, 'B42':3, 'B43':3, 'B44':3, 'B45':3,
+    'B70':3, 'B71':3, 'B72':3, 'B73':3, 'B74':3, 'B75':3,
+    'B76':3, 'B77':3, 'B80':3, 'B81':3, 'B82':3, 'B83':3,
+    'B84':3, 
+    'BX1':3, 'BX2':3,
+    'C10':4, 'C20':5, 'C21':5, 'C22':5,
+    'C23':5, 'C30':5, 'C31':5, 'C32':5,
+    'C33':5, 
+    'CXX1':5, 'CXX2':5, 'CXX3':5, 'CXX4':5, 'CXX5':5,
+    'CXX5':5, 'CXX6':5, 'CXX7':5, 'CXX8':5, 'CXX9':5,
+    'CXXA':5, 'CXXB':5, 'CXXC':5, 'CXXD':5, 'CXXE':5,
+    'D10':6, 'D20':6, 'D10':6,
+    'G10':7, 'G11':7, 'G12':7, 'G20':7, 'G21':7, 'G22':7, 'G30':7, 
+    'G40':7,
+    'G50':7,
+    'H10':8, 'H11':8, 'H12':8, 'H11':8,'H20':8, 'H21':8,
+    'H22':8, 'H23':8, '': 9}
+    #  This dictionary maps the LUCAS classes to crop classes.
+    crop_classification_map = {
+        "B11":0, "B12":0, "B13":0, "B14":0, "B15":0, "B16":0, "B17":0, "B18":0, "B19":0,  # Cereals
+        "B21":1, "B22":1, "B23":1,  # Root Crops
+        "B34":2, "B35":2, "B36":2, "B37":2,  # Nonpermanent Industrial Crops
+        "B31":3, "B32":3, "B33":3, "B41":3, "B42":3, "B43":3, "B44":3, "B45":3,  # Dry Pulses, Vegetables and Flowers
+        "B51":4, "B52":4, "B53":4, "B54":4,  # Fodder Crops
+        "F10":5, "F20":5, "F30":5, "F40":5,  # Bareland
+        "B71":6, "B72":6, "B73":6, "B74":6, "B75":6, "B76":6, "B77":6, 
+        "B81":6, "B82":6, "B83":6, "B84":6, "C10":6, "C20":6, "C30":6, "D10":6, "D20":6,  # Woodland and Shrubland
+        "B55":7, "E10":7, "E20":7, "E30":7,  # Grassland
+    }
     
     def __init__(
             self,
@@ -55,7 +67,8 @@ class Sen4MapDatasetMonthlyComposites(Dataset):
             resize_antialiasing = True,
             reverse_tile = False,
             reverse_tile_size = 3,
-            save_keys_path = None
+            save_keys_path = None,
+            classification_map = "land-use"
             ):
         self.h5data = h5py_file_object
         if h5data_keys is None:
@@ -73,6 +86,12 @@ class Sen4MapDatasetMonthlyComposites(Dataset):
         if input_bands and dataset_bands:
             self.input_channels = [dataset_bands.index(band_ind) for band_ind in input_bands if band_ind in dataset_bands]
         else: self.input_channels = None
+
+        classification_maps = {"land-use": Sen4MapDatasetMonthlyComposites.land_use_classification_map,
+                               "crops": Sen4MapDatasetMonthlyComposites.crop_classification_map}
+        if classification_map not in classification_maps.keys():
+            raise ValueError(f"Provided classification_map of: {classification_map}, is not from the list of valid ones: {classification_maps}")
+        self.classification_map = classification_maps[classification_map]
 
         self.resize = resize
         self.resize_to = resize_to
@@ -159,7 +178,7 @@ class Sen4MapDatasetMonthlyComposites(Dataset):
             Image = resize(Image, size=self.resize_to, interpolation=self.resize_interpolation, antialias=self.resize_antialiasing)
 
         Label = im.attrs['lc1']
-        Label = Sen4MapDatasetMonthlyComposites.d[Label] - 1
+        Label = self.classification_map[Label]
         Label = np.array(Label)
         Label = Label.astype('float32')
 
