@@ -25,6 +25,9 @@ from terratorch.datasets.m_pv4ger import MPv4gerNonGeo
 from terratorch.datasets.m_pv4ger_seg import MPv4gerSegNonGeo
 from terratorch.datasets.m_SA_crop_type import MSACropTypeNonGeo
 from terratorch.datasets.m_so2sat import MSo2SatNonGeo
+from terratorch.datasets.open_sentinel_map import OpenSentinelMap
+from terratorch.datasets.pastis import PASTIS
+from terratorch.datasets.sen4agrinet import Sen4AgriNet
 
 # GenericNonGeoRegressionDataset,
 from terratorch.datasets.sen1floods11 import Sen1Floods11NonGeo
@@ -32,6 +35,9 @@ from terratorch.datasets.utils import HLSBands
 
 # TorchGeo RasterDatasets
 from terratorch.datasets.wsf import WSF2019, WSFEvolution
+
+# Generic Classification Dataset
+from terratorch.datasets.sen4map import Sen4MapDatasetMonthlyComposites
 
 __all__ = (
     "GenericNonGeoSegmentationDataset",
@@ -42,6 +48,7 @@ __all__ = (
     "FireScarsHLS",
     "FireScarsSegmentationMask",
     "Sen1Floods11NonGeo",
+    "Sen4MapDatasetMonthlyComposites",
     "HLSBands",
     "MEuroSATNonGeo",
     "MBigEarthNonGeo",
@@ -55,6 +62,9 @@ __all__ = (
     "MPv4gerSegNonGeo",
     "MSACropTypeNonGeo",
     "MNeonTreeNonGeo",
+    "OpenSentinelMap",
+    "PASTIS",
+    "Sen4AgriNet",
     "WSF2019",
     "WSFEvolution",
     "HLSL30",

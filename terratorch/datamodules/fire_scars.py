@@ -1,5 +1,6 @@
 # Copyright contributors to the Terratorch project
 
+import os
 from typing import Any
 
 import kornia.augmentation as K  # noqa: N812
@@ -41,44 +42,31 @@ class FireScarsNonGeoDataModule(NonGeoDataModule):
         )
         self.aug = AugmentationSequential(K.Normalize(MEANS, STDS), data_keys=["image", "mask"])
 
-    def setup(self, stage: str) -> None:
-        if stage in ["fit"]:
-            self.train_dataset = self.dataset_class(
-                "/dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/training/"
-            )
-        if stage in ["fit", "validate"]:
-            self.val_dataset = self.dataset_class(
-                "/dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/validation/"
-            )
-        if stage in ["test"]:
-            self.test_dataset = self.dataset_class(
-                "/dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/validation/"
-            )
-
 
 class FireScarsDataModule(GeoDataModule):
     """Geo Fire Scars data module implementation that merges input data with ground truth segmentation masks."""
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, data_root: str, **kwargs: Any) -> None:
         super().__init__(FireScarsSegmentationMask, 4, 224, 100, 0, **kwargs)
         self.train_aug = AugmentationSequential(K.RandomCrop(224, 224), K.Normalize(MEANS, STDS))
         self.aug = AugmentationSequential(K.Normalize(MEANS, STDS))
+        self.data_root = data_root
 
     def setup(self, stage: str) -> None:
         self.images = FireScarsHLS(
-            "/dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/training/"
+            os.path.join(self.data_root, "training/")
         )
         self.labels = FireScarsSegmentationMask(
-            "/dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/training/"
+            os.path.join(self.data_root, "training/")
         )
         self.dataset = self.images & self.labels
         self.train_aug = AugmentationSequential(K.RandomCrop(224, 224), K.normalize())
 
         self.images_test = FireScarsHLS(
-            "/dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/validation/"
+            os.path.join(self.data_root, "validation/")
         )
         self.labels_test = FireScarsSegmentationMask(
-            "/dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/validation/"
+            os.path.join(self.data_root, "validation/")
         )
         self.val_dataset = self.images_test & self.labels_test
 

@@ -7,7 +7,7 @@ include = ["terratorch*"]
 
 [project]
 name = "terratorch"
-version = "0.99.3"
+version = "0.99.5"
 description = "TerraTorch - A model training toolkit for geospatial tasks"
 license = { "text" = "Apache License, Version 2.0" }
 readme = "README.md"
@@ -20,39 +20,38 @@ authors = [
 classifiers = [
   "Development Status :: 2 - Pre-Alpha",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.7",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: Implementation :: CPython",
-  "Programming Language :: Python :: Implementation :: PyPy",
 ]
+
 dependencies = [
-  "torch>=2.1.0",
+  "torch>=2.1.0, <=2.5.0",
   "torchvision>=0.16.0",
   "torchgeo>=0.6.0",
   "rioxarray>=0.15.0",
   # see issue #64
   "albumentations>=1.3.1, <=1.4.10",
+  "albucore<=0.0.16",
   "rasterio>=1.3.9",
   "torchmetrics<=1.3.1",
   "geopandas>=0.14.2",
   "lightly>=1.4.25",
   "h5py>=3.10.0",
-  "geobench>=1.0.0",
   "mlflow>=2.12.1",
   # broken due to https://github.com/Lightning-AI/pytorch-lightning/issues/19977
-  "lightning>=2, <=2.2.5",
+  "lightning[pytorch-extra]>=2,!=2.3.*",
+  "segmentation-models-pytorch>=0.3"
+  # Dependencies not available on PyPI
 ]
 
 [project.optional-dependencies]
 dev = [
   "black",
   "mkdocs-material",
-  "mkdocstrings[python]"
+  "mkdocstrings[python]",
+  "mike" # for building docs with versions
 ]
-
 test = [
   "coverage",
   "pytest"
@@ -63,6 +62,15 @@ mmseg = [
   "ftfy",
   "regex",
   "openmim"
+]
+
+wxc = [
+  "prithviwxc @ git+https://github.com/NASA-IMPACT/Prithvi-WxC.git",
+  "granitewxc @ git+https://github.com/IBM/granite-wxc.git"
+]
+
+geobench = [
+  "geobench @ git+https://github.com/fmartiescofet/geo-bench.git" # pull from fork until depenedencies for geobench are relaxed
 ]
 
 [project.urls]
@@ -159,7 +167,7 @@ exclude_lines = [
 ]
 
 [tool.bumpver]
-current_version = "0.99.3"
+current_version = "0.99.4"
 version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
 commit_message = "Bump version {old_version} -> {new_version}"
 commit = true

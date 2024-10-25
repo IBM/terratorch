@@ -2,6 +2,8 @@
 
 from torch import Tensor, nn
 
+from terratorch.registry import TERRATORCH_DECODER_REGISTRY
+
 
 class Norm2d(nn.Module):
     def __init__(self, embed_dim):
@@ -31,7 +33,7 @@ def _conv_upscale_block(input_channels, output_channels, kernel_size, stride, di
         nn.GELU(),
     )
 
-
+@TERRATORCH_DECODER_REGISTRY.register
 class FCNDecoder(nn.Module):
     """Fully Convolutional Decoder"""
 
@@ -69,7 +71,7 @@ class FCNDecoder(nn.Module):
         self.convs = nn.Sequential(*convs)
 
     @property
-    def output_embed_dim(self):
+    def out_channels(self):
         return self.channels
 
     def forward(self, x: list[Tensor]):

@@ -22,6 +22,7 @@ from terratorch.datasets import (
 )
 from terratorch.io.file import load_from_file_or_attribute
 
+from .utils import check_dataset_stackability
 
 def wrap_in_compose_is_list(transform_list):
     # set check shapes to false because of the multitemporal case
@@ -242,6 +243,9 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
         """
         dataset = self._valid_attribute(f"{split}_dataset", "dataset")
         batch_size = self._valid_attribute(f"{split}_batch_size", "batch_size")
+        
+        batch_size = check_dataset_stackability(dataset, batch_size)
+
         return DataLoader(
             dataset=dataset,
             batch_size=batch_size,
