@@ -6,4 +6,4 @@ from terratorch.models.decoders.satmae_head import SatMAEHead, SatMAEHeadViT
 from terratorch.models.decoders.upernet_decoder import UperNetDecoder
 from terratorch.models.decoders.aspp_head import ASPPSegmentationHead, ASPPRegressionHead
 
-__all__ = ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "SatMAEHead", "SatMAEHeadViT", "ASPPSegmentationHead", "ASPPRegressionHead"]
+__all__ = ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "SatMAEHead", "SatMAEHeadViT", "SMPDecoderWrapper", "ASPPSegmentationHead", "ASPPRegressionHead"]

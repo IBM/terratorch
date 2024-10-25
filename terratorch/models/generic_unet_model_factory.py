@@ -5,18 +5,22 @@ This is just an example of a possible structure to include SMP models
 Right now it always returns a UNET, but could easily be extended to many of the models provided by SMP.
 """
 
-from torch import nn
+import importlib
+
 import torch
-from terratorch.models.model import Model, ModelFactory, ModelOutput, register_factory
+from torch import nn
+
+from terratorch.models.model import Model, ModelFactory, ModelOutput
+from terratorch.models.utils import extract_prefix_keys
+from terratorch.registry import MODEL_FACTORY_REGISTRY
 from terratorch.tasks.segmentation_tasks import to_segmentation_prediction
 
-import importlib
 
 def freeze_module(module: nn.Module):
     for param in module.parameters():
         param.requires_grad_(False)
 
-@register_factory
+@MODEL_FACTORY_REGISTRY.register
 class GenericUnetModelFactory(ModelFactory):
     def _check_model_availability(self, model, builtin_engine, engine, **model_kwargs):
 
@@ -164,3 +168,4 @@ def _extract_prefix_keys(d: dict, prefix: str) -> dict:
         del d[k]
 
     return extracted_dict
+
