@@ -1,135 +1,277 @@
-from datetime import datetime
+import glob
+import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
+
+import albumentations as A
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import rioxarray
 import torch
 from einops import rearrange
-import albumentations as A
+from matplotlib.figure import Figure
+from matplotlib.patches import Rectangle
+from torch import Tensor
+from torchgeo.datasets import NonGeoDataset
+from xarray import DataArray
 
-from terratorch.datasets import GenericNonGeoSegmentationDataset
-from terratorch.datasets.utils import HLSBands
+from terratorch.datasets.utils import default_transform, filter_valid_files, validate_bands, clip_image
 
 
-class MultiTemporalCropClassification(GenericNonGeoSegmentationDataset):
-    """
-    Dataset class for multi-temporal crop classification.
-    Inherits from GenericNonGeoSegmentationDataset and adds temporal coordinates support.
-    """
+class MultiTemporalCropClassification(NonGeoDataset):
+    """NonGeo dataset implementation for multi-temporal crop classification."""
+
+    all_band_names = (
+        "BLUE",
+        "GREEN",
+        "RED",
+        "NIR_NARROW",
+        "SWIR_1",
+        "SWIR_2",
+    )
+
+    class_names = (
+        "Natural Vegetation",
+        "Forest",
+        "Corn",
+        "Soybeans",
+        "Wetlands",
+        "Developed / Barren",
+        "Open Water",
+        "Winter Wheat",
+        "Alfalfa",
+        "Fallow / Idle Cropland",
+        "Cotton",
+        "Sorghum",
+        "Other",
+    )
+
+    rgb_bands = ("RED", "GREEN", "BLUE")
+
+    BAND_SETS = {"all": all_band_names, "rgb": rgb_bands}
+
+    num_classes = 13
+    time_steps = 3
+    splits = {"train": "training", "val": "validation"}  # Only train and val splits available
+    metadata_file_name = "chip_df_final.csv"
+    col_name = "chip_id"
+    date_columns = ["first_img_date", "middle_img_date", "last_img_date"]
 
     def __init__(
         self,
-        data_root: Path,
-        num_classes: int,
-        image_grep: str = "*_merged.tif",
-        label_grep: str = "*.mask.tif",
-        split: Path | None = None,
-        ignore_split_file_extensions: bool = True,
-        allow_substring_split_file: bool = True,
-        rgb_indices: list[int] | None = None,
-        dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
-        output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
-        constant_scale: float = 1,
+        data_root: str,
+        split: str = "train",
+        bands: Sequence[str] = BAND_SETS["all"],
         transform: A.Compose | None = None,
         no_data_replace: float | None = None,
-        expand_temporal_dimension: bool = False,
-        metadata_file: Path | str | None = None,
-        metadata_columns: list[str] | None = None,
-        metadata_index_col: str | None = "chip_id",
-        reduce_zero_label: bool = False,
+        no_label_replace: int | None = None,
+        expand_temporal_dimension: bool = True,
+        reduce_zero_label: bool = True,
+        use_metadata: bool = False,
     ) -> None:
-        super().__init__(
-            data_root=data_root,
-            num_classes=num_classes,
-            label_data_root=data_root,
-            image_grep=image_grep,
-            label_grep=label_grep,
-            split=split,
-            ignore_split_file_extensions=ignore_split_file_extensions,
-            allow_substring_split_file=allow_substring_split_file,
-            rgb_indices=rgb_indices,
-            dataset_bands=dataset_bands,
-            output_bands=output_bands,
-            constant_scale=constant_scale,
-            transform=transform,
-            no_data_replace=no_data_replace,
-            no_label_replace=None,
-            expand_temporal_dimension=expand_temporal_dimension,
+        """Constructor
+
+        Args:
+            data_root (str): Path to the data root directory.
+            split (str): one of 'train' or 'val'.
+            bands (list[str]): Bands that should be output by the dataset. Defaults to all bands.
+            transform (A.Compose | None): Albumentations transform to be applied.
+                Should end with ToTensorV2(). If used through the corresponding data module,
+                should not include normalization. Defaults to None, which applies ToTensorV2().
+            no_data_replace (float | None): Replace nan values in input images with this value.
+                If None, does no replacement. Defaults to None.
+            no_label_replace (int | None): Replace nan values in label with this value.
+                If none, does no replacement. Defaults to None.
+            expand_temporal_dimension (bool): Go from shape (time*channels, h, w) to (channels, time, h, w).
+                Defaults to True.
+            reduce_zero_label (bool): Subtract 1 from all labels. Useful when labels start from 1 instead of the
+                expected 0. Defaults to True.
+            use_metadata (bool): whether to return metadata info (time and location).
+        """
+        super().__init__()
+        if split not in self.splits:
+            raise ValueError(f"Incorrect split '{split}', please choose one of {self.splits}.")
+        split_name = self.splits[split]
+        self.split = split
+
+        validate_bands(bands, self.all_band_names)
+        self.bands = bands
+        self.band_indices = np.asarray([self.all_band_names.index(b) for b in bands])
+        self.data_root = Path(data_root)
+
+        data_dir = self.data_root / f"{split_name}_chips"
+        self.image_files = sorted(glob.glob(os.path.join(data_dir, "*_merged.tif")))
+        self.segmentation_mask_files = sorted(glob.glob(os.path.join(data_dir, "*.mask.tif")))
+        split_file = data_dir / f"{split_name}_data.txt"
+
+        with open(split_file) as f:
+            split = f.readlines()
+        valid_files = {rf"{substring.strip()}" for substring in split}
+        self.image_files = filter_valid_files(
+            self.image_files,
+            valid_files=valid_files,
+            ignore_extensions=True,
+            allow_substring=True,
+        )
+        self.segmentation_mask_files = filter_valid_files(
+            self.segmentation_mask_files,
+            valid_files=valid_files,
+            ignore_extensions=True,
+            allow_substring=True,
         )
 
-        self.metadata_file = metadata_file
-        self.metadata_columns = metadata_columns
-        self.metadata_index_col = metadata_index_col
+        self.no_data_replace = no_data_replace
+        self.no_label_replace = no_label_replace
         self.reduce_zero_label = reduce_zero_label
-
-        if metadata_file:
-            self._load_metadata()
+        self.expand_temporal_dimension = expand_temporal_dimension
+        self.use_metadata = use_metadata
+        self.metadata = None
+        if self.use_metadata:
+            metadata_file = self.data_root / self.metadata_file_name
+            self.metadata = pd.read_csv(metadata_file)
             self._build_image_metadata_mapping()
-        else:
-            self.metadata_df = None
 
-    def _load_metadata(self):
-        """Load metadata CSV file."""
-        self.metadata_df = pd.read_csv(self.metadata_file)
-
-        if self.metadata_index_col not in self.metadata_df.columns:
-            msg = f"Metadata file must contain column '{self.metadata_index_col}'"
-            raise ValueError(msg)
+        # If no transform is given, apply only to transform to torch tensor
+        self.transform = transform if transform else default_transform
 
     def _build_image_metadata_mapping(self):
         """Build a mapping from image filenames to metadata indices."""
-        self.image_to_metadata_index = {}
+        self.image_to_metadata_index = dict()
 
         for idx, image_file in enumerate(self.image_files):
             image_filename = Path(image_file).name
             image_id = image_filename.replace("_merged.tif", "").replace(".tif", "")
-            metadata_indices = self.metadata_df.index[
-                self.metadata_df[self.metadata_index_col] == image_id
-            ].tolist()
+            metadata_indices = self.metadata.index[self.metadata[self.col_name] == image_id].tolist()
             self.image_to_metadata_index[idx] = metadata_indices[0]
 
+    def __len__(self) -> int:
+        return len(self.image_files)
+
+    def _get_date(self, row: pd.Series) -> torch.Tensor:
+        """Extract and format temporal coordinates (T, date) from metadata."""
+        temporal_coords = []
+        for col in self.date_columns:
+            date_str = row[col]
+            date = pd.to_datetime(date_str, format="%Y-%m-%d")
+            temporal_coords.append([date.year, date.dayofyear - 1])
+
+        return torch.tensor(temporal_coords, dtype=torch.float32)
+
+    def _get_coords(self, image: DataArray) -> torch.Tensor:
+        px = image.x.shape[0] // 2
+        py = image.y.shape[0] // 2
+
+        # get center point to reproject to lat/lon
+        point = image.isel(band=0, x=slice(px, px + 1), y=slice(py, py + 1))
+        point = point.rio.reproject('epsg:4326')
+
+        lat_lon = np.asarray([point.y[0], point.x[0]])
+
+        return torch.tensor(lat_lon, dtype=torch.float32)
 
     def __getitem__(self, index: int) -> dict[str, Any]:
-        image_file = self.image_files[index]
-        mask_file = str(image_file).replace("_merged.tif", ".mask.tif")
+        image = self._load_file(self.image_files[index], nan_replace=self.no_data_replace)
 
-        image = self._load_file(image_file, nan_replace=self.no_data_replace).to_numpy().transpose(1, 2, 0)
-        mask = self._load_file(mask_file, nan_replace=self.no_label_replace).to_numpy()[0]
+        location_coords, temporal_coords = None, None
+        if self.use_metadata:
+            location_coords = self._get_coords(image)
+            metadata_idx = self.image_to_metadata_index.get(index, None)
+            if metadata_idx is not None:
+                row = self.metadata.iloc[metadata_idx]
+                temporal_coords = self._get_date(row)
+
+        # to channels last
+        image = image.to_numpy()
+        if self.expand_temporal_dimension:
+            image = rearrange(image, "(channels time) h w -> channels time h w", channels=len(self.bands))
+        image = np.moveaxis(image, 0, -1)
+
+        # filter bands
+        image = image[..., self.band_indices]
 
         output = {
-            "image": image.astype(np.float32) * self.constant_scale,
-            "mask": mask,
+            "image": image.astype(np.float32),
+            "mask": self._load_file(
+                self.segmentation_mask_files[index], nan_replace=self.no_label_replace).to_numpy()[0],
         }
 
         if self.reduce_zero_label:
             output["mask"] -= 1
-
         if self.transform:
             output = self.transform(**output)
-
         output["mask"] = output["mask"].long()
-        output["filename"] = str(image_file)
 
-        if self.metadata_df is not None:
-            metadata_idx = self.image_to_metadata_index.get(index, None)
-            if metadata_idx is not None:
-                row = self.metadata_df.iloc[metadata_idx]
-                temporal_coords = self._get_temporal_coords(row)
-                output["temporal_coords"] = temporal_coords
-
-                if self.metadata_columns:
-                    metadata = row[self.metadata_columns].to_dict()
-                    output.update(metadata)
+        if self.use_metadata:
+            output["location_coords"] = location_coords
+            output["temporal_coords"] = temporal_coords
 
         return output
 
-    def _get_temporal_coords(self, row) -> torch.Tensor:
-        """Extract and format temporal coordinates (T, date) from metadata."""
-        date_columns = ["first_img_date", "middle_img_date", "last_img_date"]
-        temporal_coords = []
-        for idx, col in enumerate(date_columns):
-            date_str = row[col]
-            date = datetime.strptime(date_str, "%Y-%m-%d")  # noqa: DTZ007
-            temporal_coords.append([idx, date.timestamp()])
-        temporal_coords = np.array(temporal_coords, dtype=np.float32)
-        return torch.from_numpy(temporal_coords)
+    def _load_file(self, path: Path, nan_replace: int | float | None = None) -> DataArray:
+        data = rioxarray.open_rasterio(path, masked=True)
+        if nan_replace is not None:
+            data = data.fillna(nan_replace)
+        return data
+
+    def plot(self, sample: dict[str, Tensor], suptitle: str | None = None) -> Figure:
+        """Plot a sample from the dataset.
+
+        Args:
+            sample: a sample returned by :meth:`__getitem__`
+            suptitle: optional string to use as a suptitle
+
+        Returns:
+            a matplotlib Figure with the rendered sample
+        """
+        num_images = self.time_steps + 2
+
+        rgb_indices = [self.bands.index(band) for band in self.rgb_bands]
+        if len(rgb_indices) != 3:
+            raise ValueError("Dataset doesn't contain some of the RGB bands")
+
+        images = sample["image"]
+        if not self.expand_temporal_dimension:
+            images = rearrange(images, "(channels time) h w -> channels time h w", channels=len(self.bands))
+
+        # RGB -> channels-last
+        images = images[rgb_indices, ...].permute(1, 2, 3, 0).numpy()
+        mask = sample["mask"].numpy()
+
+        images = [clip_image(img) for img in images]
+
+        if "prediction" in sample:
+            prediction = sample["prediction"]
+            num_images += 1
+        else:
+            prediction = None
+
+        fig, ax = plt.subplots(1, num_images, figsize=(12, 5), layout="compressed")
+
+        ax[0].axis("off")
+
+        norm = mpl.colors.Normalize(vmin=0, vmax=self.num_classes - 1)
+
+        for i, img in enumerate(images):
+            ax[i+1].axis("off")
+            ax[i+1].title.set_text(f"T{i}")
+            ax[i+1].imshow(img)
+
+        ax[self.time_steps+1].axis("off")
+        ax[self.time_steps+1].title.set_text("Ground Truth Mask")
+        ax[self.time_steps+1].imshow(mask, cmap="jet", norm=norm)
+
+        if prediction:
+            ax[self.time_steps+2].title.set_text("Predicted Mask")
+            ax[self.time_steps+2].imshow(prediction, cmap="jet", norm=norm)
+
+        cmap = plt.get_cmap("jet")
+        legend_data = [[i, cmap(norm(i)), self.class_names[i]] for i in range(self.num_classes)]
+        handles = [Rectangle((0, 0), 1, 1, color=tuple(v for v in c)) for k, c, n in legend_data]
+        labels = [n for k, c, n in legend_data]
+        ax[0].legend(handles, labels, loc="center")
+        if suptitle is not None:
+            plt.suptitle(suptitle)
+
+        return fig

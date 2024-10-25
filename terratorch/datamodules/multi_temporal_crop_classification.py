@@ -1,211 +1,104 @@
-from pathlib import Path
 from typing import Any
 
 import albumentations as A
-import torch
+from torch import Tensor
+from torch.utils.data import DataLoader
+from torchgeo.datamodules import NonGeoDataModule
 
-from terratorch.datamodules import GenericNonGeoSegmentationDataModule
-from terratorch.datasets import (
-    HLSBands,
-    MultiTemporalCropClassification,
-)
-from terratorch.io.file import load_from_file_or_attribute
-
-
-def wrap_in_compose_is_list(transform_list):
-    # Set check_shapes to False because of the multi-temporal case
-    return A.Compose(transform_list, is_check_shapes=False) if isinstance(transform_list, list) else transform_list
+from terratorch.datamodules.generic_pixel_wise_data_module import Normalize
+from terratorch.datamodules.utils import wrap_in_compose_is_list
+from terratorch.datasets import MultiTemporalCropClassification
 
 
-class Normalize:
-    def __init__(self, means, stds):
-        self.means = means
-        self.stds = stds
+MEANS = {
+    "BLUE": 494.905781,
+    "GREEN": 815.239594,
+    "RED": 924.335066,
+    "NIR_NARROW": 2968.881459,
+    "SWIR_1": 2634.621962,
+    "SWIR_2": 1739.579917,
+}
 
-    def __call__(self, batch):
-        image = batch["image"]
-        if len(image.shape) == 5:
-            # Shape: (batch_size, channels, time, height, width)
-            means = torch.tensor(self.means, device=image.device).view(1, -1, 1, 1, 1)
-            stds = torch.tensor(self.stds, device=image.device).view(1, -1, 1, 1, 1)
-        elif len(image.shape) == 4:
-            # Shape: (batch_size, channels, height, width)
-            means = torch.tensor(self.means, device=image.device).view(1, -1, 1, 1)
-            stds = torch.tensor(self.stds, device=image.device).view(1, -1, 1, 1)
-        else:
-            msg = f"Expected image to have 4 or 5 dimensions, but got {len(image.shape)}"
-            raise Exception(msg)
-        batch["image"] = (image - means) / stds
-        return batch
+STDS = {
+    "BLUE": 284.925432,
+    "GREEN": 357.84876,
+    "RED": 575.566823,
+    "NIR_NARROW": 896.601013,
+    "SWIR_1": 951.900334,
+    "SWIR_2": 921.407808,
+}
 
 
-class MultiTemporalCropClassificationDataModule(GenericNonGeoSegmentationDataModule):
-    """
-    DataModule for multi-temporal crop classification.
-    Inherits from GenericNonGeoSegmentationDataModule and modifies only what's necessary.
-    """
+class MultiTemporalCropClassificationDataModule(NonGeoDataModule):
+    """NonGeo datamodule implementation for multi-temporal crop classification."""
 
     def __init__(
         self,
-        batch_size: int,
-        num_workers: int,
-        data_root: Path,
-        img_grep: str,
-        label_grep: str,
-        means: list[float] | str,
-        stds: list[float] | str,
-        num_classes: int,
-        predict_data_root: Path | None = None,
-        train_split: Path | None = None,
-        val_split: Path | None = None,
-        test_split: Path | None = None,
-        ignore_split_file_extensions: bool = True,
-        allow_substring_split_file: bool = True,
-        dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
-        output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
-        predict_dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
-        predict_output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
-        constant_scale: float = 1,
-        rgb_indices: list[int] | None = None,
+        data_root: str,
+        batch_size: int = 4,
+        num_workers: int = 0,
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
         val_transform: A.Compose | None | list[A.BasicTransform] = None,
         test_transform: A.Compose | None | list[A.BasicTransform] = None,
-        expand_temporal_dimension: bool = False,
-        reduce_zero_label: bool = False,
-        no_data_replace: float | None = None,
         drop_last: bool = True,
-        metadata_file: Path | str | None = None,
-        metadata_columns: list[str] | None = None,
-        metadata_index_col: str | None = "chip_id",
         **kwargs: Any,
     ) -> None:
+        super().__init__(MultiTemporalCropClassification, batch_size, num_workers, **kwargs)
         self.data_root = data_root
-        super().__init__(
-            batch_size=batch_size,
-            num_workers=num_workers,
-            train_data_root=self.data_root / "training_chips",
-            val_data_root=self.data_root / "validation_chips",
-            test_data_root=self.data_root / "validation_chips",
-            predict_data_root=predict_data_root,
-            img_grep=img_grep,
-            label_grep=label_grep,
-            means=means,
-            stds=stds,
-            num_classes=num_classes,
-            train_label_data_root=None,
-            val_label_data_root=None,
-            test_label_data_root=None,
-            train_split=train_split,
-            val_split=val_split,
-            test_split=test_split,
-            ignore_split_file_extensions=ignore_split_file_extensions,
-            allow_substring_split_file=allow_substring_split_file,
-            dataset_bands=dataset_bands,
-            output_bands=output_bands,
-            predict_dataset_bands=predict_dataset_bands,
-            predict_output_bands=predict_output_bands,
-            constant_scale=constant_scale,
-            rgb_indices=rgb_indices,
-            train_transform=train_transform,
-            val_transform=val_transform,
-            test_transform=test_transform,
-            expand_temporal_dimension=expand_temporal_dimension,
-            reduce_zero_label=reduce_zero_label,
-            no_data_replace=no_data_replace,
-            no_label_replace=None,
-            drop_last=drop_last,
-            **kwargs,
-        )
 
-        self.dataset_class = MultiTemporalCropClassification
+        bands = kwargs.get("bands", MultiTemporalCropClassification.all_band_names)
+        means = [MEANS[b] for b in bands]
+        stds = [STDS[b] for b in bands]
 
-        self.metadata_file = metadata_file
-        self.metadata_columns = metadata_columns
-        self.metadata_index_col = metadata_index_col
-
-        # Load means and standard deviations for normalization
-        self.means = load_from_file_or_attribute(means)
-        self.stds = load_from_file_or_attribute(stds)
-        self.aug = Normalize(self.means, self.stds)
+        self.train_transform = wrap_in_compose_is_list(train_transform)
+        self.val_transform = wrap_in_compose_is_list(val_transform)
+        self.test_transform = wrap_in_compose_is_list(test_transform)
+        self.aug = Normalize(means, stds)
+        self.drop_last = drop_last
 
     def setup(self, stage: str) -> None:
         if stage in ["fit"]:
             self.train_dataset = self.dataset_class(
-                num_classes=self.num_classes,
-                data_root=self.data_root / "training_chips",
-                image_grep=self.img_grep,
-                label_grep=self.label_grep,
-                split=self.train_split,
-                ignore_split_file_extensions=self.ignore_split_file_extensions,
-                allow_substring_split_file=self.allow_substring_split_file,
-                dataset_bands=self.dataset_bands,
-                output_bands=self.output_bands,
-                constant_scale=self.constant_scale,
-                rgb_indices=self.rgb_indices,
+                split="train",
+                data_root=self.data_root,
                 transform=self.train_transform,
-                no_data_replace=self.no_data_replace,
-                expand_temporal_dimension=self.expand_temporal_dimension,
-                reduce_zero_label=self.reduce_zero_label,
-                metadata_file=self.metadata_file,
-                metadata_columns=self.metadata_columns,
-                metadata_index_col=self.metadata_index_col,
+                **self.kwargs,
             )
         if stage in ["fit", "validate"]:
             self.val_dataset = self.dataset_class(
-                num_classes=self.num_classes,
-                data_root=self.data_root / "validation_chips",
-                image_grep=self.img_grep,
-                label_grep=self.label_grep,
-                split=self.val_split,
-                ignore_split_file_extensions=self.ignore_split_file_extensions,
-                allow_substring_split_file=self.allow_substring_split_file,
-                dataset_bands=self.dataset_bands,
-                output_bands=self.output_bands,
-                constant_scale=self.constant_scale,
-                rgb_indices=self.rgb_indices,
+                split="val",
+                data_root=self.data_root,
                 transform=self.val_transform,
-                no_data_replace=self.no_data_replace,
-                expand_temporal_dimension=self.expand_temporal_dimension,
-                reduce_zero_label=self.reduce_zero_label,
-                metadata_file=self.metadata_file,
-                metadata_columns=self.metadata_columns,
-                metadata_index_col=self.metadata_index_col,
+                **self.kwargs,
             )
         if stage in ["test"]:
             self.test_dataset = self.dataset_class(
-                num_classes=self.num_classes,
-                data_root=self.data_root / "validation_chips",
-                image_grep=self.img_grep,
-                label_grep=self.label_grep,
-                split=self.test_split,
-                ignore_split_file_extensions=self.ignore_split_file_extensions,
-                allow_substring_split_file=self.allow_substring_split_file,
-                dataset_bands=self.dataset_bands,
-                output_bands=self.output_bands,
-                constant_scale=self.constant_scale,
-                rgb_indices=self.rgb_indices,
+                split="val",
+                data_root=self.data_root,
                 transform=self.test_transform,
-                no_data_replace=self.no_data_replace,
-                expand_temporal_dimension=self.expand_temporal_dimension,
-                reduce_zero_label=self.reduce_zero_label,
-                metadata_file=self.metadata_file,
-                metadata_columns=self.metadata_columns,
-                metadata_index_col=self.metadata_index_col,
+                **self.kwargs,
             )
-        if stage in ["predict"] and self.predict_root:
-            self.predict_dataset = self.dataset_class(
-                num_classes=self.num_classes,
-                data_root=self.predict_root,
-                image_grep=self.img_grep,
-                label_grep=self.label_grep,
-                dataset_bands=self.predict_dataset_bands,
-                output_bands=self.predict_output_bands,
-                constant_scale=self.constant_scale,
-                rgb_indices=self.rgb_indices,
-                transform=self.test_transform,
-                no_data_replace=self.no_data_replace,
-                expand_temporal_dimension=self.expand_temporal_dimension,
-                metadata_file=self.metadata_file,
-                metadata_columns=self.metadata_columns,
-                metadata_index_col=self.metadata_index_col,
-            )
+
+    def _dataloader_factory(self, split: str) -> DataLoader[dict[str, Tensor]]:
+        """Implement one or more PyTorch DataLoaders.
+
+        Args:
+            split: Either 'train', 'val', 'test', or 'predict'.
+
+        Returns:
+            A collection of data loaders specifying samples.
+
+        Raises:
+            MisconfigurationException: If :meth:`setup` does not define a
+                dataset or sampler, or if the dataset or sampler has length 0.
+        """
+        dataset = self._valid_attribute(f"{split}_dataset", "dataset")
+        batch_size = self._valid_attribute(f"{split}_batch_size", "batch_size")
+        return DataLoader(
+            dataset=dataset,
+            batch_size=batch_size,
+            shuffle=split == "train",
+            num_workers=self.num_workers,
+            collate_fn=self.collate_fn,
+            drop_last=split == "train" and self.drop_last,
+        )
