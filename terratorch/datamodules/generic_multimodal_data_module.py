@@ -128,8 +128,6 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         train_split: Path | None = None,
         val_split: Path | None = None,
         test_split: Path | None = None,
-        ignore_split_file_extensions: bool = True,
-        allow_substring_split_file: bool = True,  # TODO: Check if covered
         dataset_bands: dict | None = None,
         output_bands: dict | None = None,
         predict_dataset_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
@@ -173,13 +171,6 @@ class GenericMultiModalDataModule(NonGeoDataModule):
             train_split (Path | None, optional): _description_. Defaults to None.
             val_split (Path | None, optional): _description_. Defaults to None.
             test_split (Path | None, optional): _description_. Defaults to None.
-            ignore_split_file_extensions (bool, optional): Whether to disregard extensions when using the split
-                file to determine which files to include in the dataset.
-                E.g. necessary for Eurosat, since the split files specify ".jpg" but files are
-                actually ".jpg". Defaults to True.
-            allow_substring_split_file (bool, optional): Whether the split files contain substrings
-                that must be present in file names to be included (as in mmsegmentation), or exact
-                matches (e.g. eurosat). Defaults to True.
             dataset_bands (list[HLSBands | int] | None): Bands present in the dataset. Defaults to None.
             output_bands (list[HLSBands | int] | None): Bands that should be output by the dataset.
                 Naming must match that of dataset_bands. Defaults to None.
@@ -243,8 +234,6 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.train_split = train_split
         self.val_split = val_split
         self.test_split = test_split
-        self.ignore_split_file_extensions = ignore_split_file_extensions
-        self.allow_substring_split_file = allow_substring_split_file
         self.constant_scale = constant_scale
         if isinstance(self.constant_scale, dict):
             # Fill in missing modalities
@@ -321,8 +310,6 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 label_grep=self.label_grep,
                 label_data_root=self.train_label_data_root,
                 split=self.train_split,
-                ignore_split_file_extensions=self.ignore_split_file_extensions,
-                allow_substring_split_file=self.allow_substring_split_file,
                 dataset_bands=self.dataset_bands,
                 output_bands=self.output_bands,
                 constant_scale=self.constant_scale,
@@ -343,8 +330,6 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 label_grep=self.label_grep,
                 label_data_root=self.val_label_data_root,
                 split=self.val_split,
-                ignore_split_file_extensions=self.ignore_split_file_extensions,
-                allow_substring_split_file=self.allow_substring_split_file,
                 dataset_bands=self.dataset_bands,
                 output_bands=self.output_bands,
                 constant_scale=self.constant_scale,
@@ -365,8 +350,6 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 label_grep=self.label_grep,
                 label_data_root=self.test_label_data_root,
                 split=self.test_split,
-                ignore_split_file_extensions=self.ignore_split_file_extensions,
-                allow_substring_split_file=self.allow_substring_split_file,
                 dataset_bands=self.dataset_bands,
                 output_bands=self.output_bands,
                 constant_scale=self.constant_scale,

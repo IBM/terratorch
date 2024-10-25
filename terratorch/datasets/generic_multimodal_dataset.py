@@ -26,21 +26,6 @@ from terratorch.datasets.utils import (HLSBands, default_transform, filter_valid
 from terratorch.datasets.transforms import MultiModalTransforms
 
 
-def load_files(root, grep):
-    if isinstance(root, dict):
-        files = {}
-        for m, m_root in root.items():
-            if isinstance(m_root, list):
-                # Iterate over a list of data folders
-                dir_lists = [glob.glob(os.path.join(r, grep[m])) for r in m_root]
-                files[m] = sorted([p for l in dir_lists for p in l])  # Concatenate
-            else:
-                files[m] = sorted(glob.glob(os.path.join(m_root, grep[m])))
-        return files
-    elif isinstance(root, str):
-        return sorted(glob.glob(os.path.join(root, grep)))
-
-
 class GenericMultimodalDataset(NonGeoDataset, ABC):
     """
     This is a generic dataset class to be used for instantiating datasets from arguments.
@@ -49,13 +34,11 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
     def __init__(
         self,
-        data_root: Path | list[Path],
+        data_root: dict[Path],
         label_data_root: Path | list[Path] | None = None,
         image_grep: str | None = "*",
         label_grep: str | None = "*",
         split: Path | None = None,
-        ignore_split_file_extensions: bool = True,
-        allow_substring_split_file: bool = True,
         rgb_modality: str | None = None,
         rgb_indices: list[int] | None = None,
         allow_missing_modalities: bool = False,  # TODO: Not implemented on a data module level yet (collate_fn required).
@@ -82,13 +65,6 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             split (Path, optional): Path to file containing files to be used for this split.
                 The file should be a new-line separated prefixes contained in the desired files.
                 Files will be seached using glob with the form Path(data_root).glob(prefix + [image or label grep])
-            ignore_split_file_extensions (bool, optional): Whether to disregard extensions when using the split
-                file to determine which files to include in the dataset.
-                E.g. necessary for Eurosat, since the split files specify ".jpg" but files are
-                actually ".jpg". Defaults to True.
-            allow_substring_split_file (bool, optional): Whether the split files contain substrings
-                that must be present in file names to be included (as in mmsegmentation), or exact
-                matches (e.g. eurosat). Defaults to True.
             rgb_indices (list[str], optional): Indices of RGB channels. Defaults to [0, 1, 2].
             dataset_bands (list[HLSBands | int | tuple[int, int] | str] | None): Bands present in the dataset. This parameter names input channels (bands) using HLSBands, ints, int ranges, or strings, so that they can then be refered to by output_bands. Defaults to None.
             output_bands (list[HLSBands | int | tuple[int, int] | str] | None): Bands that should be output by the dataset as named by dataset_bands.
@@ -110,13 +86,13 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
         self.modalities = list(data_root.keys())
         assert 'mask' not in self.modalities, "Modality cannot be called 'mask'."
-        self.image_files = load_files(data_root, image_grep)
 
-        if label_data_root:
-            self.segmentation_mask_files = load_files(label_data_root, label_grep)
-        else:
-            # No labels
-            self.segmentation_mask_files = None
+        # Convert path strings to lists
+        for m, m_dir in data_root.items():
+            if not isinstance(m_dir, list):
+                data_root[m] = [m_dir]
+        if label_data_root and not isinstance(label_data_root, list):
+            label_data_root = [label_data_root]
 
         self.constant_scale = {m: constant_scale[m] or 1. for m in self.modalities}
         self.no_data_replace = no_data_replace
@@ -128,55 +104,53 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             msg = "Please provide dataset_bands for each modality when expand_temporal_dimension is True"
             raise Exception(msg)
 
+        # Load samples based on split file
         if self.split_file is not None:
             with open(self.split_file) as f:
                 split = f.readlines()
             valid_files = {rf"{substring.strip()}" for substring in split}
-            if not ignore_split_file_extensions or not allow_substring_split_file:
-                # TODO: Only need for special cases, can we generalize the multi-modal samples and remove this part?
-                for m, m_files in self.image_files.items():
-                    self.image_files[m] = filter_valid_files(
-                        m_files,
-                        valid_files=valid_files,
-                        ignore_extensions=ignore_split_file_extensions,
-                        allow_substring=allow_substring_split_file,
-                    )
-                if self.segmentation_mask_files:
-                    self.segmentation_mask_files = filter_valid_files(
-                        self.segmentation_mask_files,
-                        valid_files=valid_files,
-                        ignore_extensions=ignore_split_file_extensions,
-                        allow_substring=allow_substring_split_file,
-                    )
+
         else:
-            logging.warning('No split file provided. '
-                            'This requires that all modalities have the same filename for aligned samples.')
+            image_files = {}
+            for m, m_dirs in data_root.items():
+                dir_lists = [glob.glob(os.path.join(r, image_grep[m])) for r in m_dirs]
+                image_files[m] = sorted([p for l in dir_lists for p in l])  # Concatenate
+
+            if label_data_root:
+                dir_lists = [glob.glob(os.path.join(r, label_grep)) for r in label_data_root]
+                segmentation_mask_files = sorted([p for l in dir_lists for p in l])  # Concatenate
+
             if allow_missing_modalities:
-                all_files = [os.path.splitext(os.path.basename(file))[0]
-                               for file in np.concatenate(list(self.image_files.values()))]
-                valid_files = list(set(all_files))
+                valid_files = set([os.path.splitext(os.path.basename(file))[0]
+                                   for file in np.concatenate(list(image_files.values()))])
             else:
                 valid_files = [os.path.splitext(os.path.basename(file))[0]
-                               for file in self.image_files[self.modalities[0]]]
+                               for file in image_files[self.modalities[0]]]
 
-
-        # Get multi-modal samples in form: {'modality': path, ..., 'mask': path}
         self.samples = []
-        num_modalities = len(self.modalities) + int(self.segmentation_mask_files is not None)
-        for split_file in valid_files:
+        num_modalities = len(self.modalities) + int(label_data_root is not None)
+        # Iterate over all files in split
+        for file in valid_files:
             sample = {}
-            for m, files in self.image_files.items():
-                matching_files = [file for file in files if split_file in file]
-                if matching_files:
-                    sample[m] = matching_files[0]
-            if self.segmentation_mask_files:
-                matching_files = [file for file in self.segmentation_mask_files if split_file in file]
-                if matching_files:
-                    sample['mask'] = matching_files[0]
-                else:
-                    # Skip samples with missing labels
-                    continue
-            if allow_missing_modalities or len(sample) == num_modalities:
+            # Iterate over all modalities
+            for m, m_dirs in data_root.items():
+                # Iterate over all directories of the current modality
+                for m_dir in m_dirs:
+                    m_files = glob.glob(os.path.join(m_dir, file + image_grep[m]))
+                    if m_files:
+                        sample[m] = m_files[0]
+                        break
+            if label_data_root:
+                for l_dir in label_data_root:
+                    l_files = glob.glob(os.path.join(l_dir, file + label_grep))
+                    if l_files:
+                        sample['mask'] = l_files[0]
+                        break
+                if 'mask' not in sample:
+                    # Only add sample if mask is present
+                    break
+
+            if len(sample) == num_modalities or allow_missing_modalities:
                 self.samples.append(sample)
 
         self.rgb_modality = rgb_modality or self.modalities[0]
@@ -297,8 +271,6 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
         image_grep: str | None = "*",
         label_grep: str | None = "*",
         split: Path | None = None,
-        ignore_split_file_extensions: bool = True,
-        allow_substring_split_file: bool = True,
         rgb_modality: str | None = None,
         rgb_indices: list[str] | None = None,
         allow_missing_modalities: bool = False,
@@ -327,13 +299,6 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
             split (Path, optional): Path to file containing files to be used for this split.
                 The file should be a new-line separated prefixes contained in the desired files.
                 Files will be seached using glob with the form Path(data_root).glob(prefix + [image or label grep])
-            ignore_split_file_extensions (bool, optional): Whether to disregard extensions when using the split
-                file to determine which files to include in the dataset.
-                E.g. necessary for Eurosat, since the split files specify ".jpg" but files are
-                actually ".jpg". Defaults to True
-            allow_substring_split_file (bool, optional): Whether the split files contain substrings
-                that must be present in file names to be included (as in mmsegmentation), or exact
-                matches (e.g. eurosat). Defaults to True.
             rgb_indices (list[str], optional): Indices of RGB channels. Defaults to [0, 1, 2].
             dataset_bands (list[HLSBands | int] | None): Bands present in the dataset.
             output_bands (list[HLSBands | int] | None): Bands that should be output by the dataset.
@@ -356,8 +321,6 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
             image_grep=image_grep,
             label_grep=label_grep,
             split=split,
-            ignore_split_file_extensions=ignore_split_file_extensions,
-            allow_substring_split_file=allow_substring_split_file,
             rgb_modality=rgb_modality,
             rgb_indices=rgb_indices,
             allow_missing_modalities=allow_missing_modalities,
@@ -472,8 +435,6 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
         image_grep: str | None = "*",
         label_grep: str | None = "*",
         split: Path | None = None,
-        ignore_split_file_extensions: bool = True,
-        allow_substring_split_file: bool = True,
         rgb_modality: str | None = None,
         rgb_indices: list[int] | None = None,
         allow_missing_modalities : bool = False,
@@ -500,13 +461,6 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
             split (Path, optional): Path to file containing files to be used for this split.
                 The file should be a new-line separated prefixes contained in the desired files.
                 Files will be seached using glob with the form Path(data_root).glob(prefix + [image or label grep])
-            ignore_split_file_extensions (bool, optional): Whether to disregard extensions when using the split
-                file to determine which files to include in the dataset.
-                E.g. necessary for Eurosat, since the split files specify ".jpg" but files are
-                actually ".jpg". Defaults to True.
-            allow_substring_split_file (bool, optional): Whether the split files contain substrings
-                that must be present in file names to be included (as in mmsegmentation), or exact
-                matches (e.g. eurosat). Defaults to True.
             rgb_indices (list[str], optional): Indices of RGB channels. Defaults to [0, 1, 2].
             dataset_bands (list[HLSBands | int] | None): Bands present in the dataset.
             output_bands (list[HLSBands | int] | None): Bands that should be output by the dataset.
@@ -528,8 +482,6 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
             image_grep=image_grep,
             label_grep=label_grep,
             split=split,
-            ignore_split_file_extensions=ignore_split_file_extensions,
-            allow_substring_split_file=allow_substring_split_file,
             rgb_modality=rgb_modality,
             rgb_indices=rgb_indices,
             allow_missing_modalities=allow_missing_modalities,
