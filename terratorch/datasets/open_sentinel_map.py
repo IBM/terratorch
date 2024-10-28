@@ -49,7 +49,6 @@ class OpenSentinelMap(NonGeoDataset):
             target (int): Specifies which target class to use from the mask. Default is 0.
             pick_random_pair (bool): If True, selects two random images from the temporal sequence. Default is True.
         """
-        split = "test"
         if bands is None:
             bands = ["gsd_10", "gsd_20", "gsd_60"]
 

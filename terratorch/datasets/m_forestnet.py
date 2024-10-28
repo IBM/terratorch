@@ -2,13 +2,13 @@ import ast
 import json
 import pickle
 from collections.abc import Sequence
-from datetime import datetime
 from pathlib import Path
 
 import albumentations as A
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import torch
 from albumentations.pytorch import ToTensorV2
 from torchgeo.datasets import NonGeoDataset
@@ -70,18 +70,13 @@ class MForestNetNonGeo(NonGeoDataset):
         latitude = float(lat_str)
         longitude = float(lon_str)
 
-        location_coords = torch.tensor([latitude, longitude], dtype=torch.float32)
-        return location_coords
+        return torch.tensor([latitude, longitude], dtype=torch.float32)
 
     def _get_date(self, image_id: str) -> torch.Tensor:
         _, _, date_str = image_id.split("_", 2)
-        date = datetime.strptime(date_str, "%Y_%m_%d")  # noqa: DTZ007
+        date = pd.to_datetime(date_str, format="%Y_%m_%d")
 
-        year = date.year
-        day_of_year = date.timetuple().tm_yday
-
-        temporal_coords = np.array([[year, day_of_year]], dtype=np.float32)
-        return torch.tensor(temporal_coords)
+        return torch.tensor([[date.year, date.dayofyear - 1]], dtype=torch.float32)
 
     def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
         file_path = self.image_files[index]

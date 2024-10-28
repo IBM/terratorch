@@ -74,25 +74,23 @@ class MBeninSmallHolderCashewsNonGeo(NonGeoDataset):
 
         self.image_files = [self.data_directory / (filename + ".hdf5") for filename in partitions[split]]
 
-    def _get_date(self, keys) -> np.ndarray:
+    def _get_date(self, keys) -> torch.Tensor:
         date_pattern = re.compile(r"\d{4}-\d{2}-\d{2}")
-        date = None
 
+        date_str = None
         for key in keys:
             match = date_pattern.search(key)
             if match:
-                date = match.group()
+                date_str = match.group()
                 break
 
-        if date:
-            date = pd.to_datetime(date)
-            date_np = np.zeros((1, 2), dtype=np.float32)
-            date_np[0, 0] = date.year
-            date_np[0, 1] = date.dayofyear - 1
-        else:
-            date_np = np.zeros((1, 2), dtype=np.float32)
+        date = torch.zeros((1, 2), dtype=torch.float32)
+        if date_str:
+            # TODO: check default format
+            date = pd.to_datetime(date_str)
+            date = torch.tensor([[date.year, date.dayofyear - 1]], dtype=torch.float32)
 
-        return torch.tensor(date_np)
+        return date
 
     def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
         file_path = self.image_files[index]

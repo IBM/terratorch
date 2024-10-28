@@ -129,6 +129,7 @@ class MEuroSATNonGeo(NonGeoDataset):
 
         self._plot_sample(image=rgb_image, label_index=label_index, class_names=class_names, suptitle=suptitle)
 
+    @staticmethod
     def _plot_sample(image, label_index, class_names=None, suptitle=None) -> None:
         fig, ax = plt.subplots(figsize=(6, 6))
         ax.imshow(image)

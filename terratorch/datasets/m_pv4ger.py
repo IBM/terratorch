@@ -62,8 +62,7 @@ class MPv4gerNonGeo(NonGeoDataset):
         latitude = float(lat_str)
         longitude = float(lon_str)
 
-        location_coords = np.array([latitude, longitude], dtype=np.float32)
-        return torch.tensor(location_coords)
+        return torch.tensor([latitude, longitude], dtype=torch.float32)
 
     def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
         file_path = self.image_files[index]

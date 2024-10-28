@@ -9,6 +9,7 @@ import h5py
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import torch
 from albumentations.pytorch import ToTensorV2
 from matplotlib import colormaps
@@ -64,18 +65,13 @@ class MNzCattleNonGeo(NonGeoDataset):
         coords_str = re.search(r"_(\-?\d+\.\d+),(\-?\d+\.\d+)", file_name).groups()
         longitude, latitude = map(float, coords_str)
 
-        location_coords = np.array([latitude, longitude], dtype=np.float32)
-        return torch.tensor(location_coords)
+        return torch.tensor([latitude, longitude], dtype=torch.float32)
 
     def _get_date(self, band_name: str) -> torch.Tensor:
         date_str = band_name.split("_")[-1]
-        date = datetime.strptime(date_str, "%Y-%m-%d")  # noqa: DTZ007
+        date = pd.to_datetime(date_str, format="%Y-%m-%d")  # noqa: DTZ007
 
-        year = date.year
-        day_of_year = date.timetuple().tm_yday
-
-        temporal_coords = np.array([[year, day_of_year]], dtype=np.float32)
-        return torch.tensor(temporal_coords)
+        return torch.tensor([[date.year, date.dayofyear - 1]], dtype=torch.float32)
 
     def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
         file_path = self.image_files[index]
