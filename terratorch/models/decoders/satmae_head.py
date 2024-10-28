@@ -4,10 +4,13 @@ import torch
 import torch.nn as nn
 from timm.models.vision_transformer import Block, PatchEmbed
 
+from terratorch.registry import TERRATORCH_DECODER_REGISTRY
 
+
+@TERRATORCH_DECODER_REGISTRY.register
 class SatMAEHead(nn.Module):
 
-    def __init__(self, embed_dim:int=None, output_embed_dim:int=None, bias:bool=True,
+    def __init__(self, embed_dim:int=None, out_channels:int=None, bias:bool=True,
             num_heads:int=None, mlp_ratio:float=None, patch_size:int=None, num_patches:int=1, 
                  depth:int=None, norm_layer=nn.LayerNorm, in_chans:int=None) -> None:
 
@@ -19,7 +22,8 @@ class SatMAEHead(nn.Module):
             self.embed_dim = embed_dim
 
 
-        self.output_embed_dim = output_embed_dim
+        self.out_channels = out_channels
+        self.out_channels = out_channels
         self.bias = bias
         self.num_heads = num_heads
         self.mlp_ratio = mlp_ratio
@@ -29,18 +33,18 @@ class SatMAEHead(nn.Module):
         self.num_patches = num_patches
         self.depth = depth 
 
-        self.decoder_embed = nn.Linear(self.embed_dim, self.output_embed_dim, bias=self.bias)
+        self.decoder_embed = nn.Linear(self.embed_dim, self.out_channels, bias=self.bias)
 
-        self.mask_token = nn.Parameter(torch.zeros(1, 1, self.output_embed_dim))
+        self.mask_token = nn.Parameter(torch.zeros(1, 1, self.out_channels))
 
-        self.decoder_pos_embed = nn.Parameter(torch.zeros(1, self.num_patches + 1, self.output_embed_dim), requires_grad=False)  # fixed sin-cos embedding
+        self.decoder_pos_embed = nn.Parameter(torch.zeros(1, self.num_patches + 1, self.out_channels), requires_grad=False)  # fixed sin-cos embedding
 
         self.decoder_blocks = nn.ModuleList([
-            Block(self.output_embed_dim, self.num_heads, self.mlp_ratio, qkv_bias=True, qk_norm=None, norm_layer=self.norm_layer)
+            Block(self.out_channels, self.num_heads, self.mlp_ratio, qkv_bias=True, qk_norm=None, norm_layer=self.norm_layer)
             for i in range(self.depth)])
 
-        self.decoder_norm = self.norm_layer(self.output_embed_dim)
-        self.decoder_pred = nn.Linear(self.output_embed_dim, self.patch_size**2 * self.in_chans, bias=True) # decoder to patch
+        self.decoder_norm = self.norm_layer(self.out_channels)
+        self.decoder_pred = nn.Linear(self.out_channels, self.patch_size**2 * self.in_chans, bias=True) # decoder to patch
 
     def unpatchify(self, x, p, c):
         """
@@ -92,7 +96,7 @@ class SatMAEHead(nn.Module):
 
 class SatMAEHeadViT(nn.Module):
 
-    def __init__(self, embed_dim:int=None, output_embed_dim:int=None, bias:bool=True,
+    def __init__(self, embed_dim:int=None, out_channels:int=None, bias:bool=True,
             num_heads:int=None, mlp_ratio:float=None, patch_size:int=None, num_patches:int=1, 
                  depth:int=None, norm_layer=nn.LayerNorm, in_chans:int=None) -> None:
 
@@ -104,7 +108,7 @@ class SatMAEHeadViT(nn.Module):
             self.embed_dim = embed_dim
 
 
-        self.output_embed_dim = output_embed_dim
+        self.out_channels = out_channels
         self.bias = bias
         self.num_heads = num_heads
         self.mlp_ratio = mlp_ratio
@@ -114,18 +118,18 @@ class SatMAEHeadViT(nn.Module):
         self.num_patches = num_patches
         self.depth = depth 
 
-        self.decoder_embed = nn.Linear(self.embed_dim, self.output_embed_dim, bias=self.bias)
+        self.decoder_embed = nn.Linear(self.embed_dim, self.out_channels, bias=self.bias)
 
-        self.mask_token = nn.Parameter(torch.zeros(1, 1, self.output_embed_dim))
+        self.mask_token = nn.Parameter(torch.zeros(1, 1, self.out_channels))
 
-        self.decoder_pos_embed = nn.Parameter(torch.zeros(1, self.num_patches + 1, self.output_embed_dim), requires_grad=False)  # fixed sin-cos embedding
+        self.decoder_pos_embed = nn.Parameter(torch.zeros(1, self.num_patches + 1, self.out_channels), requires_grad=False)  # fixed sin-cos embedding
 
         self.decoder_blocks = nn.ModuleList([
-            Block(self.output_embed_dim, self.num_heads, self.mlp_ratio, qkv_bias=True, qk_norm=None, norm_layer=self.norm_layer)
+            Block(self.out_channels, self.num_heads, self.mlp_ratio, qkv_bias=True, qk_norm=None, norm_layer=self.norm_layer)
             for i in range(self.depth)])
 
-        self.decoder_norm = self.norm_layer(self.output_embed_dim)
-        self.decoder_pred = nn.Linear(self.output_embed_dim, self.patch_size**2 * self.in_chans, bias=True) # decoder to patch
+        self.decoder_norm = self.norm_layer(self.out_channels)
+        self.decoder_pred = nn.Linear(self.out_channels, self.patch_size**2 * self.in_chans, bias=True) # decoder to patch
 
     def unpatchify(self, x, p, c):
         """

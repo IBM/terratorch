@@ -33,6 +33,9 @@ from terratorch.datamodules.sen1floods11 import Sen1Floods11NonGeoDataModule
 from terratorch.datamodules.torchgeo_data_module import TorchGeoDataModule, TorchNonGeoDataModule
 from terratorch.datamodules.generic_multimodal_data_module import GenericMultiModalDataModule
 
+# Generic classification datamodule
+from terratorch.datamodules.sen4map import Sen4MapLucasDataModule
+
 __all__ = (
     "GenericNonGeoSegmentationDataModule",
     "GenericNonGeoPixelwiseRegressionDataModule",
@@ -40,6 +43,7 @@ __all__ = (
     "GenericNonGeoClassificationDataModule",
     # "GenericNonGeoRegressionDataModule",
     "Sen1Floods11NonGeoDataModule",
+    "Sen4MapLucasDataModule",
     "FireScarsNonGeoDataModule",
     "TorchGeoDataModule",
     "TorchNonGeoDataModule",

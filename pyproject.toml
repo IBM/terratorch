@@ -7,7 +7,7 @@ include = ["terratorch*"]
 
 [project]
 name = "terratorch"
-version = "0.99.4"
+version = "0.99.5"
 description = "TerraTorch - A model training toolkit for geospatial tasks"
 license = { "text" = "Apache License, Version 2.0" }
 readme = "README.md"
@@ -26,7 +26,7 @@ classifiers = [
 ]
 
 dependencies = [
-  "torch>=2.1.0",
+  "torch>=2.1.0, <=2.5.0",
   "torchvision>=0.16.0",
   "torchgeo>=0.6.0",
   "rioxarray>=0.15.0",
@@ -41,6 +41,7 @@ dependencies = [
   "mlflow>=2.12.1",
   # broken due to https://github.com/Lightning-AI/pytorch-lightning/issues/19977
   "lightning[pytorch-extra]>=2,!=2.3.*",
+  "segmentation-models-pytorch>=0.3"
   # Dependencies not available on PyPI
 ]
 
@@ -48,9 +49,9 @@ dependencies = [
 dev = [
   "black",
   "mkdocs-material",
-  "mkdocstrings[python]"
+  "mkdocstrings[python]",
+  "mike" # for building docs with versions
 ]
-
 test = [
   "coverage",
   "pytest"
@@ -66,6 +67,10 @@ mmseg = [
 wxc = [
   "prithviwxc @ git+https://github.com/NASA-IMPACT/Prithvi-WxC.git",
   "granitewxc @ git+https://github.com/IBM/granite-wxc.git"
+]
+
+geobench = [
+  "geobench @ git+https://github.com/fmartiescofet/geo-bench.git" # pull from fork until depenedencies for geobench are relaxed
 ]
 
 [project.urls]

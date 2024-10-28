@@ -2,20 +2,11 @@ import torch
 import torch.nn.functional as F  # noqa: N812
 from torch import Tensor, nn
 
-"""
-Adapted from https://github.com/yassouali/pytorch-segmentation/blob/master/models/upernet.py
-"""
-class ConvModule(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, padding=0, inplace=False) -> None:  # noqa: FBT002
-        super().__init__()
-        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, padding=padding, bias=False)
-        self.norm = nn.BatchNorm2d(out_channels)
-        self.act = nn.ReLU(inplace=inplace)
-
-    def forward(self, x):
-        return self.act(self.norm(self.conv(x)))
+from terratorch.registry import TERRATORCH_DECODER_REGISTRY
+from .utils import ConvModule
 
 # Adapted from MMSegmentation
+@TERRATORCH_DECODER_REGISTRY.register
 class UperNetDecoder(nn.Module):
     """UperNetDecoder. Adapted from MMSegmentation."""
 
@@ -57,7 +48,7 @@ class UperNetDecoder(nn.Module):
         else:
             self.embed_dim = embed_dim
 
-        self.output_embed_dim = channels
+        self.out_channels = channels
         self.channels = channels
         self.align_corners = align_corners
         # PSP Module
