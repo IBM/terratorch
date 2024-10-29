@@ -135,9 +135,12 @@ def dofa_huge_patch16_224(model_bands, pretrained = False, ckpt_data: str | None
 
 def load_dofa_weights(model: nn.Module, ckpt_data: str | None = None,  weights: Weights | None = None, input_size = 224) -> nn.Module:
     state_dict = model.state_dict()
+    print("Loading weights")
     if ckpt_data is not None:
         if ckpt_data.find("https://hf.co/") > -1:
-            ckpt_data = huggingface_hub.hf_hub_download(repo_id="torchgeo/dofa", filename=ckpt_data.split('/')[-1])
+            repo_id = ckpt_data.split("/resolve/")[0].replace("https://hf.co/", '')
+            filename = ckpt_data.split("/")[-1]
+            ckpt_data = huggingface_hub.hf_hub_download(repo_id=repo_id, filename=filename)
         checkpoint_model = torch.load(ckpt_data, map_location="cpu")
 
         for k in ["head.weight", "head.bias"]:
