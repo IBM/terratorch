@@ -41,7 +41,7 @@ class ViTEncoderWrapper(nn.Module):
         
 
     def forward(self, x: List[torch.Tensor]) -> torch.Tensor:
-        return self.vit_model(x)
+        return self.vit_model.forward_intermediates(x, intermediates_only=True)
         
 look_up_table = {
     "B01": "COASTAL_AEROSOL",
@@ -171,7 +171,8 @@ def ssl4eos12_vit_small_patch16_224_sentinel2_all_moco(model_bands, pretrained =
 #### to add build model and load weights
 def load_vit_weights(model: nn.Module, model_bands, ckpt_data: str, weights: Weights, input_size: int = 224, custom_weight_proj: str = "patch_embed.proj.weight") -> nn.Module:
     
-    pretrained_bands = get_pretrained_bands(weights.meta["bands"]) if "bands" in weights.meta else []
+    pretrained_bands = get_pretrained_bands(weights.meta["bands"]) if "bands" in weights.meta else ["B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A", "B09", "B10", "B11", "B12"]
+
     print("Loading weights")
     if ckpt_data is not None:
         if ckpt_data.find("https://hf.co/") > -1:
