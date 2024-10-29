@@ -4,7 +4,6 @@ from collections.abc import Callable, Mapping, Set
 from contextlib import suppress
 from reprlib import recursive_repr as _recursive_repr
 
-
 class BuildableRegistry(typing.Protocol):
     def __iter__(self): ...
     def __len__(self) -> int: ...
@@ -57,8 +56,8 @@ class MultiSourceRegistry(Mapping[str, T], typing.Generic[T]):
 
         # if no prefix, try to build in order
         for source in self._sources.values():
-            with suppress(KeyError):
-                return source.build(name, *constructor_args, **constructor_kwargs)
+            # with suppress(KeyError):
+            return source.build(name, *constructor_args, **constructor_kwargs)
 
         msg = f"Could not instantiate model {name} not from any source."
         raise KeyError(msg)
@@ -77,23 +76,6 @@ class MultiSourceRegistry(Mapping[str, T], typing.Generic[T]):
 
     def __len__(self):
         return sum(len(source) for source in self._sources.values())
-
-    # def __getitem__(self, name):
-    #     parsed_prefix = self._parse_prefix(name)
-    #     if parsed_prefix:
-    #         prefix, name_without_prefix = parsed_prefix
-    #         registry = self._sources[prefix]
-    #         return registry[name_without_prefix]
-
-    #     # if no prefix is given, go through all sources in order
-    #     for source in self._sources.values():
-    #         try:
-    #             return source[name]
-    #         except Exception as e:
-    #             logging.debug(e)
-
-    #     msg = f"Could not find Model {name} not from any source."
-    #     raise KeyError(msg)
 
     def __getitem__(self, name):
         return self._sources[name]
