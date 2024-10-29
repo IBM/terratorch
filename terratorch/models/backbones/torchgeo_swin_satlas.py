@@ -231,10 +231,12 @@ def satlas_swin_b_sentinel1_si(model_bands, pretrained = False, ckpt_data: str |
 def load_swin_weights(model: nn.Module, model_bands, ckpt_data: str, weights: Weights, input_size: int = 224, custom_weight_proj: str = "features.0.0.weight") -> nn.Module:
     
     pretrained_bands = get_pretrained_bands(weights.meta["bands"])
-    
+    print("Loading weights")
     if ckpt_data is not None:
         if ckpt_data.find("https://hf.co/") > -1:
-            ckpt_data = huggingface_hub.hf_hub_download(repo_id="torchgeo/satlas", filename=ckpt_data.split('/')[-1])
+            repo_id = ckpt_data.split("/resolve/")[0].replace("https://hf.co/", '')
+            filename = ckpt_data.split("/")[-1]
+            ckpt_data = huggingface_hub.hf_hub_download(repo_id=repo_id, filename=filename)
         # checkpoint_model = torch.load(ckpt_data, map_location="cpu")["model"]
         checkpoint_model = torch.load(ckpt_data, map_location="cpu")
         state_dict = model.state_dict()
