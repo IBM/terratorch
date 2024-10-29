@@ -37,12 +37,13 @@ class ResNetEncoderWrapper(nn.Module):
         super().__init__()
         self.resnet_model = resnet_model
         self.weights = weights
-        self.out_channels = resnet_model.feature_info
-
+        self.out_channels = [x['num_chs'] for x in self.resnet_model.feature_info]
+        self.resnet_meta = resnet_meta
+    
     def forward(self, x: List[torch.Tensor]) -> torch.Tensor:
         x = self.resnet_model.forward_intermediates(x, intermediates_only=True)
         
-        return 
+        return x
 
 look_up_table = {
     "B01": "COASTAL_AEROSOL",
@@ -88,6 +89,7 @@ def get_pretrained_bands(model_bands):
 #### resnet 18
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet18_landsat_tm_toa_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet18_Weights.LANDSAT_TM_TOA_MOCO, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -95,6 +97,7 @@ def ssl4eol_resnet18_landsat_tm_toa_moco(model_bands, pretrained = False, ckpt_d
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet18_landsat_tm_toa_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet18_Weights.LANDSAT_TM_TOA_SIMCLR, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -103,6 +106,7 @@ def ssl4eol_resnet18_landsat_tm_toa_simclr(model_bands, pretrained = False, ckpt
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet18_landsat_etm_toa_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet18_Weights.LANDSAT_ETM_TOA_MOCO, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -111,6 +115,7 @@ def ssl4eol_resnet18_landsat_etm_toa_moco(model_bands, pretrained = False, ckpt_
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet18_landsat_etm_toa_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet18_Weights.LANDSAT_ETM_TOA_SIMCLR, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -119,6 +124,7 @@ def ssl4eol_resnet18_landsat_etm_toa_simclr(model_bands, pretrained = False, ckp
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet18_landsat_etm_sr_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet18_Weights.LANDSAT_ETM_SR_MOCO, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -127,6 +133,7 @@ def ssl4eol_resnet18_landsat_etm_sr_moco(model_bands, pretrained = False, ckpt_d
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet18_landsat_etm_sr_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet18_Weights.LANDSAT_ETM_SR_SIMCLR, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -135,6 +142,7 @@ def ssl4eol_resnet18_landsat_etm_sr_simclr(model_bands, pretrained = False, ckpt
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet18_landsat_oli_tirs_toa_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet18_Weights.LANDSAT_OLI_TIRS_TOA_MOCO, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -143,6 +151,7 @@ def ssl4eol_resnet18_landsat_oli_tirs_toa_moco(model_bands, pretrained = False, 
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet18_landsat_oli_tirs_toa_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet18_Weights.LANDSAT_OLI_TIRS_TOA_SIMCLR, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -151,6 +160,7 @@ def ssl4eol_resnet18_landsat_oli_tirs_toa_simclr(model_bands, pretrained = False
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet18_landsat_oli_sr_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet18_Weights.LANDSAT_OLI_SR_MOCO, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -159,6 +169,7 @@ def ssl4eol_resnet18_landsat_oli_sr_moco(model_bands, pretrained = False, ckpt_d
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet18_landsat_oli_sr_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet18_Weights.LANDSAT_OLI_SR_SIMCLR, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -167,6 +178,7 @@ def ssl4eol_resnet18_landsat_oli_sr_simclr(model_bands, pretrained = False, ckpt
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eos12_resnet18_sentinel2_all_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None =  ResNet18_Weights.SENTINEL2_ALL_MOCO, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -175,6 +187,7 @@ def ssl4eos12_resnet18_sentinel2_all_moco(model_bands, pretrained = False, ckpt_
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eos12_resnet18_sentinel2_rgb_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet18_Weights.SENTINEL2_RGB_MOCO, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -183,6 +196,7 @@ def ssl4eos12_resnet18_sentinel2_rgb_moco(model_bands, pretrained = False, ckpt_
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def seco_resnet18_sentinel2_rgb_seco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet18_Weights.SENTINEL2_RGB_SECO, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -192,6 +206,7 @@ def seco_resnet18_sentinel2_rgb_seco(model_bands, pretrained = False, ckpt_data:
 #### resnet 50
 @TERRATORCH_BACKBONE_REGISTRY.register
 def fmow_resnet50_fmow_rgb_gassl(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.FMOW_RGB_GASSL, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -200,6 +215,7 @@ def fmow_resnet50_fmow_rgb_gassl(model_bands, pretrained = False, ckpt_data: str
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet50_landsat_tm_toa_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.LANDSAT_TM_TOA_MOCO, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -207,6 +223,7 @@ def ssl4eol_resnet50_landsat_tm_toa_moco(model_bands, pretrained = False, ckpt_d
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet50_landsat_tm_toa_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.LANDSAT_TM_TOA_SIMCLR, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -214,6 +231,7 @@ def ssl4eol_resnet50_landsat_tm_toa_simclr(model_bands, pretrained = False, ckpt
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet50_landsat_etm_toa_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.LANDSAT_ETM_TOA_MOCO, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -221,6 +239,7 @@ def ssl4eol_resnet50_landsat_etm_toa_moco(model_bands, pretrained = False, ckpt_
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet50_landsat_etm_toa_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.LANDSAT_ETM_TOA_SIMCLR, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -228,6 +247,7 @@ def ssl4eol_resnet50_landsat_etm_toa_simclr(model_bands, pretrained = False, ckp
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet50_landsat_etm_sr_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.LANDSAT_ETM_SR_MOCO, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -235,6 +255,7 @@ def ssl4eol_resnet50_landsat_etm_sr_moco(model_bands, pretrained = False, ckpt_d
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet50_landsat_etm_sr_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.LANDSAT_ETM_SR_SIMCLR, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -242,6 +263,7 @@ def ssl4eol_resnet50_landsat_etm_sr_simclr(model_bands, pretrained = False, ckpt
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet50_landsat_oli_tirs_toa_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.LANDSAT_OLI_TIRS_TOA_MOCO, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -249,6 +271,7 @@ def ssl4eol_resnet50_landsat_oli_tirs_toa_moco(model_bands, pretrained = False, 
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet50_landsat_oli_tirs_toa_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.LANDSAT_OLI_TIRS_TOA_SIMCLR, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -256,6 +279,7 @@ def ssl4eol_resnet50_landsat_oli_tirs_toa_simclr(model_bands, pretrained = False
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet50_landsat_oli_sr_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.LANDSAT_OLI_SR_MOCO, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -263,6 +287,7 @@ def ssl4eol_resnet50_landsat_oli_sr_moco(model_bands, pretrained = False, ckpt_d
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet50_landsat_oli_sr_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.LANDSAT_OLI_SR_SIMCLR, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -270,6 +295,7 @@ def ssl4eol_resnet50_landsat_oli_sr_simclr(model_bands, pretrained = False, ckpt
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eos12_resnet50_sentinel1_all_decur(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.SENTINEL1_ALL_DECUR, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -277,6 +303,7 @@ def ssl4eos12_resnet50_sentinel1_all_decur(model_bands, pretrained = False, ckpt
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eos12_resnet50_sentinel1_all_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None =  ResNet50_Weights.SENTINEL1_ALL_MOCO, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -284,6 +311,7 @@ def ssl4eos12_resnet50_sentinel1_all_moco(model_bands, pretrained = False, ckpt_
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eos12_resnet50_sentinel2_all_decur(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.SENTINEL2_ALL_DECUR, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -291,6 +319,7 @@ def ssl4eos12_resnet50_sentinel2_all_decur(model_bands, pretrained = False, ckpt
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eos12_resnet50_sentinel2_all_dino(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.SENTINEL2_ALL_DINO, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -298,6 +327,7 @@ def ssl4eos12_resnet50_sentinel2_all_dino(model_bands, pretrained = False, ckpt_
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eos12_resnet50_sentinel2_all_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.SENTINEL2_ALL_MOCO, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -305,6 +335,7 @@ def ssl4eos12_resnet50_sentinel2_all_moco(model_bands, pretrained = False, ckpt_
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eos12_resnet50_sentinel2_rgb_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.SENTINEL2_RGB_MOCO, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -312,6 +343,7 @@ def ssl4eos12_resnet50_sentinel2_rgb_moco(model_bands, pretrained = False, ckpt_
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def seco_resnet50_sentinel2_rgb_seco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.SENTINEL2_RGB_SECO, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -319,6 +351,7 @@ def seco_resnet50_sentinel2_rgb_seco(model_bands, pretrained = False, ckpt_data:
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_resnet50_sentinel2_mi_ms_satlas(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.SENTINEL2_MI_MS_SATLAS, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -326,6 +359,7 @@ def satlas_resnet50_sentinel2_mi_ms_satlas(model_bands, pretrained = False, ckpt
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_resnet50_sentinel2_mi_rgb_satlas(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.SENTINEL2_MI_RGB_SATLAS, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -333,6 +367,7 @@ def satlas_resnet50_sentinel2_mi_rgb_satlas(model_bands, pretrained = False, ckp
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_resnet50_sentinel2_si_ms_satlas(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.SENTINEL2_SI_MS_SATLAS, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -340,6 +375,7 @@ def satlas_resnet50_sentinel2_si_ms_satlas(model_bands, pretrained = False, ckpt
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_resnet50_sentinel2_si_rgb_satlas(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.SENTINEL2_SI_RGB_SATLAS, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -348,6 +384,7 @@ def satlas_resnet50_sentinel2_si_rgb_satlas(model_bands, pretrained = False, ckp
 #### resnet152
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_resnet152_sentinel2_mi_ms(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None =  ResNet152_Weights.SENTINEL2_MI_MS_SATLAS, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet152(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -355,6 +392,7 @@ def satlas_resnet152_sentinel2_mi_ms(model_bands, pretrained = False, ckpt_data:
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_resnet152_sentinel2_mi_rgb(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet152_Weights.SENTINEL2_MI_RGB_SATLAS, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet152(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -362,6 +400,7 @@ def satlas_resnet152_sentinel2_mi_rgb(model_bands, pretrained = False, ckpt_data
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_resnet152_sentinel2_si_ms_satlas(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet152_Weights.SENTINEL2_SI_MS_SATLAS, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet152(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -369,6 +408,7 @@ def satlas_resnet152_sentinel2_si_ms_satlas(model_bands, pretrained = False, ckp
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_resnet152_sentinel2_si_rgb_satlas(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None =  ResNet152_Weights.SENTINEL2_SI_RGB_SATLAS, out_indices: list | None = None, **kwargs):
+    if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet152(**kwargs)
     if pretrained:
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
@@ -376,13 +416,15 @@ def satlas_resnet152_sentinel2_si_rgb_satlas(model_bands, pretrained = False, ck
 
 
 #### to add build model and load weights
-def load_resnet_weights(model: nn.Module, model_bands, ckpt_data: str, weights: Weights, input_size: int = 224, custom_weight_proj: str = "features.0.0.weight") -> nn.Module:
+def load_resnet_weights(model: nn.Module, model_bands, ckpt_data: str, weights: Weights, input_size: int = 224, custom_weight_proj: str = "conv1.weight") -> nn.Module:
     
-    pretrained_bands = get_pretrained_bands(weights.meta["bands"])
-    
+    pretrained_bands = get_pretrained_bands(weights.meta["bands"]) if "bands" in weights.meta else []
+    print("Loading weights")
     if ckpt_data is not None:
         if ckpt_data.find("https://hf.co/") > -1:
-            ckpt_data = huggingface_hub.hf_hub_download(repo_id="torchgeo/satlas", filename=ckpt_data.split('/')[-1])
+            repo_id = ckpt_data.split("/resolve/")[0].replace("https://hf.co/", '')
+            filename = ckpt_data.split("/")[-1]
+            ckpt_data = huggingface_hub.hf_hub_download(repo_id=repo_id, filename=filename)
         # checkpoint_model = torch.load(ckpt_data, map_location="cpu")["model"]
         checkpoint_model = torch.load(ckpt_data, map_location="cpu")
         state_dict = model.state_dict()
@@ -407,6 +449,5 @@ def load_resnet_weights(model: nn.Module, model_bands, ckpt_data: str, weights: 
             missing_keys, unexpected_keys = model.load_state_dict(checkpoint_model, strict=False)
             assert set(missing_keys) <= set()
             assert not unexpected_keys
-
     
     return model
