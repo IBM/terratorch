@@ -166,18 +166,6 @@ def ssl4eos12_vit_small_patch16_224_sentinel2_all_moco(model_bands, pretrained =
     if pretrained:
         model = load_vit_weights(model, model_bands, ckpt_data, weights)
     return ViTEncoderWrapper(model, vit_s_meta, weights, out_indices)
-
-def remove_keys(checkpoint_model, state_dict, keys_to_remove: list[str] = ["head.weight", "head.bias"]):
-    
-    for k in keys_to_remove:
-        if (
-            k in checkpoint_model
-            and checkpoint_model[k].shape != state_dict[k].shape
-        ):
-            logging.info(f"Removing key {k} from pretrained checkpoint")
-            del checkpoint_model[k]
-            
-    return checkpoint_model
     
 
 #### to add build model and load weights
