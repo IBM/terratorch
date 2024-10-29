@@ -3,7 +3,8 @@ from torch import Tensor, nn
 from torchgeo.trainers import BaseTask
 from typing import Any, Mapping
 
-from terratorch.models.model import Model, get_factory
+from terratorch.models.model import Model#, get_factory
+from terratorch.registry import MODEL_FACTORY_REGISTRY
 from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
 from terratorch.tasks.regression_tasks import RootLossWrapper
@@ -29,12 +30,12 @@ class WxCDownscalingTask(BaseTask):
         plot_on_val: bool | int = 10,
     ) -> None:
 
-        self.model_factory = get_factory(model_factory)
+        self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
         self.model_config = model_config
         # TODO Unify it with self.hparams
         self.extended_hparams = self.model_config.to_dict()
         super().__init__()
-        print(type(self.hparams))
+       
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
         self.test_loss_handler = LossHandler(self.test_metrics.prefix)
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
