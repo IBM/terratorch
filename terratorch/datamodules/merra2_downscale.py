@@ -22,8 +22,30 @@ class Merra2DownscaleDatasetTerraTorch(Merra2DownscaleDataset):
 
 class Merra2DownscaleNonGeoDataModule(NonGeoDataModule):
 
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(Merra2DownscaleDatasetTerraTorch, **kwargs)
+    def __init__(self, input_surface_vars: list[int | tuple[int, int] | str] | None = None,
+                       input_static_surface_vars: list[int | tuple[int, int] | str] | None = None,
+                       input_vertical_vars: list[int | tuple[int, int] | str] | None = None,
+                       input_levels: list[float] = None,
+                       output_vars: list[int | tuple[int, int] | str] | None = None,
+                       n_input_timestamps: int = 2,
+                       crop_lat: list[float] = None,
+                       input_size_lat: int = 60,
+                       input_size_lon: int = 60,
+                       apply_smoothen: bool = True, 
+                       **kwargs: Any) -> None:
+        
+        super().__init__(Merra2DownscaleDatasetTerraTorch,
+                         input_surface_vars=input_surface_vars,
+                         input_static_surface_vars=input_static_surface_vars,
+                         input_vertical_vars=input_vertical_vars,
+                         output_vars=output_vars,
+                         n_input_timestamps=n_input_timestamps,
+                         crop_lat=crop_lat,
+                         input_size_lat=input_size_lat,
+                         input_size_lon=input_size_lon,
+                         apply_smoothen=apply_smoothen,
+                         **kwargs)
+
         self.aug = lambda x: x
 
     def _dataloader_factory(self, split: str) -> DataLoader[dict[str, Tensor]]:

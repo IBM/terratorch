@@ -28,6 +28,8 @@ from terratorch.datamodules.open_sentinel_map import OpenSentinelMapDataModule
 from terratorch.datamodules.pastis import PASTISDataModule
 from terratorch.datamodules.sen4agrinet import Sen4AgriNetDataModule
 
+from terratorch.datamodules.merra2_downscale import Merra2DownscaleNonGeoDataModule 
+
 # GenericNonGeoRegressionDataModule,
 from terratorch.datamodules.sen1floods11 import Sen1Floods11NonGeoDataModule
 from terratorch.datamodules.torchgeo_data_module import TorchGeoDataModule, TorchNonGeoDataModule
