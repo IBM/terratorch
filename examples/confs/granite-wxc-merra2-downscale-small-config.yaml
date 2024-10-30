@@ -17,7 +17,6 @@ trainer:
   log_every_n_steps: 50
   enable_checkpointing: true
   default_root_dir: examples/
-  #job_id: inference-test
   #num_epochs: 400
   #dl_num_workers: 19
   #dl_prefetch_size: 1
@@ -34,13 +33,13 @@ trainer:
   #mask_ratio_targets: 0.0
   #max_batch_size: 16
 
-  path_experiment: experiment
+  #path_experiment: experiment
   #loss: rmse
   #freeze_backbone: True
   #freeze_decoder: False
-  backbone_prefix: encoder.
-  finetune_w_static: True
-  strict_matching: true
+  #backbone_prefix: encoder.
+  #finetune_w_static: True
+  #strict_matching: true
 data:
   #type: merra2
   class_path: terratorch.datamodules.Merra2DownscaleNonGeoDataModule
@@ -100,38 +99,52 @@ data:
     input_size_lon: 96 # 6x coarsening 
     apply_smoothen: True
 model:
-  class_path: terratorch.tasks.WxCDownscalingTask 
+  class_path: WxCDownscalingTask 
   init_args:
     model_args:
-      # Platform independent config
       num_static_channels: 7
       embed_dim: 256 #0
       token_size:
-        - 1
-        - 1
+      - 1
+      - 1
       n_blocks_encoder: 6 #12
       mlp_multiplier: 4
       n_heads: 8 #16
       dropout_rate: 0.0
       drop_path: 0.05
-      
-      # Accepted values: temporal, climate, none
-      residual: climate
-      
-      residual_connection: True
-      encoder_shift: False
+      mask_unit_size: 
+        - 15
+        - 16
+    model_config:    
+       num_epochs: 200   
+       limit_steps_train: 250 
+       limit_steps_valid: 50
+       batch_size: 16 
+       learning_rate: 0.0001 
+       min_lr: 0.00001 
+       dl_num_workers: 19 
+       dl_prefetch_size: 1 
+       path_experiment: experiment/
+       warm_up_steps: 0 
+       mask_ratio_inputs: 0.0
+       mask_ratio_targets: 0.0    # Accepted values: temporal, climate, none
+       job_id: inference-test
+       #residual: climate
+    model_factory: WxCModelFactory 
+      #residual_connection: True
+      #encoder_shift: False
 
-      downscaling_patch_size: [2, 2]
-      downscaling_embed_dim: 256
-      encoder_decoder_type: 'conv' # ['conv', 'transformer']
-      encoder_decoder_upsampling_mode: pixel_shuffle # ['nearest', 'bilinear', 'pixel_shuffle', 'conv_transpose']
-      encoder_decoder_kernel_size_per_stage: [[3], [3]] # Optional, default = 3 for conv_tanspose [[3], [2]]
-      encoder_decoder_scale_per_stage: [[2], [3]] # First list determines before/after backbone
-      encoder_decoder_conv_channels: 128
-      freeze_backbone: True
-      freeze_decoder: False
-      ignore_index: -1
-  loss: rmse 
+      #downscaling_patch_size: [2, 2]
+      #downscaling_embed_dim: 256
+      #encoder_decoder_type: 'conv' # ['conv', 'transformer']
+      #encoder_decoder_upsampling_mode: pixel_shuffle # ['nearest', 'bilinear', 'pixel_shuffle', 'conv_transpose']
+      #encoder_decoder_kernel_size_per_stage: [[3], [3]] # Optional, default = 3 for conv_tanspose [[3], [2]]
+      #encoder_decoder_scale_per_stage: [[2], [3]] # First list determines before/after backbone
+      #encoder_decoder_conv_channels: 128
+      #freeze_backbone: True
+      #freeze_decoder: False
+      #ignore_index: -1
+      #loss: rmse 
 optimizer:
   class_path: torch.optim.AdamW
   init_args:

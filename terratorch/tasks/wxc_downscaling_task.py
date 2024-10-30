@@ -29,6 +29,10 @@ class WxCDownscalingTask(BaseTask):
         freeze_decoder: bool = False,  # noqa: FBT001, FBT002
         plot_on_val: bool | int = 10,
     ) -> None:
+        
+        # Special case for mask_init_size, which must be read as tuple:
+        model_unit_size = tuple(model_args.pop["model_unit_size"])
+        model_config["model_unit_size"] = model_unit_size
 
         self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
         self.model_config = model_config
