@@ -134,6 +134,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         predict_output_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
         rgb_modality: str | None = None,
         rgb_indices: list[int] | None = None,
+        allow_substring_split_file: bool = False,
         constant_scale: dict | float = 1.,
         train_transform: dict | A.Compose | None | list[A.BasicTransform] = None,
         val_transform: dict | A.Compose | None | list[A.BasicTransform] = None,
@@ -234,6 +235,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.train_split = train_split
         self.val_split = val_split
         self.test_split = test_split
+        self.allow_substring_split_file = allow_substring_split_file
         self.constant_scale = constant_scale
         if isinstance(self.constant_scale, dict):
             # Fill in missing modalities
@@ -310,6 +312,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 label_grep=self.label_grep,
                 label_data_root=self.train_label_data_root,
                 split=self.train_split,
+                allow_substring_split_file=self.allow_substring_split_file,
                 dataset_bands=self.dataset_bands,
                 output_bands=self.output_bands,
                 constant_scale=self.constant_scale,
@@ -330,6 +333,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 label_grep=self.label_grep,
                 label_data_root=self.val_label_data_root,
                 split=self.val_split,
+                allow_substring_split_file=self.allow_substring_split_file,
                 dataset_bands=self.dataset_bands,
                 output_bands=self.output_bands,
                 constant_scale=self.constant_scale,
@@ -350,6 +354,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 label_grep=self.label_grep,
                 label_data_root=self.test_label_data_root,
                 split=self.test_split,
+                allow_substring_split_file=self.allow_substring_split_file,
                 dataset_bands=self.dataset_bands,
                 output_bands=self.output_bands,
                 constant_scale=self.constant_scale,
@@ -366,6 +371,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
             self.predict_dataset = self.dataset_class(
                 data_root=self.predict_root,
                 num_classes=self.num_classes,
+                allow_substring_split_file=self.allow_substring_split_file,
                 dataset_bands=self.predict_dataset_bands,
                 output_bands=self.predict_output_bands,
                 constant_scale=self.constant_scale,

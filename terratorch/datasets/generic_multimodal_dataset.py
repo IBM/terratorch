@@ -42,6 +42,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         rgb_modality: str | None = None,
         rgb_indices: list[int] | None = None,
         allow_missing_modalities: bool = False,  # TODO: Not implemented on a data module level yet (collate_fn required).
+        allow_substring_split_file: bool = False,
         dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         constant_scale: dict[float] = None,
@@ -118,14 +119,19 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
             if label_data_root:
                 dir_lists = [glob.glob(os.path.join(r, label_grep)) for r in label_data_root]
-                segmentation_mask_files = sorted([p for l in dir_lists for p in l])  # Concatenate
+                image_files['mask'] = sorted([p for l in dir_lists for p in l])  # Concatenate
+
+            if allow_substring_split_file:
+                # Get exact match of filenames
+                get_file_id = lambda s: os.path.basename(s)
+            else:
+                # Remove file extensions
+                get_file_id = lambda s: os.path.splitext(os.path.basename(s))[0]
 
             if allow_missing_modalities:
-                valid_files = set([os.path.splitext(os.path.basename(file))[0]
-                                   for file in np.concatenate(list(image_files.values()))])
+                valid_files = set([get_file_id(file) for file in np.concatenate(list(image_files.values()))])
             else:
-                valid_files = [os.path.splitext(os.path.basename(file))[0]
-                               for file in image_files[self.modalities[0]]]
+                valid_files = [get_file_id(file) for file in image_files[self.modalities[0]]]
 
         self.samples = []
         num_modalities = len(self.modalities) + int(label_data_root is not None)
@@ -136,16 +142,32 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             for m, m_dirs in data_root.items():
                 # Iterate over all directories of the current modality
                 for m_dir in m_dirs:
-                    m_files = glob.glob(os.path.join(m_dir, file + image_grep[m]))
-                    if m_files:
-                        sample[m] = m_files[0]
-                        break
+                    if allow_substring_split_file:
+                        # Substring match with image_grep
+                        m_files = glob.glob(os.path.join(m_dir, file + image_grep[m]))
+                        if m_files:
+                            sample[m] = m_files[0]
+                            break
+                    else:
+                        # Exact match
+                        file_path = os.path.join(m_dir, file)
+                        if os.path.isfile(file_path):
+                            sample[m] = file_path
+                            break
             if label_data_root:
                 for l_dir in label_data_root:
-                    l_files = glob.glob(os.path.join(l_dir, file + label_grep))
-                    if l_files:
-                        sample['mask'] = l_files[0]
-                        break
+                    if allow_substring_split_file:
+                        # Substring match with label_grep
+                        l_files = glob.glob(os.path.join(l_dir, file + label_grep))
+                        if l_files:
+                            sample['mask'] = l_files[0]
+                            break
+                    else:
+                        # Exact match
+                        file_path = os.path.join(l_dir, file)
+                        if os.path.isfile(file_path):
+                            sample['mask'] = file_path
+                            break
                 if 'mask' not in sample:
                     # Only add sample if mask is present
                     break
