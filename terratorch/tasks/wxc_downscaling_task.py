@@ -18,6 +18,7 @@ class WxCDownscalingTask(BaseTask):
         self,
         model_args: dict,
         model_factory: str,
+        extra_kwargs: dict,
         model_config: ExperimentConfig,
         loss: str = "mse",
         lr: float = 0.001,
@@ -30,9 +31,21 @@ class WxCDownscalingTask(BaseTask):
         plot_on_val: bool | int = 10,
     ) -> None:
         
-        # Special case for mask_init_size, which must be read as tuple:
+        # Special cases for some parameters that could not be read in 
+        # their own fields.
         mask_unit_size = tuple(model_args.pop("mask_unit_size"))
+        encoder_decoder_kernel_size_per_stage = extra_kwargs.pop("encoder_decoder_kernel_size_per_stage")
+        output_vars = extra_kwargs.pop("output_vars")
+        type_dataset = extra_kwargs.pop("type") 
+
+        # Special cases for optional variables
+        input_surface_scalers_path = extra_kwargs.pop("input_surface_scalers_path", None)
+
         model_config.model.mask_unit_size = mask_unit_size
+        model_config.model.encoder_decoder_kernel_size_per_stage = encoder_decoder_kernel_size_per_stage
+        model_config.model.input_surface_scalers_path = input_surface_scalers_path
+        model_config.data.output_vars = output_vars
+        model_config.data.type = type_dataset
 
         self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
         self.model_config = model_config
