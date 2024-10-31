@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import Any
 
 import albumentations as A
@@ -18,6 +19,7 @@ class GeobenchDataModule(NonGeoDataModule):
         batch_size: int = 8,
         num_workers: int = 0,
         data_root: str = "./",
+        bands: Sequence[str] | None = None,
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
         val_transform: A.Compose | None | list[A.BasicTransform] = None,
         test_transform: A.Compose | None | list[A.BasicTransform] = None,
@@ -27,7 +29,8 @@ class GeobenchDataModule(NonGeoDataModule):
     ) -> None:
         super().__init__(dataset_class, batch_size, num_workers, **kwargs)
 
-        bands = kwargs.get("bands", dataset_class.all_band_names)
+        if bands is None:
+            bands = dataset_class.all_band_names
         self.means = torch.tensor([means[b] for b in bands])
         self.stds = torch.tensor([stds[b] for b in bands])
         self.train_transform = wrap_in_compose_is_list(train_transform)

@@ -4,8 +4,9 @@ import dataclasses
 import glob
 import os
 import re
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 import albumentations as A
 import matplotlib as mpl
@@ -19,7 +20,7 @@ from torch import Tensor
 from torchgeo.datasets import NonGeoDataset, RasterDataset
 from xarray import DataArray
 
-from terratorch.datasets.utils import default_transform, validate_bands, clip_image_percentile
+from terratorch.datasets.utils import clip_image_percentile, default_transform, validate_bands
 
 
 class FireScarsNonGeo(NonGeoDataset):
@@ -66,7 +67,8 @@ class FireScarsNonGeo(NonGeoDataset):
         """
         super().__init__()
         if split not in self.splits:
-            raise ValueError(f"Incorrect split '{split}', please choose one of {self.splits}.")
+            msg = f"Incorrect split '{split}', please choose one of {self.splits}."
+            raise ValueError(msg)
         split_name = self.splits[split]
         self.split = split
 
@@ -107,7 +109,7 @@ class FireScarsNonGeo(NonGeoDataset):
 
         # get center point to reproject to lat/lon
         point = image.isel(band=0, x=slice(px, px + 1), y=slice(py, py + 1))
-        point = point.rio.reproject('epsg:4326')
+        point = point.rio.reproject("epsg:4326")
 
         lat_lon = np.asarray([point.y[0], point.x[0]])
 
@@ -163,7 +165,8 @@ class FireScarsNonGeo(NonGeoDataset):
 
         rgb_indices = [self.bands.index(band) for band in self.rgb_bands]
         if len(rgb_indices) != 3:
-            raise ValueError("Dataset doesn't contain some of the RGB bands")
+            msg = "Dataset doesn't contain some of the RGB bands"
+            raise ValueError(msg)
 
         # RGB -> channels-last
         image = sample["image"][rgb_indices, ...].permute(1, 2, 0).numpy()

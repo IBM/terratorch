@@ -1,7 +1,8 @@
 import glob
 import os
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 import albumentations as A
 import geopandas
@@ -17,7 +18,7 @@ from torch import Tensor
 from torchgeo.datasets import NonGeoDataset
 from xarray import DataArray
 
-from terratorch.datasets.utils import default_transform, filter_valid_files, validate_bands, clip_image
+from terratorch.datasets.utils import clip_image, default_transform, filter_valid_files, validate_bands
 
 
 class Sen1Floods11NonGeo(NonGeoDataset):
@@ -79,7 +80,8 @@ class Sen1Floods11NonGeo(NonGeoDataset):
         """
         super().__init__()
         if split not in self.splits:
-            raise ValueError(f"Incorrect split '{split}', please choose one of {self.splits}.")
+            msg = f"Incorrect split '{split}', please choose one of {self.splits}."
+            raise ValueError(msg)
         split_name = self.splits[split]
         self.split = split
 
@@ -193,7 +195,8 @@ class Sen1Floods11NonGeo(NonGeoDataset):
 
         rgb_indices = [self.bands.index(band) for band in self.rgb_bands]
         if len(rgb_indices) != 3:
-            raise ValueError("Dataset doesn't contain some of the RGB bands")
+            msg = "Dataset doesn't contain some of the RGB bands"
+            raise ValueError(msg)
 
         # RGB -> channels-last
         image = sample["image"][rgb_indices, ...].permute(1, 2, 0).numpy()

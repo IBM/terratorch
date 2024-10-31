@@ -10,13 +10,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
-from albumentations.pytorch import ToTensorV2
 from torchgeo.datasets import NonGeoDataset
 
-from terratorch.datasets.utils import to_tensor
+from terratorch.datasets.utils import (
+    clip_image,
+    default_transform,
+    validate_bands,
+)
 
 
 class MForestNetNonGeo(NonGeoDataset):
+    """NonGeo dataset implementation for M-ForestNet."""
     all_band_names = (
         "BLUE",
         "GREEN",
@@ -28,55 +32,64 @@ class MForestNetNonGeo(NonGeoDataset):
 
     rgb_bands = ("RED", "GREEN", "BLUE")
 
-    BAND_SETS = {"all": all_band_names, "rgb": rgb_bands}  # noqa: RUF012
+    BAND_SETS = {"all": all_band_names, "rgb": rgb_bands}
+
+    splits = {"train": "train", "val": "valid", "test": "test"}
+
+    data_dir = "m-forestnet"
+    partition_file_template = "{partition}_partition.json"
 
     def __init__(
         self,
         data_root: str,
+        split: str = "train",
         bands: Sequence[str] = BAND_SETS["all"],
         transform: A.Compose | None = None,
-        split="train",
-        partition="default",
-        use_metadata=False,  # noqa: FBT002
+        partition: str = "default",
+        use_metadata: bool = False,
     ) -> None:
+        """Initialize the dataset.
+
+        Args:
+            data_root (str): Path to the data root directory.
+            split (str): One of 'train', 'val', or 'test'.
+            bands (Sequence[str]): Bands to be used. Defaults to all bands.
+            transform (A.Compose | None): Albumentations transform to be applied.
+                Defaults to None, which applies default_transform().
+            partition (str): Partition name for the dataset splits. Defaults to 'default'.
+            use_metadata (bool): Whether to return metadata info (time and location).
+        """
         super().__init__()
-        if split not in ["train", "test", "val"]:
-            msg = "Split must be one of train, test, val."
-            raise Exception(msg)
-        if split == "val":
-            split = "valid"
 
-        self.transform = transform if transform else lambda **batch: to_tensor(batch)
-        self._validate_bands(bands)
-        self.bands = bands
-        self.band_indices = np.array([self.all_band_names.index(b) for b in bands if b in self.all_band_names])
+        if split not in self.splits:
+            msg = f"Incorrect split '{split}', please choose one of {list(self.splits.keys())}."
+            raise ValueError(msg)
+        split_name = self.splits[split]
         self.split = split
-        self.use_metadata = use_metadata
-        data_root = Path(data_root)
-        self.data_directory = data_root / "m-forestnet"
 
-        partition_file = self.data_directory / f"{partition}_partition.json"
+        validate_bands(bands, self.all_band_names)
+        self.bands = bands
+        self.band_indices = np.array([self.all_band_names.index(b) for b in bands])
+
+        self.use_metadata = use_metadata
+
+        self.data_root = Path(data_root)
+        self.data_directory = self.data_root / self.data_dir
+
+        partition_file = self.data_directory / self.partition_file_template.format(partition=partition)
         with open(partition_file) as file:
             partitions = json.load(file)
 
-        if split not in partitions:
-            msg = f"Split '{split}' not found."
+        if split_name not in partitions:
+            msg = f"Split '{split_name}' not found."
             raise ValueError(msg)
 
-        self.image_files = [self.data_directory / (filename + ".hdf5") for filename in partitions[split]]
+        self.image_files = [self.data_directory / f"{filename}.hdf5" for filename in partitions[split_name]]
 
-    def _get_coords(self, image_id: str) -> torch.Tensor:
-        lat_str, lon_str, _ = image_id.split("_", 2)
-        latitude = float(lat_str)
-        longitude = float(lon_str)
+        self.transform = transform if transform else default_transform
 
-        return torch.tensor([latitude, longitude], dtype=torch.float32)
-
-    def _get_date(self, image_id: str) -> torch.Tensor:
-        _, _, date_str = image_id.split("_", 2)
-        date = pd.to_datetime(date_str, format="%Y_%m_%d")
-
-        return torch.tensor([[date.year, date.dayofyear - 1]], dtype=torch.float32)
+    def __len__(self) -> int:
+        return len(self.image_files)
 
     def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
         file_path = self.image_files[index]
@@ -93,7 +106,8 @@ class MForestNetNonGeo(NonGeoDataset):
 
         output = {"image": image.astype(np.float32)}
 
-        output = self.transform(**output)
+        if self.transform:
+            output = self.transform(**output)
 
         output["label"] = class_index
 
@@ -106,52 +120,56 @@ class MForestNetNonGeo(NonGeoDataset):
 
         return output
 
-    def _validate_bands(self, bands: Sequence[str]) -> None:
-        assert isinstance(bands, Sequence), "'bands' must be a sequence"
-        for band in bands:
-            if band not in self.all_band_names:
-                msg = f"'{band}' is an invalid band name."
-                raise ValueError(msg)
+    def _get_coords(self, image_id: str) -> torch.Tensor:
+        """Extract spatial coordinates from the image ID.
 
-    def __len__(self):
-        return len(self.image_files)
+        Args:
+            image_id (str): The ID of the image.
 
-    def plot(self, arg, suptitle: str | None = None) -> None:
-        if isinstance(arg, int):
-            sample = self.__getitem__(arg)
-        elif isinstance(arg, dict):
-            sample = arg
-        else:
-            msg = "Argument must be an integer index or a sample dictionary."
-            raise TypeError(msg)
+        Returns:
+            torch.Tensor: Tensor containing latitude and longitude.
+        """
+        lat_str, lon_str, _ = image_id.split("_", 2)
+        latitude = float(lat_str)
+        longitude = float(lon_str)
+        return torch.tensor([latitude, longitude], dtype=torch.float32)
 
-        image = sample["image"].numpy()
-        label_index = sample["label"].numpy()
+    def _get_date(self, image_id: str) -> torch.Tensor:
+        _, _, date_str = image_id.split("_", 2)
+        date = pd.to_datetime(date_str, format="%Y_%m_%d")
 
-        rgb_indices = []
-        for band in self.rgb_bands:
-            if band in self.bands:
-                rgb_indices.append(self.bands.index(band))
-            else:
-                msg = "Dataset doesn't contain some of the RGB bands"
-                raise ValueError(msg)
+        return torch.tensor([[date.year, date.dayofyear - 1]], dtype=torch.float32)
 
-        rgb_image = image[rgb_indices, :, :]
-        rgb_image = np.transpose(rgb_image, (1, 2, 0))
-        rgb_image = (rgb_image - np.min(rgb_image)) / (np.max(rgb_image) - np.min(rgb_image))
+    def plot(self, sample: dict[str, torch.Tensor], suptitle: str | None = None) -> plt.Figure:
+        """Plot a sample from the dataset.
 
-        self._plot_sample(image=rgb_image, label_index=label_index, suptitle=suptitle)
+        Args:
+            sample (dict[str, torch.Tensor]): A sample returned by :meth:`__getitem__`.
+            suptitle (str | None): Optional string to use as a suptitle.
 
-    @staticmethod
-    def _plot_sample(image, label_index, suptitle=None) -> None:
+        Returns:
+            matplotlib.figure.Figure: A matplotlib Figure with the rendered sample.
+        """
+        rgb_indices = [self.bands.index(band) for band in self.rgb_bands if band in self.bands]
+        if len(rgb_indices) != 3:
+            msg = "Dataset doesn't contain some of the RGB bands"
+            raise ValueError(msg)
+
+        image = sample["image"]
+        label = sample["label"].item()
+
+        if torch.is_tensor(image):
+            image = image.permute(1, 2, 0).numpy()  # (H, W, C)
+
+        rgb_image = image[:, :, rgb_indices]
+        rgb_image = clip_image(rgb_image)
+
         fig, ax = plt.subplots(figsize=(6, 6))
-        ax.imshow(image)
+        ax.imshow(rgb_image)
         ax.axis("off")
+        ax.set_title(f"Class: {label}")
 
-        class_name = str(label_index)
-        title = f"Class: {class_name}"
         if suptitle:
-            title = f"{suptitle} - {title}"
-        ax.set_title(title)
+            plt.suptitle(suptitle)
 
         return fig

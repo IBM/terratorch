@@ -194,6 +194,42 @@ def create_prithvi_vit_300(
     return model
 
 
+def create_prithvi_vit_600(
+    model_name: str,
+    pretrained: bool = False,  # noqa: FBT001, FBT002
+    bands: list[HLSBands] | None = None,
+    **kwargs,
+) -> TemporalViTEncoder:
+    """Prithvi ViT 600M"""
+    pretrained_bands = PRETRAINED_BANDS
+    if bands is None:
+        bands = pretrained_bands
+        logging.info(
+            f"Model bands not passed. Assuming bands are ordered in the same way as {PRETRAINED_BANDS}.\
+            Pretrained patch_embed layer may be misaligned with current bands"
+        )
+    model_args = {
+        "patch_size": 14,
+        "embed_dim": 1280,
+        "depth": 32,
+        "num_heads": 16,
+        "decoder_embed_dim": 512,
+        "decoder_depth": 8,
+        "decoder_num_heads": 16,
+        "mlp_ratio": 4,
+        "norm_layer": partial(nn.LayerNorm, eps=1e-6),
+        "num_frames": 1,
+    }
+    model = _create_prithvi(
+        model_name,
+        pretrained=pretrained,
+        pretrained_bands=pretrained_bands,
+        model_bands=bands,
+        **dict(model_args, **kwargs),
+    )
+    return model
+
+
 @register_model
 def prithvi_vit_tiny(
     bands: list[HLSBands] | None = None,
@@ -235,3 +271,12 @@ def prithvi_vit_300(
     **kwargs,
 ) -> TemporalViTEncoder:
     return create_prithvi_vit_300("prithvi_vit_300", pretrained, bands, **kwargs)
+
+
+@register_model
+def prithvi_vit_600(
+    pretrained: bool = False,  # noqa: FBT001, FBT002
+    bands: list[HLSBands] | None = None,
+    **kwargs,
+) -> TemporalViTEncoder:
+    return create_prithvi_vit_600("prithvi_vit_600", pretrained, bands, **kwargs)

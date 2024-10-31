@@ -1,5 +1,6 @@
 # Copyright contributors to the Terratorch project
 
+from collections.abc import Sequence
 from typing import Any
 
 import albumentations as A
@@ -11,7 +12,6 @@ from torchgeo.transforms import AugmentationSequential
 
 from terratorch.datamodules.utils import wrap_in_compose_is_list
 from terratorch.datasets import Sen1Floods11NonGeo
-
 
 MEANS = {
     "COASTAL_AEROSOL": 0.16450718,
@@ -54,16 +54,20 @@ class Sen1Floods11NonGeoDataModule(NonGeoDataModule):
         data_root: str,
         batch_size: int = 4,
         num_workers: int = 0,
+        bands: Sequence[str] = Sen1Floods11NonGeo.all_band_names,
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
         val_transform: A.Compose | None | list[A.BasicTransform] = None,
         test_transform: A.Compose | None | list[A.BasicTransform] = None,
         drop_last: bool = True,
+        constant_scale: float = 0.0001,
+        no_data_replace: float | None = 0,
+        no_label_replace: int | None = -1,
+        use_metadata: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(Sen1Floods11NonGeo, batch_size, num_workers, **kwargs)
         self.data_root = data_root
 
-        bands = kwargs.get("bands", Sen1Floods11NonGeo.all_band_names)
         means = [MEANS[b] for b in bands]
         stds = [STDS[b] for b in bands]
 
@@ -72,6 +76,10 @@ class Sen1Floods11NonGeoDataModule(NonGeoDataModule):
         self.test_transform = wrap_in_compose_is_list(test_transform)
         self.aug = AugmentationSequential(K.Normalize(means, stds), data_keys=["image"])
         self.drop_last = drop_last
+        self.constant_scale = constant_scale
+        self.no_data_replace = no_data_replace
+        self.no_label_replace = no_label_replace
+        self.use_metadata = use_metadata
 
     def setup(self, stage: str) -> None:
         if stage in ["fit"]:
@@ -79,21 +87,30 @@ class Sen1Floods11NonGeoDataModule(NonGeoDataModule):
                 split="train",
                 data_root=self.data_root,
                 transform=self.train_transform,
-                **self.kwargs,
+                constant_scale=self.constant_scale,
+                no_data_replace=self.no_data_replace,
+                no_label_replace=self.no_label_replace,
+                use_metadata=self.use_metadata,
             )
         if stage in ["fit", "validate"]:
             self.val_dataset = self.dataset_class(
                 split="val",
                 data_root=self.data_root,
                 transform=self.val_transform,
-                **self.kwargs,
+                constant_scale=self.constant_scale,
+                no_data_replace=self.no_data_replace,
+                no_label_replace=self.no_label_replace,
+                use_metadata=self.use_metadata,
             )
         if stage in ["test"]:
             self.test_dataset = self.dataset_class(
                 split="test",
                 data_root=self.data_root,
                 transform=self.test_transform,
-                **self.kwargs,
+                constant_scale=self.constant_scale,
+                no_data_replace=self.no_data_replace,
+                no_label_replace=self.no_label_replace,
+                use_metadata=self.use_metadata,
             )
 
     def _dataloader_factory(self, split: str) -> DataLoader[dict[str, Tensor]]:
