@@ -41,24 +41,30 @@ def wrap_in_compose_is_list(transform_list, additional_targets=None):
         if isinstance(transform_list, Iterable) else transform_list
 
 
-class Normalize(Callable):
+class MultimodalNormalize(Callable):
     def __init__(self, means, stds):
         super().__init__()
         self.means = means
         self.stds = stds
 
     def __call__(self, batch):
-        image = batch["image"]
-        if len(image.shape) == 5:
-            means = torch.tensor(self.means, device=image.device).view(1, -1, 1, 1, 1)
-            stds = torch.tensor(self.stds, device=image.device).view(1, -1, 1, 1, 1)
-        elif len(image.shape) == 4:
-            means = torch.tensor(self.means, device=image.device).view(1, -1, 1, 1)
-            stds = torch.tensor(self.stds, device=image.device).view(1, -1, 1, 1)
-        else:
-            msg = f"Expected batch to have 5 or 4 dimensions, but got {len(image.shape)}"
-            raise Exception(msg)
-        batch["image"] = (image - means) / stds
+        for m in self.means.keys():
+            if m not in batch:
+                continue
+            image = batch[m]
+            if len(image.shape) == 5:
+                means = torch.tensor(self.means[m], device=image.device).view(1, -1, 1, 1, 1)
+                stds = torch.tensor(self.stds[m], device=image.device).view(1, -1, 1, 1, 1)
+            elif len(image.shape) == 4:
+                means = torch.tensor(self.means[m], device=image.device).view(1, -1, 1, 1)
+                stds = torch.tensor(self.stds[m], device=image.device).view(1, -1, 1, 1)
+            elif len(self.means[m]) == 1:
+                means = torch.tensor(self.means[m], device=image.device)
+                stds = torch.tensor(self.stds[m], device=image.device)
+            else:
+                msg = f"Expected batch to have 5 or 4 dimensions, but got {len(image.shape)}"
+                raise Exception(msg)
+            batch[m] = (image - means) / stds
         return batch
 
 
@@ -297,7 +303,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         means = {m: load_from_file_or_attribute(means[m]) for m in means.keys()}
         stds = {m: load_from_file_or_attribute(stds[m]) for m in stds.keys()}
 
-        self.aug = {m: Normalize(means[m], stds[m]) for m in modalities}
+        self.aug = MultimodalNormalize(means, stds)
 
         self.chunk_data = chunk_data
         if chunk_data:

@@ -5,6 +5,7 @@
 import glob
 import logging
 import os
+import torch
 from abc import ABC
 from pathlib import Path
 from typing import Any
@@ -18,12 +19,26 @@ from einops import rearrange
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
-from torch import Tensor
 from torchgeo.datasets import NonGeoDataset
 
 from terratorch.datasets.utils import (HLSBands, default_transform, filter_valid_files, generate_bands_intervals,
                                        to_tensor)
 from terratorch.datasets.transforms import MultiModalTransforms
+
+
+class MultimodalToTensor():
+    def __init__(self, modalities):
+        self.modalities = modalities
+    def __call__(self, d):
+        new_dict = {}
+        for k, v in d.items():
+            if not isinstance(v, np.ndarray):
+                new_dict[k] = v
+            else:
+                if k in self.modalities and len(v.shape) >= 3:  # Assuming raster modalities with 3+ dimensions
+                    v = np.moveaxis(v, -1, 0)
+                new_dict[k] = torch.from_numpy(v)
+        return new_dict
 
 
 class GenericMultimodalDataset(NonGeoDataset, ABC):
@@ -205,12 +220,12 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
                 self.filter_indices[m] = [self.dataset_bands[m].index(band) for band in self.output_bands[m]]
 
-
         # If no transform is given, apply only to transform to torch tensor
         if isinstance(transform, A.Compose):
             self.transform = MultiModalTransforms(transform)
         elif transform is None:
-            self.transform = to_tensor
+            self.transform = MultimodalToTensor(self.modalities)
+            logging.warning(f'Default transforms ')
         else:
             # Modality-specific transforms
             transform = {m: transform[m] if m in transform else default_transform
@@ -246,9 +261,8 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             if modality == 'mask':
                 data = data[0]
 
-            # TODO: Assumes all modalities with three dimension and more to be channel-first images
-            if len(data.shape) >= 3:
-                # to channels last
+            if len(data.shape) >= 3:  # TODO: Assumes raster modalities by 3+ dimensions.
+                # to channels last (required by albumentations)
                 data = np.moveaxis(data, -3, -1)
 
             if modality in self.filter_indices:
@@ -263,7 +277,13 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             output["mask"] -= 1
         if self.transform:
             output = self.transform(output)
-        output["filename"] = self.samples[index]
+
+        # Tasks expect data to be stored in 'image', moving modalities to image dict
+        output = {
+            'image': {m: output[m] for m in self.modalities if m in output},
+            'mask': output['mask'] if 'mask' in output else None,
+            'filename': self.samples[index]
+        }
 
         return output
 
@@ -296,6 +316,7 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
         rgb_modality: str | None = None,
         rgb_indices: list[str] | None = None,
         allow_missing_modalities: bool = False,
+        allow_substring_split_file: bool = False,
         dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         class_names: list[str] | None = None,
@@ -346,6 +367,7 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
             rgb_modality=rgb_modality,
             rgb_indices=rgb_indices,
             allow_missing_modalities=allow_missing_modalities,
+            allow_substring_split_file=allow_substring_split_file,
             dataset_bands=dataset_bands,
             output_bands=output_bands,
             constant_scale=constant_scale,
@@ -363,7 +385,7 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
         item["mask"] = item["mask"].long()
         return item
 
-    def plot(self, sample: dict[str, Tensor], suptitle: str | None = None) -> Figure:
+    def plot(self, sample: dict[str, torch.Tensor], suptitle: str | None = None) -> Figure:
         """Plot a sample from the dataset.
 
         Args:
@@ -381,7 +403,7 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
         image = sample[self.rgb_modality]
         if len(image.shape) == 5:  # TODO: Needed? Copied from generic dataest.
             return
-        if isinstance(image, Tensor):
+        if isinstance(image, torch.Tensor):
             image = image.numpy()
         image = image.take(self.rgb_indices, axis=0)
         image = np.transpose(image, (1, 2, 0))
@@ -389,13 +411,13 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
         image = np.clip(image, 0, 1)
 
         label_mask = sample["mask"]
-        if isinstance(label_mask, Tensor):
+        if isinstance(label_mask, torch.Tensor):
             label_mask = label_mask.numpy()
 
         showing_predictions = "prediction" in sample
         if showing_predictions:
             prediction_mask = sample["prediction"]
-            if isinstance(prediction_mask, Tensor):
+            if isinstance(prediction_mask, torch.Tensor):
                 prediction_mask = prediction_mask.numpy()
 
         return self._plot_sample(
@@ -460,6 +482,7 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
         rgb_modality: str | None = None,
         rgb_indices: list[int] | None = None,
         allow_missing_modalities : bool = False,
+        allow_substring_split_file: bool = False,
         dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         constant_scale: float = 1,
@@ -507,6 +530,7 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
             rgb_modality=rgb_modality,
             rgb_indices=rgb_indices,
             allow_missing_modalities=allow_missing_modalities,
+            allow_substring_split_file=allow_substring_split_file,
             dataset_bands=dataset_bands,
             output_bands=output_bands,
             constant_scale=constant_scale,
@@ -522,7 +546,7 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
         item["mask"] = item["mask"].float()
         return item
 
-    def plot(self, sample: dict[str, Tensor], suptitle: str | None = None) -> Figure:
+    def plot(self, sample: dict[str, torch.Tensor], suptitle: str | None = None) -> Figure:
         """Plot a sample from the dataset.
 
         Args:
@@ -540,7 +564,7 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
         image = sample["image"]
         if len(image.shape) == 5:
             return
-        if isinstance(image, Tensor):
+        if isinstance(image, torch.Tensor):
             image = image.numpy()
         image = image.take(self.rgb_indices, axis=0)
         image = np.transpose(image, (1, 2, 0))
@@ -548,13 +572,13 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
         image = np.clip(image, 0, 1)
 
         label_mask = sample["mask"]
-        if isinstance(label_mask, Tensor):
+        if isinstance(label_mask, torch.Tensor):
             label_mask = label_mask.numpy()
 
         showing_predictions = "prediction" in sample
         if showing_predictions:
             prediction_mask = sample["prediction"]
-            if isinstance(prediction_mask, Tensor):
+            if isinstance(prediction_mask, torch.Tensor):
                 prediction_mask = prediction_mask.numpy()
 
         return self._plot_sample(
