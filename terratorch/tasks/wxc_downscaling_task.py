@@ -30,29 +30,81 @@ class WxCDownscalingTask(BaseTask):
         freeze_decoder: bool = False,  # noqa: FBT001, FBT002
         plot_on_val: bool | int = 10,
     ) -> None:
-        
-        # Special cases for some parameters that could not be read in 
+
+        # Special cases for some parameters that could not be read in
         # their own fields.
         mask_unit_size = tuple(model_args.pop("mask_unit_size"))
         encoder_decoder_kernel_size_per_stage = extra_kwargs.pop("encoder_decoder_kernel_size_per_stage")
         output_vars = extra_kwargs.pop("output_vars")
-        type_dataset = extra_kwargs.pop("type") 
+        type_dataset = extra_kwargs.pop("type")
+        input_levels = extra_kwargs.pop("input_levels")
+        downscaling_patch_size = extra_kwargs.pop("downscaling_patch_size")
+        n_input_timestamps = extra_kwargs.pop("n_input_timestamps")
+        downscaling_embed_dim = extra_kwargs.pop("downscaling_embed_dim")
+        encoder_decoder_conv_channels = extra_kwargs.pop("encoder_decoder_conv_channels")
+        encoder_decoder_scale_per_stage = extra_kwargs.pop("encoder_decoder_scale_per_stage")
+        encoder_decoder_upsampling_mode = extra_kwargs.pop("encoder_decoder_upsampling_mode")
+        encoder_shift = extra_kwargs.pop("encoder_shift")
+        drop_path = extra_kwargs.pop("drop_path")
+        encoder_decoder_type = extra_kwargs.pop("encoder_decoder_type")
+        input_size_lat = extra_kwargs.pop("input_size_lat")
+        input_size_lon = extra_kwargs.pop("input_size_lon")
+        freeze_backbone = extra_kwargs.pop("freeze_backbone")
+        freeze_decoder = extra_kwargs.pop("freeze_decoder")
+        data_path_surface = extra_kwargs.pop("data_path_surface") 
+        data_path_vertical = extra_kwargs.pop("data_path_vertical") 
+        climatology_path_surface = extra_kwargs.pop("climatology_path_surface") 
+        climatology_path_vertical = extra_kwargs.pop("climatology_path_vertical") 
 
-        # Special cases for optional variables
-        input_surface_scalers_path = extra_kwargs.pop("input_surface_scalers_path", None)
+        # Special cases for required variables
+        input_scalers_surface_path = extra_kwargs.pop("input_scalers_surface_path", None)
+        if not input_scalers_surface_path:
+            raise Exception(f"The parameter `input_scalers_surface_path` must be defined in `extra_kwargs`.")
 
+        input_scalers_vertical_path = extra_kwargs.pop("input_scalers_vertical_path", None)
+        if not input_scalers_vertical_path:
+            raise Exception(f"The parameter `input_scalers_vertical_path` must be defined in `extra_kwargs`.")
+        
+        output_scalers_surface_path = extra_kwargs.pop("output_scalers_surface_path")
+        output_scalers_vertical_path = extra_kwargs.pop("output_scalers_vertical_path")
+
+        model_config.freeze_backbone = freeze_backbone
+        model_config.freeze_decoder = freeze_decoder
+        model_config.mask_unit_size = mask_unit_size  
         model_config.model.mask_unit_size = mask_unit_size
         model_config.model.encoder_decoder_kernel_size_per_stage = encoder_decoder_kernel_size_per_stage
-        model_config.model.input_surface_scalers_path = input_surface_scalers_path
+        model_config.model.input_scalers_surface_path = input_scalers_surface_path
+        model_config.model.input_scalers_vertical_path = input_scalers_vertical_path
         model_config.data.output_vars = output_vars
         model_config.data.type = type_dataset
+        model_config.data.input_surface_vars = model_config.data.surface_vars
+        model_config.data.input_vertical_vars = model_config.data.vertical_vars
+        model_config.data.input_static_surface_vars = model_config.data.static_surface_vars
+        model_config.data.input_levels = input_levels 
+        model_config.model.downscaling_patch_size = downscaling_patch_size
+        model_config.data.n_input_timestamps = n_input_timestamps
+        model_config.model.downscaling_embed_dim = downscaling_embed_dim
+        model_config.model.encoder_decoder_conv_channels = encoder_decoder_conv_channels
+        model_config.model.encoder_decoder_scale_per_stage = encoder_decoder_scale_per_stage
+        model_config.model.encoder_decoder_upsampling_mode = encoder_decoder_upsampling_mode
+        model_config.model.encoder_shift = encoder_shift
+        model_config.model.drop_path = drop_path 
+        model_config.model.encoder_decoder_type = encoder_decoder_type
+        model_config.data.input_size_lat = input_size_lat
+        model_config.data.input_size_lon = input_size_lon
+        model_config.data.data_path_surface = data_path_surface
+        model_config.data.data_path_vertical = data_path_vertical
+        model_config.data.climatology_path_surface = climatology_path_surface
+        model_config.data.climatology_path_vertical = climatology_path_vertical
+        model_config.model.output_scalers_surface_path = output_scalers_surface_path
+        model_config.model.output_scalers_vertical_path = output_scalers_vertical_path
 
         self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
         self.model_config = model_config
         # TODO Unify it with self.hparams
         self.extended_hparams = self.model_config.to_dict()
         super().__init__()
-       
+
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
         self.test_loss_handler = LossHandler(self.test_metrics.prefix)
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
@@ -90,7 +142,7 @@ class WxCDownscalingTask(BaseTask):
         Raises:
             ValueError: If *loss* is invalid.
         """
-        #TODO 'reduction' should be chosen using the config and 
+        #TODO 'reduction' should be chosen using the config and
         # a similar class as IgnoreIndex should be defined for this class
 
         loss: str = self.hparams["loss"].lower()
