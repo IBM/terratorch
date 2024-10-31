@@ -7,7 +7,6 @@ import torch
 
 from terratorch.cli_tools import build_lightning_cli
 
-
 @pytest.fixture(autouse=True)
 def setup_and_cleanup(model_name):
     model_instance = timm.create_model(model_name)
