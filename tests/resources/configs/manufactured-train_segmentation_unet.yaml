@@ -94,11 +94,15 @@ model:
   class_path: terratorch.tasks.SemanticSegmentationTask
   init_args:
     model_args:
+      backbone: "UNet"
+      backbone_in_channels: 6
+      backbone_base_channels: 16
       decoder: "ASPPSegmentationHead"
       decoder_dilations: [1, 6, 12, 18]
       decoder_channels: 256
-      decoder_in_channels: 6
+      decoder_in_channels: 16
       decoder_num_classes: 2
+      channels: 2
       in_channels: 6
       bands:
         - BLUE
