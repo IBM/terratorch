@@ -136,7 +136,8 @@ class ClayModelFactory(ModelFactory):
             except Exception as e:
                 print(e, "Error loading from HF. Trying to instantiate locally ...")
 
-                assert checkpoint_path, "A checkpoint must be provided to restore the model."
+                if checkpoint_path is None:
+                    raise ValueError("A checkpoint (checkpoint_path) must be provided to restore the model.")
 
                 backbone: nn.Module = Embedder(ckpt_path=checkpoint_path, **backbone_kwargs)
                 print("Model Clay was successfully restored.")
