@@ -55,8 +55,7 @@ class Attention(nn.Module):
         x = self.norm(x)
 
         qkv = self.to_qkv(x).chunk(3, dim=-1)
-        q, k, v = map(lambda t: rearrange(
-            t, 'b n (h d) -> b h n d', h=self.heads), qkv)
+        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h=self.heads), qkv)
 
         dots = torch.matmul(q, k.transpose(-1, -2)) * self.scale
 
@@ -242,7 +241,6 @@ class Encoder(nn.Module):
         patches, waves_encoded = self.to_patch_embed(
             cube, waves
         )  # [B L D] - patchify & create embeddings per patch
-        # TODO: Add time & latlon as encoding to patches
         patches = self.add_encodings(
             patches,
             time,

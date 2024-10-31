@@ -58,8 +58,7 @@ class Embedder(nn.Module):
         )
 
         # for use in features list. Single layer feature for simplicity
-        self.feature_info.append(
-            {"num_chs": 768, "reduction": 1, "module": f"clay_encoder"})
+        self.feature_info.append({"num_chs": 768, "reduction": 1, "module": "clay_encoder"})
 
         # assuming this is used to fine tune a network on top of the embeddings
 

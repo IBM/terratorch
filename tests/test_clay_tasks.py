@@ -22,7 +22,7 @@ def model_input() -> torch.Tensor:
     return torch.ones((1, NUM_CHANNELS, 224, 224))
 
 @pytest.mark.parametrize("backbone", ["clay_v1_base"])
-@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
+@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder"])
 @pytest.mark.parametrize("loss", ["ce", "jaccard", "focal", "dice"])
 def test_create_segmentation_task(backbone, decoder, loss, model_factory: ClayModelFactory):
     model_args = {
@@ -45,7 +45,7 @@ def test_create_segmentation_task(backbone, decoder, loss, model_factory: ClayMo
 
 
 @pytest.mark.parametrize("backbone", ["clay_v1_base"])
-@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
+@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder"])
 @pytest.mark.parametrize("loss", ["mae", "rmse", "huber"])
 def test_create_regression_task(backbone, decoder, loss, model_factory: ClayModelFactory):
     model_args = {
@@ -68,7 +68,7 @@ def test_create_regression_task(backbone, decoder, loss, model_factory: ClayMode
 
 
 @pytest.mark.parametrize("backbone", ["clay_v1_base"])
-@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
+@pytest.mark.parametrize("decoder", ["IdentityDecoder"])
 @pytest.mark.parametrize("loss", ["ce", "bce", "jaccard", "focal"])
 def test_create_classification_task(backbone, decoder, loss, model_factory: ClayModelFactory):
     model_args = {

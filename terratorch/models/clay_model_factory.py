@@ -138,9 +138,7 @@ class ClayModelFactory(ModelFactory):
 
                 assert checkpoint_path, "A checkpoint must be provided to restore the model."
 
-                device = "cpu" if self.CPU_ONLY else "cuda"
-                backbone: nn.Module = Embedder(
-                    ckpt_path=checkpoint_path, device=device, **backbone_kwargs)
+                backbone: nn.Module = Embedder(ckpt_path=checkpoint_path, **backbone_kwargs)
                 print("Model Clay was successfully restored.")
 
         # allow decoder to be a module passed directly
@@ -160,8 +158,8 @@ class ClayModelFactory(ModelFactory):
                 task, backbone, decoder, head_kwargs, prepare_features_for_image_model, rescale=rescale
             )
 
-        to_be_aux_decoders: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] = [
-        ]
+        to_be_aux_decoders: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] = []
+
         for aux_decoder in aux_decoders:
             args = aux_decoder.decoder_args if aux_decoder.decoder_args else {}
             aux_decoder_cls: nn.Module = _get_decoder(aux_decoder.decoder)
