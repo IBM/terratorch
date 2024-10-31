@@ -41,7 +41,6 @@ trainer:
   #finetune_w_static: True
   #strict_matching: true
 data:
-  #type: merra2
   class_path: terratorch.datamodules.Merra2DownscaleNonGeoDataModule
   init_args: 
     # Input variables definition
@@ -114,6 +113,11 @@ model:
         - 15
         - 16
     model_factory: WxCModelFactory 
+    extra_kwargs:
+        encoder_decoder_kernel_size_per_stage: [[3], [3]] # Optional, default = 3 for conv_tanspose [[3], [2]]
+        output_vars:
+          - T2M # near surface temperature
+        type: merra2
     model_config:
       num_epochs: 200   
       limit_steps_train: 250 
@@ -140,7 +144,6 @@ model:
         dropout_rate: 0.0
         #drop_path: 0.05
         residual: True
-        
       data_config: 
         surface_vars:
             - EFLUX
@@ -180,9 +183,7 @@ model:
          #    levels: [34.0, 39.0, 41.0, 43.0, 44.0, 45.0, 48.0, 53.0, 56.0, 63.0, 68.0, 72.0]
          ## remove: n_input_timestamps: 1
          # Output variables definition
-         #output_vars:
-         #  - T2M # near surface temperature
-      #residual_connection: True
+             #residual_connection: True
       #encoder_shift: False
 
       #downscaling_patch_size: [2, 2]
