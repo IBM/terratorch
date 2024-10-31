@@ -32,6 +32,10 @@ from terratorch.datamodules.sen4agrinet import Sen4AgriNetDataModule
 from terratorch.datamodules.sen1floods11 import Sen1Floods11NonGeoDataModule
 from terratorch.datamodules.torchgeo_data_module import TorchGeoDataModule, TorchNonGeoDataModule
 
+
+# miscellaneous datamodules
+from terratorch.datamodules.openearthmap import OpenEarthMapNonGeoDataModule
+
 # Generic classification datamodule
 from terratorch.datamodules.sen4map import Sen4MapLucasDataModule
 
@@ -58,6 +62,7 @@ __all__ = (
     "MPv4gerSegNonGeoDataModule",
     "MSACropTypeNonGeoDataModule",
     "MNeonTreeNonGeoDataModule",
+    "OpenEarthMapModule"
     "OpenSentinelMapDataModule",
     "PASTISDataModule",
     "Sen4AgriNetDataModule"
