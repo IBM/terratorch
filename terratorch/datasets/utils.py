@@ -97,3 +97,23 @@ def to_tensor(d, transpose=True):
                 v = np.moveaxis(v, -1, 0)
             new_dict[k] = torch.from_numpy(v)
     return new_dict
+
+
+def pad_numpy(x, target_length, pad_value=0):
+    padlen = target_length - x.shape[0]
+    if padlen <= 0:
+        return x
+
+    pad_width = [(padlen, 0)] + [(0, 0) for _ in range(len(x.shape) - 1)]
+
+    return np.pad(x, pad_width=pad_width, mode="constant", constant_values=pad_value)
+
+
+def pad_dates_numpy(dates, target_length, pad_value=-1):
+    padlen = target_length - dates.shape[0]
+    if padlen <= 0:
+        return dates
+
+    pad_width = [(padlen, 0)]
+
+    return np.pad(dates, pad_width=pad_width, mode="constant", constant_values=pad_value)
