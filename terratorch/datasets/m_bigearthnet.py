@@ -31,7 +31,6 @@ class MBigEarthNonGeo(NonGeoDataset):
         "WATER_VAPOR",
         "SWIR_1",
         "SWIR_2",
-        "CLOUD_PROBABILITY",
     )
 
     rgb_bands = ("RED", "GREEN", "BLUE")

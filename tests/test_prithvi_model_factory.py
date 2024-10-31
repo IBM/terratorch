@@ -1,5 +1,7 @@
 # Copyright contributors to the Terratorch project
-
+"""
+This module should be removed when PrithviModelFactory is removed. For now, this tests backwards compatibility.
+"""
 import pytest
 import torch
 
@@ -17,7 +19,6 @@ PIXELWISE_TASK_EXPECTED_OUTPUT = [
     ("regression", EXPECTED_REGRESSION_OUTPUT_SHAPE),
     ("segmentation", EXPECTED_SEGMENTATION_OUTPUT_SHAPE),
 ]
-
 
 @pytest.fixture(scope="session")
 def model_factory() -> PrithviModelFactory:
@@ -78,8 +79,8 @@ def test_create_pixelwise_model(backbone, task, expected, decoder, model_factory
     if task == "segmentation":
         model_args["num_classes"] = NUM_CLASSES
     if decoder == "UperNetDecoder":
-        model_args["out_indices"] = [1, 2, 3, 4]
-        model_args["scale_modules"] = True
+        model_args["backbone_out_indices"] = [1, 2, 3, 4]
+        model_args["decoder_scale_modules"] = True
 
     model = model_factory.build_model(**model_args)
     model.eval()
@@ -105,8 +106,8 @@ def test_create_pixelwise_model_no_in_channels(
     if task == "segmentation":
         model_args["num_classes"] = NUM_CLASSES
     if decoder == "UperNetDecoder":
-        model_args["out_indices"] = [1, 2, 3, 4]
-        model_args["scale_modules"] = True
+        model_args["backbone_out_indices"] = [1, 2, 3, 4]
+        model_args["decoder_scale_modules"] = True
 
     model = model_factory.build_model(**model_args)
     model.eval()
@@ -135,8 +136,8 @@ def test_create_pixelwise_model_with_aux_heads(
         model_args["num_classes"] = NUM_CLASSES
 
     if decoder == "UperNetDecoder":
-        model_args["out_indices"] = [1, 2, 3, 4]
-        model_args["scale_modules"] = True
+        model_args["backbone_out_indices"] = [1, 2, 3, 4]
+        model_args["decoder_scale_modules"] = True
 
     model = model_factory.build_model(**model_args)
     model.eval()
@@ -166,8 +167,8 @@ def test_create_pixelwise_model_with_extra_bands(backbone, task, expected, decod
         model_args["num_classes"] = NUM_CLASSES
 
     if decoder == "UperNetDecoder":
-        model_args["out_indices"] = [1, 2, 3, 4]
-        model_args["scale_modules"] = True
+        model_args["backbone_out_indices"] = [1, 2, 3, 4]
+        model_args["decoder_scale_modules"] = True
     model = model_factory.build_model(**model_args)
     model.eval()
     model_input = torch.ones((1, NUM_CHANNELS + 1, 224, 224))

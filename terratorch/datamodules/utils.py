@@ -42,3 +42,15 @@ def pad_collate(batch, pad_value=0):
         return [pad_collate(samples, pad_value=pad_value) for samples in transposed]
     else:
         return default_collate(batch)
+
+def check_dataset_stackability(dataset, batch_size) -> bool:
+
+    shapes = np.array([item["image"].shape for item in dataset])
+
+    if np.array_equal(shapes.max(0), shapes.min(0)):
+        return batch_size
+    else:
+        print("The batch samples can't be stacked, since they don't have the same dimensions. Setting batch_size=1.")
+        return 1
+
+

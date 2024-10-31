@@ -1,5 +1,6 @@
 # Copyright contributors to the Terratorch project
 
+import os
 from collections.abc import Sequence
 from typing import Any
 
@@ -123,7 +124,7 @@ class FireScarsNonGeoDataModule(NonGeoDataModule):
 class FireScarsDataModule(GeoDataModule):
     """Geo Fire Scars data module implementation that merges input data with ground truth segmentation masks."""
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, data_root: str, **kwargs: Any) -> None:
         super().__init__(FireScarsSegmentationMask, 4, 224, 100, 0, **kwargs)
         means = list(MEANS.values())
         stds = list(STDS.values())
@@ -132,19 +133,19 @@ class FireScarsDataModule(GeoDataModule):
 
     def setup(self, stage: str) -> None:
         self.images = FireScarsHLS(
-            "/dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/training/"
+            os.path.join(self.data_root, "training/")
         )
         self.labels = FireScarsSegmentationMask(
-            "/dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/training/"
+            os.path.join(self.data_root, "training/")
         )
         self.dataset = self.images & self.labels
         self.train_aug = AugmentationSequential(K.RandomCrop(224, 224), K.normalize())
 
         self.images_test = FireScarsHLS(
-            "/dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/validation/"
+            os.path.join(self.data_root, "validation/")
         )
         self.labels_test = FireScarsSegmentationMask(
-            "/dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/validation/"
+            os.path.join(self.data_root, "validation/")
         )
         self.val_dataset = self.images_test & self.labels_test
 
