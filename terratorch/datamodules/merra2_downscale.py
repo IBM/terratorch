@@ -8,9 +8,18 @@ from torch._tensor import Tensor
 
 class Merra2DownscaleDatasetTerraTorch(Merra2DownscaleDataset):
     def __init__(self, split : str, **kwargs):
+        # Strict variables
+        crop_lat = kwargs.pop("crop_lat")
+        input_size_lat = kwargs.pop("input_size_lat")
+        input_size_lon = kwargs.pop("input_size_lon")
+        apply_smoothen = kwargs.pop("apply_smoothen")
+        
         super().__init__(**kwargs)
         self.split = split
-
+        self.crop_lat = crop_lat
+        self.input_size_lat = input_size_lat
+        self.input_size_lon = input_size_lon
+        self.apply_smoothen = apply_smoothen
     def __getitem__(self, index) -> dict[Tensor | int]:
         batch = super().__getitem__(index)
         batch_extended = {}
