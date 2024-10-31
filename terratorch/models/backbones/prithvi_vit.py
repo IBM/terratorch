@@ -4,6 +4,7 @@
 import logging
 from functools import partial
 from pathlib import Path
+from collections import defaultdict
 
 from timm.models import FeatureInfo
 from timm.models._builder import build_model_with_cfg
@@ -13,6 +14,7 @@ from torch import nn
 from terratorch.datasets import HLSBands
 from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
 from terratorch.models.backbones.vit_encoder_decoder import TemporalViTEncoder
+from terratorch.datasets.utils import generate_bands_intervals
 
 PRETRAINED_BANDS = [
     HLSBands.BLUE,
@@ -23,22 +25,14 @@ PRETRAINED_BANDS = [
     HLSBands.SWIR_2,
 ]
 
-def _cfg(file: Path = "", **kwargs) -> dict:
-    return {
-        "file": file,
-        "source": "file",
-        "input_size": (6, 224, 224),
-        "license": "mit",
-        # "first_conv": "patch_embed.proj",
-        **kwargs,
-    }
-
 default_cfgs = generate_default_cfgs(
     {
         "prithvi_vit_100": {
             "hf_hub_id": "ibm-nasa-geospatial/Prithvi-100M",
-            "hf_hub_filename": "Prithvi_100M.pt"
-        }
+            "hf_hub_filename": "Prithvi_100M.pt",
+        },
+        "prithvi_vit_300": {},
+        "prithvi_vit_tiny": {}
     }
 )
 
@@ -84,11 +78,22 @@ def _create_prithvi(
     if pretrained_bands is None:
         pretrained_bands = PRETRAINED_BANDS
 
+    if model_bands is None:
+        model_bands: list[HLSBands | int] = pretrained_bands
+        logging.info(
+            f"Model bands not passed. Assuming bands are ordered in the same way as {PRETRAINED_BANDS}.\
+            Pretrained patch_embed layer may be misaligned with current bands"
+        )
+    else:
+        model_bands = [HLSBands.try_convert_to_hls_bands_enum(b) for b in model_bands]
+
     # Little hack because VIT does not support timm's features_only
     # so we do it ourselves
     encoder_only = kwargs.get("features_only", False)
     if "features_only" in kwargs:
         kwargs = {k: v for k, v in kwargs.items() if k != "features_only"}
+
+    model_bands = generate_bands_intervals(model_bands)
 
     kwargs["in_chans"] = len(model_bands)
 
@@ -148,20 +153,22 @@ def create_prithvi_vit_100(
         "norm_layer": partial(nn.LayerNorm, eps=1e-6),
         "num_frames": 1,
     }
+
     model = _create_prithvi(
         model_name,
         pretrained=pretrained,
         model_bands=bands,
         pretrained_bands=pretrained_bands,
-        **dict(model_args, **kwargs),
+        **dict(model_args,**kwargs),
     )
+    
     return model
 
 
 def create_prithvi_vit_300(
     model_name: str,
     pretrained: bool = False,  # noqa: FBT001, FBT002
-    bands: list[HLSBands] | None = None,
+    bands: list[HLSBands | int] | None = None,
     **kwargs,
 ) -> TemporalViTEncoder:
     """Prithvi ViT 300M"""
@@ -232,7 +239,7 @@ def create_prithvi_vit_600(
 
 @register_model
 def prithvi_vit_tiny(
-    bands: list[HLSBands] | None = None,
+    bands: list[HLSBands | int] | None = None,
     **kwargs,
 ) -> TemporalViTEncoder:
     """Prithvi ViT tiny"""

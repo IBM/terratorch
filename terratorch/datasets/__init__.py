@@ -37,6 +37,9 @@ from terratorch.datasets.utils import HLSBands
 # TorchGeo RasterDatasets
 from terratorch.datasets.wsf import WSF2019, WSFEvolution
 
+# Generic Classification Dataset
+from terratorch.datasets.sen4map import Sen4MapDatasetMonthlyComposites
+
 __all__ = (
     "GenericNonGeoSegmentationDataset",
     "GenericNonGeoPixelwiseRegressionDataset",
@@ -47,6 +50,7 @@ __all__ = (
     "FireScarsSegmentationMask",
     "Sen1Floods11NonGeo",
     "MultiTemporalCropClassification",
+    "Sen4MapDatasetMonthlyComposites",
     "HLSBands",
     "MEuroSATNonGeo",
     "MBigEarthNonGeo",
