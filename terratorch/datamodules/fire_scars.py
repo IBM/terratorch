@@ -130,6 +130,7 @@ class FireScarsDataModule(GeoDataModule):
         stds = list(STDS.values())
         self.train_aug = AugmentationSequential(K.RandomCrop(224, 224), K.Normalize(means, stds))
         self.aug = AugmentationSequential(K.Normalize(means, stds))
+        self.data_root = data_root
 
     def setup(self, stage: str) -> None:
         self.images = FireScarsHLS(

@@ -130,24 +130,6 @@ class MSo2SatNonGeo(NonGeoDataset):
         Returns:
             matplotlib.figure.Figure: A matplotlib Figure with the rendered sample.
         """
-        return self.plot_sample(sample, suptitle=suptitle)
-
-    def plot_sample(
-        self,
-        sample: dict[str, torch.Tensor],
-        suptitle: str | None = None,
-        class_names: list[str] | None = None,
-    ) -> plt.Figure:
-        """Plot a sample from the dataset.
-
-        Args:
-            sample (dict[str, torch.Tensor]): A sample containing 'image' and 'label'.
-            suptitle (str | None): Optional string to use as a suptitle.
-            class_names (list[str] | None): Optional list of class names for the legend.
-
-        Returns:
-            matplotlib.figure.Figure: A matplotlib Figure with the rendered sample.
-        """
         rgb_indices = [self.bands.index(band) for band in self.rgb_bands if band in self.bands]
 
         if len(rgb_indices) != 3:
@@ -164,8 +146,6 @@ class MSo2SatNonGeo(NonGeoDataset):
         rgb_image = clip_image(rgb_image)
 
         class_name = str(label_index)
-        if class_names:
-            class_name = class_names[label_index]
 
         fig, ax = plt.subplots(figsize=(6, 6))
         ax.imshow(rgb_image)

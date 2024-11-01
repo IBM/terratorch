@@ -1,10 +1,10 @@
 # Copyright contributors to the Terratorch project
 
 import os
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from enum import Enum
 from functools import partial
-from typing import Any, Sequence
+from typing import Any
 
 import numpy as np
 import torch

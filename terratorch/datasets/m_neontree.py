@@ -4,7 +4,6 @@ from pathlib import Path
 
 import albumentations as A
 import h5py
-import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -107,24 +106,6 @@ class MNeonTreeNonGeo(NonGeoDataset):
         Returns:
             matplotlib.figure.Figure: A matplotlib Figure with the rendered sample.
         """
-        return self.plot_sample(sample, suptitle=suptitle)
-
-    def plot_sample(
-        self,
-        sample: dict[str, torch.Tensor],
-        suptitle: str | None = None,
-        class_names: list[str] | None = None,
-    ) -> plt.Figure:
-        """Plot a sample from the dataset, with optional prediction.
-
-        Args:
-            sample (dict[str, torch.Tensor]): A sample containing 'image', 'mask', and optionally 'prediction'.
-            suptitle (str | None): Optional string to use as a suptitle.
-            class_names (list[str] | None): Optional list of class names for the legend.
-
-        Returns:
-            matplotlib.figure.Figure: A matplotlib Figure with the rendered sample.
-        """
         rgb_indices = [self.bands.index(band) for band in self.rgb_bands if band in self.bands]
         if len(rgb_indices) != 3:
             msg = "Dataset doesn't contain some of the RGB bands"
@@ -163,12 +144,6 @@ class MNeonTreeNonGeo(NonGeoDataset):
             ax[3].imshow(prediction, cmap=cmap, norm=norm)
             ax[3].set_title("Predicted Mask")
             ax[3].axis("off")
-
-        if class_names:
-            legend_handles = [
-                mpatches.Patch(color=cmap(i / num_classes), label=class_names[i]) for i in range(num_classes)
-            ]
-            ax[0].legend(handles=legend_handles, bbox_to_anchor=(1.05, 1), loc="upper left")
 
         if suptitle:
             plt.suptitle(suptitle)

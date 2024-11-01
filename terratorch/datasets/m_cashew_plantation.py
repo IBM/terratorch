@@ -106,8 +106,7 @@ class MBeninSmallHolderCashewsNonGeo(NonGeoDataset):
 
         date = torch.zeros((1, 2), dtype=torch.float32)
         if date_str:
-            # TODO: check default format
-            date = pd.to_datetime(date_str)
+            date = pd.to_datetime(date_str, format="%Y-%m-%d")
             date = torch.tensor([[date.year, date.dayofyear - 1]], dtype=torch.float32)
 
         return date

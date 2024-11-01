@@ -95,7 +95,6 @@ class MBigEarthNonGeo(NonGeoDataset):
         self.transform = transform if transform else default_transform
 
     def __len__(self) -> int:
-        """Return the number of samples in the dataset."""
         return len(self.image_files)
 
     def __getitem__(self, index: int) -> dict[str, torch.Tensor]:

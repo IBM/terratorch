@@ -1,14 +1,10 @@
-from collections.abc import Iterable, Sequence
+from collections.abc import Sequence
 from typing import Any
 
 import albumentations as A
-import kornia.augmentation as K  # noqa: N812
-import torch
-from torchgeo.datamodules import NonGeoDataModule
 from torchgeo.transforms import AugmentationSequential
 
 from terratorch.datamodules.geobench_data_module import GeobenchDataModule
-from terratorch.datamodules.utils import wrap_in_compose_is_list
 from terratorch.datasets import MForestNetNonGeo
 
 MEANS = {
