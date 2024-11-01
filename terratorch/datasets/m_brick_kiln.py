@@ -132,7 +132,7 @@ class MBrickKilnNonGeo(NonGeoDataset):
             raise ValueError(msg)
 
         image = sample["image"]
-        label = sample["label"].item()
+        label = sample["label"]
 
         if torch.is_tensor(image):
             image = image.permute(1, 2, 0).numpy()  # Convert to (H, W, C)

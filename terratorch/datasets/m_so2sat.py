@@ -155,7 +155,7 @@ class MSo2SatNonGeo(NonGeoDataset):
             raise ValueError(msg)
 
         image = sample["image"]
-        label_index = sample["label"].item()
+        label_index = sample["label"]
 
         if torch.is_tensor(image):
             image = image.permute(1, 2, 0).numpy()
