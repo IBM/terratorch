@@ -114,7 +114,7 @@ class UnflattenSamplesFromChannels(ImageOnlyTransform):
     def apply(self, img, **params):
         if self.time_dim:
             rearranged = rearrange(
-                img, "(samples time channels) height width -> samples time channels height width",
+                img, "(samples time channels) height width -> samples channels time height width",
                 **self.additional_info
             )
         else:

@@ -35,8 +35,14 @@ class MultimodalToTensor():
             if not isinstance(v, np.ndarray):
                 new_dict[k] = v
             else:
+                # TODO: This code has hard assumptions on the data structure
                 if k in self.modalities and len(v.shape) >= 3:  # Assuming raster modalities with 3+ dimensions
-                    v = np.moveaxis(v, -1, 0)
+                    if len(v.shape) <= 4:
+                        v = np.moveaxis(v, -1, 0)  # C, H, W or C, T, H, W
+                    elif len(v.shape) == 5:
+                        v = np.moveaxis(v, -1, 1)  # B, C, T, H, W
+                    else:
+                        raise ValueError(f'Unexpected shape for {k}: {v.shape}')
                 new_dict[k] = torch.from_numpy(v)
         return new_dict
 
@@ -261,7 +267,8 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             if modality == 'mask':
                 data = data[0]
 
-            if len(data.shape) >= 3:  # TODO: Assumes raster modalities by 3+ dimensions.
+            if len(data.shape) >= 3:
+                # TODO: Assumes data structure to be (B), (T), C, H, W but could also be C, T, H, W
                 # to channels last (required by albumentations)
                 data = np.moveaxis(data, -3, -1)
 
@@ -401,7 +408,7 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
                                   'Set `export TERRATORCH_NUM_VAL_PLOTS=0` before running terratorch.')
 
         image = sample[self.rgb_modality]
-        if len(image.shape) == 5:  # TODO: Needed? Copied from generic dataest.
+        if len(image.shape) == 5:  # TODO: Fix plot code.
             return
         if isinstance(image, torch.Tensor):
             image = image.numpy()

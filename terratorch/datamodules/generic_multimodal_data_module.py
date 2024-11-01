@@ -28,6 +28,8 @@ def collate_chunk_dicts(batch_list):
     for key, value in batch_list[0].items():  # TODO: Handle missing modalities when allow_missing_modalities is set.
         if isinstance(value, torch.Tensor):
             batch[key] = torch.concat([chunk[key] for chunk in batch_list])
+        elif isinstance(value, dict):
+            batch[key] = collate_chunk_dicts([chunk[key] for chunk in batch_list])
         else:
             batch[key] = [chunk[key] for chunk in batch_list]
     return batch
@@ -53,16 +55,19 @@ class MultimodalNormalize(Callable):
                 continue
             image = batch[m]
             if len(image.shape) == 5:
+                # B, C, T, H, W
                 means = torch.tensor(self.means[m], device=image.device).view(1, -1, 1, 1, 1)
                 stds = torch.tensor(self.stds[m], device=image.device).view(1, -1, 1, 1, 1)
             elif len(image.shape) == 4:
+                # B, C, H, W
                 means = torch.tensor(self.means[m], device=image.device).view(1, -1, 1, 1)
                 stds = torch.tensor(self.stds[m], device=image.device).view(1, -1, 1, 1)
             elif len(self.means[m]) == 1:
+                # B, (T,) H, W
                 means = torch.tensor(self.means[m], device=image.device)
                 stds = torch.tensor(self.stds[m], device=image.device)
             else:
-                msg = f"Expected batch to have 5 or 4 dimensions, but got {len(image.shape)}"
+                msg = f"Expected batch to have 5 or 4 dimensions or a single channel, but got {len(image.shape)}"
                 raise Exception(msg)
             batch[m] = (image - means) / stds
         return batch
