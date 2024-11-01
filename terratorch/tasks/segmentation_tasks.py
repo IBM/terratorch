@@ -102,6 +102,7 @@ class SemanticSegmentationTask(BaseTask):
         self._model_module = None
 
         if model_factory:  
+            self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
             self.model_builder = self._build
         else:
             self.model_builder = self._bypass_build
@@ -111,9 +112,6 @@ class SemanticSegmentationTask(BaseTask):
         super().__init__()
 
         self._model_module = model
-
-        if model_factory:
-            self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
 
         
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
@@ -287,6 +285,7 @@ class SemanticSegmentationTask(BaseTask):
         """
         x = batch["image"]
         y = batch["mask"]
+        print(f"SELF:{self}")
         model_output: ModelOutput = self(x)
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
