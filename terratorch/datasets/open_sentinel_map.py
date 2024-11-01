@@ -25,12 +25,11 @@ class OpenSentinelMap(NonGeoDataset):
         split: str = "train",
         bands: list[str] | None = None,
         transform: A.Compose | None = None,
-        spatial_interpolate_and_stack_temporally: bool = False,  # noqa: FBT001, FBT002
+        spatial_interpolate_and_stack_temporally: bool = True,  # noqa: FBT001, FBT002
         pad_image: int | None = None,
         truncate_image: int | None = None,
         target: int = 0,
         pick_random_pair: bool = True,  # noqa: FBT002, FBT001
-        remap_unused_classes: bool = False,
     ) -> None:
         """
         Pytorch Dataset class to load samples from the OpenSentinelMap dataset, supporting
@@ -50,6 +49,7 @@ class OpenSentinelMap(NonGeoDataset):
             target (int): Specifies which target class to use from the mask. Default is 0.
             pick_random_pair (bool): If True, selects two random images from the temporal sequence. Default is True.
         """
+        split = "test"
         if bands is None:
             bands = ["gsd_10", "gsd_20", "gsd_60"]
 
@@ -79,7 +79,6 @@ class OpenSentinelMap(NonGeoDataset):
         self.truncate_image = truncate_image
         self.target = target
         self.pick_random_pair = pick_random_pair
-        self.remap_unused_classes = remap_unused_classes
 
         self.image_files = []
         self.label_files = []
@@ -113,14 +112,16 @@ class OpenSentinelMap(NonGeoDataset):
         if "gsd_10" not in self.bands:
             return None
 
+        num_images = len([key for key in sample if key.startswith("image")])
         images = []
-        image_dict = sample["image"]
-        for i in range(image_dict.size(1)):
-            image = image_dict[:,i,:,:]
+
+        for i in range(1, num_images + 1):
+            image_dict = sample[f"image{i}"]
+            image = image_dict["gsd_10"]
             if isinstance(image, Tensor):
                 image = image.numpy()
 
-            image = image.take(range(3), axis=0).transpose(1, 2, 0)
+            image = image.take(range(3), axis=2)
             image = image.squeeze()
             image = (image - image.min(axis=(0, 1))) * (1 / image.max(axis=(0, 1)))
             image = np.clip(image, 0, 1)
@@ -168,16 +169,6 @@ class OpenSentinelMap(NonGeoDataset):
 
         output = {}
 
-        label_file = self.label_files[index]
-        mask = np.array(Image.open(label_file)).astype(int)
-
-        # Map 'unlabel' (254) and 'none' (255) to unused classes 15 and 16 for processing
-        if self.remap_unused_classes:
-            mask[mask == 254] = 15  # noqa: PLR2004
-            mask[mask == 255] = 16  # noqa: PLR2004
-
-        output["mask"] = mask
-
         if self.spatial_interpolate_and_stack_temporally:
             images_over_time = []
             for _, npz_file in enumerate(npz_files):
@@ -186,9 +177,10 @@ class OpenSentinelMap(NonGeoDataset):
                 for band in self.bands:
                     band_frame = data[band]
                     band_frame = torch.from_numpy(band_frame).float()
+                    band_frame = band_frame.permute(2, 0, 1)
                     interpolated = F.interpolate(
                         band_frame.unsqueeze(0), size=MAX_TEMPORAL_IMAGE_SIZE, mode="bilinear", align_corners=False
-                    ).squeeze(dim=0)
+                    ).squeeze(0)
                     interpolated_bands.append(interpolated)
                 concatenated_bands = torch.cat(interpolated_bands, dim=0)
                 images_over_time.append(concatenated_bands)
@@ -199,28 +191,38 @@ class OpenSentinelMap(NonGeoDataset):
             if self.pad_image:
                 images = pad_numpy(images, self.pad_image)
 
-            output["image"] = images
-
-            if self.transform:
-                transformed_images = []
-                for t in range(images.shape[0]):
-                    image = images[t].transpose(2, 1, 0)
-                    transformed = self.transform(image=image)
-                    transformed_image = transformed["image"]  # (C, H, W)
-                    transformed_images.append(transformed_image)
-
-                output["image"] = torch.stack(transformed_images, dim=0)  # (T, C, H, W)
-                transformed_mask = self.transform(image=output["mask"])["image"]
-                output["mask"] = transformed_mask.squeeze().long()
+            output["image"] = images.transpose(0, 2, 3, 1)
         else:
-            image_dict = {band: {} for band in self.bands}
-            for idx, npz_file in enumerate(npz_files):
+            image_dict = {band: [] for band in self.bands}
+            for _, npz_file in enumerate(npz_files):
                 data = np.load(npz_file)
                 for band in self.bands:
-                    band_frames = data[band].astype(np.float32)
-                    image_dict[band][f"temporal_{idx}"] = torch.from_numpy(band_frames)
+                    band_frames = data[band]
+                    band_frames = band_frames.astype(np.float32)
+                    band_frames = np.transpose(band_frames, (2, 0, 1))
+                    image_dict[band].append(band_frames)
 
-            output["image"] = image_dict
-            output["mask"] = torch.from_numpy(output["mask"]).long()
+            final_image_dict = {}
+            for band in self.bands:
+                band_images = image_dict[band]
+                if self.truncate_image:
+                    band_images = band_images[-self.truncate_image:]
+                if self.pad_image:
+                    band_images = [pad_numpy(img, self.pad_image) for img in band_images]
+                band_images = np.stack(band_images, axis=0)
+                final_image_dict[band] = band_images
+
+            output["image"] = final_image_dict
+
+        label_file = self.label_files[index]
+        mask = np.array(Image.open(label_file)).astype(int)
+
+        # Map 'unlabel' (254) and 'none' (255) to unused classes 15 and 16 for processing
+        mask[mask == 254] = 15  # noqa: PLR2004
+        mask[mask == 255] = 16  # noqa: PLR2004
+        output["mask"] = mask[:, :, self.target]
+
+        if self.transform:
+            output = self.transform(**output)
 
         return output

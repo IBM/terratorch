@@ -10,7 +10,7 @@ import pandas as pd
 import torch
 from torchgeo.datasets import NonGeoDataset
 
-from terratorch.datasets.utils import default_transform, pad_dates_numpy, pad_numpy
+from terratorch.datasets.utils import pad_dates_numpy, pad_numpy
 
 
 class PASTIS(NonGeoDataset):
@@ -58,13 +58,13 @@ class PASTIS(NonGeoDataset):
             folds (list, optional): List of ints specifying which of the 5 official
                 folds to load. By default (when None is specified), all folds are loaded.
             class_mapping (dict, optional): A dictionary to define a mapping between the
-                default 18 class nomenclature and another class grouping. If not provided,
+                default 18 class nomenclature and another class grouping. If not provided, 
                 the default class mapping is used.
-            transform (callable, optional): A transform to apply to the loaded data
+            transform (callable, optional): A transform to apply to the loaded data 
                 (images, dates, and masks). By default, no transformation is applied.
-            truncate_image (int, optional): Truncate the time dimension of the image to
+            truncate_image (int, optional): Truncate the time dimension of the image to 
                 a specified number of timesteps. If None, no truncation is performed.
-            pad_image (int, optional): Pad the time dimension of the image to a specified
+            pad_image (int, optional): Pad the time dimension of the image to a specified 
                 number of timesteps. If None, no padding is applied.
             satellites (list): Defines the satellites to use. If you are using PASTIS-R, you
                 have access to Sentinel-2 imagery and Sentinel-1 observations in Ascending
@@ -93,7 +93,7 @@ class PASTIS(NonGeoDataset):
         )
         self.target = target
         self.satellites = satellites
-        self.transform = transform if transform else default_transform
+        self.transform = transform
         self.truncate_image = truncate_image
         self.pad_image = pad_image
         # loads patches metadata
@@ -120,7 +120,7 @@ class PASTIS(NonGeoDataset):
                     lambda x: (
                         datetime(int(str(x)[:4]), int(str(x)[4:6]), int(str(x)[6:]), tzinfo=timezone.utc)
                         - self.reference_date
-                    ).days if str(x).isdigit() and len(str(x)) == 8 else None
+                    ).days
                 )
                 date_table.loc[pid, d.values] = 1
             date_table = date_table.fillna(0)
@@ -240,7 +240,7 @@ class PASTIS(NonGeoDataset):
 
             dates[satellite] = torch.from_numpy(date)
 
-        output["image"] = satellites["S2"]
+        output["image"] = satellites["S2"].transpose(0, 2, 3, 1)
         output["mask"] = target
 
         if self.transform:
@@ -254,7 +254,7 @@ class PASTIS(NonGeoDataset):
 
     def plot(self, sample, suptitle=None):
         dates = sample["dates"]
-        target = sample["mask"]
+        target = sample["target"]
 
         if "S2" not in sample:
             warnings.warn("No RGB image.", stacklevel=2)
@@ -265,7 +265,7 @@ class PASTIS(NonGeoDataset):
 
         rgb_images = []
         for i in range(image_data.shape[0]):
-            rgb_image = image_data[i, :3, :, :].transpose(1, 2, 0)
+            rgb_image = image_data[i, :3, :, :].numpy().transpose(1, 2, 0)
 
             rgb_min = rgb_image.min(axis=(0, 1), keepdims=True)
             rgb_max = rgb_image.max(axis=(0, 1), keepdims=True)
@@ -289,10 +289,6 @@ class PASTIS(NonGeoDataset):
         rows = (num_images + cols) // cols
 
         fig, ax = plt.subplots(rows, cols, figsize=(20, 4 * rows))
-        if rows == 1:
-            ax = np.expand_dims(ax, 0)
-        if cols == 1:
-            ax = np.expand_dims(ax, 1)
 
         for i, image in enumerate(images):
             ax[i // cols, i % cols].imshow(image)
