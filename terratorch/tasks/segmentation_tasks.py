@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 import lightning
 import matplotlib.pyplot as plt
@@ -40,6 +40,7 @@ class SemanticSegmentationTask(BaseTask):
         self,
         model_args: dict,
         model_factory: str,
+        model: Optional[torch.nn.Module],
         loss: str = "ce",
         aux_heads: list[AuxiliaryHead] | None = None,
         aux_loss: dict[str, float] | None = None,
@@ -98,22 +99,49 @@ class SemanticSegmentationTask(BaseTask):
         self.tiled_inference_parameters = tiled_inference_parameters
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
-        self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
+        self._model_module = None
+
+        if model_factory:  
+            self.model_builder = self._build
+        else:
+            self.model_builder = self._bypass_build
+
+        self._model_module = None 
+
         super().__init__()
+
+        self._model_module = model
+
+        if model_factory:
+            self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
+
+        
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
         self.test_loss_handler = LossHandler(self.test_metrics.prefix)
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
         self.monitor = f"{self.val_metrics.prefix}loss"
         self.plot_on_val = int(plot_on_val)
 
-    # overwrite early stopping
+    @property
+    def model_module(self):
+        return self._model_module
+
+       # overwrite early stopping
     def configure_callbacks(self) -> list[Callback]:
         return []
 
-    def configure_models(self) -> None:
-        self.model: Model = self.model_factory.build_model(
+    def _bypass_build(self):
+        return self.model_module
+
+    def _build(self):
+
+        return self.model_factory.build_model(
             "segmentation", aux_decoders=self.aux_heads, **self.hparams["model_args"]
         )
+
+    def configure_models(self) -> None:
+        self.model: Model = self.model_builder()
+
         if self.hparams["freeze_backbone"]:
             self.model.freeze_encoder()
         if self.hparams["freeze_decoder"]:
