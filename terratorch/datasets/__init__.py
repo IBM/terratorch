@@ -48,7 +48,7 @@ __all__ = (
     "GenericNonGeoSegmentationDataset",
     "GenericNonGeoPixelwiseRegressionDataset",
     "GenericNonGeoClassificationDataset",
-    "GenericNonGeoRegressionDataset",
+    #"GenericNonGeoRegressionDataset",
     "FireScarsNonGeo",
     "FireScarsHLS",
     "FireScarsSegmentationMask",
