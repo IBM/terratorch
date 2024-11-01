@@ -40,7 +40,7 @@ class SemanticSegmentationTask(BaseTask):
         self,
         model_args: dict,
         model_factory: str,
-        model: Optional[torch.nn.Module],
+        model: Optional[torch.nn.Module]=None,
         loss: str = "ce",
         aux_heads: list[AuxiliaryHead] | None = None,
         aux_loss: dict[str, float] | None = None,
