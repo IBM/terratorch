@@ -206,7 +206,6 @@ def _build_appropriate_model(
             backbone,
             decoder,
             head_kwargs,
-            prepare_features_for_image_model=prepare_features_for_image_model,
             rescale=rescale,
             auxiliary_heads=auxiliary_heads,
         )
@@ -216,7 +215,6 @@ def _build_appropriate_model(
             backbone,
             decoder,
             head_kwargs,
-            prepare_features_for_image_model=prepare_features_for_image_model,
             auxiliary_heads=auxiliary_heads,
         )
 
