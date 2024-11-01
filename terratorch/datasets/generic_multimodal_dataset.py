@@ -21,9 +21,8 @@ from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 from torchgeo.datasets import NonGeoDataset
 
-from terratorch.datasets.utils import (HLSBands, default_transform, filter_valid_files, generate_bands_intervals,
-                                       to_tensor)
-from terratorch.datasets.transforms import MultiModalTransforms
+from terratorch.datasets.utils import HLSBands, default_transform, filter_valid_files, generate_bands_intervals
+from terratorch.datasets.transforms import MultimodalTransforms
 
 
 class MultimodalToTensor():
@@ -72,6 +71,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         no_label_replace: int | None = None,
         expand_temporal_dimension: bool = False,
         reduce_zero_label: bool = False,
+        channel_position: int = -1,
         *args, **kwargs,
     ) -> None:
         """Constructor
@@ -121,6 +121,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         self.no_label_replace = no_label_replace
         self.reduce_zero_label = reduce_zero_label
         self.expand_temporal_dimension = expand_temporal_dimension
+        self.channel_position = channel_position
 
         if self.expand_temporal_dimension and len(dataset_bands) != self.modalities:
             msg = "Please provide dataset_bands for each modality when expand_temporal_dimension is True"
@@ -228,15 +229,14 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
         # If no transform is given, apply only to transform to torch tensor
         if isinstance(transform, A.Compose):
-            self.transform = MultiModalTransforms(transform)
+            self.transform = MultimodalTransforms(transform)
         elif transform is None:
             self.transform = MultimodalToTensor(self.modalities)
-            logging.warning(f'Default transforms ')
         else:
             # Modality-specific transforms
             transform = {m: transform[m] if m in transform else default_transform
                          for m in self.modalities}
-            self.transform = MultiModalTransforms(transform, shared=False)
+            self.transform = MultimodalTransforms(transform, shared=False)
 
         import warnings
         import rasterio
@@ -267,10 +267,9 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             if modality == 'mask':
                 data = data[0]
 
-            if len(data.shape) >= 3:
-                # TODO: Assumes data structure to be (B), (T), C, H, W but could also be C, T, H, W
+            if len(data.shape) >= 3 and self.channel_position:
                 # to channels last (required by albumentations)
-                data = np.moveaxis(data, -3, -1)
+                data = np.moveaxis(data, self.channel_position, -1)
 
             if modality in self.filter_indices:
                 data = data[..., self.filter_indices[modality]]
@@ -333,6 +332,7 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
         no_label_replace: int | None = None,
         expand_temporal_dimension: bool = False,
         reduce_zero_label: bool = False,
+        channel_position: int = -3,
     ) -> None:
         """Constructor
 
@@ -383,6 +383,7 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
             no_label_replace=no_label_replace,
             expand_temporal_dimension=expand_temporal_dimension,
             reduce_zero_label=reduce_zero_label,
+            channel_position=channel_position,
         )
         self.num_classes = num_classes
         self.class_names = class_names
@@ -498,6 +499,7 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
         no_label_replace: int | None = None,
         expand_temporal_dimension: bool = False,
         reduce_zero_label: bool = False,
+        channel_position: int = -3,
     ) -> None:
         """Constructor
 
@@ -546,6 +548,7 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
             no_label_replace=no_label_replace,
             expand_temporal_dimension=expand_temporal_dimension,
             reduce_zero_label=reduce_zero_label,
+            channel_position=channel_position,
         )
 
     def __getitem__(self, index: int) -> dict[str, Any]:

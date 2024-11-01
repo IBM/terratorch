@@ -51,9 +51,9 @@ class MultimodalNormalize(Callable):
 
     def __call__(self, batch):
         for m in self.means.keys():
-            if m not in batch:
+            if m not in batch['image']:
                 continue
-            image = batch[m]
+            image = batch['image'][m]
             if len(image.shape) == 5:
                 # B, C, T, H, W
                 means = torch.tensor(self.means[m], device=image.device).view(1, -1, 1, 1, 1)
@@ -69,7 +69,7 @@ class MultimodalNormalize(Callable):
             else:
                 msg = f"Expected batch to have 5 or 4 dimensions or a single channel, but got {len(image.shape)}"
                 raise Exception(msg)
-            batch[m] = (image - means) / stds
+            batch['image'][m] = (image - means) / stds
         return batch
 
 
@@ -160,6 +160,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         chunk_data: bool = False,
         sample_num_modalities: int | None = None,
         sample_replace: bool = False,
+        channel_position: int = -3,
         **kwargs: Any,
     ) -> None:
         """Constructor
@@ -271,6 +272,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.rgb_indices = rgb_indices
         self.expand_temporal_dimension = expand_temporal_dimension
         self.reduce_zero_label = reduce_zero_label
+        self.channel_position = channel_position
 
         # Transforms can be None (leads to to_tensor default), shared between modalities or individual per modality
         if shared_transforms:
@@ -334,6 +336,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 no_label_replace=self.no_label_replace,
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
+                channel_position=self.channel_position,
             )
             logging.info(f'Train dataset: {len(self.train_dataset)}')
         if stage in ["fit", "validate"]:
@@ -355,6 +358,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 no_label_replace=self.no_label_replace,
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
+                channel_position=self.channel_position,
             )
             logging.info(f'Val dataset: {len(self.val_dataset)}')
         if stage in ["test"]:
@@ -376,6 +380,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 no_label_replace=self.no_label_replace,
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
+                channel_position=self.channel_position,
             )
             logging.info(f'Test dataset: {len(self.test_dataset)}')
         if stage in ["predict"] and self.predict_root:
@@ -393,6 +398,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 no_label_replace=self.no_label_replace,
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
+                channel_position=self.channel_position,
             )
             logging.info(f'Predict dataset: {len(self.predict_dataset)}')
 

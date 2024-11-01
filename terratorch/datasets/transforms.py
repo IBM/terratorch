@@ -158,7 +158,7 @@ class SelectBands(ImageOnlyTransform):
         return "band_indices"
 
 
-class MultiModalTransforms:
+class MultimodalTransforms:
     """Applies albumentations transforms to multiple images"""
     def __init__(self, transforms: dict | A.Compose, shared : bool = True):
         self.transforms = transforms
