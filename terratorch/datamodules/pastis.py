@@ -1,10 +1,9 @@
 from typing import Any
 
 import albumentations as A  # noqa: N812
-from torch.utils.data import DataLoader, default_collate
 from torchgeo.datamodules import NonGeoDataModule
 
-from terratorch.datamodules.utils import wrap_in_compose_is_list, pad_collate
+from terratorch.datamodules.utils import wrap_in_compose_is_list
 from terratorch.datasets import PASTIS
 
 
