@@ -112,7 +112,7 @@ class SemanticSegmentationTask(BaseTask):
         super().__init__()
 
         self._model_module = model
-
+        self.model = model
         
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
         self.test_loss_handler = LossHandler(self.test_metrics.prefix)
@@ -285,7 +285,7 @@ class SemanticSegmentationTask(BaseTask):
         """
         x = batch["image"]
         y = batch["mask"]
-        print(f"SELF:{self}")
+
         model_output: ModelOutput = self(x)
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
