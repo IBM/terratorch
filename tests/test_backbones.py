@@ -25,6 +25,10 @@ def input_512():
 def input_224_multitemporal():
     return torch.ones((1, NUM_CHANNELS, NUM_FRAMES, 224, 224))
 
+@pytest.fixture
+def input_non_divisible():
+    return torch.ones((1, NUM_CHANNELS, NUM_FRAMES, 220, 230))
+
 
 @pytest.fixture
 def input_386():
@@ -58,6 +62,11 @@ def test_vit_models_accept_multitemporal(model_name, input_224_multitemporal):
     backbone = timm.create_model(model_name, pretrained=False, num_frames=NUM_FRAMES)
     backbone(input_224_multitemporal)
 
+@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_vit_300"])
+def test_vit_models_non_divisible_input(model_name, input_non_divisible):
+    #padding 'none','constant', 'reflect', 'replicate' or 'circular' default is 'none'
+    backbone = timm.create_model(model_name, pretrained=False, num_frames=NUM_FRAMES,padding='constant')
+    backbone(input_non_divisible)
 
 @pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_vit_300"])
 @pytest.mark.parametrize("patch_size", [8, 16])
@@ -100,6 +109,18 @@ def test_out_indices(model_name, input_224):
 
     output = backbone(input_224)
     full_output = backbone.forward_features(input_224)
+
+    for filtered_index, full_index in enumerate(out_indices):
+        assert torch.allclose(full_output[full_index], output[filtered_index])
+
+@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_vit_300"])
+def test_out_indices_non_divisible(model_name, input_non_divisible):
+    out_indices = [2, 4, 8, 10]
+    backbone = timm.create_model(model_name, pretrained=False, features_only=True, num_frames=NUM_FRAMES, out_indices=out_indices, padding='constant')
+    assert backbone.feature_info.out_indices == out_indices
+
+    output = backbone(input_non_divisible)
+    full_output = backbone.forward_features(input_non_divisible)
 
     for filtered_index, full_index in enumerate(out_indices):
         assert torch.allclose(full_output[full_index], output[filtered_index])
