@@ -200,11 +200,11 @@ class WxCDownscalingTask(BaseTask):
         y = batch["mask"]
         model_output: ModelOutput = self(x)
 
-        loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, None)
-        self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
+        loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, None)
+        self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat = model_output.output
-        self.train_metrics(y_hat, y)
-        self.log_dict(self.train_metrics, on_epoch=True)
+        self.val_metrics(y_hat, y)
+        self.log_dict(self.val_metrics, on_epoch=True)
 
         return loss["loss"]
 
