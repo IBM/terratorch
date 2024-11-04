@@ -15,6 +15,7 @@ from terratorch.models.backbones.select_patch_embed_weights import select_patch_
 
 from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
 import torch
+import pdb
 
 class ResNetEncoderWrapper(nn.Module):
 
@@ -36,14 +37,27 @@ class ResNetEncoderWrapper(nn.Module):
         """
         super().__init__()
         self.resnet_model = resnet_model
-        self.weights = weights
-        self.out_channels = [x['num_chs'] for x in self.resnet_model.feature_info]
         self.resnet_meta = resnet_meta
-    
-    def forward(self, x: List[torch.Tensor]) -> torch.Tensor:
-        x = self.resnet_model.forward_intermediates(x, intermediates_only=True)
+        self.weights = weights
+        self.out_indices = out_indices if out_indices else [-1]
+        self.out_channels = [x['num_chs'] for x in self.resnet_model.feature_info]
+        self.resnet_meta['original_out_channels'] = self.out_channels
+        self.out_channels = [x for i, x in enumerate(self.out_channels) if (i in self.out_indices) | (i == (len(self.out_channels)-1)) & (-1 in self.out_indices)]
         
-        return x
+    
+    def forward(self, x: List[torch.Tensor], **kwargs) -> torch.Tensor:
+        
+        features = self.resnet_model.forward_intermediates(x, intermediates_only=True)
+
+        outs = []
+        for i, feature in enumerate(features):
+            if i in self.out_indices:
+                outs.append(feature)
+            elif (i == (len(self.resnet_meta["original_out_channels"])-1)) & (-1 in self.out_indices):
+                outs.append(feature)
+
+        return outs
+        
 
 look_up_table = {
     "B01": "COASTAL_AEROSOL",
@@ -298,6 +312,8 @@ def ssl4eos12_resnet50_sentinel1_all_decur(model_bands, pretrained = False, ckpt
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
+        if weights is not None:
+            weights.meta['bands'] = ['VV', 'VH']
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
     return ResNetEncoderWrapper(model, resnet50_meta, weights, out_indices)
 
@@ -306,6 +322,8 @@ def ssl4eos12_resnet50_sentinel1_all_moco(model_bands, pretrained = False, ckpt_
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
+        if weights is not None:
+            weights.meta['bands'] = ['VV', 'VH']
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
     return ResNetEncoderWrapper(model, resnet50_meta, weights, out_indices)
 
@@ -314,6 +332,8 @@ def ssl4eos12_resnet50_sentinel2_all_decur(model_bands, pretrained = False, ckpt
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
+        if weights is not None:
+            weights.meta['bands'] = ['B01', 'B02', 'B03', 'B04', 'B05', 'B06', 'B07', 'B08', 'B8A', 'B09', 'B10', 'B11', 'B12']
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
     return ResNetEncoderWrapper(model, resnet50_meta, weights, out_indices)
 
@@ -322,6 +342,8 @@ def ssl4eos12_resnet50_sentinel2_all_dino(model_bands, pretrained = False, ckpt_
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
+        if weights is not None:
+            weights.meta['bands'] = ['B01', 'B02', 'B03', 'B04', 'B05', 'B06', 'B07', 'B08', 'B8A', 'B09', 'B10', 'B11', 'B12']
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
     return ResNetEncoderWrapper(model, resnet50_meta, weights, out_indices)
 
@@ -330,6 +352,8 @@ def ssl4eos12_resnet50_sentinel2_all_moco(model_bands, pretrained = False, ckpt_
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
+        if weights is not None:
+            weights.meta['bands'] = ['B01', 'B02', 'B03', 'B04', 'B05', 'B06', 'B07', 'B08', 'B8A', 'B09', 'B10', 'B11', 'B12']
         model = load_resnet_weights(model, model_bands, ckpt_data, weights)
     return ResNetEncoderWrapper(model, resnet50_meta, weights, out_indices)
 
@@ -429,7 +453,7 @@ def load_resnet_weights(model: nn.Module, model_bands, ckpt_data: str, weights: 
         checkpoint_model = torch.load(ckpt_data, map_location="cpu")
         state_dict = model.state_dict()
         
-        for k in ["head.weight", "head.bias"]:
+        for k in ["fc.weight", "fc.bias"]:
                 if (
                     k in checkpoint_model
                     and checkpoint_model[k].shape != state_dict[k].shape
@@ -447,7 +471,7 @@ def load_resnet_weights(model: nn.Module, model_bands, ckpt_data: str, weights: 
             checkpoint_model = weights.get_state_dict(progress=True)
             checkpoint_model = select_patch_embed_weights(checkpoint_model, model, pretrained_bands, model_bands, custom_weight_proj)
             missing_keys, unexpected_keys = model.load_state_dict(checkpoint_model, strict=False)
-            assert set(missing_keys) <= set()
+            assert set(missing_keys) <= {'fc.weight', 'fc.bias'}
             assert not unexpected_keys
     
     return model
