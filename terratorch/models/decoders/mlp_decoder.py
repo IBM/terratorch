@@ -5,10 +5,10 @@
 
 from torch import Tensor, nn
 import torch
-from terratorch.registry import TERRATORCH_DECODER_REGISTRY
+#from terratorch.registry import TERRATORCH_DECODER_REGISTRY
 
 
-@TERRATORCH_DECODER_REGISTRY.register
+#@TERRATORCH_DECODER_REGISTRY.register
 class MLPDecoder(nn.Module):
     """Identity decoder. Useful to pass the feature straight to the head."""
 
@@ -25,6 +25,7 @@ class MLPDecoder(nn.Module):
         self.dim = out_index
         self.n_inputs = len(self.embed_dim)
         self.out_channels = self.embed_dim[self.dim]
+        self.output_embed_dim = self.out_channels
         self.hidden_layer = torch.nn.Linear(self.out_channels*self.n_inputs, self.out_channels)
         self.activation = getattr(nn, activation)()
 
