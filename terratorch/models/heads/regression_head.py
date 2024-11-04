@@ -82,5 +82,4 @@ class RegressionHead(nn.Module):
 
     def forward(self, x):
         output = self.head(x)
-        print(self.final_act)
         return self.final_act(output)

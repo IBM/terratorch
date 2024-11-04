@@ -97,12 +97,9 @@ model:
       decoder: MLPDecoder
       pretrained: false
       backbone: prithvi_vit_100
-      # backbone_pretrained_cfg_overlay:
-      #   file: tests/prithvi_vit_100.pt
+      decoder_activation: ReLU
       backbone_drop_path_rate: 0.3
       num_frames: 1
-      # backbone_window_size: 8
-      #decoder_channels: 64
       in_channels: 6
       bands:
         - BLUE
