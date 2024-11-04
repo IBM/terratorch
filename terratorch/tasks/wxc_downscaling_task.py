@@ -55,6 +55,7 @@ class WxCDownscalingTask(BaseTask):
         data_path_vertical = extra_kwargs.pop("data_path_vertical") 
         climatology_path_surface = extra_kwargs.pop("climatology_path_surface") 
         climatology_path_vertical = extra_kwargs.pop("climatology_path_vertical") 
+        residual_connection = model_args.pop("residual_connection")
 
         # Special cases for required variables
         input_scalers_surface_path = extra_kwargs.pop("input_scalers_surface_path", None)
@@ -98,6 +99,7 @@ class WxCDownscalingTask(BaseTask):
         model_config.data.climatology_path_vertical = climatology_path_vertical
         model_config.model.output_scalers_surface_path = output_scalers_surface_path
         model_config.model.output_scalers_vertical_path = output_scalers_vertical_path
+        model_config.model.residual_connection = residual_connection
 
         self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
         self.model_config = model_config

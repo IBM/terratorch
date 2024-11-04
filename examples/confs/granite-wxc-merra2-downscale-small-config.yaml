@@ -43,6 +43,7 @@ trainer:
 data:
   class_path: terratorch.datamodules.Merra2DownscaleNonGeoDataModule
   init_args: 
+    transforms_fn: granitewxc.utils.data._get_transforms
     # Input variables definition
     input_surface_vars:
       - EFLUX
@@ -89,7 +90,7 @@ data:
 
     # Data transformations
     # Initial crop before any other processing
-    #crop_lat: [0, 1]
+    crop_lat: [0, 1]
     # crop_lon: [0, 0]
     # coarsening of target -- applied after crop
     input_size_lat: 60 # 6x coarsening 
@@ -120,6 +121,7 @@ model:
       mask_unit_size: 
         - 15
         - 16
+      residual_connection: True
     model_factory: WxCModelFactory 
     extra_kwargs:
         encoder_decoder_kernel_size_per_stage: [[3], [3]] # Optional, default = 3 for conv_tanspose [[3], [2]]
@@ -130,7 +132,7 @@ model:
         input_scalers_vertical_path: /home/jalmeida/Projetos/terratorch/examples/scripts/climatology/musigma_vertical.nc
         output_scalers_surface_path: /home/jalmeida/Projetos/terratorch/examples/scripts/climatology/anomaly_variance_surface.nc
         output_scalers_vertical_path: /home/jalmeida/Projetos/terratorch/examples/scripts/climatology/anomaly_variance_vertical.nc
-        input_levels: [34.0, 39.0, 41.0, 43.0, 44.0, 45.0, 48.0, 51.0, 53.0, 56.0, 63.0, 68.0, 71.0, 72.0]
+        input_levels: [34.0, 39.0, 41.0, 43.0, 44.0, 45.0, 48.0, 53.0, 56.0, 63.0, 68.0, 72.0]
         downscaling_patch_size: [2, 2]
         n_input_timestamps: 2
         downscaling_embed_dim: 256
