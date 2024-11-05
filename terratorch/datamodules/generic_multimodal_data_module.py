@@ -66,8 +66,13 @@ class MultimodalNormalize(Callable):
                 # B, (T,) H, W
                 means = torch.tensor(self.means[m], device=image.device)
                 stds = torch.tensor(self.stds[m], device=image.device)
+            elif len(image.shape) == 3:  # No batch dim
+                # C, H, W
+                means = torch.tensor(self.means[m], device=image.device).view(-1, 1, 1)
+                stds = torch.tensor(self.stds[m], device=image.device).view(-1, 1, 1)
             else:
-                msg = f"Expected batch to have 5 or 4 dimensions or a single channel, but got {len(image.shape)}"
+                msg = (f"Expected batch with 5 or 4 dimensions (B, C, (T,) H, W), sample with 3 dimensions (C, H, W) "
+                       f"or a single channel, but got {len(image.shape)}")
                 raise Exception(msg)
             batch['image'][m] = (image - means) / stds
         return batch

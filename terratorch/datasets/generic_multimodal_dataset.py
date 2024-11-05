@@ -405,12 +405,7 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
 
         .. versionadded:: 0.2
         """
-        raise NotImplementedError('Code is based on the generic single-modality dataset and not yet adapted. '
-                                  'Set `export TERRATORCH_NUM_VAL_PLOTS=0` before running terratorch.')
-
-        image = sample[self.rgb_modality]
-        if len(image.shape) == 5:  # TODO: Fix plot code.
-            return
+        image = sample["image"]
         if isinstance(image, torch.Tensor):
             image = image.numpy()
         image = image.take(self.rgb_indices, axis=0)
@@ -493,7 +488,7 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
         allow_substring_split_file: bool = False,
         dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
-        constant_scale: float = 1,
+        constant_scale: float = 1.,
         transform: A.Compose | None = None,
         no_data_replace: float | None = None,
         no_label_replace: int | None = None,
