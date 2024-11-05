@@ -2,12 +2,17 @@ import lightning.pytorch as pl
 from torchvision.transforms.v2 import InterpolationMode
 import pickle
 import h5py
+import torch
+from torchgeo.datamodules import GeoDataModule, NonGeoDataModule, BaseDataModule
+import kornia.augmentation as K  # noqa: N812
 from torch.utils.data import DataLoader
-
+from terratorch.datamodules.geobench_data_module import GeobenchDataModule
+from terratorch.datasets import HLSBands
 from terratorch.datasets import Sen4MapDatasetMonthlyComposites
+from kornia.augmentation.container import VideoSequential, ImageSequential, AugmentationSequential
 
 
-class Sen4MapLucasDataModule(pl.LightningDataModule):
+class Sen4MapLucasDataModule(NonGeoDataModule):
     def __init__(
             self, 
             batch_size,
@@ -21,9 +26,19 @@ class Sen4MapLucasDataModule(pl.LightningDataModule):
             test_hdf5_keys_path = None,
             val_hdf5_path = None,
             val_hdf5_keys_path = None,
+            bands: list[HLSBands | int] = None,
             **kwargs
             ):
-        
+
+        super().__init__(
+            Sen4MapDatasetMonthlyComposites,
+            batch_size=batch_size,
+            num_workers=num_workers,
+            **kwargs,
+        )
+        self.aug = AugmentationSequential(K.RandomEqualize3D(), data_keys=None)
+
+        #self.aug = AugmentationSequential(K.Normalize(MEANS, STDS), data_keys = None)
         self.prepare_data_per_node = False
         self._log_hyperparams = None
         self.allow_zero_length_dataloader_with_multiple_devices = False
@@ -39,6 +54,10 @@ class Sen4MapLucasDataModule(pl.LightningDataModule):
         self.train_hdf5_keys_path = train_hdf5_keys_path
         self.test_hdf5_keys_path = test_hdf5_keys_path
         self.val_hdf5_keys_path = val_hdf5_keys_path
+
+        bands = kwargs.get("bands", Sen4MapDatasetMonthlyComposites.all_band_names)
+        #self.means = torch.tensor([means[b] for b in bands])
+        #self.stds = torch.tensor([stds[b] for b in bands])
 
         if train_hdf5_path and not train_hdf5_keys_path: print(f"Train dataset path provided but not the path to the dataset keys. Generating the keys might take a few minutes.")
         if test_hdf5_path and not test_hdf5_keys_path: print(f"Test dataset path provided but not the path to the dataset keys. Generating the keys might take a few minutes.")
@@ -103,53 +122,103 @@ class Sen4MapLucasDataModule(pl.LightningDataModule):
             return keys[:int(fraction*len(keys))]
 
     def setup(self, stage: str):
-        if stage == "fit":
+        if stage in ["fit"]:
             train_keys = self._load_hdf5_keys_from_path(self.train_hdf5_keys_path, fraction=self.train_data_fraction)
             val_keys = self._load_hdf5_keys_from_path(self.val_hdf5_keys_path, fraction=self.val_data_fraction)
+            
             if self.reduce_train_keys:
                 test_keys = self._load_hdf5_keys_from_path(self.test_hdf5_keys_path, fraction=self.test_data_fraction)
                 train_keys = list(set(train_keys) - set(val_keys) - set(test_keys))
+            
             train_file = h5py.File(self.train_hdf5_path, 'r')
-            self.lucasS2_train = Sen4MapDatasetMonthlyComposites(
+            self.train_dataset = Sen4MapDatasetMonthlyComposites(
                 train_file, 
-                h5data_keys = train_keys, 
-                resize = self.resize,
-                resize_to = self.resize_to,
-                resize_interpolation = self.resize_interpolation,
-                resize_antialiasing = self.resize_antialiasing,
-                save_keys_path = self.train_hdf5_keys_save_path,
+                h5data_keys=train_keys, 
+                resize=self.resize,
+                resize_to=self.resize_to,
+                resize_interpolation=self.resize_interpolation,
+                resize_antialiasing=self.resize_antialiasing,
+                save_keys_path=self.train_hdf5_keys_save_path,
                 **self.kwargs
             )
+        
+        if stage in ["fit", "validate"]:
+            val_keys = self._load_hdf5_keys_from_path(self.val_hdf5_keys_path, fraction=self.val_data_fraction)
             val_file = h5py.File(self.val_hdf5_path, 'r')
-            self.lucasS2_val = Sen4MapDatasetMonthlyComposites(
+            self.val_dataset = Sen4MapDatasetMonthlyComposites(
                 val_file, 
                 h5data_keys=val_keys, 
-                resize = self.resize,
-                resize_to = self.resize_to,
-                resize_interpolation = self.resize_interpolation,
-                resize_antialiasing = self.resize_antialiasing,
-                save_keys_path = self.val_hdf5_keys_save_path,
+                resize=self.resize,
+                resize_to=self.resize_to,
+                resize_interpolation=self.resize_interpolation,
+                resize_antialiasing=self.resize_antialiasing,
+                save_keys_path=self.val_hdf5_keys_save_path,
                 **self.kwargs
             )
+        
         if stage == "test":
-            test_file = h5py.File(self.test_hdf5_path, 'r')
             test_keys = self._load_hdf5_keys_from_path(self.test_hdf5_keys_path, fraction=self.test_data_fraction)
-            self.lucasS2_test = Sen4MapDatasetMonthlyComposites(
+            test_file = h5py.File(self.test_hdf5_path, 'r')
+            self.test_dataset = Sen4MapDatasetMonthlyComposites(
                 test_file, 
                 h5data_keys=test_keys, 
-                resize = self.resize,
-                resize_to = self.resize_to,
-                resize_interpolation = self.resize_interpolation,
-                resize_antialiasing = self.resize_antialiasing,
-                save_keys_path = self.test_hdf5_keys_save_path,
+                resize=self.resize,
+                resize_to=self.resize_to,
+                resize_interpolation=self.resize_interpolation,
+                resize_antialiasing=self.resize_antialiasing,
+                save_keys_path=self.test_hdf5_keys_save_path,
                 **self.kwargs
             )
 
-    def train_dataloader(self):
-        return DataLoader(self.lucasS2_train, batch_size=self.batch_size, num_workers=self.num_workers, prefetch_factor=self.prefetch_factor, shuffle=self.train_shuffle)
 
-    def val_dataloader(self):
-        return DataLoader(self.lucasS2_val, batch_size=self.batch_size, num_workers=self.num_workers, prefetch_factor=self.prefetch_factor, shuffle=self.val_shuffle)
+    # def setup(self, stage: str):
+    #     if stage == "fit":
+    #         train_keys = self._load_hdf5_keys_from_path(self.train_hdf5_keys_path, fraction=self.train_data_fraction)
+    #         val_keys = self._load_hdf5_keys_from_path(self.val_hdf5_keys_path, fraction=self.val_data_fraction)
+    #         if self.reduce_train_keys:
+    #             test_keys = self._load_hdf5_keys_from_path(self.test_hdf5_keys_path, fraction=self.test_data_fraction)
+    #             train_keys = list(set(train_keys) - set(val_keys) - set(test_keys))
+    #         train_file = h5py.File(self.train_hdf5_path, 'r')
+    #         self.lucasS2_train = Sen4MapDatasetMonthlyComposites(
+    #             train_file, 
+    #             h5data_keys = train_keys, 
+    #             resize = self.resize,
+    #             resize_to = self.resize_to,
+    #             resize_interpolation = self.resize_interpolation,
+    #             resize_antialiasing = self.resize_antialiasing,
+    #             save_keys_path = self.train_hdf5_keys_save_path,
+    #             **self.kwargs
+    #         )
+    #         val_file = h5py.File(self.val_hdf5_path, 'r')
+    #         self.lucasS2_val = Sen4MapDatasetMonthlyComposites(
+    #             val_file, 
+    #             h5data_keys=val_keys, 
+    #             resize = self.resize,
+    #             resize_to = self.resize_to,
+    #             resize_interpolation = self.resize_interpolation,
+    #             resize_antialiasing = self.resize_antialiasing,
+    #             save_keys_path = self.val_hdf5_keys_save_path,
+    #             **self.kwargs
+    #         )
+    #     if stage == "test":
+    #         test_file = h5py.File(self.test_hdf5_path, 'r')
+    #         test_keys = self._load_hdf5_keys_from_path(self.test_hdf5_keys_path, fraction=self.test_data_fraction)
+    #         self.lucasS2_test = Sen4MapDatasetMonthlyComposites(
+    #             test_file, 
+    #             h5data_keys=test_keys, 
+    #             resize = self.resize,
+    #             resize_to = self.resize_to,
+    #             resize_interpolation = self.resize_interpolation,
+    #             resize_antialiasing = self.resize_antialiasing,
+    #             save_keys_path = self.test_hdf5_keys_save_path,
+    #             **self.kwargs
+    #         )
 
-    def test_dataloader(self):
-        return DataLoader(self.lucasS2_test, batch_size=self.batch_size, num_workers=self.num_workers, prefetch_factor=self.prefetch_factor, shuffle=self.test_shuffle)
+    # def train_dataloader(self):
+    #     return DataLoader(self.lucasS2_train, batch_size=None, num_workers=self.num_workers, prefetch_factor=self.prefetch_factor, shuffle=self.train_shuffle)
+
+    # def val_dataloader(self):
+    #     return DataLoader(self.lucasS2_val, batch_size=None, num_workers=self.num_workers, prefetch_factor=self.prefetch_factor, shuffle=self.val_shuffle)
+
+    # def test_dataloader(self):
+    #     return DataLoader(self.lucasS2_test, batch_size=None, num_workers=self.num_workers, prefetch_factor=self.prefetch_factor, shuffle=self.test_shuffle)

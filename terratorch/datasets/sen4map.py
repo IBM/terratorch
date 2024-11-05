@@ -1,8 +1,10 @@
 import numpy as np
 import h5py
+from torchgeo.datasets import NonGeoDataset
 
 import torch
 import torch.nn.functional as F
+from kornia.augmentation.container import VideoSequential, ImageSequential, AugmentationSequential
 from torch.utils.data import Dataset
 from terratorch.datasets.utils import HLSBands
 
@@ -12,9 +14,25 @@ from torchvision.transforms.v2 import InterpolationMode
 import pickle
 
 
-class Sen4MapDatasetMonthlyComposites(Dataset):
+class Sen4MapDatasetMonthlyComposites(NonGeoDataset):
+    all_band_names = (
+        "BLUE",
+        "GREEN",
+        "RED",
+        "RED_EDGE_1",
+        "RED_EDGE_2",
+        "RED_EDGE_3",
+        "NIR_BROAD",
+        "NIR_NARROW",
+        "SWIR_1",
+        "SWIR_2",
+    )
+    
+    rgb_bands = ("RED", "GREEN", "BLUE")
+
+    BAND_SETS = {"all": all_band_names, "rgb": rgb_bands}
     #  This dictionary maps the LUCAS classes to Land-cover classes.
-    land_cover_classification_map={'A10':0, 'A11':0, 'A12':0, 'A13':0, 
+    land_use_classification_map={'A10':0, 'A11':0, 'A12':0, 'A13':0, 
     'A20':0, 'A21':0, 'A30':0, 
     'A22':1, 'F10':1, 'F20':1, 
     'F30':1, 'F40':1,
@@ -45,12 +63,12 @@ class Sen4MapDatasetMonthlyComposites(Dataset):
     crop_classification_map = {
         "B11":0, "B12":0, "B13":0, "B14":0, "B15":0, "B16":0, "B17":0, "B18":0, "B19":0,  # Cereals
         "B21":1, "B22":1, "B23":1,  # Root Crops
-        "B31":2, "B32":2, "B33":2, "B34":2, "B35":2, "B36":2, "B37":2,  # Nonpermanent Industrial Crops
-        "B41":3, "B42":3, "B43":3, "B44":3, "B45":3,  # Dry Pulses, Vegetables and Flowers
+        "B34":2, "B35":2, "B36":2, "B37":2,  # Nonpermanent Industrial Crops
+        "B31":3, "B32":3, "B33":3, "B41":3, "B42":3, "B43":3, "B44":3, "B45":3,  # Dry Pulses, Vegetables and Flowers
         "B51":4, "B52":4, "B53":4, "B54":4,  # Fodder Crops
         "F10":5, "F20":5, "F30":5, "F40":5,  # Bareland
         "B71":6, "B72":6, "B73":6, "B74":6, "B75":6, "B76":6, "B77":6, 
-        "B81":6, "B82":6, "B83":6, "B84":6, "C10":6, "C21":6, "C22":6, "C23":6, "C31":6, "C32":6, "C33":6, "D10":6, "D20":6,  # Woodland and Shrubland
+        "B81":6, "B82":6, "B83":6, "B84":6, "C10":6, "C20":6, "C30":6, "D10":6, "D20":6,  # Woodland and Shrubland
         "B55":7, "E10":7, "E20":7, "E30":7,  # Grassland
     }
     
@@ -68,11 +86,10 @@ class Sen4MapDatasetMonthlyComposites(Dataset):
             reverse_tile = False,
             reverse_tile_size = 3,
             save_keys_path = None,
-            classification_map = "land-cover"
+            classification_map = "land-use"
             ):
         self.h5data = h5py_file_object
         if h5data_keys is None:
-            if classification_map == "crops": print(f"Crop classification task chosen but no keys supplied. Will fail unless dataset hdf5 files have been filtered. Either filter dataset files or create a filtered set of keys.")
             self.h5data_keys = list(self.h5data.keys())
             if save_keys_path is not None:
                 with open(save_keys_path, "wb") as file:
@@ -88,7 +105,7 @@ class Sen4MapDatasetMonthlyComposites(Dataset):
             self.input_channels = [dataset_bands.index(band_ind) for band_ind in input_bands if band_ind in dataset_bands]
         else: self.input_channels = None
 
-        classification_maps = {"land-cover": Sen4MapDatasetMonthlyComposites.land_cover_classification_map,
+        classification_maps = {"land-use": Sen4MapDatasetMonthlyComposites.land_use_classification_map,
                                "crops": Sen4MapDatasetMonthlyComposites.crop_classification_map}
         if classification_map not in classification_maps.keys():
             raise ValueError(f"Provided classification_map of: {classification_map}, is not from the list of valid ones: {classification_maps}")
@@ -106,11 +123,14 @@ class Sen4MapDatasetMonthlyComposites(Dataset):
         # we can call dataset with an index, eg. dataset[0]
         im = self.h5data[self.h5data_keys[index]]
         Image, Label = self.get_data(im)
+        
         Image = self.min_max_normalize(Image, [67.0, 122.0, 93.27, 158.5, 160.77, 174.27, 162.27, 149.0, 84.5, 66.27 ],
                                     [2089.0, 2598.45, 3214.5, 3620.45, 4033.61, 4613.0, 4825.45, 4945.72, 5140.84, 4414.45])
         
         Image = Image.clip(0,1)
         Label = torch.LongTensor(Label)
+        
+        
         if self.input_channels:
             Image = Image[self.input_channels, ...]
 
@@ -174,9 +194,9 @@ class Sen4MapDatasetMonthlyComposites(Dataset):
         
         if self.crop_size: Image = self.crop_center(Image, self.crop_size, self.crop_size)
         if self.reverse_tile:
-            Image = self.reverse_tiling_pytorch(Image, kernel_size=self.reverse_tile_size)
+           Image = self.reverse_tiling_pytorch(Image, kernel_size=self.reverse_tile_size)
         if self.resize:
-            Image = resize(Image, size=self.resize_to, interpolation=self.resize_interpolation, antialias=self.resize_antialiasing)
+           Image = resize(Image, size=self.resize_to, interpolation=self.resize_interpolation, antialias=self.resize_antialiasing)
 
         Label = im.attrs['lc1']
         Label = self.classification_map[Label]
