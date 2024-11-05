@@ -7,6 +7,7 @@ import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from albumentations.pytorch import ToTensorV2
 from torchgeo.datasets import NonGeoDataset
 
 from terratorch.datasets.utils import (
@@ -63,7 +64,7 @@ class MNeonTreeNonGeo(NonGeoDataset):
         self.data_directory = self.data_root / self.data_dir
 
         partition_file = self.data_directory / self.partition_file_template.format(partition=partition)
-        with open(partition_file, "r") as file:
+        with open(partition_file) as file:
             partitions = json.load(file)
 
         if split_name not in partitions:

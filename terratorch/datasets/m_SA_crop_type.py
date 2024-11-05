@@ -7,6 +7,7 @@ import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from albumentations.pytorch import ToTensorV2
 from torchgeo.datasets import NonGeoDataset
 
 from terratorch.datasets.utils import (
