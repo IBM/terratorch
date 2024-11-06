@@ -1,8 +1,6 @@
 # Copyright contributors to the Terratorch project
 import timm
 import torch
-from granitewxc.utils.config import get_config
-from granitewxc.utils.downscaling_model import get_finetune_model
 from torch import nn
 
 import os
@@ -17,7 +15,6 @@ from terratorch.models.model import (
     ModelOutput,
 )
 from terratorch.registry import MODEL_FACTORY_REGISTRY
-
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +50,23 @@ class WxCModelFactory(ModelFactory):
         aux_decoders,
         **kwargs,
     ) -> Model:
-        module = get_finetune_model(kwargs['model_config'])
-
-        return WxCModuleWrapper(module)
+        if backbone == 'gravitywave':
+            try:
+                __import__('prithviwxc.gravitywave.inference')
+                from prithviwxc.gravitywave.inference import get_model
+                from prithviwxc.gravitywave.config import get_cfg
+                cfg = get_cfg()
+                return WxCModuleWrapper(get_model(cfg,'uvtp122', cfg.singular_sharded_checkpoint))
+            except ImportError as e:
+                missing_module = e.name if hasattr(e, 'name') else "unknown module"
+                print('prithvi wxc gravitywave not installed, missing module: {missing_module}')
+                return None
+        else:
+            try:
+                __import__('granitewxc.utils.config')
+                from granitewxc.utils.config import get_config
+                from granitewxc.utils.downscaling_model import get_finetune_model
+                module = get_finetune_model(kwargs['model_config'])
+                return WxCModuleWrapper(module)
+            except ImportError:
+                print('granite wxc downscaling not installed')
