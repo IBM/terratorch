@@ -9,7 +9,7 @@ from collections import defaultdict
 from timm.models import FeatureInfo
 from timm.models._builder import build_model_with_cfg
 from timm.models._registry import generate_default_cfgs, register_model
-from torch import nn
+from torch import nn, Tensor
 
 from terratorch.datasets import HLSBands
 from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
@@ -58,6 +58,16 @@ def checkpoint_filter_fn(
 
     return state_dict
 
+
+def pad_images(imgs: Tensor,patch_size: int, padding:str) -> Tensor:
+    p = patch_size
+    # h, w = imgs.shape[3], imgs.shape[4]
+    t, h, w = imgs.shape[-3:]
+    h_pad, w_pad = (p - h % p) % p, (p - w % p) % p  # Ensure padding is within bounds
+    if h_pad > 0 or w_pad > 0:
+        imgs = nn.functional.pad(imgs, (0, w_pad, 0, h_pad), mode=padding)
+    return imgs
+
 def _create_prithvi(
     variant: str,
     pretrained: bool = False,  # noqa: FBT001, FBT002
@@ -68,6 +78,7 @@ def _create_prithvi(
     if pretrained_bands is None:
         pretrained_bands = PRETRAINED_BANDS
 
+
     if model_bands is None:
         model_bands: list[HLSBands | int] = pretrained_bands
         logging.info(
@@ -76,6 +87,9 @@ def _create_prithvi(
         )
     else:
         model_bands = [HLSBands.try_convert_to_hls_bands_enum(b) for b in model_bands]
+
+    padding = kwargs.get("padding", "none")
+    patch_size = kwargs.get("patch_size", 16)
 
     # Little hack because VIT does not support timm's features_only
     # so we do it ourselves
@@ -113,6 +127,24 @@ def _create_prithvi(
         model.forward = forward_filter_indices
         model.model_bands = model_bands
         model.pretrained_bands = pretrained_bands
+
+    if padding != "none":
+        original_forward = model.forward
+        original_forward_features = model.forward_features
+
+        def pad_and_forward(forward_fn, patch_size, padding, *args, **kwargs):
+            inputs = pad_images(args[0], patch_size, padding)
+            return forward_fn(inputs, **kwargs)
+
+        def forward_pad_images(*args, **kwargs):
+            return pad_and_forward(original_forward, patch_size, padding, *args, **kwargs)
+
+        def forward_features_pad_images(*args, **kwargs):
+            return pad_and_forward(original_forward_features, patch_size, padding, *args, **kwargs)
+
+        model.forward = forward_pad_images
+        model.forward_features = forward_features_pad_images
+
 
     return model
 
