@@ -313,8 +313,10 @@ class SemanticSegmentationTask(BaseTask):
 
         model_output: ModelOutput = self(x)
         if dataloader_idx >= len(self.test_loss_handler):
-            msg = "You are returning more than one test dataloader but not defining \
-                enough test_dataloaders_names."
+            msg = (
+                "You are returning more than one test dataloader but not defining"
+                "enough test_dataloaders_names."
+            )
             raise ValueError(msg)
         loss = self.test_loss_handler[dataloader_idx].compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.test_loss_handler[dataloader_idx].log_loss(
