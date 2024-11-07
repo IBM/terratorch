@@ -317,7 +317,7 @@ class SemanticSegmentationTask(BaseTask):
                 enough test_dataloaders_names."
             raise ValueError(msg)
         loss = self.test_loss_handler[dataloader_idx].compute_loss(model_output, y, self.criterion, self.aux_loss)
-        self.train_loss_handler[dataloader_idx].log_loss(
+        self.test_loss_handler[dataloader_idx].log_loss(
             partial(self.log, add_dataloader_idx=False), # We don't need the dataloader idx as prefixes are different
             loss_dict=loss,
             batch_size=x.shape[0],
