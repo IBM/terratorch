@@ -214,11 +214,11 @@ class Sen4MapLucasDataModule(NonGeoDataModule):
     #             **self.kwargs
     #         )
 
-    # def train_dataloader(self):
-    #     return DataLoader(self.lucasS2_train, batch_size=None, num_workers=self.num_workers, prefetch_factor=self.prefetch_factor, shuffle=self.train_shuffle)
+    def train_dataloader(self):
+        return DataLoader(self.train_dataset, batch_size=self.batch_size, num_workers=self.num_workers, prefetch_factor=self.prefetch_factor, shuffle=self.train_shuffle)
 
-    # def val_dataloader(self):
-    #     return DataLoader(self.lucasS2_val, batch_size=None, num_workers=self.num_workers, prefetch_factor=self.prefetch_factor, shuffle=self.val_shuffle)
+    def val_dataloader(self):
+        return DataLoader(self.val_dataset, batch_size=self.batch_size, num_workers=self.num_workers, prefetch_factor=self.prefetch_factor, shuffle=self.val_shuffle)
 
-    # def test_dataloader(self):
-    #     return DataLoader(self.lucasS2_test, batch_size=None, num_workers=self.num_workers, prefetch_factor=self.prefetch_factor, shuffle=self.test_shuffle)
+    def test_dataloader(self):
+        return DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=self.num_workers, prefetch_factor=self.prefetch_factor, shuffle=self.test_shuffle)
