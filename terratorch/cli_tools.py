@@ -521,7 +521,7 @@ class LightningInferenceModel:
         Returns:
             A torch tensor with the prediction
         """
-        print("USING ME")
+
         with tempfile.TemporaryDirectory() as tmpdir:
             os.symlink(file_path, os.path.join(tmpdir, os.path.basename(file_path)))
             prediction, file_name = self.inference_on_dir(
