@@ -74,6 +74,7 @@ def is_one_band(img):
 
 
 def write_tiff(img_wrt, filename, metadata):
+
     with rasterio.open(filename, "w", **metadata) as dest:
         if is_one_band(img_wrt):
             img_wrt = img_wrt[None]
@@ -109,6 +110,30 @@ class CustomWriter(BasePredictionWriter):
         super().__init__(write_interval)
 
         self.output_dir = output_dir
+
+    def write_on_batch_end(self, trainer, pl_module, prediction, batch_indices, batch, batch_idx, dataloader_idx):  # noqa: ARG002
+        # this will create N (num processes) files in `output_dir` each containing
+        # the predictions of it's respective rank
+        print("doing.")
+        # by default take self.output_dir. If None, look for one in trainer
+        if self.output_dir is None:
+            try:
+                output_dir = trainer.predict_output_dir
+            except AttributeError as err:
+                msg = "Output directory must be passed to CustomWriter constructor or the `predict_output_dir`\
+                attribute must be present in the trainer."
+                raise Exception(msg) from err
+        else:
+            output_dir = self.output_dir
+
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir, exist_ok=True)
+
+        pred_batch, filename_batch = prediction
+
+        for prediction, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
+            save_prediction(prediction, file_name, output_dir, dtype=trainer.out_dtype)
+
 
     def write_on_epoch_end(self, trainer, pl_module, predictions, batch_indices):  # noqa: ARG002
         # this will create N (num processes) files in `output_dir` each containing
@@ -381,7 +406,7 @@ def build_lightning_cli(
         save_config_kwargs={"overwrite": True},
         args=args,
         # save only state_dict as well as full state. Only state_dict will be used for exporting the model
-        trainer_defaults={"callbacks": [CustomWriter(write_interval="epoch")]},
+        trainer_defaults={"callbacks": [CustomWriter(write_interval="batch")]},
         run=run,
     )
 
@@ -497,7 +522,7 @@ class LightningInferenceModel:
         Returns:
             A torch tensor with the prediction
         """
-
+        print("USING ME")
         with tempfile.TemporaryDirectory() as tmpdir:
             os.symlink(file_path, os.path.join(tmpdir, os.path.basename(file_path)))
             prediction, file_name = self.inference_on_dir(
