@@ -114,7 +114,7 @@ class CustomWriter(BasePredictionWriter):
     def write_on_batch_end(self, trainer, pl_module, prediction, batch_indices, batch, batch_idx, dataloader_idx):  # noqa: ARG002
         # this will create N (num processes) files in `output_dir` each containing
         # the predictions of it's respective rank
-        print("doing.")
+
         # by default take self.output_dir. If None, look for one in trainer
         if self.output_dir is None:
             try:
@@ -133,7 +133,6 @@ class CustomWriter(BasePredictionWriter):
 
         for prediction, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
             save_prediction(prediction, file_name, output_dir, dtype=trainer.out_dtype)
-
 
     def write_on_epoch_end(self, trainer, pl_module, predictions, batch_indices):  # noqa: ARG002
         # this will create N (num processes) files in `output_dir` each containing
