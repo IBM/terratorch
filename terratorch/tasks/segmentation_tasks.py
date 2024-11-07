@@ -57,6 +57,7 @@ class SemanticSegmentationTask(BaseTask):
         plot_on_val: bool | int = 10,
         class_names: list[str] | None = None,
         tiled_inference_parameters: TiledInferenceParameters = None,
+        test_dataloaders_names: list[str] | None = None,
     ) -> None:
         """Constructor
 
@@ -101,7 +102,9 @@ class SemanticSegmentationTask(BaseTask):
         self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
         super().__init__()
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
-        self.test_loss_handler = LossHandler(self.test_metrics.prefix)
+        self.test_loss_handler:list[LossHandler] = []
+        for metrics in self.test_metrics:
+            self.test_loss_handler.append(LossHandler(metrics.prefix))
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
         self.monitor = f"{self.val_metrics.prefix}loss"
         self.plot_on_val = int(plot_on_val)
@@ -210,7 +213,12 @@ class SemanticSegmentationTask(BaseTask):
         )
         self.train_metrics = metrics.clone(prefix="train/")
         self.val_metrics = metrics.clone(prefix="val/")
-        self.test_metrics = metrics.clone(prefix="test/")
+        self.test_metrics: list[MetricCollection] = []
+        if self.hparams["test_dataloaders_names"] is not None:
+            for dl_name in self.hparams["test_dataloaders_names"]:
+                self.test_metrics.append(metrics.clone(prefix=f"test/{dl_name}"))
+        else:
+            self.test_metrics.append(metrics.clone(prefix="test/"))
 
     def training_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         """Compute the train loss and additional metrics.
@@ -303,14 +311,15 @@ class SemanticSegmentationTask(BaseTask):
         y = batch["mask"]
 
         model_output: ModelOutput = self(x)
-        loss = self.test_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
-        self.test_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
+        loss = self.test_loss_handler[dataloader_idx].compute_loss(model_output, y, self.criterion, self.aux_loss)
+        self.test_loss_handler[dataloader_idx].log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat_hard = to_segmentation_prediction(model_output)
-        self.test_metrics.update(y_hat_hard, y)
+        self.test_metrics[dataloader_idx].update(y_hat_hard, y)
 
     def on_test_epoch_end(self) -> None:
-        self.log_dict(self.test_metrics.compute(), sync_dist=True)
-        self.test_metrics.reset()
+        for metrics in self.test_metrics:
+            self.log_dict(metrics.compute(), sync_dist=True)
+            metrics.reset()
         return super().on_test_epoch_end()
 
     def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
