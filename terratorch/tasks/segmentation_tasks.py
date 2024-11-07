@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Any
 
 import lightning
@@ -216,7 +217,7 @@ class SemanticSegmentationTask(BaseTask):
         self.test_metrics: list[MetricCollection] = []
         if self.hparams["test_dataloaders_names"] is not None:
             for dl_name in self.hparams["test_dataloaders_names"]:
-                self.test_metrics.append(metrics.clone(prefix=f"test/{dl_name}"))
+                self.test_metrics.append(metrics.clone(prefix=f"test/{dl_name}/"))
         else:
             self.test_metrics.append(metrics.clone(prefix="test/"))
 
@@ -311,8 +312,16 @@ class SemanticSegmentationTask(BaseTask):
         y = batch["mask"]
 
         model_output: ModelOutput = self(x)
+        if dataloader_idx >= len(self.test_loss_handler):
+            msg = "You are returning more than one test dataloader but not defining \
+                enough test_dataloaders_names."
+            raise ValueError(msg)
         loss = self.test_loss_handler[dataloader_idx].compute_loss(model_output, y, self.criterion, self.aux_loss)
-        self.test_loss_handler[dataloader_idx].log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
+        self.train_loss_handler[dataloader_idx].log_loss(
+            partial(self.log, add_dataloader_idx=False), # We don't need the dataloader idx as prefixes are different
+            loss_dict=loss,
+            batch_size=x.shape[0],
+        )
         y_hat_hard = to_segmentation_prediction(model_output)
         self.test_metrics[dataloader_idx].update(y_hat_hard, y)
 
