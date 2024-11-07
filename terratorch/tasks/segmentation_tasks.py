@@ -35,6 +35,7 @@ class SemanticSegmentationTask(BaseTask):
         - Logs metrics per class
         - Does not have any callbacks by default (TorchGeo tasks do early stopping by default)
         - Allows the setting of optimizers in the constructor
+        - Allows to evaluate on multiple test dataloaders
     """
 
     def __init__(
@@ -96,6 +97,9 @@ class SemanticSegmentationTask(BaseTask):
                 Defaults to numeric ordering.
             tiled_inference_parameters (TiledInferenceParameters | None, optional): Inference parameters
                 used to determine if inference is done on the whole image or through tiling.
+            test_dataloaders_names (list[str] | None, optional): Names used to differentiate metrics when
+                multiple dataloaders are returned by test_dataloader in the datamodule. Defaults to None,
+                which assumes only one test dataloader is used.
         """
         self.tiled_inference_parameters = tiled_inference_parameters
         self.aux_loss = aux_loss
@@ -314,7 +318,7 @@ class SemanticSegmentationTask(BaseTask):
         model_output: ModelOutput = self(x)
         if dataloader_idx >= len(self.test_loss_handler):
             msg = (
-                "You are returning more than one test dataloader but not defining"
+                "You are returning more than one test dataloader but not defining "
                 "enough test_dataloaders_names."
             )
             raise ValueError(msg)
