@@ -107,7 +107,7 @@ class SemanticSegmentationTask(BaseTask):
         self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
         super().__init__()
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
-        self.test_loss_handler:list[LossHandler] = []
+        self.test_loss_handler: list[LossHandler] = []
         for metrics in self.test_metrics:
             self.test_loss_handler.append(LossHandler(metrics.prefix))
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
@@ -218,12 +218,12 @@ class SemanticSegmentationTask(BaseTask):
         )
         self.train_metrics = metrics.clone(prefix="train/")
         self.val_metrics = metrics.clone(prefix="val/")
-        self.test_metrics: list[MetricCollection] = []
         if self.hparams["test_dataloaders_names"] is not None:
-            for dl_name in self.hparams["test_dataloaders_names"]:
-                self.test_metrics.append(metrics.clone(prefix=f"test/{dl_name}/"))
+            self.test_metrics = nn.ModuleList(
+                [metrics.clone(prefix=f"test/{dl_name}/") for dl_name in self.hparams["test_dataloaders_names"]]
+            )
         else:
-            self.test_metrics.append(metrics.clone(prefix="test/"))
+            self.test_metrics = nn.ModuleList([metrics.clone(prefix="test/")])
 
     def training_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         """Compute the train loss and additional metrics.
@@ -317,14 +317,11 @@ class SemanticSegmentationTask(BaseTask):
 
         model_output: ModelOutput = self(x)
         if dataloader_idx >= len(self.test_loss_handler):
-            msg = (
-                "You are returning more than one test dataloader but not defining "
-                "enough test_dataloaders_names."
-            )
+            msg = "You are returning more than one test dataloader but not defining enough test_dataloaders_names."
             raise ValueError(msg)
         loss = self.test_loss_handler[dataloader_idx].compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.test_loss_handler[dataloader_idx].log_loss(
-            partial(self.log, add_dataloader_idx=False), # We don't need the dataloader idx as prefixes are different
+            partial(self.log, add_dataloader_idx=False),  # We don't need the dataloader idx as prefixes are different
             loss_dict=loss,
             batch_size=x.shape[0],
         )
