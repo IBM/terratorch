@@ -56,8 +56,8 @@ class MultiSourceRegistry(Mapping[str, T], typing.Generic[T]):
 
         # if no prefix, try to build in order
         for source in self._sources.values():
-            # with suppress(KeyError):
-            return source.build(name, *constructor_args, **constructor_kwargs)
+            with suppress(KeyError):
+                return source.build(name, *constructor_args, **constructor_kwargs)
 
         msg = f"Could not instantiate model {name} not from any source."
         raise KeyError(msg)
