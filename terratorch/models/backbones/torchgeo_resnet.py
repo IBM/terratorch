@@ -443,7 +443,6 @@ def satlas_resnet152_sentinel2_si_rgb_satlas(model_bands, pretrained = False, ck
 def load_resnet_weights(model: nn.Module, model_bands, ckpt_data: str, weights: Weights, input_size: int = 224, custom_weight_proj: str = "conv1.weight") -> nn.Module:
     
     pretrained_bands = get_pretrained_bands(weights.meta["bands"]) if "bands" in weights.meta else []
-    print("Loading weights")
     if ckpt_data is not None:
         if ckpt_data.find("https://hf.co/") > -1:
             repo_id = ckpt_data.split("/resolve/")[0].replace("https://hf.co/", '')

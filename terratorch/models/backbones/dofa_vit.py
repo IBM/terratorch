@@ -164,7 +164,7 @@ def load_dofa_weights(model: nn.Module, ckpt_data: str | None = None,  weights: 
         logging.info(msg)
     else:
         if weights is not None:
-            print("Loading weights.")
+            
             checkpoint_model = weights.get_state_dict(progress=True)
             allowed_missing_keys =  {'fc_norm.weight', 'fc_norm.bias', 'head.weight', 'head.bias'}
             if input_size != 224:
