@@ -54,7 +54,7 @@ class MultiTemporalCropClassificationDataModule(NonGeoDataModule):
 
         means = [MEANS[b] for b in bands]
         stds = [STDS[b] for b in bands]
-
+        self.bands = bands
         self.train_transform = wrap_in_compose_is_list(train_transform)
         self.val_transform = wrap_in_compose_is_list(val_transform)
         self.test_transform = wrap_in_compose_is_list(test_transform)
@@ -72,6 +72,7 @@ class MultiTemporalCropClassificationDataModule(NonGeoDataModule):
                 split="train",
                 data_root=self.data_root,
                 transform=self.train_transform,
+                bands=self.bands,
                 no_data_replace=self.no_data_replace,
                 no_label_replace=self.no_label_replace,
                 expand_temporal_dimension = self.expand_temporal_dimension,
@@ -83,6 +84,7 @@ class MultiTemporalCropClassificationDataModule(NonGeoDataModule):
                 split="val",
                 data_root=self.data_root,
                 transform=self.val_transform,
+                bands=self.bands,
                 no_data_replace=self.no_data_replace,
                 no_label_replace=self.no_label_replace,
                 expand_temporal_dimension = self.expand_temporal_dimension,
@@ -94,6 +96,7 @@ class MultiTemporalCropClassificationDataModule(NonGeoDataModule):
                 split="val",
                 data_root=self.data_root,
                 transform=self.test_transform,
+                bands=self.bands,
                 no_data_replace=self.no_data_replace,
                 no_label_replace=self.no_label_replace,
                 expand_temporal_dimension = self.expand_temporal_dimension,

@@ -57,7 +57,7 @@ class FireScarsNonGeoDataModule(NonGeoDataModule):
 
         means = [MEANS[b] for b in bands]
         stds = [STDS[b] for b in bands]
-
+        self.bands = bands
         self.train_transform = wrap_in_compose_is_list(train_transform)
         self.val_transform = wrap_in_compose_is_list(val_transform)
         self.test_transform = wrap_in_compose_is_list(test_transform)
@@ -73,6 +73,7 @@ class FireScarsNonGeoDataModule(NonGeoDataModule):
                 split="train",
                 data_root=self.data_root,
                 transform=self.train_transform,
+                bands=self.bands,
                 no_data_replace=self.no_data_replace,
                 no_label_replace=self.no_label_replace,
                 use_metadata=self.use_metadata,
@@ -82,6 +83,7 @@ class FireScarsNonGeoDataModule(NonGeoDataModule):
                 split="val",
                 data_root=self.data_root,
                 transform=self.val_transform,
+                bands=self.bands,
                 no_data_replace=self.no_data_replace,
                 no_label_replace=self.no_label_replace,
                 use_metadata=self.use_metadata,
@@ -91,6 +93,7 @@ class FireScarsNonGeoDataModule(NonGeoDataModule):
                 split="val",
                 data_root=self.data_root,
                 transform=self.test_transform,
+                bands=self.bands,
                 no_data_replace=self.no_data_replace,
                 no_label_replace=self.no_label_replace,
                 use_metadata=self.use_metadata,
