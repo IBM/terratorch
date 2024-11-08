@@ -505,6 +505,7 @@ class LightningInferenceModel:
             A tuple with a torch tensor with all predictions and a list of corresponding input file paths
 
         """
+
         if data_root:
             self.datamodule.predict_root = data_root
         predictions = self.trainer.predict(model=self.model, datamodule=self.datamodule, return_predictions=True)
