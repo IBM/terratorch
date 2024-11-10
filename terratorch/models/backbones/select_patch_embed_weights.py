@@ -48,7 +48,7 @@ def select_patch_embed_weights(
         else:
             _possible_keys_for_proj_weight = {custom_proj_key}
             
-        patch_embed_proj_weight_key = state_dict.keys() & _possible_keys_for_proj_weight if (type(state_dict) == collections.OrderedDict) else state_dict().keys() & _possible_keys_for_proj_weight
+        patch_embed_proj_weight_key = state_dict.keys() & _possible_keys_for_proj_weight if (type(state_dict) in [collections.OrderedDict, dict]) else state_dict().keys() & _possible_keys_for_proj_weight
         if len(patch_embed_proj_weight_key) == 0:
             msg = "Could not find key for patch embed weight"
             raise Exception(msg)
