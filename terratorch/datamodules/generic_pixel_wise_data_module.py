@@ -526,6 +526,7 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         if stage in ["predict"] and self.predict_root:
             self.predict_dataset = self.dataset_class(
                 self.predict_root,
+                image_grep=self.img_grep,
                 dataset_bands=self.predict_dataset_bands,
                 output_bands=self.predict_output_bands,
                 constant_scale=self.constant_scale,
