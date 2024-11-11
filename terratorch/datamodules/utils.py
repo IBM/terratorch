@@ -1,12 +1,12 @@
 # Copyright contributors to the Terratorch project
 
 import re
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 
 import albumentations as A
 import numpy as np
+import torch
 
-np_str_obj_array_pattern = re.compile(r"[SaUO]")
 
 def wrap_in_compose_is_list(transform_list):
     # set check shapes to false because of the multitemporal case
@@ -22,4 +22,26 @@ def check_dataset_stackability(dataset, batch_size) -> bool:
         print("The batch samples can't be stacked, since they don't have the same dimensions. Setting batch_size=1.")
         return 1
 
+class NormalizeWithTimesteps(Callable):
+    def __init__(self, means, stds):
+        super().__init__()
+        self.means = means  # (C, T)
+        self.stds = stds    # (C, T)
 
+    def __call__(self, batch):
+        image = batch["image"]
+
+        if len(image.shape) == 5:  # (B, T, C, H, W)
+            means = torch.tensor(self.means, device=image.device).transpose(0, 1).reshape(1, image.shape[1], image.shape[2], 1, 1)
+            stds = torch.tensor(self.stds, device=image.device).transpose(0, 1).reshape(1, image.shape[1], image.shape[2], 1, 1)
+
+        elif len(image.shape) == 4:  # (B, C, H, W)
+            means = torch.tensor(self.means, device=image.device).mean(dim=1).view(1, image.shape[1], 1, 1)
+            stds = torch.tensor(self.stds, device=image.device).mean(dim=1).view(1, image.shape[1], 1, 1)
+
+        else:
+            msg = f"Expected batch to have 5 or 4 dimensions, but got {len(image.shape)}"
+            raise Exception(msg)
+
+        batch["image"] = (image - means) / stds
+        return batch

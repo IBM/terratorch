@@ -11,13 +11,13 @@ import numpy as np
 import pandas as pd
 import torch
 from albumentations.pytorch import ToTensorV2
-from torchgeo.datasets import NonGeoDataset
 
 from terratorch.datasets.utils import (
     clip_image,
     default_transform,
     validate_bands,
 )
+from torchgeo.datasets import NonGeoDataset
 
 
 class MForestNetNonGeo(NonGeoDataset):
