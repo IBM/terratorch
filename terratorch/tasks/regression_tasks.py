@@ -315,7 +315,7 @@ class PixelwiseRegressionTask(BaseTask):
         rest = {k:batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
-        self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
+        self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat = model_output.output
         out = y_hat[y != -1]
         mask = y[y != -1]
@@ -326,6 +326,9 @@ class PixelwiseRegressionTask(BaseTask):
             try:
                 datamodule = self.trainer.datamodule
                 batch["prediction"] = y_hat
+                if isinstance(batch["image"], dict):
+                    # Multimodal input
+                    batch["image"] = batch["image"][self.trainer.datamodule.rgb_modality]
                 for key in ["image", "mask", "prediction"]:
                     batch[key] = batch[key].cpu()
                 sample = unbind_samples(batch)[0]

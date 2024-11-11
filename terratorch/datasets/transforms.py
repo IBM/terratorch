@@ -1,8 +1,10 @@
 # Copyright contributors to the Terratorch project
 
+import albumentations as A
+import numpy as np
+import torch
 from albumentations import BasicTransform, Compose, ImageOnlyTransform
 from einops import rearrange
-from torch import Tensor
 
 N_DIMS_FOR_TEMPORAL = 4
 N_DIMS_FLATTENED_TEMPORAL = 3
@@ -18,6 +20,11 @@ def albumentations_to_callable_with_dict(albumentation: list[BasicTransform] | N
 
     return fn
 
+def default_non_image_transform(array):
+    if array.dtype in (float, int):
+        return torch.from_numpy(array)
+    else:
+        return array
 
 class FlattenTemporalIntoChannels(ImageOnlyTransform):
     """Flatten the temporal dimension into channels"""
@@ -91,3 +98,34 @@ class SelectBands(ImageOnlyTransform):
 
     def get_transform_init_args_names(self):
         return "band_indices"
+
+class MultimodalTransforms:
+    """Applies albumentations transforms to multiple images"""
+    def __init__(
+            self,
+            transforms: dict | A.Compose,
+            shared : bool = True,
+            non_image_modalities: list[str] | None = None,
+            non_image_transform: object | None = None,
+    ):
+        self.transforms = transforms
+        self.shared = shared
+        self.non_image_modalities = non_image_modalities
+        self.non_image_transform = non_image_transform or default_non_image_transform
+
+    def __call__(self, data: dict):
+        if self.shared:
+            # albumentations requires a key 'image' and treats all other keys as additional targets
+            image_modality = list(set(data.keys()) - set(self.non_image_modalities))[0]
+            data["image"] = data.pop(image_modality)
+            data = self.transforms(**data)
+            data[image_modality] = data.pop("image")
+
+            # Process sequence data which is ignored by albumentations as 'global_label'
+            for modality in self.non_image_modalities:
+                data[modality] = self.non_image_transform(data[modality])
+        else:
+            # Applies transformations for each modality separate
+            for key, value in data.items():
+                data[key] = self.transforms[key](image=value)["image"]  # Only works with image modalities
+        return data

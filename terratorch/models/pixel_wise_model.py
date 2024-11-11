@@ -90,7 +90,11 @@ class PixelWiseModel(Model, SegmentationModel):
     def forward(self, x: torch.Tensor, **kwargs) -> ModelOutput:
         """Sequentially pass `x` through model`s encoder, decoder and heads"""
         self.check_input_shape(x)
-        input_size = x.shape[-2:]
+        if isinstance(x, torch.Tensor):
+            input_size = x.shape[-2:]
+        elif isinstance(x, dict):
+            # Multimodal input in passed as dict
+            input_size = list(x.values())[0].shape[-2:]
         features = self.encoder(x, **kwargs)
 
         ## only for backwards compatibility with pre-neck times.
