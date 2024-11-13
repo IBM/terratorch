@@ -8,6 +8,7 @@ import torch
 from terratorch.models import EncoderDecoderFactory
 from terratorch.models.backbones.prithvi_vit import PRETRAINED_BANDS
 from terratorch.models.model import AuxiliaryHead
+import gc 
 
 NUM_CHANNELS = 6
 NUM_CLASSES = 2
@@ -49,6 +50,7 @@ def test_unused_args_raise_exception(model_factory: EncoderDecoderFactory):
         )
     assert "unused_argument" in str(excinfo.value)
 
+    gc.collect()
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
 def test_create_classification_model(backbone, model_factory: EncoderDecoderFactory, model_input):
@@ -65,6 +67,7 @@ def test_create_classification_model(backbone, model_factory: EncoderDecoderFact
     with torch.no_grad():
         assert model(model_input).output.shape == EXPECTED_CLASSIFICATION_OUTPUT_SHAPE
 
+    gc.collect()
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
 def test_create_classification_model_no_in_channels(backbone, model_factory: EncoderDecoderFactory, model_input):
@@ -81,6 +84,7 @@ def test_create_classification_model_no_in_channels(backbone, model_factory: Enc
     with torch.no_grad():
         assert model(model_input).output.shape == EXPECTED_CLASSIFICATION_OUTPUT_SHAPE
 
+    gc.collect()
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
@@ -105,6 +109,7 @@ def test_create_pixelwise_model(backbone, task, expected, decoder, model_factory
     with torch.no_grad():
         assert model(model_input).output.shape == expected
 
+    gc.collect()
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
@@ -127,6 +132,7 @@ def test_create_model_with_smp_fpn_decoder(backbone, task, expected, model_facto
     with torch.no_grad():
         assert model(model_input).output.shape == expected
 
+    gc.collect()
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
@@ -152,6 +158,7 @@ def test_create_model_with_smp_unet_decoder(
     with torch.no_grad():
         assert model(model_input).output.shape == expected
 
+    gc.collect()
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
@@ -175,6 +182,8 @@ def test_create_model_with_smp_deeplabv3plus_decoder(
 
     with torch.no_grad():
         assert model(model_input).output.shape == expected
+
+    gc.collect()
 
 @pytest.mark.skipif(not importlib.util.find_spec("mmseg"), reason="mmsegmentation not installed")
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
@@ -204,6 +213,8 @@ def test_create_model_with_mmseg_fcn_decoder(
 
     with torch.no_grad():
         assert model(model_input).output.shape == expected
+
+    gc.collect()
 
 @pytest.mark.skipif(not importlib.util.find_spec("mmseg"), reason="mmsegmentation not installed")
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
@@ -236,6 +247,7 @@ def test_create_model_with_mmseg_uperhead_decoder(
     with torch.no_grad():
         assert model(model_input).output.shape == expected
 
+    gc.collect()
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
@@ -262,6 +274,7 @@ def test_create_pixelwise_model_no_in_channels(
     with torch.no_grad():
         assert model(model_input).output.shape == expected
 
+    gc.collect()
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
@@ -296,6 +309,7 @@ def test_create_pixelwise_model_with_aux_heads(
         for _, output in model_output.auxiliary_heads.items():
             assert output.shape == expected
 
+    gc.collect()
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
@@ -321,3 +335,5 @@ def test_create_pixelwise_model_with_extra_bands(
     model_input = torch.ones((1, NUM_CHANNELS + 1, 224, 224))
     with torch.no_grad():
         assert model(model_input).output.shape == expected
+
+    gc.collect()
