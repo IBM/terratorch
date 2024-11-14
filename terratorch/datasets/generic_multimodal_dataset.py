@@ -3,6 +3,7 @@
 """Module containing generic dataset classes"""
 
 import glob
+import logging
 import os
 import torch
 import pandas as pd
@@ -25,7 +26,8 @@ from terratorch.datasets.utils import HLSBands, default_transform, filter_valid_
 from terratorch.datasets.transforms import MultimodalTransforms
 
 
-def load_table_data(file_path: str):
+def load_table_data(file_path: str | Path) -> pd.DataFrame:
+    file_path = str(file_path)
     if file_path.endswith('parquet'):
         df = pd.read_parquet(file_path)
     elif file_path.endswith('csv'):
@@ -72,7 +74,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         image_modalities: list[str] | None = None,
         rgb_modality: str | None = None,
         rgb_indices: list[int] | None = None,
-        allow_missing_modalities: bool = False,  # TODO: Not implemented on a data module level yet (collate_fn required).
+        allow_missing_modalities: bool = False,  # TODO: Not implemented on a data module level yet.
         allow_substring_split_file: bool = False,
         dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
@@ -83,6 +85,8 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         expand_temporal_dimension: bool = False,
         reduce_zero_label: bool = False,
         channel_position: int = -1,
+        scalar_label: bool = False,
+        concat_bands: bool = False,
         *args, **kwargs,
     ) -> None:
         """Constructor
@@ -120,13 +124,15 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         self.modalities = list(data_root.keys())
         assert 'mask' not in self.modalities, "Modality cannot be called 'mask'."
         self.image_modalities = image_modalities or self.modalities
-        self.sequence_modalities = list(set(self.modalities) - set(image_modalities))
+        self.non_image_modalities = list(set(self.modalities) - set(image_modalities))
+        if scalar_label:
+            self.non_image_modalities += ['label']
 
         # Convert path strings to lists as the code expects a list of paths per modality
         for m, m_path in data_root.items():
             if not isinstance(m_path, list):
                 data_root[m] = [m_path]
-        if label_data_root and not isinstance(label_data_root, list):
+        if label_data_root is not None and not isinstance(label_data_root, list):
             label_data_root = [label_data_root]
 
         self.constant_scale = constant_scale or []
@@ -135,6 +141,13 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         self.reduce_zero_label = reduce_zero_label
         self.expand_temporal_dimension = expand_temporal_dimension
         self.channel_position = channel_position
+        self.scalar_label = scalar_label
+        self.concat_bands = concat_bands
+        assert not self.concat_bands or len(self.non_image_modalities) == 0, \
+            (f"concat_bands can only be used with image modalities, "
+             f"but non-image modalities are given: {self.non_image_modalities}")
+        assert not self.concat_bands or not allow_missing_modalities, \
+            "concat_bands cannot be used with allow_missing_modalities."
 
         if self.expand_temporal_dimension and len(dataset_bands) != self.modalities:
             msg = "Please provide dataset_bands for each modality when expand_temporal_dimension is True"
@@ -147,7 +160,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                     split = f.readlines()
                 valid_files = {rf"{substring.strip()}" for substring in split}
             else:
-                valid_files = list(load_table_data(str(self.split_file)).index)
+                valid_files = list(load_table_data(self.split_file).index)
 
         else:
             image_files = {}
@@ -155,7 +168,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                 dir_lists = [glob.glob(os.path.join(r, image_grep[m])) for r in m_paths]
                 image_files[m] = sorted([p for l in dir_lists for p in l])  # Concatenate
 
-            if label_data_root:
+            if label_data_root is not None:
                 dir_lists = [glob.glob(os.path.join(r, label_grep)) for r in label_data_root]
                 image_files['mask'] = sorted([p for l in dir_lists for p in l])  # Concatenate
 
@@ -189,7 +202,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                     (f"Sample key expected in table index (first column) for {m}, "
                      f"key '{list(valid_files)[0]}' is not in index [{list(data_root[m].index[:3])}, ...]")
 
-        if label_data_root:
+        if label_data_root is not None:
             # Check for parquet and csv files with labels and read the file
             l_dfs = []
             for l_path in label_data_root:
@@ -229,29 +242,28 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                         if os.path.isfile(file_path):
                             sample[m] = file_path
                             break
-            if label_data_root:
+            if label_data_root is not None:
                 # Add tabular data to sample
                 if isinstance(label_data_root, pd.DataFrame):
                     # label_data_root was replaced by DataFrame
                     sample['mask'] = label_data_root.loc[file].values
-                    continue
-
-                for l_dir in label_data_root:
-                    if allow_substring_split_file:
-                        # Substring match with label_grep
-                        l_files = glob.glob(os.path.join(l_dir, file + label_grep))
-                        if l_files:
-                            sample['mask'] = l_files[0]
-                            break
-                    else:
-                        # Exact match
-                        file_path = os.path.join(l_dir, file)
-                        if os.path.isfile(file_path):
-                            sample['mask'] = file_path
-                            break
-                if 'mask' not in sample:
-                    # Only add sample if mask is present
-                    break
+                else:
+                    for l_dir in label_data_root:
+                        if allow_substring_split_file:
+                            # Substring match with label_grep
+                            l_files = glob.glob(os.path.join(l_dir, file + label_grep))
+                            if l_files:
+                                sample['mask'] = l_files[0]
+                                break
+                        else:
+                            # Exact match
+                            file_path = os.path.join(l_dir, file)
+                            if os.path.isfile(file_path):
+                                sample['mask'] = file_path
+                                break
+                    if 'mask' not in sample:
+                        # Only add sample if mask is present
+                        break
 
             if len(sample) == num_modalities or allow_missing_modalities:
                 self.samples.append(sample)
@@ -286,9 +298,13 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
                 self.filter_indices[m] = [self.dataset_bands[m].index(band) for band in self.output_bands[m]]
 
+            if not self.channel_position:
+                logging.warning('output_bands is defined but no channel_position is provided. '
+                                'Channels must be in the last dimension, otherwise provide channel_position.')
+
         # If no transform is given, apply only to transform to torch tensor
         if isinstance(transform, A.Compose):
-            self.transform = MultimodalTransforms(transform, sequence_modalities=self.sequence_modalities)
+            self.transform = MultimodalTransforms(transform, non_image_modalities=self.non_image_modalities)
         elif transform is None:
             self.transform = MultimodalToTensor(self.modalities)
         else:
@@ -327,7 +343,8 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                 data = rearrange(data, "(channels time) h w -> channels time h w",
                                  channels=len(self.dataset_bands[modality]))
 
-            if modality == 'mask':
+            if modality == 'mask' and len(data) == 1:
+                # tasks expect image masks without channel dim
                 data = data[0]
 
             if modality in self.image_modalities and len(data.shape) >= 3 and self.channel_position:
@@ -344,15 +361,21 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
         if self.reduce_zero_label:
             output["mask"] -= 1
+
+        if self.scalar_label:
+            output["label"] = output.pop("mask")
+
         if self.transform:
             output = self.transform(output)
 
-        # Tasks expect data to be stored in 'image', moving modalities to image dict
-        output = {
-            'image': {m: output[m] for m in self.modalities if m in output},
-            'mask': output['mask'] if 'mask' in output else None,
-            'filename': self.samples[index]
-        }
+        if self.concat_bands:
+            # Concatenate bands of all image modalities
+            output['image'] = torch.cat([output.pop(m) for m in self.image_modalities if m in output])
+        else:
+            # Tasks expect data to be stored in 'image', moving modalities to image dict
+            output['image'] = {m: output.pop(m) for m in self.modalities if m in output}
+
+        output['filename'] = self.samples[index]
 
         return output
 
@@ -400,6 +423,7 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
         expand_temporal_dimension: bool = False,
         reduce_zero_label: bool = False,
         channel_position: int = -3,
+        *args, **kwargs,
     ) -> None:
         """Constructor
 
@@ -432,6 +456,8 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
             reduce_zero_label (bool): Subtract 1 from all labels. Useful when labels start from 1 instead of the
                 expected 0. Defaults to False.
         """
+        assert label_data_root is not None, "label_data_root must be specified for segmentation tasks."
+
         super().__init__(
             data_root,
             label_data_root=label_data_root,
@@ -452,6 +478,7 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
             expand_temporal_dimension=expand_temporal_dimension,
             reduce_zero_label=reduce_zero_label,
             channel_position=channel_position,
+            *args, **kwargs,
         )
         self.num_classes = num_classes
         self.class_names = class_names
@@ -564,6 +591,7 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
         expand_temporal_dimension: bool = False,
         reduce_zero_label: bool = False,
         channel_position: int = -3,
+        *args, **kwargs,
     ) -> None:
         """Constructor
 
@@ -594,6 +622,8 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
             reduce_zero_label (bool): Subtract 1 from all labels. Useful when labels start from 1 instead of the
                 expected 0. Defaults to False.
         """
+        assert label_data_root is not None, "label_data_root must be specified for regression tasks."
+
         super().__init__(
             data_root,
             label_data_root=label_data_root,
@@ -614,6 +644,7 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
             expand_temporal_dimension=expand_temporal_dimension,
             reduce_zero_label=reduce_zero_label,
             channel_position=channel_position,
+            *args, **kwargs,
         )
 
     def __getitem__(self, index: int) -> dict[str, Any]:
@@ -633,6 +664,161 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
 
         .. versionadded:: 0.2
         """
+
+        image = sample["image"]
+        if isinstance(image, torch.Tensor):
+            image = image.numpy()
+        image = image.take(self.rgb_indices, axis=0)
+        image = np.transpose(image, (1, 2, 0))
+        image = (image - image.min(axis=(0, 1))) * (1 / image.max(axis=(0, 1)))
+        image = np.clip(image, 0, 1)
+
+        label_mask = sample["mask"]
+        if isinstance(label_mask, torch.Tensor):
+            label_mask = label_mask.numpy()
+
+        showing_predictions = "prediction" in sample
+        if showing_predictions:
+            prediction_mask = sample["prediction"]
+            if isinstance(prediction_mask, torch.Tensor):
+                prediction_mask = prediction_mask.numpy()
+
+        return self._plot_sample(
+            image,
+            label_mask,
+            prediction=prediction_mask if showing_predictions else None,
+            suptitle=suptitle,
+        )
+
+    @staticmethod
+    def _plot_sample(image, label, prediction=None, suptitle=None):
+        num_images = 4 if prediction is not None else 3
+        fig, ax = plt.subplots(1, num_images, figsize=(12, 10), layout="compressed")
+
+        norm = mpl.colors.Normalize(vmin=label.min(), vmax=label.max())
+        ax[0].axis("off")
+        ax[0].title.set_text("Image")
+        ax[0].imshow(image)
+
+        ax[1].axis("off")
+        ax[1].title.set_text("Ground Truth Mask")
+        ax[1].imshow(label, cmap="Greens", norm=norm)
+
+        ax[2].axis("off")
+        ax[2].title.set_text("GT Mask on Image")
+        ax[2].imshow(image)
+        ax[2].imshow(label, cmap="Greens", alpha=0.3, norm=norm)
+        # ax[2].legend()
+
+        if prediction is not None:
+            ax[3].title.set_text("Predicted Mask")
+            ax[3].imshow(prediction, cmap="Greens", norm=norm)
+
+        if suptitle is not None:
+            plt.suptitle(suptitle)
+        return fig
+
+
+class GenericMultimodalScalarDataset(GenericMultimodalDataset):
+    """GenericMultimodalClassificationDataset"""
+
+    def __init__(
+        self,
+        data_root: Path,
+        label_data_root: Path,
+        image_grep: str | None = "*",
+        label_grep: str | None = "*",
+        split: Path | None = None,
+        image_modalities: list[str] | None = None,
+        rgb_modality: str | None = None,
+        rgb_indices: list[int] | None = None,
+        allow_missing_modalities : bool = False,
+        allow_substring_split_file: bool = False,
+        dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        constant_scale: float = 1.,  # TODO: Check types of args
+        transform: A.Compose | None = None,
+        no_data_replace: float | None = None,
+        no_label_replace: int | None = None,
+        expand_temporal_dimension: bool = False,
+        reduce_zero_label: bool = False,
+        channel_position: int = -3,
+        *args, **kwargs,
+    ) -> None:
+        """Constructor
+
+        Args:
+            TODO: Update docs
+            data_root (Path): Path to data root directory
+            label_data_root (Path, optional): Path to data root directory with labels.
+                If not specified, will use the same as for images.
+            image_grep (str, optional): Regular expression appended to data_root to find input images.
+                Defaults to "*".
+            label_grep (str, optional): Regular expression appended to data_root to find ground truth masks.
+                Defaults to "*".
+            split (Path, optional): Path to file containing files to be used for this split.
+                The file should be a new-line separated prefixes contained in the desired files.
+                Files will be seached using glob with the form Path(data_root).glob(prefix + [image or label grep])
+            rgb_indices (list[str], optional): Indices of RGB channels. Defaults to [0, 1, 2].
+            dataset_bands (list[HLSBands | int] | None): Bands present in the dataset.
+            output_bands (list[HLSBands | int] | None): Bands that should be output by the dataset.
+            constant_scale (float): Factor to multiply image values by. Defaults to 1.
+            transform (Albumentations.Compose | None): Albumentations transform to be applied.
+                Should end with ToTensorV2(). If used through the generic_data_module,
+                should not include normalization. Not supported for multi-temporal data.
+                Defaults to None, which simply applies ToTensorV2().
+            no_data_replace (float | None): Replace nan values in input images with this value. If none, does no replacement. Defaults to None.
+            no_label_replace (int | None): Replace nan values in label with this value. If none, does no replacement. Defaults to None.
+            expand_temporal_dimension (bool): Go from shape (time*channels, h, w) to (channels, time, h, w).
+                Defaults to False.
+            reduce_zero_label (bool): Subtract 1 from all labels. Useful when labels start from 1 instead of the
+                expected 0. Defaults to False.
+        """
+        assert label_data_root is not None, "label_data_root must be specified for scalar tasks."
+
+        super().__init__(
+            data_root,
+            label_data_root=label_data_root,
+            image_grep=image_grep,
+            label_grep=label_grep,
+            split=split,
+            image_modalities=image_modalities,
+            rgb_modality=rgb_modality,
+            rgb_indices=rgb_indices,
+            allow_missing_modalities=allow_missing_modalities,
+            allow_substring_split_file=allow_substring_split_file,
+            dataset_bands=dataset_bands,
+            output_bands=output_bands,
+            constant_scale=constant_scale,
+            transform=transform,
+            no_data_replace=no_data_replace,
+            no_label_replace=no_label_replace,
+            expand_temporal_dimension=expand_temporal_dimension,
+            reduce_zero_label=reduce_zero_label,
+            channel_position=channel_position,
+            scalar_label=True,
+            *args, **kwargs,
+        )
+
+    def __getitem__(self, index: int) -> dict[str, Any]:
+        item = super().__getitem__(index)
+        return item
+
+    def plot(self, sample: dict[str, torch.Tensor], suptitle: str | None = None) -> Figure:
+        """Plot a sample from the dataset.
+
+        Args:
+            sample (dict[str, Tensor]): a sample returned by :meth:`__getitem__`
+            suptitle (str|None): optional string to use as a suptitle
+
+        Returns:
+            a matplotlib Figure with the rendered sample
+
+        .. versionadded:: 0.2
+        """
+
+        # TODO: Check plotting code for classification tasks and add it to generic classification dataset as well
+        raise NotImplementedError
 
         image = sample["image"]
         if isinstance(image, torch.Tensor):

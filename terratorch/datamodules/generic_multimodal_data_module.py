@@ -14,12 +14,13 @@ import kornia.augmentation as K
 import numpy as np
 import torch
 from torch import Tensor
-from torch.utils.data import DataLoader, RandomSampler, BatchSampler, SequentialSampler
+from torch.utils.data import DataLoader, RandomSampler, BatchSampler, SequentialSampler, default_collate
 from torchgeo.datamodules import NonGeoDataModule
 from torchgeo.transforms import AugmentationSequential
 
 from terratorch.datasets import (GenericMultimodalDataset, GenericMultimodalSegmentationDataset,
-                                 GenericMultimodalPixelwiseRegressionDataset, HLSBands)
+                                 GenericMultimodalPixelwiseRegressionDataset, GenericMultimodalScalarDataset, HLSBands)
+from terratorch.datamodules.generic_pixel_wise_data_module import Normalize
 from terratorch.io.file import load_from_file_or_attribute
 
 
@@ -28,7 +29,7 @@ def collate_chunk_dicts(batch_list):
     for key, value in batch_list[0].items():  # TODO: Handle missing modalities when allow_missing_modalities is set.
         if isinstance(value, torch.Tensor):
             batch[key] = torch.concat([chunk[key] for chunk in batch_list])
-        if isinstance(value, np.ndarray):
+        elif isinstance(value, np.ndarray):
             batch[key] = np.concatenate([chunk[key] for chunk in batch_list])
         elif isinstance(value, dict):
             batch[key] = collate_chunk_dicts([chunk[key] for chunk in batch_list])
@@ -37,14 +38,34 @@ def collate_chunk_dicts(batch_list):
     return batch
 
 
-def wrap_in_compose_is_list(transform_list, image_modalities=None, sequence_modalities=None):
+def collate_samples(batch_list):
+    """
+    Wrapper for default_collate as it cannot handle some datatypes such as np.datetime64.
+    """
+    batch = {}
+    for key, value in batch_list[0].items():  # TODO: Handle missing modalities when allow_missing_modalities is set.
+        if isinstance(value, dict):
+            batch[key] = collate_samples([chunk[key] for chunk in batch_list])
+        else:
+            try:
+                batch[key] = default_collate([chunk[key] for chunk in batch_list])
+            except TypeError:
+                # Fallback to numpy or simple list
+                if isinstance(value, np.ndarray):
+                    batch[key] = np.stack([chunk[key] for chunk in batch_list])
+                else:
+                    batch[key] = [chunk[key] for chunk in batch_list]
+    return batch
+
+
+def wrap_in_compose_is_list(transform_list, image_modalities=None, non_image_modalities=None):
     additional_targets = {}
     if image_modalities:
         for modality in image_modalities:
             additional_targets[modality] = 'image'
-    if sequence_modalities:
+    if non_image_modalities:
         # Global label values are ignored and need to be processed separately
-        for modality in sequence_modalities:
+        for modality in non_image_modalities:
             additional_targets[modality] = "global_label"
     # set check shapes to false because of the multitemporal case
     return A.Compose(transform_list, is_check_shapes=False, additional_targets=additional_targets) \
@@ -175,6 +196,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         sample_num_modalities: int | None = None,
         sample_replace: bool = False,
         channel_position: int = -3,
+        concat_bands: bool = False,
         **kwargs: Any,
     ) -> None:
         """Constructor
@@ -238,6 +260,9 @@ class GenericMultiModalDataModule(NonGeoDataModule):
             dataset_class = GenericMultimodalSegmentationDataset
         elif task == 'regression':
             dataset_class = GenericMultimodalPixelwiseRegressionDataset
+        elif task in ['classification', 'multilabel_classification', 'scalar_regression', 'scalar']:
+            dataset_class = GenericMultimodalScalarDataset
+            task = 'scalar'
         elif task is None:
             dataset_class = GenericMultimodalDataset
         else:
@@ -247,7 +272,9 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.num_classes = num_classes
         self.modalities = modalities
         self.image_modalities = image_modalities or modalities
-        self.sequence_modalities = list(set(self.modalities) - set(image_modalities))
+        self.non_image_modalities = list(set(self.modalities) - set(self.image_modalities))
+        if task == 'scalar':
+            self.non_image_modalities += ['label']
         if isinstance(img_grep, dict):
             self.img_grep = {m: img_grep[m] if m in img_grep else '*' for m in modalities}
         else:
@@ -270,7 +297,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.drop_last = drop_last
         self.pin_memory = pin_memory
         self.sample_num_modalities = sample_num_modalities
-        self.sample_replace = sample_replace
+        self.sample_replace = sample_replace        
 
         self.dataset_bands = dataset_bands
         self.output_bands = output_bands
@@ -282,6 +309,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.expand_temporal_dimension = expand_temporal_dimension
         self.reduce_zero_label = reduce_zero_label
         self.channel_position = channel_position
+        self.concat_bands = concat_bands
 
         if isinstance(train_transform, dict):
             self.train_transform = {m: wrap_in_compose_is_list(train_transform[m]) if m in train_transform else None
@@ -289,7 +317,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         elif shared_transforms:
             self.train_transform = wrap_in_compose_is_list(train_transform,
                                                            image_modalities=self.image_modalities,
-                                                           sequence_modalities=self.sequence_modalities)
+                                                           non_image_modalities=self.non_image_modalities)
         else:
             self.train_transform = {m: wrap_in_compose_is_list(train_transform)
                                     for m in modalities}
@@ -300,7 +328,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         elif shared_transforms:
             self.val_transform = wrap_in_compose_is_list(val_transform,
                                                          image_modalities=self.image_modalities,
-                                                         sequence_modalities=self.sequence_modalities)
+                                                         non_image_modalities=self.non_image_modalities)
         else:
             self.val_transform = {m: wrap_in_compose_is_list(val_transform)
                                     for m in modalities}
@@ -311,19 +339,29 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         elif shared_transforms:
             self.test_transform = wrap_in_compose_is_list(test_transform,
                                                           image_modalities=self.image_modalities,
-                                                          sequence_modalities=self.sequence_modalities)
+                                                          non_image_modalities=self.non_image_modalities,                                                          
+                                                          )
         else:
             self.test_transform = {m: wrap_in_compose_is_list(test_transform)
                                     for m in modalities}
 
-        means = {m: load_from_file_or_attribute(means[m]) for m in means.keys()}
-        stds = {m: load_from_file_or_attribute(stds[m]) for m in stds.keys()}
+        if self.concat_bands:
+            # Concatenate mean and std values
+            means = load_from_file_or_attribute(np.concatenate([means[m] for m in self.image_modalities]).tolist())
+            stds = load_from_file_or_attribute(np.concatenate([stds[m] for m in self.image_modalities]).tolist())
 
-        self.aug = MultimodalNormalize(means, stds)
+            self.aug = Normalize(means, stds)
+        else:
+            # Apply standardization per modality
+            means = {m: load_from_file_or_attribute(means[m]) for m in means.keys()}
+            stds = {m: load_from_file_or_attribute(stds[m]) for m in stds.keys()}
+
+            self.aug = MultimodalNormalize(means, stds)
 
         self.chunk_data = chunk_data
-        if chunk_data:
-            self.collate_fn = collate_chunk_dicts
+
+        self.collate_fn = collate_chunk_dicts if chunk_data else collate_samples
+
 
     def setup(self, stage: str) -> None:
         if stage in ["fit"]:
@@ -347,6 +385,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
                 channel_position=self.channel_position,
+                concat_bands=self.concat_bands ,
             )
             logging.info(f'Train dataset: {len(self.train_dataset)}')
         if stage in ["fit", "validate"]:
@@ -370,6 +409,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
                 channel_position=self.channel_position,
+                concat_bands=self.concat_bands,
             )
             logging.info(f'Val dataset: {len(self.val_dataset)}')
         if stage in ["test"]:
@@ -393,6 +433,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
                 channel_position=self.channel_position,
+                concat_bands=self.concat_bands,
             )
             logging.info(f'Test dataset: {len(self.test_dataset)}')
         if stage in ["predict"] and self.predict_root:
@@ -412,6 +453,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
                 channel_position=self.channel_position,
+                concat_bands=self.concat_bands,
             )
             logging.info(f'Predict dataset: {len(self.predict_dataset)}')
 

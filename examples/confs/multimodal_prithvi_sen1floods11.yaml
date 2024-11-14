@@ -10,7 +10,8 @@ trainer:
     class_path: TensorBoardLogger
     init_args:
       save_dir: output
-      name: multimae_sen1floods11
+      name: multimodal_prithvi_sen1floods11
+      version: test_best
   callbacks:
     - class_path: RichProgressBar
     - class_path: LearningRateMonitor
@@ -21,22 +22,21 @@ trainer:
         monitor: val/loss
         patience: 40
 
-  max_epochs: 2
+  max_epochs: 5
   check_val_every_n_epoch: 1
   log_every_n_steps: 50
-  enable_checkpointing: true
-  default_root_dir: output/multimae_sen1floods11/
+  enable_checkpointing: True
+  default_root_dir: output/multimodal_prithvi_sen1floods11/
 
 data:
   class_path: GenericMultiModalDataModule
   init_args:
     task: 'segmentation'
-    batch_size: 4
+    batch_size: 2
     num_workers: 0
     modalities:
       - S2L2A
       - S1
-      - LULC
     rgb_modality: S2L2A # If not provided, uses first modality
     rgb_indices:
       - 3
@@ -46,17 +46,14 @@ data:
     train_data_root:
       S2L2A: data/sen1floods11/data/data/flood_events/HandLabeled/S2L2AHand
       S1: data/sen1floods11/data/data/flood_events/HandLabeled/S1Hand
-      LULC: data/sen1floods11/data/data/flood_events/HandLabeled/LULCHand
     train_label_data_root: data/sen1floods11/data/data/flood_events/HandLabeled/LabelHand
     val_data_root:
       S2L2A: data/sen1floods11/data/data/flood_events/HandLabeled/S2L2AHand
       S1: data/sen1floods11/data/data/flood_events/HandLabeled/S1Hand
-      LULC: data/sen1floods11/data/data/flood_events/HandLabeled/LULCHand
     val_label_data_root: data/sen1floods11/data/data/flood_events/HandLabeled/LabelHand
     test_data_root:
       S2L2A: data/sen1floods11/data/data/flood_events/HandLabeled/S2L2AHand
       S1: data/sen1floods11/data/data/flood_events/HandLabeled/S1Hand
-      LULC: data/sen1floods11/data/data/flood_events/HandLabeled/LULCHand
     test_label_data_root: data/sen1floods11/data/data/flood_events/HandLabeled/LabelHand
 
     train_split: data/sen1floods11/splits/splits/flood_handlabeled/dev_train.txt
@@ -67,10 +64,10 @@ data:
     img_grep:
       S2L2A: "*_S2L2AHand.tif"
       S1: "*_S1Hand.tif"
-      LULC: "*_LULCHand.npy"
     label_grep: "*_LabelHand.tif"
     no_label_replace: -1
     no_data_replace: 0
+    concat_bands: true # Concatenate S2 and S2 bands
 
     means:
       S2L2A:
@@ -124,21 +121,33 @@ model:
   init_args:
     model_factory: EncoderDecoderFactory
     model_args:
+      backbone: prithvi_vit_100
       backbone_pretrained: false
-      backbone: multimae_base
-      backbone_input_adapters:
-        - S1
-        - S2L2A
-        - LULC
-      decoder: UperNetDecoder # FCNDecoder
-      # decoder_num_convs: 4  # only for FCNDecoder
-      decoder_scale_modules: True  # only for UperNetDecoder
+      backbone_bands:
+        - COASTAL_AEROSOL
+        - BLUE
+        - GREEN
+        - RED
+        - RED_EDGE_1
+        - RED_EDGE_2
+        - RED_EDGE_3
+        - NIR_BROAD
+        - NIR_NARROW
+        - CIRRUS
+        - SWIR_1
+        - SWIR_2
+        - VV
+        - VH
+      decoder: FCNDecoder # FCNDecoder
+      decoder_num_convs: 4  # only for FCNDecoder
+      # decoder_scale_modules: True  # only for UperNetDecoder
       decoder_channels: 256
       num_classes: 2
       head_dropout: 0.1
       head_channel_list:
         - 256
-    loss: ce
+
+    loss: dice
     ignore_index: -1
     class_weights:
       - 0.3

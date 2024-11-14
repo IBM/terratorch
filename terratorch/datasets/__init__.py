@@ -11,7 +11,8 @@ from terratorch.datasets.generic_scalar_label_dataset import (
 from terratorch.datasets.generic_multimodal_dataset import (
     GenericMultimodalDataset,
     GenericMultimodalSegmentationDataset,
-    GenericMultimodalPixelwiseRegressionDataset
+    GenericMultimodalPixelwiseRegressionDataset,
+    GenericMultimodalScalarDataset,
 )
 from terratorch.datasets.hls import HLSL30, HLSS30
 from terratorch.datasets.m_bigearthnet import MBigEarthNonGeo
@@ -52,6 +53,7 @@ __all__ = (
     "GenericMultimodalDataset",
     "GenericMultimodalSegmentationDataset",
     "GenericMultimodalPixelwiseRegressionDataset",
+    "GenericMultimodalScalarDataset",
     "FireScarsNonGeo",
     "FireScarsHLS",
     "FireScarsSegmentationMask",
