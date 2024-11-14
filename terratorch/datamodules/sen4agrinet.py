@@ -17,8 +17,8 @@ class Sen4AgriNetDataModule(NonGeoDataModule):
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
         val_transform: A.Compose | None | list[A.BasicTransform] = None,
         test_transform: A.Compose | None | list[A.BasicTransform] = None,
-        truncate_image: int | None = 4,
-        pad_image: int | None = 4,
+        truncate_image: int | None = 6,
+        pad_image: int | None = 6,
         spatial_interpolate_and_stack_temporally: bool = True,  # noqa: FBT002, FBT001
         seed: int = 42,
         **kwargs: Any,
