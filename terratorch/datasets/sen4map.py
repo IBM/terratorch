@@ -94,6 +94,7 @@ class Sen4MapDatasetMonthlyComposites(NonGeoDataset):
             ):
         self.h5data = h5py_file_object
         if h5data_keys is None:
+            if classification_map == "crops": print(f"Crop classification task chosen but no keys supplied. Will fail unless dataset hdf5 files have been filtered. Either filter dataset files or create a filtered set of keys.")
             self.h5data_keys = list(self.h5data.keys())
             if save_keys_path is not None:
                 with open(save_keys_path, "wb") as file:
@@ -198,9 +199,9 @@ class Sen4MapDatasetMonthlyComposites(NonGeoDataset):
         
         if self.crop_size: Image = self.crop_center(Image, self.crop_size, self.crop_size)
         if self.reverse_tile:
-           Image = self.reverse_tiling_pytorch(Image, kernel_size=self.reverse_tile_size)
+            Image = self.reverse_tiling_pytorch(Image, kernel_size=self.reverse_tile_size)
         if self.resize:
-           Image = resize(Image, size=self.resize_to, interpolation=self.resize_interpolation, antialias=self.resize_antialiasing)
+            Image = resize(Image, size=self.resize_to, interpolation=self.resize_interpolation, antialias=self.resize_antialiasing)
 
         Label = im.attrs['lc1']
         Label = self.classification_map[Label]

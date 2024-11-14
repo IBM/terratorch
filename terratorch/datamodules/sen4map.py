@@ -55,7 +55,8 @@ class Sen4MapLucasDataModule(NonGeoDataModule):
         self.test_hdf5_keys_path = test_hdf5_keys_path
         self.val_hdf5_keys_path = val_hdf5_keys_path
 
-        bands = kwargs.get("bands", Sen4MapDatasetMonthlyComposites.all_band_names)
+        self.bands = bands
+        #bands = kwargs.get("bands", Sen4MapDatasetMonthlyComposites.all_band_names)
         #self.means = torch.tensor([means[b] for b in bands])
         #self.stds = torch.tensor([stds[b] for b in bands])
 
@@ -134,6 +135,8 @@ class Sen4MapLucasDataModule(NonGeoDataModule):
             self.train_dataset = Sen4MapDatasetMonthlyComposites(
                 train_file, 
                 h5data_keys=train_keys, 
+                input_bands = self.bands,
+                dataset_bands = Sen4MapDatasetMonthlyComposites.all_band_names,
                 resize=self.resize,
                 resize_to=self.resize_to,
                 resize_interpolation=self.resize_interpolation,
@@ -147,7 +150,9 @@ class Sen4MapLucasDataModule(NonGeoDataModule):
             val_file = h5py.File(self.val_hdf5_path, 'r')
             self.val_dataset = Sen4MapDatasetMonthlyComposites(
                 val_file, 
-                h5data_keys=val_keys, 
+                h5data_keys=val_keys,
+                input_bands = self.bands, 
+                dataset_bands = Sen4MapDatasetMonthlyComposites.all_band_names,
                 resize=self.resize,
                 resize_to=self.resize_to,
                 resize_interpolation=self.resize_interpolation,
@@ -162,6 +167,8 @@ class Sen4MapLucasDataModule(NonGeoDataModule):
             self.test_dataset = Sen4MapDatasetMonthlyComposites(
                 test_file, 
                 h5data_keys=test_keys, 
+                input_bands = self.bands,
+                dataset_bands = Sen4MapDatasetMonthlyComposites.all_band_names,
                 resize=self.resize,
                 resize_to=self.resize_to,
                 resize_interpolation=self.resize_interpolation,
