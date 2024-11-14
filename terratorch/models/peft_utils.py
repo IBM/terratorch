@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Any
+import warnings
 
 import torch
 from torch import nn
@@ -11,7 +12,7 @@ try:
 except ImportError:
     _has_peft = False
 
-SUPPORTED_PEFT_METHODS = ["LORA"]
+TESTED_PEFT_METHODS = ["LORA"]
 
 
 def _get_submodules(model: nn.Module, key: str) -> tuple[nn.Module, nn.Module, str]:
@@ -35,9 +36,9 @@ def _validate_terratorch_peft_config(peft_config: dict[str, Any]) -> TerratorchP
         replace_qkv=peft_config.get("replace_qkv", None),
         peft_config_kwargs=peft_config.get("peft_config_kwargs", {}),
     )
-    if terratorch_peft_config.method not in SUPPORTED_PEFT_METHODS:
-        msg = f"PEFT method {terratorch_peft_config.method} is not supported."
-        raise ValueError(msg)
+    if terratorch_peft_config.method not in TESTED_PEFT_METHODS:
+        msg = f"PEFT method {terratorch_peft_config.method} has not been tested. Use at your own risk."
+        warnings.warn(msg, stacklevel=1)
     return terratorch_peft_config
 
 

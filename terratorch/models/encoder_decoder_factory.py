@@ -104,6 +104,15 @@ class EncoderDecoderFactory(ModelFactory):
             rescale (bool): Whether to apply bilinear interpolation to rescale the model output if its size
                 is different from the ground truth. Only applicable to pixel wise models
                 (e.g. segmentation, pixel wise regression). Defaults to True.
+            peft_config (dict): Configuration options for using [PEFT](https://huggingface.co/docs/peft/index).
+                The dictionary should have the following keys:
+
+                - "method": Which PEFT method to use. Should be one implemented in PEFT, you can check them [here](https://huggingface.co/docs/peft/package_reference/peft_types#peft.PeftType).
+                - "replace_qkv": String containing a substring of the name of the submodules to replace with QKVSep.
+                  This should be used when the qkv matrices are merged together in a single linear layer and the PEFT
+                  method should be applied separately to query, key and value matrices (e.g. if LoRA is only desired in
+                  Q and V matrices). e.g. If using Prithvi this should be "qkv"
+                - "peft_config_kwargs": Dictionary containing keyword arguments which will be passed to [PeftConfig](https://huggingface.co/docs/peft/package_reference/config#peft.PeftConfig)
 
 
         Returns:
