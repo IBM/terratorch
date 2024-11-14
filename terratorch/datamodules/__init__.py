@@ -34,6 +34,7 @@ from terratorch.datamodules.merra2_downscale import Merra2DownscaleNonGeoDataMod
 from terratorch.datamodules.sen1floods11 import Sen1Floods11NonGeoDataModule
 from terratorch.datamodules.sen4agrinet import Sen4AgriNetDataModule
 from terratorch.datamodules.torchgeo_data_module import TorchGeoDataModule, TorchNonGeoDataModule
+from terratorch.datamodules.generic_multimodal_data_module import GenericMultiModalDataModule
 
 
 # miscellaneous datamodules
@@ -69,5 +70,6 @@ __all__ = (
     "OpenEarthMapModule"
     "OpenSentinelMapDataModule",
     "PASTISDataModule",
-    "Sen4AgriNetDataModule"
+    "Sen4AgriNetDataModule",
+    "GenericMultiModalDataModule",
 )
