@@ -122,10 +122,10 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         self.image_modalities = image_modalities or self.modalities
         self.sequence_modalities = list(set(self.modalities) - set(image_modalities))
 
-        # Convert path strings to lists
-        for m, m_dir in data_root.items():
-            if not isinstance(m_dir, list):
-                data_root[m] = [m_dir]
+        # Convert path strings to lists as the code expects a list of paths per modality
+        for m, m_path in data_root.items():
+            if not isinstance(m_path, list):
+                data_root[m] = [m_path]
         if label_data_root and not isinstance(label_data_root, list):
             label_data_root = [label_data_root]
 
@@ -151,8 +151,8 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
         else:
             image_files = {}
-            for m, m_dirs in data_root.items():
-                dir_lists = [glob.glob(os.path.join(r, image_grep[m])) for r in m_dirs]
+            for m, m_paths in data_root.items():
+                dir_lists = [glob.glob(os.path.join(r, image_grep[m])) for r in m_paths]
                 image_files[m] = sorted([p for l in dir_lists for p in l])  # Concatenate
 
             if label_data_root:
@@ -175,11 +175,11 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         num_modalities = len(self.modalities) + int(label_data_root is not None)
 
         # Check for parquet and csv files with modality data and read the file
-        for m, m_dirs in data_root.items():
+        for m, m_paths in data_root.items():
             m_dfs = []
-            for m_dir in m_dirs:
-                if os.path.isfile(m_dir):
-                    m_dfs.append(load_table_data(m_dir))
+            for m_path in m_paths:
+                if os.path.isfile(m_path):
+                    m_dfs.append(load_table_data(m_path))
             if len(m_dfs):
                 # Replace paths with DataFrame
                 data_root[m] = pd.concat(m_dfs, axis=0)
@@ -192,9 +192,9 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         if label_data_root:
             # Check for parquet and csv files with labels and read the file
             l_dfs = []
-            for l_dir in label_data_root:
-                if os.path.isfile(l_dir):
-                    l_dfs.append(load_table_data(l_dir))
+            for l_path in label_data_root:
+                if os.path.isfile(l_path):
+                    l_dfs.append(load_table_data(l_path))
             if len(l_dfs):
                 # Replace paths with DataFrame
                 label_data_root = pd.concat(l_dfs, axis=0)
@@ -208,31 +208,31 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         for file in valid_files:
             sample = {}
             # Iterate over all modalities
-            for m, m_dirs in data_root.items():
+            for m, m_paths in data_root.items():
                 # Add tabular data to sample
-                if isinstance(m_dirs, pd.DataFrame):
-                    # m_dirs paths is replaced by DataFrame
-                    sample[m] = m_dirs.loc[file].values
+                if isinstance(m_paths, pd.DataFrame):
+                    # m_paths was replaced by DataFrame
+                    sample[m] = m_paths.loc[file].values
                     continue
 
                 # Iterate over all directories of the current modality
-                for m_dir in m_dirs:
+                for m_path in m_paths:
                     if allow_substring_split_file:
                         # Substring match with image_grep
-                        m_files = glob.glob(os.path.join(m_dir, file + image_grep[m]))
+                        m_files = glob.glob(os.path.join(m_path, file + image_grep[m]))
                         if m_files:
                             sample[m] = m_files[0]
                             break
                     else:
                         # Exact match
-                        file_path = os.path.join(m_dir, file)
+                        file_path = os.path.join(m_path, file)
                         if os.path.isfile(file_path):
                             sample[m] = file_path
                             break
             if label_data_root:
                 # Add tabular data to sample
                 if isinstance(label_data_root, pd.DataFrame):
-                    # m_dirs paths is replaced by DataFrame
+                    # label_data_root was replaced by DataFrame
                     sample['mask'] = label_data_root.loc[file].values
                     continue
 
