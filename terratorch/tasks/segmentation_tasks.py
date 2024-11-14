@@ -104,8 +104,10 @@ class SemanticSegmentationTask(BaseTask):
         if model_factory:  
             self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
             self.model_builder = self._build
-        else:
+        elif model:
             self.model_builder = self._bypass_build
+        else:
+            raise Exception("Or a model_factory or a torch.nn.Module object must be provided.")
 
         self._model_module = None 
 
