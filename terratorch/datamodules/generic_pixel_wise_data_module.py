@@ -108,7 +108,7 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
         no_data_replace: float | None = None,
         no_label_replace: int | None = None,
         drop_last: bool = True,
-        pin_memory: bool = True,
+        pin_memory: bool = False,
         **kwargs: Any,
     ) -> None:
         """Constructor
@@ -365,7 +365,7 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         no_data_replace: float | None = None,
         no_label_replace: int | None = None,
         drop_last: bool = True,
-        pin_memory: bool = True,
+        pin_memory: bool = False,
         **kwargs: Any,
     ) -> None:
         """Constructor

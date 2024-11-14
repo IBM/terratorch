@@ -28,9 +28,9 @@ from terratorch.datasets.transforms import MultimodalTransforms
 
 def load_table_data(file_path: str | Path) -> pd.DataFrame:
     file_path = str(file_path)
-    if file_path.endswith('parquet'):
+    if file_path.endswith("parquet"):
         df = pd.read_parquet(file_path)
-    elif file_path.endswith('csv'):
+    elif file_path.endswith("csv"):
         df = pd.read_csv(file_path, index_col=0)
     else:
         raise Exception(f"Unrecognized file type: {file_path}. Only parquet and csv are supported.")
@@ -53,7 +53,7 @@ class MultimodalToTensor():
                     elif len(v.shape) == 5:
                         v = np.moveaxis(v, -1, 1)  # B, C, T, H, W
                     else:
-                        raise ValueError(f'Unexpected shape for {k}: {v.shape}')
+                        raise ValueError(f"Unexpected shape for {k}: {v.shape}")
                 new_dict[k] = torch.from_numpy(v)
         return new_dict
 
@@ -122,11 +122,11 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         self.split_file = split
 
         self.modalities = list(data_root.keys())
-        assert 'mask' not in self.modalities, "Modality cannot be called 'mask'."
+        assert "mask" not in self.modalities, "Modality cannot be called 'mask'."
         self.image_modalities = image_modalities or self.modalities
         self.non_image_modalities = list(set(self.modalities) - set(image_modalities))
         if scalar_label:
-            self.non_image_modalities += ['label']
+            self.non_image_modalities += ["label"]
 
         # Convert path strings to lists as the code expects a list of paths per modality
         for m, m_path in data_root.items():
@@ -155,7 +155,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
         # Load samples based on split file
         if self.split_file is not None:
-            if str(self.split_file).endswith('.txt'):
+            if str(self.split_file).endswith(".txt"):
                 with open(self.split_file) as f:
                     split = f.readlines()
                 valid_files = {rf"{substring.strip()}" for substring in split}
@@ -170,7 +170,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
             if label_data_root is not None:
                 dir_lists = [glob.glob(os.path.join(r, label_grep)) for r in label_data_root]
-                image_files['mask'] = sorted([p for l in dir_lists for p in l])  # Concatenate
+                image_files["mask"] = sorted([p for l in dir_lists for p in l])  # Concatenate
 
             if allow_substring_split_file:
                 # Get exact match of filenames
@@ -246,22 +246,22 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                 # Add tabular data to sample
                 if isinstance(label_data_root, pd.DataFrame):
                     # label_data_root was replaced by DataFrame
-                    sample['mask'] = label_data_root.loc[file].values
+                    sample["mask"] = label_data_root.loc[file].values
                 else:
                     for l_dir in label_data_root:
                         if allow_substring_split_file:
                             # Substring match with label_grep
                             l_files = glob.glob(os.path.join(l_dir, file + label_grep))
                             if l_files:
-                                sample['mask'] = l_files[0]
+                                sample["mask"] = l_files[0]
                                 break
                         else:
                             # Exact match
                             file_path = os.path.join(l_dir, file)
                             if os.path.isfile(file_path):
-                                sample['mask'] = file_path
+                                sample["mask"] = file_path
                                 break
-                    if 'mask' not in sample:
+                    if "mask" not in sample:
                         # Only add sample if mask is present
                         break
 
@@ -299,8 +299,8 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                 self.filter_indices[m] = [self.dataset_bands[m].index(band) for band in self.output_bands[m]]
 
             if not self.channel_position:
-                logging.warning('output_bands is defined but no channel_position is provided. '
-                                'Channels must be in the last dimension, otherwise provide channel_position.')
+                logging.warning("output_bands is defined but no channel_position is provided. "
+                                "Channels must be in the last dimension, otherwise provide channel_position.")
 
         # If no transform is given, apply only to transform to torch tensor
         if isinstance(transform, A.Compose):
@@ -334,7 +334,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         for modality, file in sample.items():
             data = self._load_file(
                 file,
-                nan_replace=self.no_label_replace if modality == 'mask' else self.no_data_replace,
+                nan_replace=self.no_label_replace if modality == "mask" else self.no_data_replace,
                 modality=modality,
             )
 
@@ -343,7 +343,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                 data = rearrange(data, "(channels time) h w -> channels time h w",
                                  channels=len(self.dataset_bands[modality]))
 
-            if modality == 'mask' and len(data) == 1:
+            if modality == "mask" and len(data) == 1:
                 # tasks expect image masks without channel dim
                 data = data[0]
 
@@ -370,12 +370,12 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
         if self.concat_bands:
             # Concatenate bands of all image modalities
-            output['image'] = torch.cat([output.pop(m) for m in self.image_modalities if m in output])
+            output["image"] = torch.cat([output.pop(m) for m in self.image_modalities if m in output])
         else:
-            # Tasks expect data to be stored in 'image', moving modalities to image dict
-            output['image'] = {m: output.pop(m) for m in self.modalities if m in output}
+            # Tasks expect data to be stored in "image", moving modalities to image dict
+            output["image"] = {m: output.pop(m) for m in self.modalities if m in output}
 
-        output['filename'] = self.samples[index]
+        output["filename"] = self.samples[index]
 
         return output
 
@@ -383,11 +383,11 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         if isinstance(path, np.ndarray):
             # data was loaded from table and is saved in memory
             data = path
-        elif path.endswith('.zarr') or path.endswith('.zarr.zip'):
+        elif path.endswith(".zarr") or path.endswith(".zarr.zip"):
             data = xr.open_zarr(path, mask_and_scale=True)
             data_var = modality if modality in data.data_vars else list(data.data_vars)[0]
             data = data[data_var].to_numpy()
-        elif path.endswith('.npy'):
+        elif path.endswith(".npy"):
             data = np.load(path)
         else:
             data = rioxarray.open_rasterio(path, masked=True).to_numpy()

@@ -62,7 +62,7 @@ def wrap_in_compose_is_list(transform_list, image_modalities=None, non_image_mod
     additional_targets = {}
     if image_modalities:
         for modality in image_modalities:
-            additional_targets[modality] = 'image'
+            additional_targets[modality] = "image"
     if non_image_modalities:
         # Global label values are ignored and need to be processed separately
         for modality in non_image_modalities:
@@ -80,9 +80,9 @@ class MultimodalNormalize(Callable):
 
     def __call__(self, batch):
         for m in self.means.keys():
-            if m not in batch['image']:
+            if m not in batch["image"]:
                 continue
-            image = batch['image'][m]
+            image = batch["image"][m]
             if len(image.shape) == 5:
                 # B, C, T, H, W
                 means = torch.tensor(self.means[m], device=image.device).view(1, -1, 1, 1, 1)
@@ -103,7 +103,7 @@ class MultimodalNormalize(Callable):
                 msg = (f"Expected batch with 5 or 4 dimensions (B, C, (T,) H, W), sample with 3 dimensions (C, H, W) "
                        f"or a single channel, but got {len(image.shape)}")
                 raise Exception(msg)
-            batch['image'][m] = (image - means) / stds
+            batch["image"][m] = (image - means) / stds
         return batch
 
 
@@ -119,7 +119,7 @@ class MultiModalBatchSampler(BatchSampler):
 
     def __iter__(self) -> Iterator[list[int]]:
         """
-        Code similar to BatchSampler but samples tuples in the format (idx, ['m1', 'm2', ...])
+        Code similar to BatchSampler but samples tuples in the format (idx, ["m1", "m2", ...])
         """
         # Select sampled modalities per batch
         sampled_modalities = np.random.choice(self.modalities, self.sample_num_modalities, replace=self.sample_replace)
@@ -256,30 +256,30 @@ class GenericMultiModalDataModule(NonGeoDataModule):
             into device/CUDA pinned memory before returning them. Defaults to False.
 
         """
-        if task == 'segmentation':
+        if task == "segmentation":
             dataset_class = GenericMultimodalSegmentationDataset
-        elif task == 'regression':
+        elif task == "regression":
             dataset_class = GenericMultimodalPixelwiseRegressionDataset
-        elif task in ['classification', 'multilabel_classification', 'scalar_regression', 'scalar']:
+        elif task in ["classification", "multilabel_classification", "scalar_regression", "scalar"]:
             dataset_class = GenericMultimodalScalarDataset
-            task = 'scalar'
+            task = "scalar"
         elif task is None:
             dataset_class = GenericMultimodalDataset
         else:
-            raise ValueError(f'Unknown task {task}, only segmentation and regression are supported.')
+            raise ValueError(f"Unknown task {task}, only segmentation and regression are supported.")
 
         super().__init__(dataset_class, batch_size, num_workers, **kwargs)
         self.num_classes = num_classes
         self.modalities = modalities
         self.image_modalities = image_modalities or modalities
         self.non_image_modalities = list(set(self.modalities) - set(self.image_modalities))
-        if task == 'scalar':
-            self.non_image_modalities += ['label']
+        if task == "scalar":
+            self.non_image_modalities += ["label"]
         if isinstance(img_grep, dict):
-            self.img_grep = {m: img_grep[m] if m in img_grep else '*' for m in modalities}
+            self.img_grep = {m: img_grep[m] if m in img_grep else "*" for m in modalities}
         else:
-            self.img_grep = {m: img_grep or '*' for m in modalities}
-        self.label_grep = label_grep or '*'
+            self.img_grep = {m: img_grep or "*" for m in modalities}
+        self.label_grep = label_grep or "*"
         self.train_root = train_data_root
         self.val_root = val_data_root
         self.test_root = test_data_root
@@ -387,7 +387,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 channel_position=self.channel_position,
                 concat_bands=self.concat_bands ,
             )
-            logging.info(f'Train dataset: {len(self.train_dataset)}')
+            logging.info(f"Train dataset: {len(self.train_dataset)}")
         if stage in ["fit", "validate"]:
             self.val_dataset = self.dataset_class(
                 data_root=self.val_root,
@@ -411,7 +411,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 channel_position=self.channel_position,
                 concat_bands=self.concat_bands,
             )
-            logging.info(f'Val dataset: {len(self.val_dataset)}')
+            logging.info(f"Val dataset: {len(self.val_dataset)}")
         if stage in ["test"]:
             self.test_dataset = self.dataset_class(
                 data_root=self.test_root,
@@ -435,7 +435,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 channel_position=self.channel_position,
                 concat_bands=self.concat_bands,
             )
-            logging.info(f'Test dataset: {len(self.test_dataset)}')
+            logging.info(f"Test dataset: {len(self.test_dataset)}")
         if stage in ["predict"] and self.predict_root:
             self.predict_dataset = self.dataset_class(
                 data_root=self.predict_root,
@@ -455,13 +455,13 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 channel_position=self.channel_position,
                 concat_bands=self.concat_bands,
             )
-            logging.info(f'Predict dataset: {len(self.predict_dataset)}')
+            logging.info(f"Predict dataset: {len(self.predict_dataset)}")
 
     def _dataloader_factory(self, split: str) -> DataLoader[dict[str, Tensor]]:
         """Implement one or more PyTorch DataLoaders.
 
         Args:
-            split: Either 'train', 'val', 'test', or 'predict'.
+            split: Either "train", "val", "test", or "predict".
 
         Returns:
             A collection of data loaders specifying samples.
