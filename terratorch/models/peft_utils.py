@@ -1,6 +1,6 @@
+import warnings
 from dataclasses import dataclass
 from typing import Any
-import warnings
 
 import torch
 from torch import nn
