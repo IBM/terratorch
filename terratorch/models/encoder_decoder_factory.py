@@ -10,6 +10,7 @@ from terratorch.models.model import (
     ModelFactory,
 )
 from terratorch.models.necks import Neck, build_neck_list
+from terratorch.models.peft_utils import get_peft_backbone
 from terratorch.models.pixel_wise_model import PixelWiseModel
 from terratorch.models.scalar_output_model import ScalarOutputModel
 from terratorch.models.utils import extract_prefix_keys
@@ -74,6 +75,7 @@ class EncoderDecoderFactory(ModelFactory):
         necks: list[dict] | None = None,
         aux_decoders: list[AuxiliaryHead] | None = None,
         rescale: bool = True,  # noqa: FBT002, FBT001
+        peft_config: dict | None = None,
         **kwargs,
     ) -> Model:
         """Generic model factory that combines an encoder and decoder, together with a head, for a specific task.
@@ -114,6 +116,13 @@ class EncoderDecoderFactory(ModelFactory):
 
         backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
         backbone = _get_backbone(backbone, **backbone_kwargs)
+
+        if peft_config is not None:
+            if not backbone_kwargs.get("pretrained", False):
+                msg = "PEFT only works with pretrained backbones"
+                raise ValueError(msg)
+
+            backbone = get_peft_backbone(peft_config, backbone)
 
         try:
             out_channels = backbone.out_channels
