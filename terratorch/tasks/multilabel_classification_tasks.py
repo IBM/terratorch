@@ -66,7 +66,10 @@ class MultiLabelClassificationTask(ClassificationTask):
     def training_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         x = batch["image"]
         y = batch["label"]
-        model_output: dict[str, Tensor] = self(x)
+        other_keys = batch.keys() - {"image", "label", "filename"}
+        rest = {k:batch[k] for k in other_keys}
+
+        model_output: ModelOutput = self(x, **rest)
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat = self.to_multilabel_prediction(model_output)
@@ -77,7 +80,9 @@ class MultiLabelClassificationTask(ClassificationTask):
     def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         x = batch["image"]
         y = batch["label"]
-        model_output: dict[str, Tensor] = self(x)
+        other_keys = batch.keys() - {"image", "label", "filename"}
+        rest = {k:batch[k] for k in other_keys}
+        model_output: ModelOutput = self(x, **rest)
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat = self.to_multilabel_prediction(model_output)
@@ -86,7 +91,9 @@ class MultiLabelClassificationTask(ClassificationTask):
     def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         x = batch["image"]
         y = batch["label"]
-        model_output: dict[str, Tensor] = self(x)
+        other_keys = batch.keys() - {"image", "label", "filename"}
+        rest = {k:batch[k] for k in other_keys}
+        model_output: ModelOutput = self(x, **rest)
         loss = self.test_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.test_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat = self.to_multilabel_prediction(model_output)

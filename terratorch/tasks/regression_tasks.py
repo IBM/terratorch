@@ -279,7 +279,10 @@ class PixelwiseRegressionTask(BaseTask):
         """
         x = batch["image"]
         y = batch["mask"]
-        model_output: ModelOutput = self(x)
+        other_keys = batch.keys() - {"image", "mask", "filename"}
+        rest = {k:batch[k] for k in other_keys}
+
+        model_output: ModelOutput = self(x, **rest)
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat = model_output.output
@@ -311,7 +314,9 @@ class PixelwiseRegressionTask(BaseTask):
         """
         x = batch["image"]
         y = batch["mask"]
-        model_output: ModelOutput = self(x)
+        other_keys = batch.keys() - {"image", "mask", "filename"}
+        rest = {k:batch[k] for k in other_keys}
+        model_output: ModelOutput = self(x, **rest)
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat = model_output.output
@@ -351,7 +356,9 @@ class PixelwiseRegressionTask(BaseTask):
         """
         x = batch["image"]
         y = batch["mask"]
-        model_output: ModelOutput = self(x)
+        other_keys = batch.keys() - {"image", "mask", "filename"}
+        rest = {k:batch[k] for k in other_keys}
+        model_output: ModelOutput = self(x, **rest)
         loss = self.test_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.test_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat = model_output.output
@@ -371,6 +378,9 @@ class PixelwiseRegressionTask(BaseTask):
         """
         x = batch["image"]
         file_names = batch["filename"]
+        other_keys = batch.keys() - {"image", "mask", "filename"}
+        rest = {k:batch[k] for k in other_keys}
+        model_output: ModelOutput = self(x, **rest)
 
         def model_forward(x):
             return self(x).output

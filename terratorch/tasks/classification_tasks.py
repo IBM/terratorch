@@ -32,7 +32,7 @@ class ClassificationTask(BaseTask):
         - Does not have any callbacks by default (TorchGeo tasks do early stopping by default)
         - Allows the setting of optimizers in the constructor
         - It provides mIoU with both Micro and Macro averaging
-    
+
     .. note::
            * 'Micro' averaging suits overall performance evaluation but may not reflect
              minority class accuracy.
@@ -207,7 +207,10 @@ class ClassificationTask(BaseTask):
         """
         x = batch["image"]
         y = batch["label"]
-        model_output: dict[str, Tensor] = self(x)
+        other_keys = batch.keys() - {"image", "label", "filename"}
+        rest = {k:batch[k] for k in other_keys}
+
+        model_output: ModelOutput = self(x, **rest)
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat_hard = to_class_prediction(model_output)
@@ -230,7 +233,9 @@ class ClassificationTask(BaseTask):
         """
         x = batch["image"]
         y = batch["label"]
-        model_output: dict[str, Tensor] = self(x)
+        other_keys = batch.keys() - {"image", "label", "filename"}
+        rest = {k:batch[k] for k in other_keys}
+        model_output: ModelOutput = self(x, **rest)
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat_hard = to_class_prediction(model_output)
@@ -251,7 +256,9 @@ class ClassificationTask(BaseTask):
         """
         x = batch["image"]
         y = batch["label"]
-        model_output: dict[str, Tensor] = self(x)
+        other_keys = batch.keys() - {"image", "label", "filename"}
+        rest = {k:batch[k] for k in other_keys}
+        model_output: ModelOutput = self(x, **rest)
         loss = self.test_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.test_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat_hard = to_class_prediction(model_output)
@@ -275,6 +282,9 @@ class ClassificationTask(BaseTask):
         """
         x = batch["image"]
         file_names = batch["filename"]
+        other_keys = batch.keys() - {"image", "label", "filename"}
+        rest = {k:batch[k] for k in other_keys}
+        model_output: ModelOutput = self(x, **rest)
 
         y_hat = self(x).output
         y_hat = y_hat.argmax(dim=1)

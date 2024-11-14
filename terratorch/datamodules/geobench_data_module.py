@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import Any
 
 import albumentations as A
@@ -18,6 +19,7 @@ class GeobenchDataModule(NonGeoDataModule):
         batch_size: int = 8,
         num_workers: int = 0,
         data_root: str = "./",
+        bands: Sequence[str] | None = None,
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
         val_transform: A.Compose | None | list[A.BasicTransform] = None,
         test_transform: A.Compose | None | list[A.BasicTransform] = None,
@@ -27,9 +29,9 @@ class GeobenchDataModule(NonGeoDataModule):
     ) -> None:
         super().__init__(dataset_class, batch_size, num_workers, **kwargs)
 
-        bands = kwargs.get("bands", dataset_class.all_band_names)
-        self.means = torch.tensor([means[b] for b in bands])
-        self.stds = torch.tensor([stds[b] for b in bands])
+        self.bands = dataset_class.all_band_names if bands is None else bands
+        self.means = torch.tensor([means[b] for b in self.bands])
+        self.stds = torch.tensor([stds[b] for b in self.bands])
         self.train_transform = wrap_in_compose_is_list(train_transform)
         self.val_transform = wrap_in_compose_is_list(val_transform)
         self.test_transform = wrap_in_compose_is_list(test_transform)
@@ -46,6 +48,7 @@ class GeobenchDataModule(NonGeoDataModule):
                 data_root=self.data_root,
                 transform=self.train_transform,
                 partition=self.partition,
+                bands=self.bands,
                 **self.kwargs,
             )
         if stage in ["fit", "validate"]:
@@ -54,6 +57,7 @@ class GeobenchDataModule(NonGeoDataModule):
                 data_root=self.data_root,
                 transform=self.val_transform,
                 partition=self.partition,
+                bands=self.bands,
                 **self.kwargs,
             )
         if stage in ["test"]:
@@ -62,5 +66,6 @@ class GeobenchDataModule(NonGeoDataModule):
                 data_root=self.data_root,
                 transform=self.test_transform,
                 partition=self.partition,
+                bands=self.bands,
                 **self.kwargs,
             )
