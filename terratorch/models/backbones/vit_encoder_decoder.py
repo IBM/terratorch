@@ -44,6 +44,27 @@ def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
     return emb
 
 
+def get_1d_sincos_pos_embed_from_grid_torch(embed_dim, pos):
+    """
+    embed_dim: output dimension for each position
+    pos: a list of positions to be encoded: size (M,)
+    out: (M, D)
+    """
+    assert embed_dim % 2 == 0
+    omega = torch.arange(embed_dim // 2).to(pos.device).type(torch.float32)
+    omega /= embed_dim / 2.0
+    omega = 1.0 / 10000**omega  # (D/2,)
+
+    pos = pos.reshape(-1)  # (M,)
+    out = torch.einsum("m,d->md", pos, omega)  # (M, D/2), outer product
+
+    emb_sin = torch.sin(out)  # (M, D/2)
+    emb_cos = torch.cos(out)  # (M, D/2)
+
+    emb = torch.cat([emb_sin, emb_cos], dim=1)  # (M, D)
+    return emb
+
+
 @lru_cache(maxsize=100, typed=False)
 def get_3d_sincos_pos_embed(embed_dim: int, grid_size: tuple[int, int, int], cls_token: bool = False):
     # Copyright (c) Meta Platforms, Inc. and affiliates.
@@ -135,6 +156,73 @@ class PatchEmbed(nn.Module):
         return x
 
 
+class TemporalEncoder(nn.Module):
+    def __init__(self, embed_dim: int, trainable_scale: bool = False):
+        super().__init__()
+        self.embed_dim = embed_dim
+        self.year_embed_dim = embed_dim // 2
+        self.julian_day_embed_dim = embed_dim - self.year_embed_dim
+
+        # If trainable, initialize scale with small number
+        if trainable_scale:
+            self.scale = nn.Parameter(torch.full((1,), 0.1))
+        else:
+            self.register_buffer("scale", torch.ones(1))
+
+    def forward(self, temporal_coords: torch.Tensor, tokens_per_frame: None | int = None):
+        """
+        temporal_coords: year and day-of-year info with shape (B, T, 2).
+        tokens_per_frame: number of tokens for each frame the sample. If provided, embeddings will be
+            repeated over T dimension, and final shape is (B, T*tokens_per_frame, embed_dim).
+        """
+        shape = temporal_coords.shape[:2] + (-1,)  # B, T, -1
+
+        year = get_1d_sincos_pos_embed_from_grid_torch(self.year_embed_dim, temporal_coords[:, :, 0].flatten()).reshape(
+            shape
+        )
+        julian_day = get_1d_sincos_pos_embed_from_grid_torch(
+            self.julian_day_embed_dim, temporal_coords[:, :, 1].flatten()
+        ).reshape(shape)
+
+        embedding = self.scale * torch.cat([year, julian_day], dim=-1)
+
+        if tokens_per_frame is not None:
+            embedding = torch.repeat_interleave(embedding, tokens_per_frame, dim=1)
+
+        return embedding  # B, T*tokens_per_frame, embed_dim
+
+
+class LocationEncoder(nn.Module):
+    def __init__(self, embed_dim: int, trainable_scale: bool = False):
+        super().__init__()
+        self.embed_dim = embed_dim
+        self.lat_embed_dim = embed_dim // 2
+        self.lon_embed_dim = embed_dim - self.lat_embed_dim
+
+        # If trainable, initialize scale with small number
+        if trainable_scale:
+            self.scale = nn.Parameter(torch.full((1,), 0.1))
+        else:
+            self.register_buffer("scale", torch.ones(1))
+
+    def forward(self, location_coords: torch.Tensor):
+        """
+        location_coords: lat and lon info with shape (B, 2).
+        """
+        shape = location_coords.shape[:1] + (1, -1)  # B, 1, -1
+
+        lat = get_1d_sincos_pos_embed_from_grid_torch(self.lat_embed_dim, location_coords[:, 0].flatten()).reshape(
+            shape
+        )
+        lon = get_1d_sincos_pos_embed_from_grid_torch(self.lon_embed_dim, location_coords[:, 1].flatten()).reshape(
+            shape
+        )
+
+        embedding = self.scale * torch.cat([lat, lon], dim=-1)
+
+        return embedding  # B, 1, embed_dim
+
+
 class TemporalViTEncoder(nn.Module):
     """Encoder from an ViT with capability to take in temporal input.
 
@@ -159,6 +247,8 @@ class TemporalViTEncoder(nn.Module):
         norm_layer: nn.Module = nn.LayerNorm,
         norm_pix_loss: bool = False,  # noqa: FBT001, FBT002
         encoder_only: bool = True,  # noqa: FBT001, FBT002
+        coords_encoding: None | list[str] = None,
+        coords_scale_learn: bool = False,  # noqa: ARG002, FBT001, FBT002
         **kwargs,  # timm parameters that may be passed  # noqa: ARG002
     ):
         """
@@ -179,6 +269,12 @@ class TemporalViTEncoder(nn.Module):
             num_heads (int, optional): Number of heads used in the encoder blocks. Defaults to 16.
             mlp_ratio (float, optional): Ratio to be used for the size of the MLP in encoder blocks. Defaults to 4.0.
             norm_layer (nn.Module, optional): Norm layer to be used. Defaults to nn.LayerNorm.
+            encoder_only (bool, optional): Whether to instantiate only the decoder. Defaults to True.
+            coords_encoding (list[str], optional). Which coordinates to encode.
+                Should be None or a list with 'time', 'location', or both.
+                Defaults to None.
+            coords_scale_learn (bool, optional). Whether to learn a scale parameter for the coordinate terms.
+                Defaults to False.
             norm_pix_loss (bool, optional): Whether to use Norm Pix Loss. Defaults to False.
             pretrained (str, optional): Path to pretrained encoder weights. Defaults to None.
         """
@@ -196,6 +292,16 @@ class TemporalViTEncoder(nn.Module):
         self.embed_dim = embed_dim
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
         self.encoder_only = encoder_only
+
+        if coords_encoding is None:
+            coords_encoding = []
+
+        self.temporal_encoding = "time" in coords_encoding
+        self.location_encoding = "location" in coords_encoding
+        if self.temporal_encoding:
+            self.temporal_embed_enc = TemporalEncoder(embed_dim, coords_scale_learn)
+        if self.location_encoding:
+            self.location_embed_enc = LocationEncoder(embed_dim, coords_scale_learn)
 
         self.blocks = [
             Block(embed_dim, num_heads, mlp_ratio, qkv_bias=True, norm_layer=norm_layer) for i in range(depth)
@@ -326,7 +432,11 @@ class TemporalViTEncoder(nn.Module):
         return x_masked, mask, ids_restore
 
     def forward_encoder(
-        self, x: torch.Tensor, mask_ratio: float = 0.0
+        self,
+        x: torch.Tensor,
+        temporal_coords: None | torch.Tensor,
+        location_coords: None | torch.Tensor,
+        mask_ratio: float = 0.0,
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         # embed patches
         if len(x.shape) == B_C_H_W_SHAPE_LEN and self.patch_embed.num_frames == 1:
@@ -347,6 +457,14 @@ class TemporalViTEncoder(nn.Module):
         # add pos embed w/o cls token
         x = x + pos_embed[1:, :]
 
+        if self.temporal_encoding:
+            num_tokens_per_frame = x.shape[1] // self.patch_embed.img_size[0]
+            temporal_encoding = self.temporal_embed_enc(temporal_coords, num_tokens_per_frame)
+            x = x + temporal_encoding
+        if self.location_encoding:
+            location_encoding = self.location_embed_enc(location_coords)
+            x = x + location_encoding
+
         # masking: length -> length * mask_ratio
         x, mask, ids_restore = self.random_masking(x, mask_ratio)
 
@@ -362,7 +480,14 @@ class TemporalViTEncoder(nn.Module):
 
         return x, mask, ids_restore, (t, h, w)
 
-    def forward_decoder(self, x: torch.Tensor, ids_restore: torch.Tensor, dim_info: tuple) -> torch.Tensor:
+    def forward_decoder(
+        self,
+        x: torch.Tensor,
+        ids_restore: torch.Tensor,
+        temporal_coords: None | torch.Tensor,
+        location_coords: None | torch.Tensor,
+        dim_info: tuple,
+    ) -> torch.Tensor:
         if self.encoder_only:
             msg = (
                 "Cannot run forward decoder method with self.encoder_only. Pass encoder_only=False to use the decoder."
@@ -392,6 +517,20 @@ class TemporalViTEncoder(nn.Module):
         # add pos embed
         x = x + decoder_pos_embed
 
+        # remove cls token
+        x_ = x[:, 1:, :]
+
+        if self.temporal_encoding:
+            num_tokens_per_frame = x.shape[1] // self.patch_embed.num_frames
+            temporal_encoding = self.temporal_embed_dec(temporal_coords, num_tokens_per_frame)
+            # Add temporal encoding w/o cls token
+            x_ = x_ + temporal_encoding
+        if self.location_encoding:
+            location_encoding = self.location_embed_dec(location_coords)
+            # Add location encoding w/o cls token
+            x_ = x_ + location_encoding
+
+        x = torch.cat([x[:, :1, :], x_], dim=1)  # append cls token
         # apply Transformer blocks
         for blk in self.decoder_blocks:
             x = blk(x)
@@ -426,13 +565,24 @@ class TemporalViTEncoder(nn.Module):
         loss = (loss * mask).sum() / mask.sum()  # mean loss on removed patches
         return loss
 
-    def forward(self, imgs, mask_ratio=0.0) -> torch.Tensor:
-        latent, mask, ids_restore, dim_info = self.forward_encoder(imgs, mask_ratio)
-        pred = self.forward_decoder(latent, ids_restore, dim_info)
+    def forward(
+        self,
+        imgs,
+        temporal_coords: None | torch.Tensor = None,
+        location_coords: None | torch.Tensor = None,
+        mask_ratio=0.0,
+    ) -> torch.Tensor:
+        latent, mask, ids_restore, dim_info = self.forward_encoder(imgs, temporal_coords, location_coords, mask_ratio)
+        pred = self.forward_decoder(latent, ids_restore, temporal_coords, location_coords, dim_info)
         _ = self.forward_loss(imgs, pred, mask)
         return pred
 
-    def forward_features(self, x) -> list[torch.Tensor]:
+    def forward_features(
+        self,
+        x,
+        temporal_coords: None | torch.Tensor = None,
+        location_coords: None | torch.Tensor = None,
+    ) -> list[torch.Tensor]:
         if len(x.shape) == B_C_H_W_SHAPE_LEN and self.patch_embed.num_frames == 1:
             x = x.reshape(-1, self.in_chans, 1, *x.shape[-2:])
         t, h, w = x.shape[-3:]
@@ -451,6 +601,14 @@ class TemporalViTEncoder(nn.Module):
         ).to(x)
         # add pos embed w/o cls token
         x = x + pos_embed[1:, :]
+
+        if self.temporal_encoding:
+            num_tokens_per_frame = x.shape[1] // self.patch_embed.num_frames
+            temporal_encoding = self.temporal_embed_enc(temporal_coords, num_tokens_per_frame)
+            x = x + temporal_encoding
+        if self.location_encoding:
+            location_encoding = self.location_embed_enc(location_coords)
+            x = x + location_encoding
 
         # append cls token
         cls_token = self.cls_token + pos_embed[:1, :]

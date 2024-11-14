@@ -75,11 +75,11 @@ class ScalarOutputModel(Model, SegmentationModel):
     def check_input_shape(self, x: torch.Tensor) -> bool:  # noqa: ARG002
         return True
 
-    def forward(self, x: torch.Tensor) -> ModelOutput:
+    def forward(self, x: torch.Tensor, **kwargs) -> ModelOutput:
         """Sequentially pass `x` through model`s encoder, decoder and heads"""
 
         self.check_input_shape(x)
-        features = self.encoder(x)
+        features = self.encoder(x, **kwargs)
 
         ## only for backwards compatibility with pre-neck times.
         if self.neck:
