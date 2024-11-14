@@ -202,7 +202,7 @@ class PixelwiseRegressionTask(BaseTask):
             "regression", aux_decoders=self.aux_heads, **self.hparams["model_args"]
         )
         if self.hparams["freeze_backbone"]:
-            if self.hparams["peft_config"] is not None:
+            if self.hparams.get("peft_config", None) is not None:
                 msg = "PEFT should be run with freeze_backbone = False"
                 raise ValueError(msg)
             self.model.freeze_encoder()
