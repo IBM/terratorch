@@ -28,6 +28,8 @@ def collate_chunk_dicts(batch_list):
     for key, value in batch_list[0].items():  # TODO: Handle missing modalities when allow_missing_modalities is set.
         if isinstance(value, torch.Tensor):
             batch[key] = torch.concat([chunk[key] for chunk in batch_list])
+        if isinstance(value, np.ndarray):
+            batch[key] = np.concatenate([chunk[key] for chunk in batch_list])
         elif isinstance(value, dict):
             batch[key] = collate_chunk_dicts([chunk[key] for chunk in batch_list])
         else:
@@ -158,7 +160,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         rgb_modality: str | None = None,
         rgb_indices: list[int] | None = None,
         allow_substring_split_file: bool = False,
-        constant_scale: dict | float = 1.,
+        constant_scale: dict[float] = None,
         train_transform: dict | A.Compose | None | list[A.BasicTransform] = None,
         val_transform: dict | A.Compose | None | list[A.BasicTransform] = None,
         test_transform: dict | A.Compose | None | list[A.BasicTransform] = None,
@@ -263,13 +265,6 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.test_split = test_split
         self.allow_substring_split_file = allow_substring_split_file
         self.constant_scale = constant_scale
-        if isinstance(self.constant_scale, dict):
-            # Fill in missing modalities
-            self.constant_scale = {m: self.constant_scale[m] if m in self.constant_scale else 1.
-                                   for m in modalities}
-        else:
-            # Create dict
-            self.constant_scale = {m: constant_scale for m in modalities}
         self.no_data_replace = no_data_replace
         self.no_label_replace = no_label_replace
         self.drop_last = drop_last

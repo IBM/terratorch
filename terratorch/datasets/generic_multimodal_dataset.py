@@ -5,6 +5,7 @@
 import glob
 import os
 import torch
+import pandas as pd
 from abc import ABC
 from pathlib import Path
 from typing import Any
@@ -22,6 +23,16 @@ from torchgeo.datasets import NonGeoDataset
 
 from terratorch.datasets.utils import HLSBands, default_transform, filter_valid_files, generate_bands_intervals
 from terratorch.datasets.transforms import MultimodalTransforms
+
+
+def load_table_data(file_path: str):
+    if file_path.endswith('parquet'):
+        df = pd.read_parquet(file_path)
+    elif file_path.endswith('csv'):
+        df = pd.read_csv(file_path, index_col=0)
+    else:
+        raise Exception(f"Unrecognized file type: {file_path}. Only parquet and csv are supported.")
+    return df
 
 
 class MultimodalToTensor():
@@ -66,7 +77,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         constant_scale: dict[float] = None,
-        transform: A.Compose | None = None,
+        transform: A.Compose | dict | None = None,
         no_data_replace: float | None = None,
         no_label_replace: int | None = None,
         expand_temporal_dimension: bool = False,
@@ -118,7 +129,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         if label_data_root and not isinstance(label_data_root, list):
             label_data_root = [label_data_root]
 
-        self.constant_scale = {m: constant_scale[m] or 1. for m in self.modalities}
+        self.constant_scale = constant_scale or []
         self.no_data_replace = no_data_replace
         self.no_label_replace = no_label_replace
         self.reduce_zero_label = reduce_zero_label
@@ -131,9 +142,12 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
         # Load samples based on split file
         if self.split_file is not None:
-            with open(self.split_file) as f:
-                split = f.readlines()
-            valid_files = {rf"{substring.strip()}" for substring in split}
+            if str(self.split_file).endswith('.txt'):
+                with open(self.split_file) as f:
+                    split = f.readlines()
+                valid_files = {rf"{substring.strip()}" for substring in split}
+            else:
+                valid_files = list(load_table_data(str(self.split_file)).index)
 
         else:
             image_files = {}
@@ -159,11 +173,48 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
         self.samples = []
         num_modalities = len(self.modalities) + int(label_data_root is not None)
+
+        # Check for parquet and csv files with modality data and read the file
+        for m, m_dirs in data_root.items():
+            m_dfs = []
+            for m_dir in m_dirs:
+                if os.path.isfile(m_dir):
+                    m_dfs.append(load_table_data(m_dir))
+            if len(m_dfs):
+                # Replace paths with DataFrame
+                data_root[m] = pd.concat(m_dfs, axis=0)
+
+                # Check for sample key
+                assert list(valid_files)[0] in data_root[m].index, \
+                    (f"Sample key expected in table index (first column) for {m}, "
+                     f"key '{list(valid_files)[0]}' is not in index [{list(data_root[m].index[:3])}, ...]")
+
+        if label_data_root:
+            # Check for parquet and csv files with labels and read the file
+            l_dfs = []
+            for l_dir in label_data_root:
+                if os.path.isfile(l_dir):
+                    l_dfs.append(load_table_data(l_dir))
+            if len(l_dfs):
+                # Replace paths with DataFrame
+                label_data_root = pd.concat(l_dfs, axis=0)
+
+                # Check for sample key
+                assert list(valid_files)[0] in label_data_root.index, \
+                    (f"Sample key expected in table index (first column) of the labels, "
+                     f"key '{list(valid_files)[0]}' is not in label index [{list(label_data_root.index[:3])}, ...]")
+
         # Iterate over all files in split
         for file in valid_files:
             sample = {}
             # Iterate over all modalities
             for m, m_dirs in data_root.items():
+                # Add tabular data to sample
+                if isinstance(m_dirs, pd.DataFrame):
+                    # m_dirs paths is replaced by DataFrame
+                    sample[m] = m_dirs.loc[file].values
+                    continue
+
                 # Iterate over all directories of the current modality
                 for m_dir in m_dirs:
                     if allow_substring_split_file:
@@ -179,6 +230,12 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                             sample[m] = file_path
                             break
             if label_data_root:
+                # Add tabular data to sample
+                if isinstance(label_data_root, pd.DataFrame):
+                    # m_dirs paths is replaced by DataFrame
+                    sample['mask'] = label_data_root.loc[file].values
+                    continue
+
                 for l_dir in label_data_root:
                     if allow_substring_split_file:
                         # Substring match with label_grep
@@ -263,7 +320,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                 file,
                 nan_replace=self.no_label_replace if modality == 'mask' else self.no_data_replace,
                 modality=modality,
-            ).to_numpy()
+            )
 
             # Expand temporal dim
             if modality in self.filter_indices and self.expand_temporal_dimension:
@@ -280,7 +337,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             if modality in self.filter_indices:
                 data = data[..., self.filter_indices[modality]]
 
-            if modality != 'mask':
+            if modality in self.constant_scale:
                 data = data.astype(np.float32) * self.constant_scale[modality]
 
             output[modality] = data
@@ -300,21 +357,20 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         return output
 
     def _load_file(self, path, nan_replace: int | float | None = None, modality: str | None = None) -> xr.DataArray:
-        if path.endswith('.zarr') or path.endswith('.zarr.zip'):
+        if isinstance(path, np.ndarray):
+            # data was loaded from table and is saved in memory
+            data = path
+        elif path.endswith('.zarr') or path.endswith('.zarr.zip'):
             data = xr.open_zarr(path, mask_and_scale=True)
             data_var = modality if modality in data.data_vars else list(data.data_vars)[0]
-            data = data[data_var]
+            data = data[data_var].to_numpy()
         elif path.endswith('.npy'):
-            data = xr.DataArray(np.load(path))
+            data = np.load(path)
         else:
-            data = rioxarray.open_rasterio(path, masked=True)
+            data = rioxarray.open_rasterio(path, masked=True).to_numpy()
 
         if nan_replace is not None:
-            try:
-                data = data.fillna(nan_replace)
-            except np.exceptions.DTypePromotionError as e:
-                # No common dtype, e.g., for timestamps
-                pass
+            data = np.nan_to_num(data, nan=nan_replace)
         return data
 
 

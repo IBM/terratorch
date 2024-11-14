@@ -158,6 +158,13 @@ class SelectBands(ImageOnlyTransform):
         return "band_indices"
 
 
+def default_sequence_transform(array):
+    if array.dtype == float or array.dtype == int:
+        return torch.from_numpy(array)
+    else:
+        return array
+
+
 class MultimodalTransforms:
     """Applies albumentations transforms to multiple images"""
     def __init__(
@@ -170,12 +177,12 @@ class MultimodalTransforms:
         self.transforms = transforms
         self.shared = shared
         self.sequence_modalities = sequence_modalities
-        self.sequence_transform = sequence_transform or torch.from_numpy
+        self.sequence_transform = sequence_transform or default_sequence_transform
 
     def __call__(self, data: dict):
         if self.shared:
             # albumentations requires a key 'image' and treats all other keys as additional targets
-            image_modality = list(data.keys())[0]
+            image_modality = list(set(data.keys()) - set(self.sequence_modalities))[0]
             data['image'] = data.pop(image_modality)
             data = self.transforms(**data)
             data[image_modality] = data.pop('image')
