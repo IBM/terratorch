@@ -188,15 +188,30 @@ def _create_swin_mmseg_transformer(
     def checkpoint_filter_wrapper_fn(state_dict, model):
         return checkpoint_filter_fn(state_dict, model, pretrained_bands, model_bands)
 
-    model: MMSegSwinTransformer = build_model_with_cfg(
-        MMSegSwinTransformer,
-        variant,
-        pretrained,
-        pretrained_filter_fn=checkpoint_filter_wrapper_fn,
-        pretrained_strict=False,
-        feature_cfg={"flatten_sequential": True, "out_indices": out_indices},
-        **kwargs,
-    )
+    # When the pretrained configuration is not available in HF, we shift to 
+    # pretrained=False
+    try:
+        model: MMSegSwinTransformer = build_model_with_cfg(
+            MMSegSwinTransformer,
+            variant,
+            pretrained,
+            pretrained_filter_fn=checkpoint_filter_wrapper_fn,
+            pretrained_strict=False,
+            feature_cfg={"flatten_sequential": True, "out_indices": out_indices},
+            **kwargs,
+        )
+    except RuntimeError:
+        print(f"No pretrained configuration was found for the model {variant}.")
+        model: MMSegSwinTransformer = build_model_with_cfg(
+            MMSegSwinTransformer,
+            variant,
+            False,
+            pretrained_filter_fn=checkpoint_filter_wrapper_fn,
+            pretrained_strict=False,
+            feature_cfg={"flatten_sequential": True, "out_indices": out_indices},
+            **kwargs,
+        )
+
     model.pretrained_bands = pretrained_bands
     model.model_bands = model_bands
 
