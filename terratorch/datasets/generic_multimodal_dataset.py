@@ -3,7 +3,6 @@
 """Module containing generic dataset classes"""
 
 import glob
-import logging
 import os
 import torch
 from abc import ABC
@@ -59,6 +58,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         image_grep: str | None = "*",
         label_grep: str | None = "*",
         split: Path | None = None,
+        image_modalities: list[str] | None = None,
         rgb_modality: str | None = None,
         rgb_indices: list[int] | None = None,
         allow_missing_modalities: bool = False,  # TODO: Not implemented on a data module level yet (collate_fn required).
@@ -108,6 +108,8 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
         self.modalities = list(data_root.keys())
         assert 'mask' not in self.modalities, "Modality cannot be called 'mask'."
+        self.image_modalities = image_modalities or self.modalities
+        self.sequence_modalities = list(set(self.modalities) - set(image_modalities))
 
         # Convert path strings to lists
         for m, m_dir in data_root.items():
@@ -229,7 +231,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
         # If no transform is given, apply only to transform to torch tensor
         if isinstance(transform, A.Compose):
-            self.transform = MultimodalTransforms(transform)
+            self.transform = MultimodalTransforms(transform, sequence_modalities=self.sequence_modalities)
         elif transform is None:
             self.transform = MultimodalToTensor(self.modalities)
         else:
@@ -238,6 +240,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                          for m in self.modalities}
             self.transform = MultimodalTransforms(transform, shared=False)
 
+        # Ignore rasterio of not geo-referenced files
         import warnings
         import rasterio
         warnings.filterwarnings("ignore", category=rasterio.errors.NotGeoreferencedWarning)
@@ -257,7 +260,10 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
         for modality, file in sample.items():
             data = self._load_file(
-                file, nan_replace=self.no_label_replace if modality == 'mask' else self.no_data_replace).to_numpy()
+                file,
+                nan_replace=self.no_label_replace if modality == 'mask' else self.no_data_replace,
+                modality=modality,
+            ).to_numpy()
 
             # Expand temporal dim
             if modality in self.filter_indices and self.expand_temporal_dimension:
@@ -267,7 +273,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             if modality == 'mask':
                 data = data[0]
 
-            if len(data.shape) >= 3 and self.channel_position:
+            if modality in self.image_modalities and len(data.shape) >= 3 and self.channel_position:
                 # to channels last (required by albumentations)
                 data = np.moveaxis(data, self.channel_position, -1)
 
@@ -293,10 +299,10 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
         return output
 
-    def _load_file(self, path, nan_replace: int | float | None = None) -> xr.DataArray:
+    def _load_file(self, path, nan_replace: int | float | None = None, modality: str | None = None) -> xr.DataArray:
         if path.endswith('.zarr') or path.endswith('.zarr.zip'):
             data = xr.open_zarr(path, mask_and_scale=True)
-            data_var = list(data.data_vars)[0]  # TODO: Make data var configurable if required (e.g. for time/loc)
+            data_var = modality if modality in data.data_vars else list(data.data_vars)[0]
             data = data[data_var]
         elif path.endswith('.npy'):
             data = xr.DataArray(np.load(path))
@@ -304,7 +310,11 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             data = rioxarray.open_rasterio(path, masked=True)
 
         if nan_replace is not None:
-            data = data.fillna(nan_replace)
+            try:
+                data = data.fillna(nan_replace)
+            except np.exceptions.DTypePromotionError as e:
+                # No common dtype, e.g., for timestamps
+                pass
         return data
 
 
@@ -319,6 +329,7 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
         image_grep: str | None = "*",
         label_grep: str | None = "*",
         split: Path | None = None,
+        image_modalities: list[str] | None = None,
         rgb_modality: str | None = None,
         rgb_indices: list[str] | None = None,
         allow_missing_modalities: bool = False,
@@ -371,6 +382,7 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
             image_grep=image_grep,
             label_grep=label_grep,
             split=split,
+            image_modalities=image_modalities,
             rgb_modality=rgb_modality,
             rgb_indices=rgb_indices,
             allow_missing_modalities=allow_missing_modalities,
@@ -482,13 +494,14 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
         image_grep: str | None = "*",
         label_grep: str | None = "*",
         split: Path | None = None,
+        image_modalities: list[str] | None = None,
         rgb_modality: str | None = None,
         rgb_indices: list[int] | None = None,
         allow_missing_modalities : bool = False,
         allow_substring_split_file: bool = False,
         dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
-        constant_scale: float = 1.,
+        constant_scale: float = 1.,  # TODO: Check types of args
         transform: A.Compose | None = None,
         no_data_replace: float | None = None,
         no_label_replace: int | None = None,
@@ -531,6 +544,7 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
             image_grep=image_grep,
             label_grep=label_grep,
             split=split,
+            image_modalities=image_modalities,
             rgb_modality=rgb_modality,
             rgb_indices=rgb_indices,
             allow_missing_modalities=allow_missing_modalities,
@@ -563,12 +577,8 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
 
         .. versionadded:: 0.2
         """
-        raise NotImplementedError('Code is based on the generic single-modality dataset and not yet adapted. '
-                                  'Set `export TERRATORCH_NUM_VAL_PLOTS=0` before running terratorch.')
 
         image = sample["image"]
-        if len(image.shape) == 5:
-            return
         if isinstance(image, torch.Tensor):
             image = image.numpy()
         image = image.take(self.rgb_indices, axis=0)

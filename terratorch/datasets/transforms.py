@@ -1,8 +1,8 @@
 # Copyright contributors to the Terratorch project
 
+import torch
 from albumentations import BasicTransform, Compose, ImageOnlyTransform
 from einops import rearrange
-from torch import Tensor
 import albumentations as A
 
 N_DIMS_FOR_TEMPORAL = 4
@@ -160,17 +160,29 @@ class SelectBands(ImageOnlyTransform):
 
 class MultimodalTransforms:
     """Applies albumentations transforms to multiple images"""
-    def __init__(self, transforms: dict | A.Compose, shared : bool = True):
+    def __init__(
+            self,
+            transforms: dict | A.Compose,
+            shared : bool = True,
+            sequence_modalities: list[str] | None = None,
+            sequence_transform: object | None = None,
+    ):
         self.transforms = transforms
         self.shared = shared
+        self.sequence_modalities = sequence_modalities
+        self.sequence_transform = sequence_transform or torch.from_numpy
 
     def __call__(self, data: dict):
         if self.shared:
-            # albumentations requires a key 'image'
+            # albumentations requires a key 'image' and treats all other keys as additional targets
             image_modality = list(data.keys())[0]
             data['image'] = data.pop(image_modality)
             data = self.transforms(**data)
             data[image_modality] = data.pop('image')
+
+            # Process sequence data which is ignored by albumentations as 'global_label'
+            for modality in self.sequence_modalities:
+                data[modality] = self.sequence_transform(data[modality])
         else:
             # Applies transformations for each modality separate
             for key, value in data.items():

@@ -35,10 +35,16 @@ def collate_chunk_dicts(batch_list):
     return batch
 
 
-def wrap_in_compose_is_list(transform_list, additional_targets=None):
+def wrap_in_compose_is_list(transform_list, image_modalities=None, sequence_modalities=None):
+    additional_targets = {}
+    if image_modalities:
+        for modality in image_modalities:
+            additional_targets[modality] = 'image'
+    if sequence_modalities:
+        # Global label values are ignored and need to be processed separately
+        for modality in sequence_modalities:
+            additional_targets[modality] = "global_label"
     # set check shapes to false because of the multitemporal case
-    if additional_targets:
-        additional_targets = {m: 'image' for m in additional_targets}
     return A.Compose(transform_list, is_check_shapes=False, additional_targets=additional_targets) \
         if isinstance(transform_list, Iterable) else transform_list
 
@@ -148,6 +154,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         output_bands: dict | None = None,
         predict_dataset_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
         predict_output_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
+        image_modalities: list[str] | None = None,
         rgb_modality: str | None = None,
         rgb_indices: list[int] | None = None,
         allow_substring_split_file: bool = False,
@@ -237,6 +244,8 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         super().__init__(dataset_class, batch_size, num_workers, **kwargs)
         self.num_classes = num_classes
         self.modalities = modalities
+        self.image_modalities = image_modalities or modalities
+        self.sequence_modalities = list(set(self.modalities) - set(image_modalities))
         if isinstance(img_grep, dict):
             self.img_grep = {m: img_grep[m] if m in img_grep else '*' for m in modalities}
         else:
@@ -279,17 +288,13 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.reduce_zero_label = reduce_zero_label
         self.channel_position = channel_position
 
-        # Transforms can be None (leads to to_tensor default), shared between modalities or individual per modality
-        if shared_transforms:
-            # Applying the same transforms with the same parameters to multiple images
-            shared_transforms = shared_transforms if isinstance(shared_transforms, list) else modalities
-            assert shared_transforms == modalities, "Non-image modalities not yet supported with shared_transforms"
-
         if isinstance(train_transform, dict):
             self.train_transform = {m: wrap_in_compose_is_list(train_transform[m]) if m in train_transform else None
                                     for m in modalities}
         elif shared_transforms:
-            self.train_transform = wrap_in_compose_is_list(train_transform, additional_targets=shared_transforms)
+            self.train_transform = wrap_in_compose_is_list(train_transform,
+                                                           image_modalities=self.image_modalities,
+                                                           sequence_modalities=self.sequence_modalities)
         else:
             self.train_transform = {m: wrap_in_compose_is_list(train_transform)
                                     for m in modalities}
@@ -298,7 +303,9 @@ class GenericMultiModalDataModule(NonGeoDataModule):
             self.val_transform = {m: wrap_in_compose_is_list(val_transform[m]) if m in val_transform else None
                                     for m in modalities}
         elif shared_transforms:
-            self.val_transform = wrap_in_compose_is_list(val_transform, additional_targets=shared_transforms)
+            self.val_transform = wrap_in_compose_is_list(val_transform,
+                                                         image_modalities=self.image_modalities,
+                                                         sequence_modalities=self.sequence_modalities)
         else:
             self.val_transform = {m: wrap_in_compose_is_list(val_transform)
                                     for m in modalities}
@@ -307,7 +314,9 @@ class GenericMultiModalDataModule(NonGeoDataModule):
             self.test_transform = {m: wrap_in_compose_is_list(test_transform[m]) if m in test_transform else None
                                     for m in modalities}
         elif shared_transforms:
-            self.test_transform = wrap_in_compose_is_list(test_transform, additional_targets=shared_transforms)
+            self.test_transform = wrap_in_compose_is_list(test_transform,
+                                                          image_modalities=self.image_modalities,
+                                                          sequence_modalities=self.sequence_modalities)
         else:
             self.test_transform = {m: wrap_in_compose_is_list(test_transform)
                                     for m in modalities}
@@ -334,6 +343,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 dataset_bands=self.dataset_bands,
                 output_bands=self.output_bands,
                 constant_scale=self.constant_scale,
+                image_modalities=self.image_modalities,
                 rgb_modality=self.rgb_modality,
                 rgb_indices=self.rgb_indices,
                 transform=self.train_transform,
@@ -356,6 +366,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 dataset_bands=self.dataset_bands,
                 output_bands=self.output_bands,
                 constant_scale=self.constant_scale,
+                image_modalities=self.image_modalities,
                 rgb_modality=self.rgb_modality,
                 rgb_indices=self.rgb_indices,
                 transform=self.val_transform,
@@ -378,6 +389,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 dataset_bands=self.dataset_bands,
                 output_bands=self.output_bands,
                 constant_scale=self.constant_scale,
+                image_modalities=self.image_modalities,
                 rgb_modality=self.rgb_modality,
                 rgb_indices=self.rgb_indices,
                 transform=self.test_transform,
@@ -396,6 +408,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 dataset_bands=self.predict_dataset_bands,
                 output_bands=self.predict_output_bands,
                 constant_scale=self.constant_scale,
+                image_modalities=self.image_modalities,
                 rgb_modality=self.rgb_modality,
                 rgb_indices=self.rgb_indices,
                 transform=self.test_transform,
