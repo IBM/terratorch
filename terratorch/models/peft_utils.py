@@ -97,7 +97,7 @@ class QKVSep(nn.Module):
 
 def replace_qkv(model: nn.Module, qkv_suffix: str):
     # This is needed for ViTEncoderDecoder because the qkv matrices are together,
-    # this does not work with LoRA (and probably other adapters)
+    # and it would not work with LoRA (and probably other adapters)
     for key, _ in model.named_modules():
         if key.endswith(qkv_suffix):
             parent, target, target_name = _get_submodules(model, key)
