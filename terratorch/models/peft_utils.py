@@ -98,11 +98,15 @@ class QKVSep(nn.Module):
 def replace_qkv(model: nn.Module, qkv_suffix: str):
     # This is needed for ViTEncoderDecoder because the qkv matrices are together,
     # and it would not work with LoRA (and probably other adapters)
+    replaced = False
     for key, _ in model.named_modules():
-        if key.endswith(qkv_suffix):
+        if key.endswith(f".{qkv_suffix}"):
+            replaced = True
             parent, target, target_name = _get_submodules(model, key)
             if not isinstance(target, nn.Linear):
                 msg = "Only a qkv nn.Linear can be replaced."
                 raise ValueError(msg)
             new_module = QKVSep(target)
             setattr(parent, target_name, new_module)
+    if not replaced:
+        warnings.warn("replace_qkv was not None but no module was found ending with that pattern.", stacklevel=1)
