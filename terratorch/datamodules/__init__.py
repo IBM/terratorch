@@ -78,4 +78,4 @@ __all__ = (
 )
 
 if wxc_present:
-    __all__.__add__("Merra2DownscaleNonGeoDataModule")
+    __all__.__add__(("Merra2DownscaleNonGeoDataModule", ))
