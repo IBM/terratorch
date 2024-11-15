@@ -28,7 +28,12 @@ from terratorch.datamodules.multi_temporal_crop_classification import MultiTempo
 from terratorch.datamodules.open_sentinel_map import OpenSentinelMapDataModule
 from terratorch.datamodules.pastis import PASTISDataModule
 
-from terratorch.datamodules.merra2_downscale import Merra2DownscaleNonGeoDataModule 
+try:
+    wxc_present = True
+    from terratorch.datamodules.merra2_downscale import Merra2DownscaleNonGeoDataModule 
+except ImportError as e:
+    print('wxc_downscaling not installed')
+    wxc_present = False
 
 # GenericNonGeoRegressionDataModule,
 from terratorch.datamodules.sen1floods11 import Sen1Floods11NonGeoDataModule
@@ -71,3 +76,6 @@ __all__ = (
     "PASTISDataModule",
     "Sen4AgriNetDataModule"
 )
+
+if wxc_present:
+    __all__.__add__(("Merra2DownscaleNonGeoDataModule", ))
