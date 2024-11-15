@@ -19,4 +19,4 @@ __all__ = (
 )
 
 if wxc_present:
-    __all__.__add__("WxCDownscalingTask")
+    __all__.__add__(("WxCDownscalingTask", ))
