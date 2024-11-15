@@ -11,8 +11,6 @@ from timm.models._registry import generate_default_cfgs, register_model
 
 from terratorch.models.backbones.clay_v1.modules import EmbeddingEncoder, Datacuber
 
-warnings.filterwarnings("ignore", category=UserWarning)
-
 
 default_cfgs = generate_default_cfgs(
     {
