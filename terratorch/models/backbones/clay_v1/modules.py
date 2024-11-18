@@ -77,11 +77,15 @@ class Transformer(nn.Module):
                 FeedForward(dim, mlp_dim)
             ]))
 
-    def forward(self, x):
+    def forward(self, x) -> list[torch.Tensor]:
+        out = []
         for attn, ff in self.layers:
             x = attn(x) + x
             x = ff(x) + x
-        return self.norm(x)
+            out.append(x.clone())
+        x = self.norm(x)
+        out[-1] = x.clone()
+        return out
 
 
 class Encoder(nn.Module):
@@ -365,12 +369,12 @@ class EmbeddingEncoder(Encoder):
         patches = torch.cat((cls_tokens, patches), dim=1)  # [B (1 + L) D]
 
         # pass the patches through the transformer
-        patches = self.transformer(patches)  # [B (1 + L) D]
+        patches = self.transformer(patches)  # list of [B (1 + L) D]
 
         # # remove the cls token
         # embeddings = patches[:, 1: , :]  # [B L D]
 
-        return patches  # [B (1 + L) D]
+        return patches  # list [B (1 + L) D]
 
 
 class FCBlock(nn.Module):

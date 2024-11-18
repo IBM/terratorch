@@ -23,19 +23,23 @@ default_cfgs = generate_default_cfgs(
 
 
 class Embedder(nn.Module):
-    default_out_indices = (0,)  # Single out_indices for simplicity
+    default_out_indices = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
 
-    def __init__(self,
-                 img_size=256,
-                 num_frames=1,
-                 ckpt_path=None,
-                 bands=["blue", "green", "red", "nir", "swir16", "swir22"],
-                 **kwargs):
+    def __init__(
+        self,
+        img_size=256,
+        num_frames=1,
+        ckpt_path=None,
+        bands=["blue", "green", "red", "nir", "swir16", "swir22"],
+        out_indices: tuple[int] = default_out_indices,
+        **kwargs,
+    ):
         super().__init__()
         self.feature_info = []
         self.img_size = img_size
         self.num_frames = num_frames
         self.bands = bands
+        self.out_indices = out_indices
 
         if kwargs.get("datacuber", True) is not None:
             self.datacuber = Datacuber(bands=bands)
@@ -55,8 +59,9 @@ class Embedder(nn.Module):
             )
         )
 
-        # for use in features list. Single layer feature for simplicity
-        self.feature_info.append({"num_chs": 768, "reduction": 1, "module": "clay_encoder"})
+        # for use in features list.
+        for i in range(12):
+            self.feature_info.append({"num_chs": 768, "reduction": 1, "module": f"blocks.{i}"})
 
         # assuming this is used to fine tune a network on top of the embeddings
 
@@ -103,8 +108,7 @@ class Embedder(nn.Module):
             datacube = x
         embeddings = self.clay_encoder(datacube)
 
-        # TODO: actually return features individually
-        return [embeddings]
+        return [embeddings[i] for i in self.out_indices]
 
     def fake_datacube(self):
         "Generate a fake datacube for model export."
