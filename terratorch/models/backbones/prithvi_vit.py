@@ -114,15 +114,29 @@ def _create_prithvi(
     def checkpoint_filter_wrapper_fn(state_dict, model):
         return checkpoint_filter_fn(state_dict, model, pretrained_bands, model_bands)
 
-    model = build_model_with_cfg(
-        TemporalViTEncoder,
-        variant,
-        pretrained,
-        pretrained_filter_fn=checkpoint_filter_wrapper_fn,
-        pretrained_strict=True,
-        encoder_only=encoder_only,
-        **kwargs,
-    )
+    # When the pretrained configuration is not available in HF, we shift to 
+    # pretrained=False
+    try:
+        model = build_model_with_cfg(
+            TemporalViTEncoder,
+            variant,
+            pretrained,
+            pretrained_filter_fn=checkpoint_filter_wrapper_fn,
+            pretrained_strict=True,
+            encoder_only=encoder_only,
+            **kwargs,
+        )
+    except RuntimeError:
+        print(f"No pretrained configuration was found for the model {variant}.")
+        model = build_model_with_cfg(
+            TemporalViTEncoder,
+            variant,
+            False,
+            pretrained_filter_fn=checkpoint_filter_wrapper_fn,
+            pretrained_strict=True,
+            encoder_only=encoder_only,
+            **kwargs,
+        )
 
     if encoder_only:
         default_out_indices = list(range(len(model.blocks)))

@@ -8,6 +8,7 @@ import torch
 from terratorch.models import PrithviModelFactory
 from terratorch.models.backbones.prithvi_vit import PRETRAINED_BANDS
 from terratorch.models.model import AuxiliaryHead
+import gc 
 
 NUM_CHANNELS = 6
 NUM_CLASSES = 2
@@ -62,6 +63,7 @@ def test_create_classification_model_no_in_channels(backbone, model_factory: Pri
     with torch.no_grad():
         assert model(model_input).output.shape == EXPECTED_CLASSIFICATION_OUTPUT_SHAPE
 
+    gc.collect()
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
@@ -88,6 +90,7 @@ def test_create_pixelwise_model(backbone, task, expected, decoder, model_factory
     with torch.no_grad():
         assert model(model_input).output.shape == expected
 
+    gc.collect()
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
@@ -115,6 +118,7 @@ def test_create_pixelwise_model_no_in_channels(
     with torch.no_grad():
         assert model(model_input).output.shape == expected
 
+    gc.collect()
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
@@ -150,6 +154,7 @@ def test_create_pixelwise_model_with_aux_heads(
         for _, output in model_output.auxiliary_heads.items():
             assert output.shape == expected
 
+    gc.collect()
 
 @pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
@@ -174,3 +179,5 @@ def test_create_pixelwise_model_with_extra_bands(backbone, task, expected, decod
     model_input = torch.ones((1, NUM_CHANNELS + 1, 224, 224))
     with torch.no_grad():
         assert model(model_input).output.shape == expected
+
+    gc.collect()
