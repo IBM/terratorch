@@ -8,15 +8,12 @@ import logging
 from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any, Iterator
-
 import albumentations as A
-import kornia.augmentation as K
 import numpy as np
 import torch
 from torch import Tensor
 from torch.utils.data import DataLoader, RandomSampler, BatchSampler, SequentialSampler, default_collate
 from torchgeo.datamodules import NonGeoDataModule
-from torchgeo.transforms import AugmentationSequential
 
 from terratorch.datasets import (GenericMultimodalDataset, GenericMultimodalSegmentationDataset,
                                  GenericMultimodalPixelwiseRegressionDataset, GenericMultimodalScalarDataset, HLSBands)
@@ -155,44 +152,45 @@ class GenericMultiModalDataModule(NonGeoDataModule):
     def __init__(
         self,
         batch_size: int,
-        num_workers: int,
         modalities: list[str],
-        train_data_root: dict,
-        val_data_root: dict,
-        test_data_root: dict,
-        means: dict,
-        stds: dict,
+        train_data_root: dict[Path],
+        val_data_root: dict[Path],
+        test_data_root: dict[Path],
+        means: dict[list],
+        stds: dict[list],
         task: str | None = None,
         num_classes: int | None = None,
-        img_grep: str | dict | None = None,
+        image_grep: str | dict | None = None,
         label_grep: str | None = None,
         train_label_data_root: Path | None = None,
         val_label_data_root: Path | None = None,
         test_label_data_root: Path | None = None,
-        predict_data_root: Path | None = None,
+        predict_data_root: dict[Path] | None = None,
         train_split: Path | None = None,
         val_split: Path | None = None,
         test_split: Path | None = None,
-        dataset_bands: dict | None = None,
-        output_bands: dict | None = None,
-        predict_dataset_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
-        predict_output_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
+        dataset_bands: dict[list] | None = None,
+        output_bands: dict[list] | None = None,
+        predict_dataset_bands: dict[list] | None = None,
+        predict_output_bands: dict[list] | None = None,
         image_modalities: list[str] | None = None,
         rgb_modality: str | None = None,
         rgb_indices: list[int] | None = None,
-        allow_substring_split_file: bool = False,
+        allow_substring_file_names: bool = False,
+        class_names: list[str] | None = None,
         constant_scale: dict[float] = None,
         train_transform: dict | A.Compose | None | list[A.BasicTransform] = None,
         val_transform: dict | A.Compose | None | list[A.BasicTransform] = None,
         test_transform: dict | A.Compose | None | list[A.BasicTransform] = None,
         shared_transforms: list | bool = True,
         expand_temporal_dimension: bool = False,
-        reduce_zero_label: bool = False,
         no_data_replace: float | None = None,
-        no_label_replace: int | None = None,
+        no_label_replace: float | None = -1,
+        reduce_zero_label: bool = False,
         drop_last: bool = True,
+        num_workers: int = 0,
         pin_memory: bool = False,
-        chunk_data: bool = False,
+        data_with_sample_dim: bool = False,
         sample_num_modalities: int | None = None,
         sample_replace: bool = False,
         channel_position: int = -3,
@@ -202,59 +200,105 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         """Constructor
 
         Args:
-            # TODO: Update docs
-            batch_size (int): _description_
-            num_workers (int): _description_
-            train_data_root (Path): _description_
-            val_data_root (Path): _description_
-            test_data_root (Path): _description_
-            predict_data_root (Path): _description_
-            img_grep (str): _description_
-            label_grep (str): _description_
-            means (list[float]): _description_
-            stds (list[float]): _description_
-            num_classes (int): _description_
-            train_label_data_root (Path | None, optional): _description_. Defaults to None.
-            val_label_data_root (Path | None, optional): _description_. Defaults to None.
-            test_label_data_root (Path | None, optional): _description_. Defaults to None.
-            train_split (Path | None, optional): _description_. Defaults to None.
-            val_split (Path | None, optional): _description_. Defaults to None.
-            test_split (Path | None, optional): _description_. Defaults to None.
-            dataset_bands (list[HLSBands | int] | None): Bands present in the dataset. Defaults to None.
-            output_bands (list[HLSBands | int] | None): Bands that should be output by the dataset.
-                Naming must match that of dataset_bands. Defaults to None.
-            predict_dataset_bands (list[HLSBands | int] | None): Overwrites dataset_bands
-                with this value at predict time.
+            batch_size (int): Number of samples in per batch.
+            modalities (list[str]): List of modalities.
+            train_data_root (dict[Path]): Dictionary of paths to training data root directory or csv/parquet files with 
+                image-level data, with modalities as keys.
+            val_data_root (dict[Path]): Dictionary of paths to validation data root directory or csv/parquet files with 
+                image-level data, with modalities as keys.
+            test_data_root (dict[Path]): Dictionary of paths to test data root directory or csv/parquet files with 
+                image-level data, with modalities as keys.
+            means (dict[list]): Dictionary of mean values as lists with modalities as keys.
+            stds (dict[list]): Dictionary of std values as lists with modalities as keys.
+            task (str, optional): Selected task form segmentation, regression (pixel-wise), classification,
+                multilabel_classification, scalar_regression, scalar (custom image-level task), or None (no targets).
+                Defaults to None.
+            num_classes (int, optional): Number of classes in classification or segmentation tasks.
+            predict_data_root (dict[Path], optional): Dictionary of paths to data root directory or csv/parquet files
+                with image-level data, with modalities as keys.
+            image_grep (dict[str], optional): Dictionary with regular expression appended to data_root to find input
+                images, with modalities as keys. Defaults to "*". Ignored when allow_substring_file_names is False.
+            label_grep (str, optional): Regular expression appended to label_data_root to find labels or mask files.
+                Defaults to "*". Ignored when allow_substring_file_names is False.
+            train_label_data_root (Path | None, optional): Path to data root directory with training labels or
+                csv/parquet files with labels. Required for supervised tasks.
+            val_label_data_root (Path | None, optional): Path to data root directory with validation labels or
+                csv/parquet files with labels. Required for supervised tasks.
+            test_label_data_root (Path | None, optional): Path to data root directory with test labels or
+                csv/parquet files with labels. Required for supervised tasks.
+            train_split (Path, optional): Path to file containing training samples prefixes to be used for this split.
+                The file can be a csv/parquet file with the prefixes in the index or a txt file with new-line separated
+                sample prefixes. File names must be exact matches if allow_substring_file_names is False. Otherwise,
+                files are searched using glob with the form Path(data_root).glob(prefix + [image or label grep]).
+                If not specified, search samples based on files in data_root. Defaults to None.
+            val_split (Path, optional): Path to file containing validation samples prefixes to be used for this split.
+                The file can be a csv/parquet file with the prefixes in the index or a txt file with new-line separated
+                sample prefixes. File names must be exact matches if allow_substring_file_names is False. Otherwise,
+                files are searched using glob with the form Path(data_root).glob(prefix + [image or label grep]).
+                If not specified, search samples based on files in data_root. Defaults to None.
+            test_split (Path, optional): Path to file containing test samples prefixes to be used for this split.
+                The file can be a csv/parquet file with the prefixes in the index or a txt file with new-line separated
+                sample prefixes. File names must be exact matches if allow_substring_file_names is False. Otherwise,
+                files are searched using glob with the form Path(data_root).glob(prefix + [image or label grep]).
+                If not specified, search samples based on files in data_root. Defaults to None.
+            dataset_bands (dict[list], optional): Bands present in the dataset, provided in a dictionary with modalities
+                as keys. This parameter names input channels (bands) using HLSBands, ints, int ranges, or strings, so
+                that they can then be referred to by output_bands. Needs to be superset of output_bands. Can be a subset
+                of all modalities. Defaults to None.
+            output_bands (dict[list], optional): Bands that should be output by the dataset as named by dataset_bands,
+                provided as a dictionary with modality keys. Can be subset of all modalities. Defaults to None.
+            predict_dataset_bands (list[dict], optional): Overwrites dataset_bands with this value at predict time.
                 Defaults to None, which does not overwrite.
-            predict_output_bands (list[HLSBands | int] | None): Overwrites output_bands
-                with this value at predict time. Defaults to None, which does not overwrite.
-            constant_scale (float, optional): _description_. Defaults to 1.
+            predict_output_bands (list[dict], optional): Overwrites output_bands with this value at predict time.
+                Defaults to None, which does not overwrite.
+            image_modalities(list[str], optional): List of pixel-level raster modalities. Defaults to data_root.keys().
+                The difference between all modalities and image_modalities are non-image modalities which are treated
+                differently during the transforms and are not modified but only converted into a tensor if possible.
+            rgb_modality (str, optional): Modality used for RGB plots. Defaults to first modality in data_root.keys().
             rgb_indices (list[int] | None, optional): _description_. Defaults to None.
-            train_transform (Albumentations.Compose | None): Albumentations transform
-                to be applied to the train dataset.
-                Should end with ToTensorV2(). If used through the generic_data_module,
-                should not include normalization. Not supported for multi-temporal data.
+            allow_substring_file_names
+            class_names (list[str], optional): Names of the classes. Defaults to None.
+            constant_scale (dict[float]): Factor to multiply data values by, provided as a dictionary with modalities as
+                keys. Can be subset of all modalities. Defaults to None.
+            train_transform (Albumentations.Compose | dict | None): Albumentations transform to be applied to all image
+                modalities. Should end with ToTensorV2() and not include normalization. The transform is not applied to 
+                non-image data, which is only converted to tensors if possible. If dict, can include separate transforms 
+                per modality (no shared parameters between modalities). 
                 Defaults to None, which simply applies ToTensorV2().
-            val_transform (Albumentations.Compose | None): Albumentations transform
-                to be applied to the train dataset.
-                Should end with ToTensorV2(). If used through the generic_data_module,
-                should not include normalization. Not supported for multi-temporal data.
+            val_transform (Albumentations.Compose | dict | None): Albumentations transform to be applied to all image
+                modalities. Should end with ToTensorV2() and not include normalization. The transform is not applied to 
+                non-image data, which is only converted to tensors if possible. If dict, can include separate transforms 
+                per modality (no shared parameters between modalities). 
                 Defaults to None, which simply applies ToTensorV2().
-            test_transform (Albumentations.Compose | None): Albumentations transform
-                to be applied to the train dataset.
-                Should end with ToTensorV2(). If used through the generic_data_module,
-                should not include normalization. Not supported for multi-temporal data.
+            test_transform (Albumentations.Compose | dict | None): Albumentations transform to be applied to all image
+                modalities. Should end with ToTensorV2() and not include normalization. The transform is not applied to 
+                non-image data, which is only converted to tensors if possible. If dict, can include separate transforms 
+                per modality (no shared parameters between modalities). 
                 Defaults to None, which simply applies ToTensorV2().
-            no_data_replace (float | None): Replace nan values in input images with this value. If none, does no replacement. Defaults to None.
-            no_label_replace (int | None): Replace nan values in label with this value. If none, does no replacement. Defaults to None.
+            shared_transforms (bool): transforms are shared between all image modalities (e.g., similar crop). 
+                This setting is ignored if transforms are defined per modality. Defaults to True.  
             expand_temporal_dimension (bool): Go from shape (time*channels, h, w) to (channels, time, h, w).
+                Only works with image modalities. Is only applied to modalities with defined dataset_bands.
                 Defaults to False.
+            no_data_replace (float | None): Replace nan values in input images with this value. If none, does no 
+                replacement. Defaults to None.
+            no_label_replace (int | None): Replace nan values in label with this value. If none, does no replacement. 
+                Defaults to None.
             reduce_zero_label (bool): Subtract 1 from all labels. Useful when labels start from 1 instead of the
                 expected 0. Defaults to False.
             drop_last (bool): Drop the last batch if it is not complete. Defaults to True.
-            pin_memory (bool): If ``True``, the data loader will copy Tensors
-            into device/CUDA pinned memory before returning them. Defaults to False.
-
+            num_workers (int): Number of parallel workers. Defaults to 0 for single threaded process.
+            pin_memory (bool): If ``True``, the data loader will copy Tensors into device/CUDA pinned memory before 
+                returning them. Defaults to False.
+            data_with_sample_dim (bool): Use a specific collate function to concatenate samples along a existing sample
+                dimension instead of stacking the samples. Defaults to False.
+            sample_num_modalities (int, optional): Load only a subset of modalities per batch. Defaults to None.
+            sample_replace (bool): If sample_num_modalities is set, sample modalities with replacement.
+                Defaults to False.
+            channel_position (int): Position of the channel dimension in the image modalities. Defaults to -3.
+            concat_bands (bool): Concatenate all image modalities along the band dimension into a single "image", so
+                that it can be processed by single-modal models. Concatenate in the order of provided modalities.
+                Works with image modalities only. Does not work with allow_missing_modalities. Defaults to False.
         """
         if task == "segmentation":
             dataset_class = GenericMultimodalSegmentationDataset
@@ -270,15 +314,16 @@ class GenericMultiModalDataModule(NonGeoDataModule):
 
         super().__init__(dataset_class, batch_size, num_workers, **kwargs)
         self.num_classes = num_classes
+        self.class_names = class_names
         self.modalities = modalities
         self.image_modalities = image_modalities or modalities
         self.non_image_modalities = list(set(self.modalities) - set(self.image_modalities))
         if task == "scalar":
             self.non_image_modalities += ["label"]
-        if isinstance(img_grep, dict):
-            self.img_grep = {m: img_grep[m] if m in img_grep else "*" for m in modalities}
+        if isinstance(image_grep, dict):
+            self.image_grep = {m: image_grep[m] if m in image_grep else "*" for m in modalities}
         else:
-            self.img_grep = {m: img_grep or "*" for m in modalities}
+            self.image_grep = {m: image_grep or "*" for m in modalities}
         self.label_grep = label_grep or "*"
         self.train_root = train_data_root
         self.val_root = val_data_root
@@ -290,7 +335,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.train_split = train_split
         self.val_split = val_split
         self.test_split = test_split
-        self.allow_substring_split_file = allow_substring_split_file
+        self.allow_substring_file_names = allow_substring_file_names
         self.constant_scale = constant_scale
         self.no_data_replace = no_data_replace
         self.no_label_replace = no_label_replace
@@ -358,9 +403,9 @@ class GenericMultiModalDataModule(NonGeoDataModule):
 
             self.aug = MultimodalNormalize(means, stds)
 
-        self.chunk_data = chunk_data
+        self.data_with_sample_dim = data_with_sample_dim
 
-        self.collate_fn = collate_chunk_dicts if chunk_data else collate_samples
+        self.collate_fn = collate_chunk_dicts if data_with_sample_dim else collate_samples
 
 
     def setup(self, stage: str) -> None:
@@ -368,11 +413,11 @@ class GenericMultiModalDataModule(NonGeoDataModule):
             self.train_dataset = self.dataset_class(
                 data_root=self.train_root,
                 num_classes=self.num_classes,
-                image_grep=self.img_grep,
+                image_grep=self.image_grep,
                 label_grep=self.label_grep,
                 label_data_root=self.train_label_data_root,
                 split=self.train_split,
-                allow_substring_split_file=self.allow_substring_split_file,
+                allow_substring_file_names=self.allow_substring_file_names,
                 dataset_bands=self.dataset_bands,
                 output_bands=self.output_bands,
                 constant_scale=self.constant_scale,
@@ -392,11 +437,11 @@ class GenericMultiModalDataModule(NonGeoDataModule):
             self.val_dataset = self.dataset_class(
                 data_root=self.val_root,
                 num_classes=self.num_classes,
-                image_grep=self.img_grep,
+                image_grep=self.image_grep,
                 label_grep=self.label_grep,
                 label_data_root=self.val_label_data_root,
                 split=self.val_split,
-                allow_substring_split_file=self.allow_substring_split_file,
+                allow_substring_file_names=self.allow_substring_file_names,
                 dataset_bands=self.dataset_bands,
                 output_bands=self.output_bands,
                 constant_scale=self.constant_scale,
@@ -416,11 +461,11 @@ class GenericMultiModalDataModule(NonGeoDataModule):
             self.test_dataset = self.dataset_class(
                 data_root=self.test_root,
                 num_classes=self.num_classes,
-                image_grep=self.img_grep,
+                image_grep=self.image_grep,
                 label_grep=self.label_grep,
                 label_data_root=self.test_label_data_root,
                 split=self.test_split,
-                allow_substring_split_file=self.allow_substring_split_file,
+                allow_substring_file_names=self.allow_substring_file_names,
                 dataset_bands=self.dataset_bands,
                 output_bands=self.output_bands,
                 constant_scale=self.constant_scale,
@@ -440,7 +485,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
             self.predict_dataset = self.dataset_class(
                 data_root=self.predict_root,
                 num_classes=self.num_classes,
-                allow_substring_split_file=self.allow_substring_split_file,
+                allow_substring_file_names=self.allow_substring_file_names,
                 dataset_bands=self.predict_dataset_bands,
                 output_bands=self.predict_output_bands,
                 constant_scale=self.constant_scale,

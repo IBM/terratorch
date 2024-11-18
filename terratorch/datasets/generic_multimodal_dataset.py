@@ -68,23 +68,23 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         self,
         data_root: dict[Path],
         label_data_root: Path | list[Path] | None = None,
-        image_grep: str | None = "*",
+        image_grep: dict[str] | None = "*",
         label_grep: str | None = "*",
         split: Path | None = None,
         image_modalities: list[str] | None = None,
         rgb_modality: str | None = None,
         rgb_indices: list[int] | None = None,
-        allow_missing_modalities: bool = False,  # TODO: Not implemented on a data module level yet.
-        allow_substring_split_file: bool = False,
-        dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
-        output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        allow_missing_modalities: bool = False,
+        allow_substring_file_names: bool = False,
+        dataset_bands: dict[list] | None = None,
+        output_bands: dict[list] | None = None,
         constant_scale: dict[float] = None,
         transform: A.Compose | dict | None = None,
         no_data_replace: float | None = None,
-        no_label_replace: int | None = None,
+        no_label_replace: float | None = -1,
         expand_temporal_dimension: bool = False,
         reduce_zero_label: bool = False,
-        channel_position: int = -1,
+        channel_position: int = -3,  # TODO Check pissiont zarr data
         scalar_label: bool = False,
         concat_bands: bool = False,
         *args, **kwargs,
@@ -92,30 +92,59 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         """Constructor
 
         Args:
-            data_root (Path): Path to data root directory
-            label_data_root (Path, optional): Path to data root directory with labels.
-                If not specified, will use the same as for images.
-            image_grep (str, optional): Regular expression appended to data_root to find input images.
-                Defaults to "*".
-            label_grep (str, optional): Regular expression appended to data_root to find ground truth masks.
-                Defaults to "*".
-            split (Path, optional): Path to file containing files to be used for this split.
-                The file should be a new-line separated prefixes contained in the desired files.
-                Files will be seached using glob with the form Path(data_root).glob(prefix + [image or label grep])
+            data_root (dict[Path]): Dictionary of paths to data root directory or csv/parquet files with image-level
+                data, with modalities as keys.
+            label_data_root (Path, optional): Path to data root directory with labels or csv/parquet files with
+                image-level labels. Needs to be specified for supervised tasks.
+            image_grep (dict[str], optional): Dictionary with regular expression appended to data_root to find input
+                images, with modalities as keys. Defaults to "*". Ignored when allow_substring_file_names is False.
+            label_grep (str, optional): Regular expression appended to label_data_root to find labels or mask files.
+                Defaults to "*". Ignored when allow_substring_file_names is False.
+            split (Path, optional): Path to file containing samples prefixes to be used for this split.
+                The file can be a csv/parquet file with the prefixes in the index or a txt file with new-line separated
+                sample prefixes. File names must be exact matches if allow_substring_file_names is False. Otherwise,
+                files are searched using glob with the form Path(data_root).glob(prefix + [image or label grep]).
+                If not specified, search samples based on files in data_root. Defaults to None.
+            image_modalities(list[str], optional): List of pixel-level raster modalities. Defaults to data_root.keys().
+                The difference between all modalities and image_modalities are non-image modalities which are treated
+                differently during the transforms and are not modified but only converted into a tensor if possible.
+            rgb_modality (str, optional): Modality used for RGB plots. Defaults to first modality in data_root.keys().
             rgb_indices (list[str], optional): Indices of RGB channels. Defaults to [0, 1, 2].
-            dataset_bands (list[HLSBands | int | tuple[int, int] | str] | None): Bands present in the dataset. This parameter names input channels (bands) using HLSBands, ints, int ranges, or strings, so that they can then be refered to by output_bands. Defaults to None.
-            output_bands (list[HLSBands | int | tuple[int, int] | str] | None): Bands that should be output by the dataset as named by dataset_bands.
-            constant_scale (float): Factor to multiply image values by. Defaults to 1.
-            transform (Albumentations.Compose | None): Albumentations transform to be applied.
-                Should end with ToTensorV2(). If used through the generic_data_module,
-                should not include normalization. Not supported for multi-temporal data.
+            allow_missing_modalities (bool, optional): Allow missing modalities during data loading. Defaults to False.
+                TODO: Currently not implemented on a data module level!
+            allow_substring_file_names (bool, optional): Allow substrings during sample identification by adding
+                image or label grep to the sample prefixes. If False, treats sample prefixes as full file names.
+                If True and no split file is provided, considers the file stem as prefix, otherwise the full file name.
+                Defaults to True.
+            dataset_bands (dict[list], optional): Bands present in the dataset, provided in a dictionary with modalities
+                as keys. This parameter names input channels (bands) using HLSBands, ints, int ranges, or strings, so
+                that they can then be referred to by output_bands. Needs to be superset of output_bands. Can be a subset
+                of all modalities. Defaults to None.
+            output_bands (dict[list], optional): Bands that should be output by the dataset as named by dataset_bands,
+                provided as a dictionary with modality keys. Can be subset of all modalities. Defaults to None.
+            constant_scale (dict[float]): Factor to multiply data values by, provided as a dictionary with modalities as
+                keys. Can be subset of all modalities. Defaults to None.
+            transform (Albumentations.Compose | dict | None): Albumentations transform to be applied to all image
+                modalities (transformation are shared between image modalities, e.g., similar crop or rotation).
+                Should end with ToTensorV2(). If used through the generic_data_module, should not include normalization.
+                Not supported for multi-temporal data. The transform is not applied to non-image data, which is only
+                converted to tensors if possible. If dict, can include multiple transforms per modality which are
+                applied separately (no shared parameters between modalities).
                 Defaults to None, which simply applies ToTensorV2().
-            no_data_replace (float | None): Replace nan values in input images with this value. If none, does no replacement. Defaults to None.
-            no_label_replace (int | None): Replace nan values in label with this value. If none, does no replacement. Defaults to -1.
+            no_data_replace (float | None): Replace nan values in input data with this value.
+                If None, does no replacement. Defaults to None.
+            no_label_replace (float | None): Replace nan values in label with this value.
+                If none, does no replacement. Defaults to -1.
             expand_temporal_dimension (bool): Go from shape (time*channels, h, w) to (channels, time, h, w).
+                Only works with image modalities. Is only applied to modalities with defined dataset_bands.
                 Defaults to False.
             reduce_zero_label (bool): Subtract 1 from all labels. Useful when labels start from 1 instead of the
                 expected 0. Defaults to False.
+            channel_position (int): Position of the channel dimension in the image modalities. Defaults to -3.
+            scalar_label (bool): Returns a image mask if False or otherwise the raw labels. Defaults to False.
+            concat_bands (bool): Concatenate all image modalities along the band dimension into a single "image", so
+                that it can be processed by single-modal models. Concatenate in the order of provided modalities.
+                Works with image modalities only. Does not work with allow_missing_modalities. Defaults to False.
         """
         super().__init__()
 
@@ -149,8 +178,8 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         assert not self.concat_bands or not allow_missing_modalities, \
             "concat_bands cannot be used with allow_missing_modalities."
 
-        if self.expand_temporal_dimension and len(dataset_bands) != self.modalities:
-            msg = "Please provide dataset_bands for each modality when expand_temporal_dimension is True"
+        if self.expand_temporal_dimension and dataset_bands is None:
+            msg = "Please provide dataset_bands fwhen expand_temporal_dimension is True"
             raise Exception(msg)
 
         # Load samples based on split file
@@ -172,7 +201,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                 dir_lists = [glob.glob(os.path.join(r, label_grep)) for r in label_data_root]
                 image_files["mask"] = sorted([p for l in dir_lists for p in l])  # Concatenate
 
-            if allow_substring_split_file:
+            if allow_substring_file_names:
                 # Get exact match of filenames
                 get_file_id = lambda s: os.path.basename(s)
             else:
@@ -230,7 +259,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
                 # Iterate over all directories of the current modality
                 for m_path in m_paths:
-                    if allow_substring_split_file:
+                    if allow_substring_file_names:
                         # Substring match with image_grep
                         m_files = glob.glob(os.path.join(m_path, file + image_grep[m]))
                         if m_files:
@@ -249,7 +278,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                     sample["mask"] = label_data_root.loc[file].values
                 else:
                     for l_dir in label_data_root:
-                        if allow_substring_split_file:
+                        if allow_substring_file_names:
                             # Substring match with label_grep
                             l_files = glob.glob(os.path.join(l_dir, file + label_grep))
                             if l_files:
@@ -412,49 +441,76 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
         rgb_modality: str | None = None,
         rgb_indices: list[str] | None = None,
         allow_missing_modalities: bool = False,
-        allow_substring_split_file: bool = False,
-        dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
-        output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        allow_substring_file_names: bool = False,
+        dataset_bands: dict[list] | None = None,
+        output_bands: dict[list] | None = None,
         class_names: list[str] | None = None,
-        constant_scale: float = 1,
+        constant_scale: dict[float] = 1.,
         transform: A.Compose | None = None,
         no_data_replace: float | None = None,
-        no_label_replace: int | None = None,
+        no_label_replace: int | None = -1,
         expand_temporal_dimension: bool = False,
         reduce_zero_label: bool = False,
         channel_position: int = -3,
+        concat_bands: bool = False,
         *args, **kwargs,
     ) -> None:
         """Constructor
 
         Args:
-            TODO: Update docs
-            data_root (Path): Path to data root directory
-            num_classes (int): Number of classes in the dataset
-            label_data_root (Path, optional): Path to data root directory with labels.
-                If not specified, will use the same as for images.
-            image_grep (str, optional): Regular expression appended to data_root to find input images.
-                Defaults to "*".
-            label_grep (str, optional): Regular expression appended to data_root to find ground truth masks.
-                Defaults to "*".
-            split (Path, optional): Path to file containing files to be used for this split.
-                The file should be a new-line separated prefixes contained in the desired files.
-                Files will be seached using glob with the form Path(data_root).glob(prefix + [image or label grep])
+            data_root (dict[Path]): Dictionary of paths to data root directory or csv/parquet files with image-level
+                data, with modalities as keys.
+            num_classes (int): Number of classes.
+            label_data_root (Path): Path to data root directory with mask files.
+            image_grep (dict[str], optional): Dictionary with regular expression appended to data_root to find input
+                images, with modalities as keys. Defaults to "*". Ignored when allow_substring_file_names is False.
+            label_grep (str, optional): Regular expression appended to label_data_root to find mask files.
+                Defaults to "*". Ignored when allow_substring_file_names is False.
+            split (Path, optional): Path to file containing samples prefixes to be used for this split.
+                The file can be a csv/parquet file with the prefixes in the index or a txt file with new-line separated
+                sample prefixes. File names must be exact matches if allow_substring_file_names is False. Otherwise,
+                files are searched using glob with the form Path(data_root).glob(prefix + [image or label grep]).
+                If not specified, search samples based on files in data_root. Defaults to None.
+            image_modalities(list[str], optional): List of pixel-level raster modalities. Defaults to data_root.keys().
+                The difference between all modalities and image_modalities are non-image modalities which are treated
+                differently during the transforms and are not modified but only converted into a tensor if possible.
+            rgb_modality (str, optional): Modality used for RGB plots. Defaults to first modality in data_root.keys().
             rgb_indices (list[str], optional): Indices of RGB channels. Defaults to [0, 1, 2].
-            dataset_bands (list[HLSBands | int] | None): Bands present in the dataset.
-            output_bands (list[HLSBands | int] | None): Bands that should be output by the dataset.
-            class_names (list[str], optional): Class names. Defaults to None.
-            constant_scale (float): Factor to multiply image values by. Defaults to 1.
-            transform (Albumentations.Compose | None): Albumentations transform to be applied.
-                Should end with ToTensorV2(). If used through the generic_data_module,
-                should not include normalization. Not supported for multi-temporal data.
+            allow_missing_modalities (bool, optional): Allow missing modalities during data loading. Defaults to False.
+                TODO: Currently not implemented on a data module level!
+            allow_substring_file_names (bool, optional): Allow substrings during sample identification by adding
+                image or label grep to the sample prefixes. If False, treats sample prefixes as full file names.
+                If True and no split file is provided, considers the file stem as prefix, otherwise the full file name.
+                Defaults to True.
+            dataset_bands (dict[list], optional): Bands present in the dataset, provided in a dictionary with modalities
+                as keys. This parameter names input channels (bands) using HLSBands, ints, int ranges, or strings, so
+                that they can then be referred to by output_bands. Needs to be superset of output_bands. Can be a subset
+                of all modalities. Defaults to None.
+            output_bands (dict[list], optional): Bands that should be output by the dataset as named by dataset_bands,
+                provided as a dictionary with modality keys. Can be subset of all modalities. Defaults to None.
+            class_names (list[str], optional): Names of the classes. Defaults to None.
+            constant_scale (dict[float]): Factor to multiply data values by, provided as a dictionary with modalities as
+                keys. Can be subset of all modalities. Defaults to None.
+            transform (Albumentations.Compose | dict | None): Albumentations transform to be applied to all image
+                modalities (transformation are shared between image modalities, e.g., similar crop or rotation).
+                Should end with ToTensorV2(). If used through the generic_data_module, should not include normalization.
+                Not supported for multi-temporal data. The transform is not applied to non-image data, which is only
+                converted to tensors if possible. If dict, can include multiple transforms per modality which are
+                applied separately (no shared parameters between modalities).
                 Defaults to None, which simply applies ToTensorV2().
-            no_data_replace (float | None): Replace nan values in input images with this value. If none, does no replacement. Defaults to None.
-            no_label_replace (int | None): Replace nan values in label with this value. If none, does no replacement. Defaults to None.
+            no_data_replace (float | None): Replace nan values in input data with this value.
+                If None, does no replacement. Defaults to None.
+            no_label_replace (float | None): Replace nan values in label with this value.
+                If none, does no replacement. Defaults to -1.
             expand_temporal_dimension (bool): Go from shape (time*channels, h, w) to (channels, time, h, w).
+                Only works with image modalities. Is only applied to modalities with defined dataset_bands.
                 Defaults to False.
             reduce_zero_label (bool): Subtract 1 from all labels. Useful when labels start from 1 instead of the
                 expected 0. Defaults to False.
+            channel_position (int): Position of the channel dimension in the image modalities. Defaults to -3.
+            concat_bands (bool): Concatenate all image modalities along the band dimension into a single "image", so
+                that it can be processed by single-modal models. Concatenate in the order of provided modalities.
+                Works with image modalities only. Does not work with allow_missing_modalities. Defaults to False.
         """
         assert label_data_root is not None, "label_data_root must be specified for segmentation tasks."
 
@@ -468,7 +524,7 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
             rgb_modality=rgb_modality,
             rgb_indices=rgb_indices,
             allow_missing_modalities=allow_missing_modalities,
-            allow_substring_split_file=allow_substring_split_file,
+            allow_substring_file_names=allow_substring_file_names,
             dataset_bands=dataset_bands,
             output_bands=output_bands,
             constant_scale=constant_scale,
@@ -478,6 +534,7 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
             expand_temporal_dimension=expand_temporal_dimension,
             reduce_zero_label=reduce_zero_label,
             channel_position=channel_position,
+            concat_bands=concat_bands,
             *args, **kwargs,
         )
         self.num_classes = num_classes
@@ -581,46 +638,71 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
         rgb_modality: str | None = None,
         rgb_indices: list[int] | None = None,
         allow_missing_modalities : bool = False,
-        allow_substring_split_file: bool = False,
-        dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
-        output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
-        constant_scale: float = 1.,  # TODO: Check types of args
-        transform: A.Compose | None = None,
+        allow_substring_file_names: bool = False,
+        dataset_bands: dict[list] | None = None,
+        output_bands: dict[list] | None = None,
+        constant_scale: dict[float] = 1.,
+        transform: A.Compose | dict | None = None,
         no_data_replace: float | None = None,
-        no_label_replace: int | None = None,
+        no_label_replace: float | None = None,
         expand_temporal_dimension: bool = False,
         reduce_zero_label: bool = False,
         channel_position: int = -3,
+        concat_bands: bool = False,
         *args, **kwargs,
     ) -> None:
         """Constructor
 
         Args:
-            TODO: Update docs
-            data_root (Path): Path to data root directory
-            label_data_root (Path, optional): Path to data root directory with labels.
-                If not specified, will use the same as for images.
-            image_grep (str, optional): Regular expression appended to data_root to find input images.
-                Defaults to "*".
-            label_grep (str, optional): Regular expression appended to data_root to find ground truth masks.
-                Defaults to "*".
-            split (Path, optional): Path to file containing files to be used for this split.
-                The file should be a new-line separated prefixes contained in the desired files.
-                Files will be seached using glob with the form Path(data_root).glob(prefix + [image or label grep])
+            data_root (dict[Path]): Dictionary of paths to data root directory or csv/parquet files with image-level
+                data, with modalities as keys.
+            label_data_root (Path): Path to data root directory with ground truth files.
+            image_grep (dict[str], optional): Dictionary with regular expression appended to data_root to find input
+                images, with modalities as keys. Defaults to "*". Ignored when allow_substring_file_names is False.
+            label_grep (str, optional): Regular expression appended to label_data_root to find ground truth files.
+                Defaults to "*". Ignored when allow_substring_file_names is False.
+            split (Path, optional): Path to file containing samples prefixes to be used for this split.
+                The file can be a csv/parquet file with the prefixes in the index or a txt file with new-line separated
+                sample prefixes. File names must be exact matches if allow_substring_file_names is False. Otherwise,
+                files are searched using glob with the form Path(data_root).glob(prefix + [image or label grep]).
+                If not specified, search samples based on files in data_root. Defaults to None.
+            image_modalities(list[str], optional): List of pixel-level raster modalities. Defaults to data_root.keys().
+                The difference between all modalities and image_modalities are non-image modalities which are treated
+                differently during the transforms and are not modified but only converted into a tensor if possible.
+            rgb_modality (str, optional): Modality used for RGB plots. Defaults to first modality in data_root.keys().
             rgb_indices (list[str], optional): Indices of RGB channels. Defaults to [0, 1, 2].
-            dataset_bands (list[HLSBands | int] | None): Bands present in the dataset.
-            output_bands (list[HLSBands | int] | None): Bands that should be output by the dataset.
-            constant_scale (float): Factor to multiply image values by. Defaults to 1.
-            transform (Albumentations.Compose | None): Albumentations transform to be applied.
-                Should end with ToTensorV2(). If used through the generic_data_module,
-                should not include normalization. Not supported for multi-temporal data.
+            allow_missing_modalities (bool, optional): Allow missing modalities during data loading. Defaults to False.
+                TODO: Currently not implemented on a data module level!
+            allow_substring_file_names (bool, optional): Allow substrings during sample identification by adding
+                image or label grep to the sample prefixes. If False, treats sample prefixes as full file names.
+                If True and no split file is provided, considers the file stem as prefix, otherwise the full file name.
+                Defaults to True.
+            dataset_bands (dict[list], optional): Bands present in the dataset, provided in a dictionary with modalities
+                as keys. This parameter names input channels (bands) using HLSBands, ints, int ranges, or strings, so
+                that they can then be referred to by output_bands. Needs to be superset of output_bands. Can be a subset
+                of all modalities. Defaults to None.
+            output_bands (dict[list], optional): Bands that should be output by the dataset as named by dataset_bands,
+                provided as a dictionary with modality keys. Can be subset of all modalities. Defaults to None.
+            constant_scale (dict[float]): Factor to multiply data values by, provided as a dictionary with modalities as
+                keys. Can be subset of all modalities. Defaults to None.
+            transform (Albumentations.Compose | dict | None): Albumentations transform to be applied to all image
+                modalities. Should end with ToTensorV2() and not include normalization. The transform is not applied to
+                non-image data, which is only converted to tensors if possible. If dict, can include separate transforms
+                per modality (no shared parameters between modalities).
                 Defaults to None, which simply applies ToTensorV2().
-            no_data_replace (float | None): Replace nan values in input images with this value. If none, does no replacement. Defaults to None.
-            no_label_replace (int | None): Replace nan values in label with this value. If none, does no replacement. Defaults to None.
+            no_data_replace (float | None): Replace nan values in input data with this value.
+                If None, does no replacement. Defaults to None.
+            no_label_replace (float | None): Replace nan values in label with this value.
+                If none, does no replacement. Defaults to None.
             expand_temporal_dimension (bool): Go from shape (time*channels, h, w) to (channels, time, h, w).
+                Only works with image modalities. Is only applied to modalities with defined dataset_bands.
                 Defaults to False.
             reduce_zero_label (bool): Subtract 1 from all labels. Useful when labels start from 1 instead of the
                 expected 0. Defaults to False.
+            channel_position (int): Position of the channel dimension in the image modalities. Defaults to -3.
+            concat_bands (bool): Concatenate all image modalities along the band dimension into a single "image", so
+                that it can be processed by single-modal models. Concatenate in the order of provided modalities.
+                Works with image modalities only. Does not work with allow_missing_modalities. Defaults to False.
         """
         assert label_data_root is not None, "label_data_root must be specified for regression tasks."
 
@@ -634,7 +716,7 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
             rgb_modality=rgb_modality,
             rgb_indices=rgb_indices,
             allow_missing_modalities=allow_missing_modalities,
-            allow_substring_split_file=allow_substring_split_file,
+            allow_substring_file_names=allow_substring_file_names,
             dataset_bands=dataset_bands,
             output_bands=output_bands,
             constant_scale=constant_scale,
@@ -644,6 +726,7 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
             expand_temporal_dimension=expand_temporal_dimension,
             reduce_zero_label=reduce_zero_label,
             channel_position=channel_position,
+            concat_bands=concat_bands,
             *args, **kwargs,
         )
 
@@ -725,6 +808,7 @@ class GenericMultimodalScalarDataset(GenericMultimodalDataset):
     def __init__(
         self,
         data_root: Path,
+        num_classes: int,
         label_data_root: Path,
         image_grep: str | None = "*",
         label_grep: str | None = "*",
@@ -733,46 +817,76 @@ class GenericMultimodalScalarDataset(GenericMultimodalDataset):
         rgb_modality: str | None = None,
         rgb_indices: list[int] | None = None,
         allow_missing_modalities : bool = False,
-        allow_substring_split_file: bool = False,
+        allow_substring_file_names: bool = False,
         dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
-        constant_scale: float = 1.,  # TODO: Check types of args
+        class_names: list[str] | None = None,
+        constant_scale: dict[float] = 1.,
         transform: A.Compose | None = None,
         no_data_replace: float | None = None,
         no_label_replace: int | None = None,
         expand_temporal_dimension: bool = False,
         reduce_zero_label: bool = False,
         channel_position: int = -3,
+        concat_bands: bool = False,
         *args, **kwargs,
     ) -> None:
         """Constructor
 
         Args:
-            TODO: Update docs
-            data_root (Path): Path to data root directory
-            label_data_root (Path, optional): Path to data root directory with labels.
-                If not specified, will use the same as for images.
-            image_grep (str, optional): Regular expression appended to data_root to find input images.
-                Defaults to "*".
-            label_grep (str, optional): Regular expression appended to data_root to find ground truth masks.
-                Defaults to "*".
-            split (Path, optional): Path to file containing files to be used for this split.
-                The file should be a new-line separated prefixes contained in the desired files.
-                Files will be seached using glob with the form Path(data_root).glob(prefix + [image or label grep])
+            data_root (dict[Path]): Dictionary of paths to data root directory or csv/parquet files with image-level
+                data, with modalities as keys.
+            num_classes (int): Number of classes.
+            label_data_root (Path): Path to data root directory with labels or csv/parquet files with labels.
+            image_grep (dict[str], optional): Dictionary with regular expression appended to data_root to find input
+                images, with modalities as keys. Defaults to "*". Ignored when allow_substring_file_names is False.
+            label_grep (str, optional): Regular expression appended to label_data_root to find labels files.
+                Defaults to "*". Ignored when allow_substring_file_names is False.
+            split (Path, optional): Path to file containing samples prefixes to be used for this split.
+                The file can be a csv/parquet file with the prefixes in the index or a txt file with new-line separated
+                sample prefixes. File names must be exact matches if allow_substring_file_names is False. Otherwise,
+                files are searched using glob with the form Path(data_root).glob(prefix + [image or label grep]).
+                If not specified, search samples based on files in data_root. Defaults to None.
+            image_modalities(list[str], optional): List of pixel-level raster modalities. Defaults to data_root.keys().
+                The difference between all modalities and image_modalities are non-image modalities which are treated
+                differently during the transforms and are not modified but only converted into a tensor if possible.
+            rgb_modality (str, optional): Modality used for RGB plots. Defaults to first modality in data_root.keys().
             rgb_indices (list[str], optional): Indices of RGB channels. Defaults to [0, 1, 2].
-            dataset_bands (list[HLSBands | int] | None): Bands present in the dataset.
-            output_bands (list[HLSBands | int] | None): Bands that should be output by the dataset.
-            constant_scale (float): Factor to multiply image values by. Defaults to 1.
-            transform (Albumentations.Compose | None): Albumentations transform to be applied.
-                Should end with ToTensorV2(). If used through the generic_data_module,
-                should not include normalization. Not supported for multi-temporal data.
+            allow_missing_modalities (bool, optional): Allow missing modalities during data loading. Defaults to False.
+                TODO: Currently not implemented on a data module level!
+            allow_substring_file_names (bool, optional): Allow substrings during sample identification by adding
+                image or label grep to the sample prefixes. If False, treats sample prefixes as full file names.
+                If True and no split file is provided, considers the file stem as prefix, otherwise the full file name.
+                Defaults to True.
+            dataset_bands (dict[list], optional): Bands present in the dataset, provided in a dictionary with modalities
+                as keys. This parameter names input channels (bands) using HLSBands, ints, int ranges, or strings, so
+                that they can then be referred to by output_bands. Needs to be superset of output_bands. Can be a subset
+                of all modalities. Defaults to None.
+            output_bands (dict[list], optional): Bands that should be output by the dataset as named by dataset_bands,
+                provided as a dictionary with modality keys. Can be subset of all modalities. Defaults to None.
+            class_names (list[str], optional): Names of the classes. Defaults to None.
+            constant_scale (dict[float]): Factor to multiply data values by, provided as a dictionary with modalities as
+                keys. Can be subset of all modalities. Defaults to None.
+            transform (Albumentations.Compose | dict | None): Albumentations transform to be applied to all image
+                modalities (transformation are shared between image modalities, e.g., similar crop or rotation).
+                Should end with ToTensorV2(). If used through the generic_data_module, should not include normalization.
+                Not supported for multi-temporal data. The transform is not applied to non-image data, which is only
+                converted to tensors if possible. If dict, can include multiple transforms per modality which are
+                applied separately (no shared parameters between modalities).
                 Defaults to None, which simply applies ToTensorV2().
-            no_data_replace (float | None): Replace nan values in input images with this value. If none, does no replacement. Defaults to None.
-            no_label_replace (int | None): Replace nan values in label with this value. If none, does no replacement. Defaults to None.
+            no_data_replace (float | None): Replace nan values in input data with this value.
+                If None, does no replacement. Defaults to None.
+            no_label_replace (float | None): Replace nan values in label with this value.
+                If none, does no replacement. Defaults to -1.
             expand_temporal_dimension (bool): Go from shape (time*channels, h, w) to (channels, time, h, w).
+                Only works with image modalities. Is only applied to modalities with defined dataset_bands.
                 Defaults to False.
             reduce_zero_label (bool): Subtract 1 from all labels. Useful when labels start from 1 instead of the
                 expected 0. Defaults to False.
+            channel_position (int): Position of the channel dimension in the image modalities. Defaults to -3.
+            concat_bands (bool): Concatenate all image modalities along the band dimension into a single "image", so
+                that it can be processed by single-modal models. Concatenate in the order of provided modalities.
+                Works with image modalities only. Does not work with allow_missing_modalities. Defaults to False.
         """
         assert label_data_root is not None, "label_data_root must be specified for scalar tasks."
 
@@ -786,7 +900,7 @@ class GenericMultimodalScalarDataset(GenericMultimodalDataset):
             rgb_modality=rgb_modality,
             rgb_indices=rgb_indices,
             allow_missing_modalities=allow_missing_modalities,
-            allow_substring_split_file=allow_substring_split_file,
+            allow_substring_file_names=allow_substring_file_names,
             dataset_bands=dataset_bands,
             output_bands=output_bands,
             constant_scale=constant_scale,
@@ -797,8 +911,13 @@ class GenericMultimodalScalarDataset(GenericMultimodalDataset):
             reduce_zero_label=reduce_zero_label,
             channel_position=channel_position,
             scalar_label=True,
+            concat_bands=concat_bands,
             *args, **kwargs,
         )
+
+        self.num_classes = num_classes
+        self.class_names = class_names
+
 
     def __getitem__(self, index: int) -> dict[str, Any]:
         item = super().__getitem__(index)

@@ -60,7 +60,7 @@ data:
     val_split: data/sen1floods11/splits/splits/flood_handlabeled/dev_valid.txt
     test_split: data/sen1floods11/splits/splits/flood_handlabeled/dev_test.txt
 
-    allow_substring_split_file: True
+    allow_substring_file_names: True
     img_grep:
       S2L2A: "*_S2L2AHand.tif"
       S1: "*_S1Hand.tif"
