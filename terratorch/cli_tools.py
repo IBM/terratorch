@@ -56,7 +56,7 @@ from terratorch.tasks import (
     SemanticSegmentationTask,  # noqa: F401
 )
 
-CUSTOM_MODULES_DIR_NAME = "custom_modules"
+CUSTOM_MODULES_DIR_NAME = os.environ.get("CUSTOM_MODULES_DIR_NAME", "custom_modules")
 
 def flatten(list_of_lists):
     return list(itertools.chain.from_iterable(list_of_lists))
