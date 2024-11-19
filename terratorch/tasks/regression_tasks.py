@@ -115,7 +115,6 @@ class IgnoreIndexMetricWrapper(WrapperMetric):
     def reset(self) -> None:
         self.metric.reset()
 
-
 class PixelwiseRegressionTask(BaseTask):
     """Pixelwise Regression Task that accepts models from a range of sources.
 
@@ -397,3 +396,67 @@ class PixelwiseRegressionTask(BaseTask):
         else:
             y_hat: Tensor = self(x).output
         return y_hat, file_names
+
+class ScalarRegressionTask(PixelwiseRegressionTask):
+
+    def __init__(
+        self,
+        model_args: dict,
+        model_factory: str,
+        loss: str = "mse",
+        aux_heads: list[AuxiliaryHead] | None = None,
+        aux_loss: dict[str, float] | None = None,
+        class_weights: list[float] | None = None,
+        ignore_index: int | None = None,
+        lr: float = 0.001,
+        # the following are optional so CLI doesnt need to pass them
+        optimizer: str | None = None,
+        optimizer_hparams: dict | None = None,
+        scheduler: str | None = None,
+        scheduler_hparams: dict | None = None,
+        #
+        freeze_backbone: bool = False,  # noqa: FBT001, FBT002
+        freeze_decoder: bool = False,  # noqa: FBT001, FBT002
+        plot_on_val: bool | int = 10,
+        tiled_inference_parameters: TiledInferenceParameters | None = None,
+    ) -> None:
+
+    super().__init__(model_args=model_args,
+                     model_factory=model_factory,
+                     loss=loss, 
+                     aux_heads=aux_heads,
+                     aux_loss=aux_loss,
+                     class_weights=class_weights,
+                     ignore_index=ignore_index,
+                     lr=lr,
+                     optimizer=optimizer,
+                     optimizer_hparams=optimizer_hparams,
+                     scheduler=scheduler,
+                     scheduler_hparams=scheduler_hparams,
+                     freeze_backbone=freeze_backbone,
+                     freeze_decoder=freeze_decoder,
+                     plot_on_val=plot_on_val,
+                     tiled_inference_parameters=tiled_inference_parameters,)
+
+    def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
+        """Compute the validation loss and additional metrics.
+
+        Args:
+            batch: The output of your DataLoader.
+            batch_idx: Integer displaying index of this batch.
+            dataloader_idx: Index of the current dataloader.
+        """
+        x = batch["image"]
+        y = batch["mask"]
+        other_keys = batch.keys() - {"image", "mask", "filename"}
+        rest = {k:batch[k] for k in other_keys}
+        model_output: ModelOutput = self(x, **rest)
+        loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
+        self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
+        y_hat = model_output.output
+        self.val_metrics.update(y_hat, y)
+        ##############
+        # Custom plots
+        # ############
+
+
