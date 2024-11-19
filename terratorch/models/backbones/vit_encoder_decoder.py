@@ -249,6 +249,7 @@ class TemporalViTEncoder(nn.Module):
         encoder_only: bool = True,  # noqa: FBT001, FBT002
         coords_encoding: None | list[str] = None,
         coords_scale_learn: bool = False,  # noqa: ARG002, FBT001, FBT002
+        padding: bool | None = False, 
         **kwargs,  # timm parameters that may be passed  # noqa: ARG002
     ):
         """
@@ -288,6 +289,8 @@ class TemporalViTEncoder(nn.Module):
         self.feature_info = []
         self.in_chans = in_chans
         self.num_frames = num_frames
+        self.padding = padding # optional
+        self.pad_images = self._pad_images if self.padding else self._bypass_pad_images
 
         self.embed_dim = embed_dim
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
@@ -374,6 +377,21 @@ class TemporalViTEncoder(nn.Module):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
 
+    def _pad_images(self, imgs: Tensor, patch_size:int=None, padding:str='constant') -> Tensor:
+
+        p = patch_size
+
+        t, h, w = imgs.shape[-3:]
+        h_pad = (h // p) * p - h  # Ensure padding is within bounds
+        w_pad = (w // p) * p - w  # Ensure padding is within bounds
+        #if h_pad > 0 or w_pad > 0:
+        imgs = nn.functional.pad(imgs, (0, w_pad, 0, h_pad), mode=padding)
+        return imgs
+
+    def _bypass_pad_images(self, imgs: Tensor, patch_size:int=None, padding:str='constant') -> Tensor:
+
+        return imgs
+
     def patchify(self, imgs: torch.Tensor) -> torch.Tensor:
         """
         imgs: B, C, T, H, W
@@ -381,6 +399,7 @@ class TemporalViTEncoder(nn.Module):
         """
         p = self.patch_embed.patch_size[0]
         tub = self.patch_embed.tubelet_size
+        imgs = self.pad_images(imgs, patch_size=p)
         x = rearrange(imgs, "b c (t tub) (h p) (w q) -> b (t h w) (tub p q c)", tub=tub, p=p, q=p)
 
         return x
