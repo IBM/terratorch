@@ -421,7 +421,7 @@ class ScalarRegressionTask(PixelwiseRegressionTask):
         tiled_inference_parameters: TiledInferenceParameters | None = None,
     ) -> None:
 
-    super().__init__(model_args=model_args,
+        super().__init__(model_args=model_args,
                      model_factory=model_factory,
                      loss=loss, 
                      aux_heads=aux_heads,
@@ -455,6 +455,7 @@ class ScalarRegressionTask(PixelwiseRegressionTask):
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat = model_output.output
         self.val_metrics.update(y_hat, y)
+
         ##############
         # Custom plots
         # ############
