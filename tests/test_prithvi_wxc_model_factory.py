@@ -20,8 +20,7 @@ def teardown_function():
         pass
 
 
-#@pytest.mark.parametrize("backbone", ["gravitywave", None])
-@pytest.mark.parametrize("backbone", ["gravitywave", None])
+@pytest.mark.parametrize("backbone", ["gravitywave", None, 'prithviwxc'])
 def test_can_create_wxc_models(backbone):
     if backbone == "gravitywave":
         config_data = {
@@ -46,6 +45,10 @@ def test_can_create_wxc_models(backbone):
 
         f = WxCModelFactory()
         f.build_model(backbone, None)
+
+    elif backbone == 'prithviwxc':
+        f = WxCModelFactory()
+        f.build_model(backbone, aux_decoders = None)
 
     else:
         config = get_config('./examples/confs/granite-wxc-merra2-downscale-config.yaml')
