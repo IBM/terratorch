@@ -6,6 +6,8 @@ import torch
 from terratorch.models import SMPModelFactory
 from terratorch.models.backbones.prithvi_vit import PRETRAINED_BANDS
 
+import gc 
+
 NUM_CHANNELS = 6
 NUM_CLASSES = 2
 EXPECTED_SEGMENTATION_OUTPUT_SHAPE = (1, NUM_CLASSES, 224, 224)
@@ -40,6 +42,7 @@ def test_create_segmentation_model(backbone, model, model_factory: SMPModelFacto
     with torch.no_grad():
         assert model(model_input).output.shape == EXPECTED_SEGMENTATION_OUTPUT_SHAPE
 
+    gc.collect()
 
 @pytest.mark.parametrize("backbone", ["timm-regnetx_002"])
 @pytest.mark.parametrize("model", ["Unet", "DeepLabV3"])
@@ -57,6 +60,7 @@ def test_create_segmentation_model_no_in_channels(backbone, model, model_factory
     with torch.no_grad():
         assert model(model_input).output.shape == EXPECTED_SEGMENTATION_OUTPUT_SHAPE
 
+    gc.collect()
 
 @pytest.mark.parametrize("backbone", ["timm-regnetx_002"])
 @pytest.mark.parametrize("model", ["Unet", "DeepLabV3"])
@@ -74,3 +78,5 @@ def test_create_model_with_extra_bands(backbone, model, model_factory: SMPModelF
     model_input = torch.ones((1, NUM_CHANNELS + 1, 224, 224))
     with torch.no_grad():
         assert model(model_input).output.shape == EXPECTED_SEGMENTATION_OUTPUT_SHAPE
+
+    gc.collect()
