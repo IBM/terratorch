@@ -48,7 +48,7 @@ def test_can_create_wxc_models(backbone):
 
     elif backbone == 'prithviwxc':
         f = WxCModelFactory()
-        f.build_model(backbone, aux_decoders = None)
+        f.build_model(backbone, aux_decoders = None, backbone_weights='/dccstor/wfm/shared/pretrained/step_400.pt')
 
     else:
         config = get_config('./examples/confs/granite-wxc-merra2-downscale-config.yaml')
