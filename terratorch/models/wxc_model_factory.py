@@ -106,7 +106,7 @@ class WxCModelFactory(ModelFactory):
                 )
 
                 # Compare the keys in model and saved state_dict
-                model_keys = set(self.model.state_dict().keys())
+                model_keys = set(backbone.state_dict().keys())
                 saved_state_dict_keys = set(state_dict.keys())
 
                 # Find keys that are in the model but not in the saved state_dict
@@ -127,7 +127,7 @@ class WxCModelFactory(ModelFactory):
                     print(f"Keys present in saved state_dict but missing in model: {missing_in_model}")
 
                 # Load the state_dict with strict=False to allow partial loading
-                self.model.load_state_dict(state_dict=state_dict, strict=False)
+                backbone.load_state_dict(state_dict=state_dict, strict=False)
                 print('=>'*10, f"Model loaded from {backbone_weights}...")
                 print("Loaded backbone weights")
             else:
