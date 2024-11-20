@@ -53,7 +53,7 @@ def test_can_create_wxc_models(backbone):
 
     else:
         config = get_config('./examples/confs/granite-wxc-merra2-downscale-config.yaml')
-        config.download_path = '/dccstor/wfm/shared/datasets/training/merra-2_v1/climatology/'
+        config.download_path = '/dccstor/wfm/shared/datasets/training/merra-2_v1/'
 
         config.data.data_path_surface = os.path.join(config.download_path,'merra-2')
         config.data.data_path_vertical = os.path.join(config.download_path, 'merra-2')
