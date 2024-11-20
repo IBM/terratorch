@@ -25,7 +25,6 @@ def test_can_create_wxc_models(backbone):
     if backbone == "gravitywave":
         config_data = {
             "singular_sharded_checkpoint": "./examples/notebooks/magnet-flux-uvtp122-epoch-99-loss-0.1022.pt",
-            /dccstor/wfm/shared/datasets/training/merra-2_v1/climatology
         }
 
         with open("config.yaml", "w") as file:
