@@ -79,10 +79,7 @@ __all__ = (
     "WSFEvolution",
     "HLSL30",
     "HLSS30",
-<<<<<<< HEAD
     "OpticalBands",
     "SARBands",
-=======
     "OpenEarthMapNonGeo"
->>>>>>> main
 )
