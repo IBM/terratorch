@@ -1,12 +1,10 @@
+from collections.abc import Sequence
 from typing import Any
 
 import albumentations as A
-import kornia.augmentation as K  # noqa: N812
-import torch
 from torchgeo.transforms import AugmentationSequential
 
 from terratorch.datamodules.geobench_data_module import GeobenchDataModule
-from terratorch.datamodules.utils import wrap_in_compose_is_list
 from terratorch.datasets import MBigEarthNonGeo
 
 MEANS = {
@@ -46,6 +44,7 @@ class MBigEarthNonGeoDataModule(GeobenchDataModule):
         batch_size: int = 8,
         num_workers: int = 0,
         data_root: str = "./",
+        bands: Sequence[str] | None = None,
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
         val_transform: A.Compose | None | list[A.BasicTransform] = None,
         test_transform: A.Compose | None | list[A.BasicTransform] = None,
@@ -60,6 +59,7 @@ class MBigEarthNonGeoDataModule(GeobenchDataModule):
             batch_size=batch_size,
             num_workers=num_workers,
             data_root=data_root,
+            bands=bands,
             train_transform=train_transform,
             val_transform=val_transform,
             test_transform=test_transform,

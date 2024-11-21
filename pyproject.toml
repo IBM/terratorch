@@ -26,7 +26,7 @@ classifiers = [
 ]
 
 dependencies = [
-  "torch>=2.1.0",
+  "torch>=2.1.0, <=2.5.0",
   "torchvision>=0.16.0",
   "torchgeo>=0.6.0",
   "rioxarray>=0.15.0",
@@ -35,7 +35,7 @@ dependencies = [
   "albucore<=0.0.16",
   "rasterio>=1.3.9",
   "torchmetrics<=1.3.1",
-  "geopandas>=0.14.2",
+  "geopandas>=0.14.4",
   "lightly>=1.4.25",
   "h5py>=3.10.0",
   "mlflow>=2.12.1",
@@ -69,9 +69,9 @@ wxc = [
   "granitewxc @ git+https://github.com/IBM/granite-wxc.git"
 ]
 
-geobench = [
-  "geobench @ git+https://github.com/fmartiescofet/geo-bench.git" # pull from fork until depenedencies for geobench are relaxed
-]
+#geobench = [
+#  "geobench @ git+https://github.com/fmartiescofet/geo-bench.git" # pull from fork until depenedencies for geobench are relaxed
+#]
 
 [project.urls]
 Documentation = "https://github.com/IBM/terratorch#readme"

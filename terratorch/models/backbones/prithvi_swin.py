@@ -15,6 +15,7 @@ from timm.models._registry import generate_default_cfgs, register_model
 from terratorch.datasets.utils import HLSBands
 from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
 from terratorch.models.backbones.swin_encoder_decoder import MMSegSwinTransformer
+from terratorch.datasets.utils import generate_bands_intervals
 
 PRETRAINED_BANDS = [
     HLSBands.BLUE,
@@ -180,20 +181,37 @@ def _create_swin_mmseg_transformer(
     # the current swin model is not multitemporal
     if "num_frames" in kwargs:
         kwargs = {k: v for k, v in kwargs.items() if k != "num_frames"}
+
+    model_bands = generate_bands_intervals(model_bands)
     kwargs["in_chans"] = len(model_bands)
 
     def checkpoint_filter_wrapper_fn(state_dict, model):
         return checkpoint_filter_fn(state_dict, model, pretrained_bands, model_bands)
 
-    model: MMSegSwinTransformer = build_model_with_cfg(
-        MMSegSwinTransformer,
-        variant,
-        pretrained,
-        pretrained_filter_fn=checkpoint_filter_wrapper_fn,
-        pretrained_strict=False,
-        feature_cfg={"flatten_sequential": True, "out_indices": out_indices},
-        **kwargs,
-    )
+    # When the pretrained configuration is not available in HF, we shift to 
+    # pretrained=False
+    try:
+        model: MMSegSwinTransformer = build_model_with_cfg(
+            MMSegSwinTransformer,
+            variant,
+            pretrained,
+            pretrained_filter_fn=checkpoint_filter_wrapper_fn,
+            pretrained_strict=False,
+            feature_cfg={"flatten_sequential": True, "out_indices": out_indices},
+            **kwargs,
+        )
+    except RuntimeError:
+        print(f"No pretrained configuration was found for the model {variant}.")
+        model: MMSegSwinTransformer = build_model_with_cfg(
+            MMSegSwinTransformer,
+            variant,
+            False,
+            pretrained_filter_fn=checkpoint_filter_wrapper_fn,
+            pretrained_strict=False,
+            feature_cfg={"flatten_sequential": True, "out_indices": out_indices},
+            **kwargs,
+        )
+
     model.pretrained_bands = pretrained_bands
     model.model_bands = model_bands
 

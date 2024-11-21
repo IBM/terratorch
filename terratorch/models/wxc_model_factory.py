@@ -1,11 +1,11 @@
 # Copyright contributors to the Terratorch project
-import os
-
 import timm
 import torch
-from granitewxc.utils.config import get_config
-from granitewxc.utils.downscaling_model import get_finetune_model
 from torch import nn
+
+import os
+import typing 
+import logging
 
 import terratorch.models.decoders as decoder_registry
 from terratorch.datasets import HLSBands
@@ -16,6 +16,7 @@ from terratorch.models.model import (
 )
 from terratorch.registry import MODEL_FACTORY_REGISTRY
 
+logger = logging.getLogger(__name__)
 
 class WxCModuleWrapper(Model, nn.Module):
     def __init__(self, module: nn.Module) -> None:
@@ -23,16 +24,21 @@ class WxCModuleWrapper(Model, nn.Module):
         self.module = module
         
     def freeze_encoder(self):
-        raise NotImplementedError("This function is not yet implemented.")
+        logger.info("freeze encoder")
+        for param in self.module.backbone.parameters():
+            param.requires_grad = False
 
     def freeze_decoder(self):
-        raise NotImplementedError("This function is not yet implemented.")
+        logger.info("freeze decoder")
+        for param in self.module.head.parameters():
+            param.requires_grad = False
 
     def forward(self, x) -> ModelOutput:
         mo = self.module.forward(x)
         return ModelOutput(mo)
     
-    def load_state_dict(self, state_dict: os.Mapping[str, torch.Any], strict: bool = True, assign: bool = False):
+    def load_state_dict(self, state_dict: os.Mapping[str, typing.Any], strict: bool = True, assign: bool = False):
+
         return self.module.load_state_dict(state_dict, strict, assign)
 
 
@@ -44,5 +50,23 @@ class WxCModelFactory(ModelFactory):
         aux_decoders,
         **kwargs,
     ) -> Model:
-        module = get_finetune_model(kwargs['model_config'])
-        return WxCModuleWrapper(module)
+        if backbone == 'gravitywave':
+            try:
+                __import__('prithviwxc.gravitywave.inference')
+                from prithviwxc.gravitywave.inference import get_model
+                from prithviwxc.gravitywave.config import get_cfg
+                cfg = get_cfg()
+                return WxCModuleWrapper(get_model(cfg,'uvtp122', cfg.singular_sharded_checkpoint))
+            except ImportError as e:
+                missing_module = e.name if hasattr(e, 'name') else "unknown module"
+                print('prithvi wxc gravitywave not installed, missing module: {missing_module}')
+                return None
+        else:
+            try:
+                __import__('granitewxc.utils.config')
+                from granitewxc.utils.config import get_config
+                from granitewxc.utils.downscaling_model import get_finetune_model
+                module = get_finetune_model(kwargs['model_config'])
+                return WxCModuleWrapper(module)
+            except ImportError:
+                print('granite wxc downscaling not installed')

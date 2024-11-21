@@ -14,7 +14,7 @@ class PASTISDataModule(NonGeoDataModule):
         num_workers: int = 0,
         data_root: str = "./",
         truncate_image: int | None = None,
-        pad_image: int | None = 63,
+        pad_image: int | None = None,
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
         val_transform: A.Compose | None | list[A.BasicTransform] = None,
         test_transform: A.Compose | None | list[A.BasicTransform] = None,

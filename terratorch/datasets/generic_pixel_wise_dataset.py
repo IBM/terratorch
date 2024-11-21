@@ -142,6 +142,7 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         import warnings
 
         import rasterio
+
         warnings.filterwarnings("ignore", category=rasterio.errors.NotGeoreferencedWarning)
 
     def __len__(self) -> int:
@@ -153,7 +154,7 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         if self.expand_temporal_dimension:
             image = rearrange(image, "(channels time) h w -> channels time h w", channels=len(self.output_bands))
         image = np.moveaxis(image, 0, -1)
-
+        
         if self.filter_indices:
             image = image[..., self.filter_indices]
         output = {
@@ -168,7 +169,7 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         if self.transform:
             output = self.transform(**output)
         output["filename"] = self.image_files[index]
-
+        
         return output
 
     def _load_file(self, path, nan_replace: int | float | None = None) -> xr.DataArray:

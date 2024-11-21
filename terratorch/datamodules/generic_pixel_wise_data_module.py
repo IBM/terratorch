@@ -21,6 +21,7 @@ from terratorch.datamodules.utils import wrap_in_compose_is_list
 from terratorch.datasets import GenericNonGeoPixelwiseRegressionDataset, GenericNonGeoSegmentationDataset, HLSBands
 from terratorch.io.file import load_from_file_or_attribute
 
+from .utils import check_dataset_stackability
 
 def wrap_in_compose_is_list(transform_list):
     # set check shapes to false because of the multitemporal case
@@ -307,6 +308,9 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
         """
         dataset = self._valid_attribute(f"{split}_dataset", "dataset")
         batch_size = self._valid_attribute(f"{split}_batch_size", "batch_size")
+
+        batch_size = check_dataset_stackability(dataset, batch_size)
+
         return DataLoader(
             dataset=dataset,
             batch_size=batch_size,
@@ -523,6 +527,7 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         if stage in ["predict"] and self.predict_root:
             self.predict_dataset = self.dataset_class(
                 self.predict_root,
+                image_grep=self.img_grep,
                 dataset_bands=self.predict_dataset_bands,
                 output_bands=self.predict_output_bands,
                 constant_scale=self.constant_scale,
@@ -533,7 +538,7 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
             )
-
+       
     def _dataloader_factory(self, split: str) -> DataLoader[dict[str, Tensor]]:
         """Implement one or more PyTorch DataLoaders.
 
@@ -549,6 +554,9 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         """
         dataset = self._valid_attribute(f"{split}_dataset", "dataset")
         batch_size = self._valid_attribute(f"{split}_batch_size", "batch_size")
+
+        batch_size = check_dataset_stackability(dataset, batch_size)
+
         return DataLoader(
             dataset=dataset,
             batch_size=batch_size,

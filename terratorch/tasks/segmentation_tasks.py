@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Any
 
 import lightning
@@ -34,6 +35,7 @@ class SemanticSegmentationTask(BaseTask):
         - Logs metrics per class
         - Does not have any callbacks by default (TorchGeo tasks do early stopping by default)
         - Allows the setting of optimizers in the constructor
+        - Allows to evaluate on multiple test dataloaders
     """
 
     def __init__(
@@ -57,6 +59,7 @@ class SemanticSegmentationTask(BaseTask):
         plot_on_val: bool | int = 10,
         class_names: list[str] | None = None,
         tiled_inference_parameters: TiledInferenceParameters = None,
+        test_dataloaders_names: list[str] | None = None,
     ) -> None:
         """Constructor
 
@@ -94,6 +97,9 @@ class SemanticSegmentationTask(BaseTask):
                 Defaults to numeric ordering.
             tiled_inference_parameters (TiledInferenceParameters | None, optional): Inference parameters
                 used to determine if inference is done on the whole image or through tiling.
+            test_dataloaders_names (list[str] | None, optional): Names used to differentiate metrics when
+                multiple dataloaders are returned by test_dataloader in the datamodule. Defaults to None,
+                which assumes only one test dataloader is used.
         """
         self.tiled_inference_parameters = tiled_inference_parameters
         self.aux_loss = aux_loss
@@ -101,7 +107,9 @@ class SemanticSegmentationTask(BaseTask):
         self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
         super().__init__()
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
-        self.test_loss_handler = LossHandler(self.test_metrics.prefix)
+        self.test_loss_handler: list[LossHandler] = []
+        for metrics in self.test_metrics:
+            self.test_loss_handler.append(LossHandler(metrics.prefix))
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
         self.monitor = f"{self.val_metrics.prefix}loss"
         self.plot_on_val = int(plot_on_val)
@@ -210,7 +218,12 @@ class SemanticSegmentationTask(BaseTask):
         )
         self.train_metrics = metrics.clone(prefix="train/")
         self.val_metrics = metrics.clone(prefix="val/")
-        self.test_metrics = metrics.clone(prefix="test/")
+        if self.hparams["test_dataloaders_names"] is not None:
+            self.test_metrics = nn.ModuleList(
+                [metrics.clone(prefix=f"test/{dl_name}/") for dl_name in self.hparams["test_dataloaders_names"]]
+            )
+        else:
+            self.test_metrics = nn.ModuleList([metrics.clone(prefix="test/")])
 
     def training_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         """Compute the train loss and additional metrics.
@@ -223,7 +236,8 @@ class SemanticSegmentationTask(BaseTask):
         x = batch["image"]
         y = batch["mask"]
         other_keys = batch.keys() - {"image", "mask", "filename"}
-        rest = {k:batch[k] for k in other_keys}
+
+        rest = {k: batch[k] for k in other_keys}
 
         model_output: ModelOutput = self(x, **rest)
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
@@ -262,7 +276,9 @@ class SemanticSegmentationTask(BaseTask):
         x = batch["image"]
         y = batch["mask"]
         other_keys = batch.keys() - {"image", "mask", "filename"}
-        rest = {k:batch[k] for k in other_keys}
+
+        rest = {k: batch[k] for k in other_keys}
+
         model_output: ModelOutput = self(x, **rest)
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
@@ -307,16 +323,25 @@ class SemanticSegmentationTask(BaseTask):
         y = batch["mask"]
 
         other_keys = batch.keys() - {"image", "mask", "filename"}
-        rest = {k:batch[k] for k in other_keys}
+        rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
-        loss = self.test_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
-        self.test_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
+        if dataloader_idx >= len(self.test_loss_handler):
+            msg = "You are returning more than one test dataloader but not defining enough test_dataloaders_names."
+            raise ValueError(msg)
+        loss = self.test_loss_handler[dataloader_idx].compute_loss(model_output, y, self.criterion, self.aux_loss)
+        self.test_loss_handler[dataloader_idx].log_loss(
+            partial(self.log, add_dataloader_idx=False),  # We don't need the dataloader idx as prefixes are different
+            loss_dict=loss,
+            batch_size=x.shape[0],
+        )
+
         y_hat_hard = to_segmentation_prediction(model_output)
-        self.test_metrics.update(y_hat_hard, y)
+        self.test_metrics[dataloader_idx].update(y_hat_hard, y)
 
     def on_test_epoch_end(self) -> None:
-        self.log_dict(self.test_metrics.compute(), sync_dist=True)
-        self.test_metrics.reset()
+        for metrics in self.test_metrics:
+            self.log_dict(metrics.compute(), sync_dist=True)
+            metrics.reset()
         return super().on_test_epoch_end()
 
     def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
@@ -333,7 +358,9 @@ class SemanticSegmentationTask(BaseTask):
         x = batch["image"]
         file_names = batch["filename"]
         other_keys = batch.keys() - {"image", "mask", "filename"}
-        rest = {k:batch[k] for k in other_keys}
+
+        rest = {k: batch[k] for k in other_keys}
+
         model_output: ModelOutput = self(x, **rest)
 
         def model_forward(x):

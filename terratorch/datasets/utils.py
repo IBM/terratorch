@@ -1,7 +1,7 @@
 # Copyright contributors to the Terratorch project
 
 import os
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from enum import Enum
 from functools import partial
 from typing import Any
@@ -128,13 +128,13 @@ def _split_filter_function(file_name, valid_files: list[str], ignore_extensions=
     return False
 
 
-def to_tensor(d):
+def to_tensor(d, transpose=True):
     new_dict = {}
     for k, v in d.items():
         if not isinstance(v, np.ndarray):
             new_dict[k] = v
         else:
-            if k == "image":
+            if k == "image" and transpose:
                 v = np.moveaxis(v, -1, 0)
             new_dict[k] = torch.from_numpy(v)
     return new_dict
@@ -158,3 +158,45 @@ def pad_dates_numpy(dates, target_length, pad_value=-1):
     pad_width = [(padlen, 0)]
 
     return np.pad(dates, pad_width=pad_width, mode="constant", constant_values=pad_value)
+
+
+def validate_bands(bands: Sequence[str], bands_default: Sequence[str]):
+    assert isinstance(bands, Sequence), "'bands' must be a sequence"
+    set_diff = set(bands) - set(bands_default)
+    if set_diff != set():
+        raise ValueError(f"'{set_diff}' are invalid band names.")
+
+
+def clip_image(img: np.ndarray) -> np.ndarray:
+    """Clip image between (0, 1) considering min and max values.
+
+    Args:
+        img (np.ndarray): image in the format HWC.
+
+    Returns:
+        clipped ndarray image
+    """
+    img = (img - img.min(axis=(0, 1))) * (1 / img.max(axis=(0, 1)))
+    img = np.clip(img, 0, 1)
+    return img
+
+
+def clip_image_percentile(img: np.ndarray, q_lower: float = 1, q_upper: float = 99) -> np.ndarray:
+    """Remove values outside percentile range [lower, upper] and rescale image.
+       Based on torchgeo.datasets.utils.percentile_normalization().
+
+    Args:
+        img (np.ndarray): image in the format HWC.
+        q_lower (float): lower percentile in [0,100].
+        q_upper (float): upper percentile in [0,100].
+
+    Returns:
+        clipped ndarray image
+    """
+    assert q_lower < q_upper
+    lower = np.percentile(img, q_lower)
+    upper = np.percentile(img, q_upper)
+    img = (img - lower) / (upper - lower + 1e-5)
+    img = np.clip(img, 0, 1)
+
+    return img
