@@ -97,8 +97,8 @@ model:
       decoder: UperNetDecoder
       pretrained: false
       backbone: prithvi_vit_100
-      # backbone_pretrained_cfg_overlay:
-      #   file: tests/prithvi_vit_100.pt
+      backbone_pretrained_cfg_overlay:
+        file: tests/all_ecos_random/version_0/checkpoints/epoch=0_state_dict.ckpt #tests/prithvi_vit_100.pt
       backbone_drop_path_rate: 0.3
       num_frames: 1
       # backbone_window_size: 8
