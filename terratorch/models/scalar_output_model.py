@@ -104,5 +104,8 @@ class ScalarOutputModel(Model, SegmentationModel):
                 msg = "num_classes must be defined for classification task"
                 raise Exception(msg)
             return ClassificationHead(input_embed_dim, **head_kwargs)
+        elif task == "scalar_regression":
+            return ClassificationHead(input_embed_dim, **head_kwargs)
+
         msg = "Task must be classification."
         raise Exception(msg)
