@@ -1,6 +1,8 @@
 # Copyright contributors to the Terratorch project
 
 
+import warnings
+
 from torch import nn
 
 from terratorch.models.model import (
@@ -128,8 +130,11 @@ class EncoderDecoderFactory(ModelFactory):
 
         if peft_config is not None:
             if not backbone_kwargs.get("pretrained", False):
-                msg = "PEFT only works with pretrained backbones"
-                raise ValueError(msg)
+                msg = (
+                    "You are using PEFT without a pretrained backbone. If you are loading a checkpoint afterwards "
+                    "this is probably fine, but if you are training a model check the backbone_pretrained parameter."
+                )
+                warnings.warn(msg, stacklevel=1)
 
             backbone = get_peft_backbone(peft_config, backbone)
 
@@ -156,7 +161,15 @@ class EncoderDecoderFactory(ModelFactory):
 
         if aux_decoders is None:
             _check_all_args_used(kwargs)
-            return _build_appropriate_model(task, backbone, decoder, head_kwargs, necks=neck_list, decoder_includes_head=decoder_includes_head, rescale=rescale)
+            return _build_appropriate_model(
+                task,
+                backbone,
+                decoder,
+                head_kwargs,
+                necks=neck_list,
+                decoder_includes_head=decoder_includes_head,
+                rescale=rescale,
+            )
 
         to_be_aux_decoders: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] = []
         for aux_decoder in aux_decoders:
