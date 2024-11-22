@@ -17,6 +17,8 @@ from terratorch.models.model import (
 )
 from terratorch.registry import MODEL_FACTORY_REGISTRY
 
+from terratorch.models.pincers.unet_pincer import UNetPincer
+
 logger = logging.getLogger(__name__)
 
 class WxCModuleWrapper(Model, nn.Module):
@@ -133,7 +135,9 @@ class WxCModelFactory(ModelFactory):
             else:
                 print('Not loading backbone model weigts')
 
-            return WxCModuleWrapper(backbone)
+
+            return UNetPincer(backbone)
+            #return WxCModuleWrapper(backbone)
 
 
         # starting from there only for backwards compatibility, deprecated
