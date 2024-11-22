@@ -8,7 +8,7 @@ class Encoder(nn.Module):
             raise ValueError(f'hidden channels multiplier lenght {len(hidden_channels_multiplier)} not matching encoder blocks {num_encoder_blocks}')
         super(Encoder, self).__init__()
 
-        self.encoders = list(num_encoder_blocks)
+        self.encoders = []
 
         for index in range(num_encoder_blocks):
             if index == 0:
@@ -33,7 +33,7 @@ class Encoder(nn.Module):
                 )
 
     def forward(self, x):
-        encoder_values = list(len(self.encoders))
+        encoder_values = []
         for index in range(len(encoder_values)):
             if index == 0:
                 encoder_values[index] = self.encoders[index](x)
@@ -49,7 +49,7 @@ class Decoder(nn.Module):
             raise ValueError(f'hidden channels multiplier lenght {len(hidden_channels_multiplier)} not matching encoder blocks {num_decoder_blocks}')
         super(Decoder, self).__init__()
 
-        self.decoders = list(num_decoder_blocks)
+        self.decoders = []
 
         for index in range(num_decoder_blocks):
             self.decoders[index] = nn.Sequential(
