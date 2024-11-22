@@ -14,7 +14,7 @@ class WxCGravityWaveTask(BaseTask):
         return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
     
     def configure_models(self):
-        self.model = self.model_factory.build_model(backbone='gravitywave', aux_decoders=None)
+        self.model = self.model_factory.build_model(backbone='prithviwxc', aux_decoders=None)
 
     def training_step(self, *args, **kwargs):
         None

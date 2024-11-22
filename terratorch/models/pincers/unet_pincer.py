@@ -127,7 +127,7 @@ class UNetPincer(nn.Module):
         }
 
         # Transformer forward pass
-        transformer_output = self.model(batch_dict)
+        transformer_output = self.backbone(batch_dict)
         transformer_output_reshaped = transformer_output.view(batch_size, c, h, w)
 
         # Decode the transformer output
