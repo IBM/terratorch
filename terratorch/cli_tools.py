@@ -389,7 +389,8 @@ class MyLightningCLI(LightningCLI):
 
             custom_modules_path =  self.config.fit.custom_modules_path
         else:
-            custom_modules_path = os.environ.get("CUSTOM_MODULES_DIR_NAME", "custom_modules")
+            default_path = Path(".") / "custom_modules"
+            custom_modules_path = os.environ.get("TERRATORCH_CUSTOM_MODULE_PATH", default_path)
 
         import_custom_modules(custom_modules_path)
 
