@@ -56,6 +56,8 @@ from terratorch.tasks import (
     SemanticSegmentationTask,  # noqa: F401
 )
 
+logger = logging.getLogger(__name__)
+
 def flatten(list_of_lists):
     return list(itertools.chain.from_iterable(list_of_lists))
 
@@ -96,7 +98,7 @@ def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16"):
     file_name = os.path.basename(input_file_name)
     file_name_no_ext = os.path.splitext(file_name)[0]
     out_file_name = file_name_no_ext + "_pred.tif"
-    logging.info(f"Saving output to {out_file_name} ...")
+    logger.info(f"Saving output to {out_file_name} ...")
     write_tiff(result, os.path.join(out_dir, out_file_name), metadata)
 
 def import_custom_modules(custom_modules_path:str=None) -> None:
@@ -112,15 +114,16 @@ def import_custom_modules(custom_modules_path:str=None) -> None:
             module_dir = custom_modules_path.name
 
             sys.path.append(workdir)
-            logging.info(f"Found {custom_modules_path}")
+
             try:
                 importlib.import_module(module_dir)
+                logger.info(f"Found {custom_modules_path}")
             except Exception:
                 raise Exception(f"It was not possible to import modules from {custom_modules_path}.")
         else:
-            logging.info(f"The modules path {custom_modules_path} not found.")
+            logger.info(f"The modules path {custom_modules_path} not found.")
     else:
-        logging.info("No custom module is being used.")
+        logger.info("No custom module is being used.")
 
 class CustomWriter(BasePredictionWriter):
     """Callback class to write geospatial data to file."""
