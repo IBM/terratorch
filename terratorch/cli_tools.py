@@ -99,20 +99,28 @@ def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16"):
     logging.info(f"Saving output to {out_file_name} ...")
     write_tiff(result, os.path.join(out_dir, out_file_name), metadata)
 
-def import_custom_modules(custom_modules_path):
+def import_custom_modules(custom_modules_path:str=None) -> None:
+
     if custom_modules_path:
-        if os.path.isdir(custom_modules_path):
+
+        custom_modules_path = Path(custom_modules_path)
+
+        if custom_modules_path.is_dir():
 
             # Add 'custom_modules' folder to sys.path
-            workdir, module_dir = os.path.split(custom_modules_path)
-
-            if not workdir:
-                workdir = "."
+            workdir = custom_modules_path.parents[0]
+            module_dir = custom_modules_path.name
 
             sys.path.append(workdir)
             logging.info(f"Found {custom_modules_path}")
-
-            importlib.import_module(module_dir)
+            try:
+                importlib.import_module(module_dir)
+            except Exception:
+                raise Exception(f"It was not possible to import modules from {custom_modules_path}.")
+        else:
+            logging.info(f"The modules path {custom_modules_path} not found.")
+    else:
+        logging.info("No custom module is being used.")
 
 class CustomWriter(BasePredictionWriter):
     """Callback class to write geospatial data to file."""
