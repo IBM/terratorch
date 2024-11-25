@@ -5,7 +5,7 @@ import yaml
 from granitewxc.utils.config import get_config
 from lightning.pytorch import Trainer
 import os
-import from huggingface_hub import hf_hub_download
+from huggingface_hub import hf_hub_download
 import torch.distributed as dist
 
 
