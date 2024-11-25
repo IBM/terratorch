@@ -151,11 +151,12 @@ model:
         data_path_vertical: /home/jalmeida/Projetos/terratorch/examples/scripts/merra-2/ 
         climatology_path_surface: /home/jalmeida/Projetos/terratorch/examples/scripts/climatology/ 
         climatology_path_vertical: /home/jalmeida/Projetos/terratorch/examples/scripts/climatology/ 
+        residual: climate
     model_config:
       num_epochs: 200   
       limit_steps_train: 250 
       limit_steps_valid: 50
-      batch_size: 16 
+      batch_size: 1 #16 
       learning_rate: 0.0001 
       min_lr: 0.00001 
       dl_num_workers: 19 
@@ -166,7 +167,7 @@ model:
       mask_ratio_targets: 0.0    # Accepted values: temporal, climate, none
       job_id: inference-test
       model_config:    
-        num_static_channels: 147
+        num_static_channels: 7
         embed_dim: 2560
         token_size:
         - 1
