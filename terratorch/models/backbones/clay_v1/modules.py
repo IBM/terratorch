@@ -503,34 +503,28 @@ class DynamicEmbedding(nn.Module):
 
 
 class Datacuber(nn.Module):
-    def __init__(self,
-                 bands=None) -> None:
+    def __init__(self, bands=None) -> None:
         super().__init__()
         self.bands = bands
 
-    def forward(self, x, **kwargs):
-        if not isinstance(x, dict):
-            datacube = {}
-            datacube['pixels'] = x
-            datacube['time'] = torch.zeros((x.shape[0], 4))
-            datacube['latlon'] = torch.zeros((x.shape[0], 4))
-            datacube['gsd'] = 1.0
-            datacube['waves'] = self._parse_wavelengths(self.bands, x.shape[1])
-            return datacube
-        else:
-            assert "pixels" in datacube
-            if "time" not in datacube:
-                datacube['time'] = torch.zeros((x.shape[0], 4))
-            if "latlon" not in datacube:
-                datacube['latlon'] = torch.zeros((x.shape[0], 4))
-            if "gsd" not in datacube:
-                datacube["gsd"] = 1.0
-            if "waves" not in datacube:
-                datacube['waves'] = self._parse_wavelengths(self.bands, x.shape[1])
-            return x
-        
+    def forward(
+        self,
+        x: torch.Tensor,
+        time: torch.Tensor | None = None,
+        latlon: torch.Tensor | None = None,
+        waves: torch.Tensor | None = None,
+        gsd: float | None = None,
+    ) -> dict[str, torch.Tensor | float]:
+        datacube: dict[str, torch.Tensor | float] = {}
+        datacube["pixels"] = x
+        datacube["time"] = torch.zeros((x.shape[0], 4)) if time is None else time
+        datacube["latlon"] = torch.zeros((x.shape[0], 4)) if latlon is None else latlon
+        datacube["gsd"] = 1.0 if gsd is None else gsd
+        datacube["waves"] = self._parse_wavelengths(self.bands, x.shape[1]) if waves is None else waves
+        return datacube
+
     def _parse_wavelengths(self, bands, channels):
-        if bands is not None and all([_ in WAVELENGTHS for  _ in bands]):
+        if bands is not None and all([_ in WAVELENGTHS for _ in bands]):
             return torch.tensor([WAVELENGTHS[_] for _ in bands])
         else:
             return torch.zeros(channels)
