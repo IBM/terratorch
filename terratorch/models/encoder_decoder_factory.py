@@ -1,6 +1,7 @@
 # Copyright contributors to the Terratorch project
 
 
+import torch
 from torch import nn
 
 from terratorch.models.model import (
@@ -18,6 +19,31 @@ from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY, MODEL_FACTO
 PIXEL_WISE_TASKS = ["segmentation", "regression"]
 SCALAR_TASKS = ["classification"]
 SUPPORTED_TASKS = PIXEL_WISE_TASKS + SCALAR_TASKS
+
+
+
+class TemporalWrapper(nn.Module):
+    def __init__(self, encoder, pooling="mean"):
+        super().__init__()
+        self.encoder = encoder
+        if pooling == "mean":
+            self.pooling = torch.mean
+        elif pooling == "max":
+            self.pooling = torch.max
+        else:
+            msg = "Pooling must be 'mean' or 'max'"
+            raise ValueError(msg)
+
+    def forward(self, x):
+        # x is a list of tensors, each corresponding to a different timestamp
+        features = [self.encoder(t) for t in x]
+        # Stack features along a new dimension and apply pooling
+        features = torch.stack(features, dim=0)
+        if self.pooling == torch.max:
+            pooled_features, _ = self.pooling(features, dim=0)
+        else:
+            pooled_features = self.pooling(features, dim=0)
+        return pooled_features
 
 
 def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
@@ -73,7 +99,9 @@ class EncoderDecoderFactory(ModelFactory):
         num_classes: int | None = None,
         necks: list[dict] | None = None,
         aux_decoders: list[AuxiliaryHead] | None = None,
-        rescale: bool = True,  # noqa: FBT002, FBT001
+        rescale: bool = True,  # noqa: FBT002, FBT001,
+        use_temporal: bool = False,
+        temporal_pooling: str = "mean",
         **kwargs,
     ) -> Model:
         """Generic model factory that combines an encoder and decoder, together with a head, for a specific task.
@@ -135,6 +163,10 @@ class EncoderDecoderFactory(ModelFactory):
         decoder, head_kwargs, decoder_includes_head = _get_decoder_and_head_kwargs(
             decoder, channel_list, decoder_kwargs, head_kwargs, num_classes=num_classes
         )
+
+        # Add temporal wrapper if enabled
+        if use_temporal:
+            backbone = TemporalWrapper(backbone, pooling=temporal_pooling)
 
         if aux_decoders is None:
             _check_all_args_used(kwargs)
