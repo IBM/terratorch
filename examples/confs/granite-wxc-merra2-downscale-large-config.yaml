@@ -110,11 +110,11 @@ model:
     model_args:
       checkpoint_path: examples/pytorch_model.bin
       num_static_channels: 7
-      embed_dim: 256 #0
+      embed_dim: 2560
       token_size:
       - 1
       - 1
-      n_blocks_encoder: 6 #12
+      n_blocks_encoder: 12
       mlp_multiplier: 4
       n_heads: 16
       dropout_rate: 0.0
@@ -151,11 +151,12 @@ model:
         data_path_vertical: /home/jalmeida/Projetos/terratorch/examples/scripts/merra-2/ 
         climatology_path_surface: /home/jalmeida/Projetos/terratorch/examples/scripts/climatology/ 
         climatology_path_vertical: /home/jalmeida/Projetos/terratorch/examples/scripts/climatology/ 
+        residual: climate
     model_config:
       num_epochs: 200   
       limit_steps_train: 250 
       limit_steps_valid: 50
-      batch_size: 16 
+      batch_size: 1 #16 
       learning_rate: 0.0001 
       min_lr: 0.00001 
       dl_num_workers: 19 
@@ -167,13 +168,13 @@ model:
       job_id: inference-test
       model_config:    
         num_static_channels: 7
-        embed_dim: 256 #0
+        embed_dim: 2560
         token_size:
         - 1
         - 1
-        n_blocks_encoder: 6 #12
+        n_blocks_encoder: 12
         mlp_multiplier: 4
-        n_heads: 8 #16
+        n_heads: 16
         dropout_rate: 0.0
         #drop_path: 0.05
         residual: True
