@@ -136,6 +136,7 @@ class WxCModelFactory(ModelFactory):
                 print('Not loading backbone model weigts')
 
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            backbone.to(device)
             model_to_return = UNetPincer(backbone).to(device)
             return model_to_return
             #return WxCModuleWrapper(backbone)
