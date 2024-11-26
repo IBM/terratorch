@@ -116,48 +116,48 @@ def test_wxc_unet_pincer_inference():
     dist.destroy_process_group()
 
 
-    def test_wxc_unet_pincer_train():
-        os.environ['MASTER_ADDR'] = 'localhost'
-        os.environ['MASTER_PORT'] = '12355'
+def test_wxc_unet_pincer_train():
+    os.environ['MASTER_ADDR'] = 'localhost'
+    os.environ['MASTER_PORT'] = '12355'
 
-        if dist.is_initialized():
-            dist.destroy_process_group()
-
-        dist.init_process_group(
-            backend='gloo',
-            init_method='env://',
-            rank=0,
-            world_size=1
-        )
-
-        hf_hub_download(
-            repo_id="Prithvi-WxC/Gravity_wave_Parameterization",
-            filename=f"magnet-flux-uvtp122-epoch-99-loss-0.1022.pt",
-            local_dir=".",
-        )
-
-        hf_hub_download(
-            repo_id="Prithvi-WxC/Gravity_wave_Parameterization",
-            filename=f"config.yaml",
-            local_dir=".",
-        )
-
-        hf_hub_download(
-            repo_id="Prithvi-WxC/Gravity_wave_Parameterization",
-            repo_type='dataset',
-            filename=f"wxc_input_u_v_t_p_output_theta_uw_vw_era5_training_data_hourly_2015_constant_mu_sigma_scaling05.nc",
-            local_dir=".",
-        )
-
-        from prithviwxc.gravitywave.datamodule import ERA5DataModule
-        from terratorch.tasks.wxc_gravity_wave_task import WxCGravityWaveTask
-        task = WxCGravityWaveTask(WxCModelFactory(), mode='train')
-
-        trainer = Trainer(
-            max_epochs=1,
-        )
-        dm = ERA5DataModule(train_data_path='.', valid_data_path='.')
-        results = trainer.fit(model=task, datamodule=dm)
-
+    if dist.is_initialized():
         dist.destroy_process_group()
+
+    dist.init_process_group(
+        backend='gloo',
+        init_method='env://',
+        rank=0,
+        world_size=1
+    )
+
+    hf_hub_download(
+        repo_id="Prithvi-WxC/Gravity_wave_Parameterization",
+        filename=f"magnet-flux-uvtp122-epoch-99-loss-0.1022.pt",
+        local_dir=".",
+    )
+
+    hf_hub_download(
+        repo_id="Prithvi-WxC/Gravity_wave_Parameterization",
+        filename=f"config.yaml",
+        local_dir=".",
+    )
+
+    hf_hub_download(
+        repo_id="Prithvi-WxC/Gravity_wave_Parameterization",
+        repo_type='dataset',
+        filename=f"wxc_input_u_v_t_p_output_theta_uw_vw_era5_training_data_hourly_2015_constant_mu_sigma_scaling05.nc",
+        local_dir=".",
+    )
+
+    from prithviwxc.gravitywave.datamodule import ERA5DataModule
+    from terratorch.tasks.wxc_gravity_wave_task import WxCGravityWaveTask
+    task = WxCGravityWaveTask(WxCModelFactory(), mode='train')
+
+    trainer = Trainer(
+        max_epochs=1,
+    )
+    dm = ERA5DataModule(train_data_path='.', valid_data_path='.')
+    results = trainer.fit(model=task, datamodule=dm)
+
+    dist.destroy_process_group()
 
