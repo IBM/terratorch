@@ -118,10 +118,10 @@ def import_custom_modules(custom_modules_path:None | Path | str =None) -> None:
             try:
                 importlib.import_module(module_dir)
                 logger.info(f"Found {custom_modules_path}")
-            except Exception:
-                raise Exception(f"It was not possible to import modules from {custom_modules_path}.")
+            except ImportError:
+                raise ImportError(f"It was not possible to import modules from {custom_modules_path}.")
         else:
-            raise Exception(f"Modules path {custom_modules_path} isn't a directory. Check if you have defined it properly.")
+            raise ValueError(f"Modules path {custom_modules_path} isn't a directory. Check if you have defined it properly.")
     else:
         logger.info("No custom module is being used.")
 
