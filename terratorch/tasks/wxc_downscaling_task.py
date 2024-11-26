@@ -56,7 +56,7 @@ class WxCDownscalingTask(BaseTask):
         climatology_path_surface = extra_kwargs.pop("climatology_path_surface") 
         climatology_path_vertical = extra_kwargs.pop("climatology_path_vertical") 
         residual_connection = model_args.pop("residual_connection")
-        residual = extra_kwargs.pop("residual")
+        residual = extra_kwargs.pop("residual", True)
 
         # Special cases for required variables
         input_scalers_surface_path = extra_kwargs.pop("input_scalers_surface_path", None)
