@@ -16,7 +16,9 @@ class WxCGravityWaveTask(BaseTask):
         return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
     
     def configure_models(self):
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self.model_factory.build_model(backbone='prithviwxc', aux_decoders=None)
+        self.model = self.model.to(device)
 
     def training_step(self, batch, batch_idx):
         output: torch.Tensor = self.model(batch)
