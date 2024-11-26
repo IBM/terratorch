@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+from terratorch.models.model import Model
+
 
 class Encoder(nn.Module):
     def __init__(self, in_channels, hidden_channels, hidden_channels_multiplier : list = [1,2,4,8] , num_encoder_blocks=4):
@@ -105,10 +107,12 @@ class UNetPincer(nn.Module):
         self.backbone = backbone
 
     def forward(self, batch: dict[str, torch.Tensor]) -> torch.Tensor:
+        print('Forward called on UNetPincer')
         x = batch["x"]
         lead_time = batch["lead_time"]
         static = batch["static"]
         x = x.squeeze(1)
+        print('Forward called on UNetPincer1')
 
         encoder_values: tuple = self.encoder(x)
 
@@ -116,6 +120,7 @@ class UNetPincer(nn.Module):
         *_, last_encoder_value = encoder_values
         batch_size, c, h, w = last_encoder_value.size()
         last_encoder_value_reshaped = last_encoder_value.unsqueeze(1)
+        print('Forward called on UNetPincer2')
 
         # Prepare input for transformer model
         batch_dict = {
@@ -125,13 +130,16 @@ class UNetPincer(nn.Module):
             "static": static,
             "input_time": torch.zeros_like(lead_time),
         }
+        print('Forward called on UNetPincer3')
 
         # Transformer forward pass
         transformer_output = self.backbone(batch_dict)
         transformer_output_reshaped = transformer_output.view(batch_size, c, h, w)
+        print('Forward called on UNetPincer4')
 
         # Decode the transformer output
         output = self.decoder(encoder_values, transformer_output_reshaped)
+        print('Forward called on UNetPincer5')
 
         return output
 
