@@ -461,7 +461,6 @@ class DynamicEmbedding(nn.Module):
 
     def forward(self, batch, waves):
         waves = posemb_sincos_1d(waves, self.wave_dim)
-        waves = waves.to(batch.device)
         waves = self.fclayer(waves)
         weight, bias = self.weight_generator(waves)
 
