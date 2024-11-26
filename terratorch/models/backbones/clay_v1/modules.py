@@ -516,10 +516,10 @@ class Datacuber(nn.Module):
     ) -> dict[str, torch.Tensor | float]:
         datacube: dict[str, torch.Tensor | float] = {}
         datacube["pixels"] = x
-        datacube["time"] = torch.zeros((x.shape[0], 4)) if time is None else time
-        datacube["latlon"] = torch.zeros((x.shape[0], 4)) if latlon is None else latlon
+        datacube["time"] = torch.zeros((x.shape[0], 4), device=x.device) if time is None else time
+        datacube["latlon"] = torch.zeros((x.shape[0], 4), device=x.device) if latlon is None else latlon
         datacube["gsd"] = 1.0 if gsd is None else gsd
-        datacube["waves"] = self._parse_wavelengths(self.bands, x.shape[1]) if waves is None else waves
+        datacube["waves"] = self._parse_wavelengths(self.bands, x.shape[1]).to(x.device) if waves is None else waves
         return datacube
 
     def _parse_wavelengths(self, bands, channels):
