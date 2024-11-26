@@ -106,6 +106,11 @@ class UNetPincer(nn.Module):
 
         self.backbone = backbone
 
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.encoder = self.encoder.to(device)
+        self.decoder = self.decoder.to(device)
+        self.backbone = backbone.to(device)
+
     def forward(self, batch: dict[str, torch.Tensor]) -> torch.Tensor:
         print('Forward called on UNetPincer')
         x = batch["x"]
