@@ -3,7 +3,7 @@
 import importlib.util
 import itertools
 import json
-import logging  # noqa: I001
+import logging
 import os
 import shutil
 import sys
@@ -26,10 +26,10 @@ import yaml
 from albumentations.pytorch import ToTensorV2  # noqa: F401
 from jsonargparse import set_dumper
 from lightning.fabric.utilities.cloud_io import get_filesystem
-from lightning.fabric.utilities.types import _PATH  # noqa: F401
-from lightning.pytorch import LightningDataModule, LightningModule, Trainer  # noqa: F401
+from lightning.fabric.utilities.types import _PATH
+from lightning.pytorch import LightningDataModule, LightningModule, Trainer
 from lightning.pytorch.callbacks import BasePredictionWriter, ModelCheckpoint, RichProgressBar
-from lightning.pytorch.cli import ArgsType, LightningArgumentParser, LightningCLI, SaveConfigCallback  # noqa: F401
+from lightning.pytorch.cli import ArgsType, LightningArgumentParser, LightningCLI, SaveConfigCallback
 from torchgeo.trainers import BaseTask
 
 import terratorch.datamodules
@@ -101,7 +101,7 @@ def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16"):
     logger.info(f"Saving output to {out_file_name} ...")
     write_tiff(result, os.path.join(out_dir, out_file_name), metadata)
 
-def import_custom_modules(custom_modules_path:str=None) -> None:
+def import_custom_modules(custom_modules_path:None | Path | str =None) -> None:
 
     if custom_modules_path:
 
@@ -121,7 +121,7 @@ def import_custom_modules(custom_modules_path:str=None) -> None:
             except Exception:
                 raise Exception(f"It was not possible to import modules from {custom_modules_path}.")
         else:
-            logger.info(f"The modules path {custom_modules_path} not found.")
+            raise Exception(f"Modules path {custom_modules_path} isn't a directory. Check if you have defined it properly.")
     else:
         logger.info("No custom module is being used.")
 
@@ -229,8 +229,8 @@ class StudioDeploySaveConfigCallback(SaveConfigCallback):
         # Preparing information to save config file to log dir
         config_dict = config.as_dict()
         self.config_path_original = str(config_dict["config"][0])
-        _, self.config_file_original = os.path.split(self.config_path_original)         
-        
+        _, self.config_file_original = os.path.split(self.config_path_original)
+
         self.deploy_config_file = config_dict["deploy_config_file"]
 
     def setup(self, trainer: Trainer, pl_module: LightningModule, stage: str) -> None:
