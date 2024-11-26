@@ -108,7 +108,7 @@ model:
   class_path: WxCDownscalingTask 
   init_args:
     model_args:
-      checkpoint_path: examples/scripts/pytorch_model.bin
+      checkpoint_path: examples/pytorch_model.bin
       num_static_channels: 7
       embed_dim: 2560
       token_size:

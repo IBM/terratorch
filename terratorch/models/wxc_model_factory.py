@@ -38,9 +38,8 @@ class WxCModuleWrapper(Model, nn.Module):
         return ModelOutput(mo)
     
     def load_state_dict(self, state_dict: os.Mapping[str, typing.Any], strict: bool = True, assign: bool = False):
-        
-        self.module.load_state_dict(state_dict, strict, assign)
 
+        self.module.load_state_dict(state_dict, strict, assign)
 
 @MODEL_FACTORY_REGISTRY.register
 class WxCModelFactory(ModelFactory):
@@ -72,6 +71,7 @@ class WxCModelFactory(ModelFactory):
                 from granitewxc.utils.downscaling_model import get_finetune_model
                 module = get_finetune_model(kwargs['model_config'])
                 model_wrapper = WxCModuleWrapper(module)
+                
                 if checkpoint_path:
                     model_wrapper.load_state_dict(torch.load(checkpoint_path, weights_only=True))
                 return model_wrapper
