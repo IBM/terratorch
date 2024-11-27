@@ -37,7 +37,7 @@ def _conv_upscale_block(input_channels, output_channels, kernel_size, stride, di
 class FCNDecoder(nn.Module):
     """Fully Convolutional Decoder"""
 
-    def __init__(self, embed_dim: int, channels: int = 256, num_convs: int = 4, in_index: int = -1) -> None:
+    def __init__(self, embed_dim: int, channels: int = 256, num_convs: int = 4, in_index: int = -1, upsampling_config:dict=None) -> None:
         """Constructor
 
         Args:
@@ -70,6 +70,18 @@ class FCNDecoder(nn.Module):
 
         self.convs = nn.Sequential(*convs)
 
+        if upsampling_config:
+            self.upsampling_layer = nn.Upsample(**upsampling_config)
+            self.rescale_if_necessary = self._rescale_final_image
+        else:
+            self.rescale_if_necessary = self._bypass_rescale_final_image
+
+    def _rescale_final_image(self, x):
+        return self.upsampling_layer(x) 
+
+    def _bypass_rescale_final_image(self, x):
+        return x
+
     @property
     def out_channels(self):
         return self.channels
@@ -77,4 +89,5 @@ class FCNDecoder(nn.Module):
     def forward(self, x: list[Tensor]):
         x = x[self.in_index]
         decoded = self.convs(x)
+        decoded = self.rescale_if_necessary(decoded)
         return decoded
