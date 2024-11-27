@@ -19,6 +19,11 @@ class WxCGravityWaveTask(BaseTask):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self.model_factory.build_model(backbone='prithviwxc', aux_decoders=None)
         self.model = self.model.to(device)
+        layer_devices = []
+        for name, module in self.model.named_children():
+            device = next(module.parameters(), torch.tensor([])).device
+            layer_devices.append((name, str(device)))
+        print(layer_devices)
 
     def training_step(self, batch, batch_idx):
         output: torch.Tensor = self.model(batch)
