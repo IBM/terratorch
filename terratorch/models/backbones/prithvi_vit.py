@@ -3,8 +3,6 @@
 
 import logging
 from functools import partial
-from pathlib import Path
-from collections import defaultdict
 
 from timm.models import FeatureInfo
 from timm.models._builder import build_model_with_cfg
@@ -13,8 +11,8 @@ from torch import nn, Tensor
 
 from terratorch.datasets import HLSBands
 from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
-from terratorch.models.backbones.vit_encoder_decoder import TemporalViTEncoder
 from terratorch.datasets.utils import generate_bands_intervals
+from terratorch.models.backbones.prithvi_mae import PrithviViT, PrithviMAE
 
 PRETRAINED_BANDS = [
     HLSBands.BLUE,
@@ -31,36 +29,41 @@ default_cfgs = generate_default_cfgs(
             "hf_hub_id": "ibm-nasa-geospatial/Prithvi-100M",
             "hf_hub_filename": "Prithvi_100M.pt",
         },
-        "prithvi_vit_300": {},
+        "prithvi_vit_large": {},
+        "prithvi_vit_huge": {},
         "prithvi_vit_tiny": {}
     }
 )
 
 def checkpoint_filter_fn(
-    state_dict, model: TemporalViTEncoder, pretrained_bands: list[HLSBands | int], model_bands: list[HLSBands | int]
+    state_dict, model: PrithviViT, pretrained_bands: list[HLSBands | int], model_bands: list[HLSBands | int]
 ) -> dict:
+    # pos_embed depends on num_frames and is fixed.
     if "pos_embed" in state_dict:
-        del state_dict["pos_embed"]
+        if hasattr(model, 'pos_embed'):
+            state_dict["pos_embed"] = model.pos_embed
+        else:
+            del state_dict["pos_embed"]
     if "decoder_pos_embed" in state_dict:
-        del state_dict["decoder_pos_embed"]
-
+        if hasattr(model, 'decoder_pos_embed'):
+            state_dict["decoder_pos_embed"] = model.decoder_pos_embed
+        else:
+            del state_dict["decoder_pos_embed"]
 
     clean_dict = {}
     for k, v in state_dict.items():
-        if model.encoder_only:
-            if "decoder" in k:
-                continue
-            if "mask_token" in k:
-                continue
-            if "temporal_embed_dec" in k:
-                continue
-            if "location_embed_dec" in k:
-                continue
-        if not model.temporal_encoding and "temporal_embed_enc" in k:
+        assert model.encoder_only, "Current code only supports the Prithvi ViT Encoder"
+        # Encoder only model
+        if 'decoder' in k or '_dec' in k or k == 'mask_token':
             continue
-        if not model.location_encoding and "location_embed_enc" in k:
+        if not model.temporal_encoding and "temporal_embed" in k:
             continue
-        clean_dict[k] = v
+        if not model.location_encoding and "location_embed" in k:
+            continue
+        if k.startswith('encoder.'):
+            clean_dict[k.replace('encoder.', '')] = v  # Prithvi V2 encoder
+        else:
+            clean_dict[k] = v # Prithvi V1
 
         state_dict = clean_dict
 
@@ -84,7 +87,7 @@ def _create_prithvi(
     pretrained_bands: list[HLSBands] | None = None,
     model_bands: list[HLSBands | int] | None = None,
     **kwargs,
-) -> TemporalViTEncoder:
+) -> PrithviViT:
     if pretrained_bands is None:
         pretrained_bands = PRETRAINED_BANDS
 
@@ -118,7 +121,7 @@ def _create_prithvi(
     # pretrained=False
     try:
         model = build_model_with_cfg(
-            TemporalViTEncoder,
+            PrithviViT,
             variant,
             pretrained,
             pretrained_filter_fn=checkpoint_filter_wrapper_fn,
@@ -129,7 +132,7 @@ def _create_prithvi(
     except RuntimeError:
         print(f"No pretrained configuration was found for the model {variant}.")
         model = build_model_with_cfg(
-            TemporalViTEncoder,
+            PrithviViT,
             variant,
             False,
             pretrained_filter_fn=checkpoint_filter_wrapper_fn,
@@ -177,7 +180,7 @@ def create_prithvi_vit_100(
     pretrained: bool = False,  # noqa: FBT001, FBT002
     bands: list[HLSBands] | None = None,
     **kwargs,
-) -> TemporalViTEncoder:
+) -> PrithviViT:
     """Prithvi ViT 100M"""
     pretrained_bands = PRETRAINED_BANDS
     if bands is None:
@@ -211,13 +214,13 @@ def create_prithvi_vit_100(
     return model
 
 
-def create_prithvi_vit_300(
+def create_prithvi_vit_large(
     model_name: str,
     pretrained: bool = False,  # noqa: FBT001, FBT002
     bands: list[HLSBands | int] | None = None,
     **kwargs,
-) -> TemporalViTEncoder:
-    """Prithvi ViT 300M"""
+) -> PrithviViT:
+    """Prithvi ViT large"""
     pretrained_bands = PRETRAINED_BANDS
     if bands is None:
         bands = pretrained_bands
@@ -247,13 +250,13 @@ def create_prithvi_vit_300(
     return model
 
 
-def create_prithvi_vit_600(
+def create_prithvi_vit_huge(
     model_name: str,
     pretrained: bool = False,  # noqa: FBT001, FBT002
     bands: list[HLSBands] | None = None,
     **kwargs,
-) -> TemporalViTEncoder:
-    """Prithvi ViT 600M"""
+) -> PrithviViT:
+    """Prithvi ViT huge"""
     pretrained_bands = PRETRAINED_BANDS
     if bands is None:
         bands = pretrained_bands
@@ -287,7 +290,7 @@ def create_prithvi_vit_600(
 def prithvi_vit_tiny(
     bands: list[HLSBands | int] | None = None,
     **kwargs,
-) -> TemporalViTEncoder:
+) -> PrithviViT:
     """Prithvi ViT tiny"""
     pretrained_bands = PRETRAINED_BANDS
     if bands is None:
@@ -313,23 +316,23 @@ def prithvi_vit_100(
     pretrained: bool = False,  # noqa: FBT001, FBT002
     bands: list[HLSBands] | None = None,
     **kwargs,
-) -> TemporalViTEncoder:
+) -> PrithviViT:
     return create_prithvi_vit_100("prithvi_vit_100", pretrained, bands, **kwargs)
 
 
 @register_model
-def prithvi_vit_300(
+def prithvi_vit_large(
     pretrained: bool = False,  # noqa: FBT001, FBT002
     bands: list[HLSBands] | None = None,
     **kwargs,
-) -> TemporalViTEncoder:
-    return create_prithvi_vit_300("prithvi_vit_300", pretrained, bands, **kwargs)
+) -> PrithviViT:
+    return create_prithvi_vit_large("prithvi_vit_large", pretrained, bands, **kwargs)
 
 
 @register_model
-def prithvi_vit_600(
+def prithvi_vit_huge(
     pretrained: bool = False,  # noqa: FBT001, FBT002
     bands: list[HLSBands] | None = None,
     **kwargs,
-) -> TemporalViTEncoder:
-    return create_prithvi_vit_600("prithvi_vit_600", pretrained, bands, **kwargs)
+) -> PrithviViT:
+    return create_prithvi_vit_huge("prithvi_vit_huge", pretrained, bands, **kwargs)
