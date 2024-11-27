@@ -94,9 +94,9 @@ class UNetPincer(nn.Module):
         hidden_channels: int = 160,
         out_channels: int = 366,
         patch_size_px: list[int] = [2, 2],
-        encoder_hidden_channels_multiplier : list = [1,2,4,8,16],
+        encoder_hidden_channels_multiplier : list = [1,2,4,6,8],
         encoder_num_encoder_blocks=5,
-        decoder_hidden_channels_multiplier : list = [(32,16), (16,8),(12,4),(6,2),(3,1)],
+        decoder_hidden_channels_multiplier : list = [(16,8),(16,8),(12,4),(6,2),(3,1)],
         decoder_num_decoder_blocks=5,
     ):
         super().__init__()
