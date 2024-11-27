@@ -4,6 +4,7 @@ import torch
 import torch.nn.functional as F
 from einops import rearrange, repeat
 from torch import nn, Tensor
+from timm.layers import use_fused_attn
 
 from terratorch.models.backbones.clay_v1.utils import posemb_sincos_1d, posemb_sincos_2d_with_gsd
 
@@ -55,14 +56,16 @@ class Attention(nn.Module):
         x = self.norm(x)
 
         qkv = self.to_qkv(x).chunk(3, dim=-1)
-        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h=self.heads), qkv)
+        q, k, v = map(lambda t: rearrange(t, "b n (h d) -> b h n d", h=self.heads), qkv)
 
-        dots = torch.matmul(q, k.transpose(-1, -2)) * self.scale
+        if use_fused_attn():
+            out = F.scaled_dot_product_attention(q, k, v)
+        else:
+            dots = torch.matmul(q, k.transpose(-1, -2)) * self.scale
+            attn = self.attend(dots)
+            out = torch.matmul(attn, v)
 
-        attn = self.attend(dots)
-
-        out = torch.matmul(attn, v)
-        out = rearrange(out, 'b h n d -> b n (h d)')
+        out = rearrange(out, "b h n d -> b n (h d)")
         return self.to_out(out)
 
 

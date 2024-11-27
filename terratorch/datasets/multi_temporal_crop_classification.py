@@ -1,9 +1,5 @@
-# Copyright contributors to the Terratorch project
-
-import dataclasses
 import glob
 import os
-import re
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
@@ -12,19 +8,22 @@ import albumentations as A
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import rioxarray
 import torch
+from einops import rearrange
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 from torch import Tensor
-from torchgeo.datasets import NonGeoDataset, RasterDataset
+from torchgeo.datasets import NonGeoDataset
 from xarray import DataArray
 
-from terratorch.datasets.utils import clip_image_percentile, default_transform, validate_bands
+from terratorch.datasets.utils import clip_image, default_transform, filter_valid_files, validate_bands
 
 
-class FireScarsNonGeo(NonGeoDataset):
-    """NonGeo dataset implementation for fire scars."""
+class MultiTemporalCropClassification(NonGeoDataset):
+    """NonGeo dataset implementation for multi-temporal crop classification."""
+
     all_band_names = (
         "BLUE",
         "GREEN",
@@ -34,12 +33,32 @@ class FireScarsNonGeo(NonGeoDataset):
         "SWIR_2",
     )
 
+    class_names = (
+        "Natural Vegetation",
+        "Forest",
+        "Corn",
+        "Soybeans",
+        "Wetlands",
+        "Developed / Barren",
+        "Open Water",
+        "Winter Wheat",
+        "Alfalfa",
+        "Fallow / Idle Cropland",
+        "Cotton",
+        "Sorghum",
+        "Other",
+    )
+
     rgb_bands = ("RED", "GREEN", "BLUE")
 
     BAND_SETS = {"all": all_band_names, "rgb": rgb_bands}
 
-    num_classes = 2
-    splits = {"train": "training", "val": "validation"}   # Only train and val splits available
+    num_classes = 13
+    time_steps = 3
+    splits = {"train": "training", "val": "validation"}  # Only train and val splits available
+    metadata_file_name = "chip_df_final.csv"
+    col_name = "chip_id"
+    date_columns = ["first_img_date", "middle_img_date", "last_img_date"]
 
     def __init__(
         self,
@@ -47,22 +66,29 @@ class FireScarsNonGeo(NonGeoDataset):
         split: str = "train",
         bands: Sequence[str] = BAND_SETS["all"],
         transform: A.Compose | None = None,
-        no_data_replace: float | None = 0,
-        no_label_replace: int | None = -1,
+        no_data_replace: float | None = None,
+        no_label_replace: int | None = None,
+        expand_temporal_dimension: bool = True,
+        reduce_zero_label: bool = True,
         use_metadata: bool = False,
     ) -> None:
         """Constructor
 
         Args:
             data_root (str): Path to the data root directory.
+            split (str): one of 'train' or 'val'.
             bands (list[str]): Bands that should be output by the dataset. Defaults to all bands.
             transform (A.Compose | None): Albumentations transform to be applied.
                 Should end with ToTensorV2(). If used through the corresponding data module,
                 should not include normalization. Defaults to None, which applies ToTensorV2().
             no_data_replace (float | None): Replace nan values in input images with this value.
-                If None, does no replacement. Defaults to 0.
+                If None, does no replacement. Defaults to None.
             no_label_replace (int | None): Replace nan values in label with this value.
-                If none, does no replacement. Defaults to -1.
+                If none, does no replacement. Defaults to None.
+            expand_temporal_dimension (bool): Go from shape (time*channels, h, w) to (channels, time, h, w).
+                Defaults to True.
+            reduce_zero_label (bool): Subtract 1 from all labels. Useful when labels start from 1 instead of the
+                expected 0. Defaults to True.
             use_metadata (bool): whether to return metadata info (time and location).
         """
         super().__init__()
@@ -77,31 +103,63 @@ class FireScarsNonGeo(NonGeoDataset):
         self.band_indices = np.asarray([self.all_band_names.index(b) for b in bands])
         self.data_root = Path(data_root)
 
-        input_dir = self.data_root / split_name
-        self.image_files = sorted(glob.glob(os.path.join(input_dir, "*_merged.tif")))
-        self.segmentation_mask_files = sorted(glob.glob(os.path.join(input_dir, "*.mask.tif")))
+        data_dir = self.data_root / f"{split_name}_chips"
+        self.image_files = sorted(glob.glob(os.path.join(data_dir, "*_merged.tif")))
+        self.segmentation_mask_files = sorted(glob.glob(os.path.join(data_dir, "*.mask.tif")))
+        split_file = data_dir / f"{split_name}_data.txt"
 
-        self.use_metadata = use_metadata
+        with open(split_file) as f:
+            split = f.readlines()
+        valid_files = {rf"{substring.strip()}" for substring in split}
+        self.image_files = filter_valid_files(
+            self.image_files,
+            valid_files=valid_files,
+            ignore_extensions=True,
+            allow_substring=True,
+        )
+        self.segmentation_mask_files = filter_valid_files(
+            self.segmentation_mask_files,
+            valid_files=valid_files,
+            ignore_extensions=True,
+            allow_substring=True,
+        )
+
         self.no_data_replace = no_data_replace
         self.no_label_replace = no_label_replace
+        self.reduce_zero_label = reduce_zero_label
+        self.expand_temporal_dimension = expand_temporal_dimension
+        self.use_metadata = use_metadata
+        self.metadata = None
+        if self.use_metadata:
+            metadata_file = self.data_root / self.metadata_file_name
+            self.metadata = pd.read_csv(metadata_file)
+            self._build_image_metadata_mapping()
 
         # If no transform is given, apply only to transform to torch tensor
         self.transform = transform if transform else default_transform
 
+    def _build_image_metadata_mapping(self):
+        """Build a mapping from image filenames to metadata indices."""
+        self.image_to_metadata_index = dict()
+
+        for idx, image_file in enumerate(self.image_files):
+            image_filename = Path(image_file).name
+            image_id = image_filename.replace("_merged.tif", "").replace(".tif", "")
+            metadata_indices = self.metadata.index[self.metadata[self.col_name] == image_id].tolist()
+            self.image_to_metadata_index[idx] = metadata_indices[0]
+
     def __len__(self) -> int:
         return len(self.image_files)
 
-    def _get_date(self, index: int) -> torch.Tensor:
-        file_name = self.image_files[index]
-        base_filename = os.path.basename(file_name)
+    def _get_date(self, row: pd.Series) -> torch.Tensor:
+        """Extract and format temporal coordinates (T, date) from metadata."""
+        temporal_coords = []
+        for col in self.date_columns:
+            date_str = row[col]
+            date = pd.to_datetime(date_str, format="%Y-%m-%d")
+            temporal_coords.append([date.year, date.dayofyear - 1])
 
-        filename_regex = r"subsetted_512x512_HLS\.S30\.T[0-9A-Z]{5}\.(?P<date>[0-9]+)\.v1\.4_merged\.tif"
-        match = re.match(filename_regex, base_filename)
-        date_str = match.group("date")
-        year = int(date_str[:4])
-        julian_day = int(date_str[4:])
-
-        return torch.tensor([[year, julian_day]], dtype=torch.float32)
+        return torch.tensor(temporal_coords, dtype=torch.float32)
 
     def _get_coords(self, image: DataArray) -> torch.Tensor:
         px = image.x.shape[0] // 2
@@ -121,10 +179,15 @@ class FireScarsNonGeo(NonGeoDataset):
         location_coords, temporal_coords = None, None
         if self.use_metadata:
             location_coords = self._get_coords(image)
-            temporal_coords = self._get_date(index)
+            metadata_idx = self.image_to_metadata_index.get(index, None)
+            if metadata_idx is not None:
+                row = self.metadata.iloc[metadata_idx]
+                temporal_coords = self._get_date(row)
 
         # to channels last
         image = image.to_numpy()
+        if self.expand_temporal_dimension:
+            image = rearrange(image, "(channels time) h w -> channels time h w", channels=len(self.bands))
         image = np.moveaxis(image, 0, -1)
 
         # filter bands
@@ -135,6 +198,9 @@ class FireScarsNonGeo(NonGeoDataset):
             "mask": self._load_file(
                 self.segmentation_mask_files[index], nan_replace=self.no_label_replace).to_numpy()[0],
         }
+
+        if self.reduce_zero_label:
+            output["mask"] -= 1
         if self.transform:
             output = self.transform(**output)
         output["mask"] = output["mask"].long()
@@ -161,18 +227,22 @@ class FireScarsNonGeo(NonGeoDataset):
         Returns:
             a matplotlib Figure with the rendered sample
         """
-        num_images = 4
+        num_images = self.time_steps + 2
 
         rgb_indices = [self.bands.index(band) for band in self.rgb_bands]
         if len(rgb_indices) != 3:
             msg = "Dataset doesn't contain some of the RGB bands"
             raise ValueError(msg)
 
+        images = sample["image"]
+        if not self.expand_temporal_dimension:
+            images = rearrange(images, "(channels time) h w -> channels time h w", channels=len(self.bands))
+
         # RGB -> channels-last
-        image = sample["image"][rgb_indices, ...].permute(1, 2, 0).numpy()
+        images = images[rgb_indices, ...].permute(1, 2, 3, 0).numpy()
         mask = sample["mask"].numpy()
 
-        image = clip_image_percentile(image)
+        images = [clip_image(img) for img in images]
 
         if "prediction" in sample:
             prediction = sample["prediction"]
@@ -185,25 +255,22 @@ class FireScarsNonGeo(NonGeoDataset):
         ax[0].axis("off")
 
         norm = mpl.colors.Normalize(vmin=0, vmax=self.num_classes - 1)
-        ax[1].axis("off")
-        ax[1].title.set_text("Image")
-        ax[1].imshow(image)
 
-        ax[2].axis("off")
-        ax[2].title.set_text("Ground Truth Mask")
-        ax[2].imshow(mask, cmap="jet", norm=norm)
+        for i, img in enumerate(images):
+            ax[i+1].axis("off")
+            ax[i+1].title.set_text(f"T{i}")
+            ax[i+1].imshow(img)
 
-        ax[3].axis("off")
-        ax[3].title.set_text("GT Mask on Image")
-        ax[3].imshow(image)
-        ax[3].imshow(mask, cmap="jet", alpha=0.3, norm=norm)
+        ax[self.time_steps+1].axis("off")
+        ax[self.time_steps+1].title.set_text("Ground Truth Mask")
+        ax[self.time_steps+1].imshow(mask, cmap="jet", norm=norm)
 
         if prediction:
-            ax[4].title.set_text("Predicted Mask")
-            ax[4].imshow(prediction, cmap="jet", norm=norm)
+            ax[self.time_steps+2].title.set_text("Predicted Mask")
+            ax[self.time_steps+2].imshow(prediction, cmap="jet", norm=norm)
 
         cmap = plt.get_cmap("jet")
-        legend_data = [[i, cmap(norm(i)), str(i)] for i in range(self.num_classes)]
+        legend_data = [[i, cmap(norm(i)), self.class_names[i]] for i in range(self.num_classes)]
         handles = [Rectangle((0, 0), 1, 1, color=tuple(v for v in c)) for k, c, n in legend_data]
         labels = [n for k, c, n in legend_data]
         ax[0].legend(handles, labels, loc="center")
@@ -211,27 +278,3 @@ class FireScarsNonGeo(NonGeoDataset):
             plt.suptitle(suptitle)
 
         return fig
-
-
-class FireScarsHLS(RasterDataset):
-    """RasterDataset implementation for fire scars input images."""
-
-    filename_glob = "subsetted*_merged.tif"
-    filename_regex = r"subsetted_512x512_HLS\..30\..{6}\.(?P<date>[0-9]*)\.v1.4_merged.tif"
-    date_format = "%Y%j"
-    is_image = True
-    separate_files = False
-    all_bands = dataclasses.field(default_factory=["B02", "B03", "B04", "B8A", "B11", "B12"])
-    rgb_bands = dataclasses.field(default_factory=["B04", "B03", "B02"])
-
-
-class FireScarsSegmentationMask(RasterDataset):
-    """RasterDataset implementation for fire scars segmentation mask.
-    Can be easily merged with input images using the & operator.
-    """
-
-    filename_glob = "subsetted*.mask.tif"
-    filename_regex = r"subsetted_512x512_HLS\..30\..{6}\.(?P<date>[0-9]*)\.v1.4.mask.tif"
-    date_format = "%Y%j"
-    is_image = False
-    separate_files = False

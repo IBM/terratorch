@@ -44,15 +44,25 @@ def checkpoint_filter_fn(
     if "decoder_pos_embed" in state_dict:
         del state_dict["decoder_pos_embed"]
 
-    if model.encoder_only:
-        encoder_only_dict = {}
-        for k, v in state_dict.items():
+
+    clean_dict = {}
+    for k, v in state_dict.items():
+        if model.encoder_only:
             if "decoder" in k:
                 continue
             if "mask_token" in k:
                 continue
-            encoder_only_dict[k] = v
-        state_dict = encoder_only_dict
+            if "temporal_embed_dec" in k:
+                continue
+            if "location_embed_dec" in k:
+                continue
+        if not model.temporal_encoding and "temporal_embed_enc" in k:
+            continue
+        if not model.location_encoding and "location_embed_enc" in k:
+            continue
+        clean_dict[k] = v
+
+        state_dict = clean_dict
 
     state_dict = select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands)
 
@@ -104,15 +114,29 @@ def _create_prithvi(
     def checkpoint_filter_wrapper_fn(state_dict, model):
         return checkpoint_filter_fn(state_dict, model, pretrained_bands, model_bands)
 
-    model = build_model_with_cfg(
-        TemporalViTEncoder,
-        variant,
-        pretrained,
-        pretrained_filter_fn=checkpoint_filter_wrapper_fn,
-        pretrained_strict=True,
-        encoder_only=encoder_only,
-        **kwargs,
-    )
+    # When the pretrained configuration is not available in HF, we shift to 
+    # pretrained=False
+    try:
+        model = build_model_with_cfg(
+            TemporalViTEncoder,
+            variant,
+            pretrained,
+            pretrained_filter_fn=checkpoint_filter_wrapper_fn,
+            pretrained_strict=True,
+            encoder_only=encoder_only,
+            **kwargs,
+        )
+    except RuntimeError:
+        print(f"No pretrained configuration was found for the model {variant}.")
+        model = build_model_with_cfg(
+            TemporalViTEncoder,
+            variant,
+            False,
+            pretrained_filter_fn=checkpoint_filter_wrapper_fn,
+            pretrained_strict=True,
+            encoder_only=encoder_only,
+            **kwargs,
+        )
 
     if encoder_only:
         default_out_indices = list(range(len(model.blocks)))
@@ -223,6 +247,42 @@ def create_prithvi_vit_300(
     return model
 
 
+def create_prithvi_vit_600(
+    model_name: str,
+    pretrained: bool = False,  # noqa: FBT001, FBT002
+    bands: list[HLSBands] | None = None,
+    **kwargs,
+) -> TemporalViTEncoder:
+    """Prithvi ViT 600M"""
+    pretrained_bands = PRETRAINED_BANDS
+    if bands is None:
+        bands = pretrained_bands
+        logging.info(
+            f"Model bands not passed. Assuming bands are ordered in the same way as {PRETRAINED_BANDS}.\
+            Pretrained patch_embed layer may be misaligned with current bands"
+        )
+    model_args = {
+        "patch_size": 14,
+        "embed_dim": 1280,
+        "depth": 32,
+        "num_heads": 16,
+        "decoder_embed_dim": 512,
+        "decoder_depth": 8,
+        "decoder_num_heads": 16,
+        "mlp_ratio": 4,
+        "norm_layer": partial(nn.LayerNorm, eps=1e-6),
+        "num_frames": 1,
+    }
+    model = _create_prithvi(
+        model_name,
+        pretrained=pretrained,
+        pretrained_bands=pretrained_bands,
+        model_bands=bands,
+        **dict(model_args, **kwargs),
+    )
+    return model
+
+
 @register_model
 def prithvi_vit_tiny(
     bands: list[HLSBands | int] | None = None,
@@ -264,3 +324,12 @@ def prithvi_vit_300(
     **kwargs,
 ) -> TemporalViTEncoder:
     return create_prithvi_vit_300("prithvi_vit_300", pretrained, bands, **kwargs)
+
+
+@register_model
+def prithvi_vit_600(
+    pretrained: bool = False,  # noqa: FBT001, FBT002
+    bands: list[HLSBands] | None = None,
+    **kwargs,
+) -> TemporalViTEncoder:
+    return create_prithvi_vit_600("prithvi_vit_600", pretrained, bands, **kwargs)
