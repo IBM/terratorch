@@ -33,6 +33,8 @@ class Encoder(nn.Module):
                     nn.BatchNorm2d(hidden_channels * hidden_channels_multiplier[index]),
                     nn.ReLU(inplace=True),
                 )
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            self.encoders[index] = self.encoders[index].to(device)
 
     def forward(self, x):
         encoder_values = [None] * len(self.encoders)
@@ -66,6 +68,8 @@ class Decoder(nn.Module):
                 nn.BatchNorm2d(hidden_channels * hidden_channels_multiplier[index][1]),
                 nn.ReLU(inplace=True),
             )
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            self.decoders[index] = self.decoders[index].to(device)
 
         # Final output layer
         self.final_conv = nn.Conv2d(hidden_channels, out_channels, kernel_size=1)
@@ -107,6 +111,7 @@ class UNetPincer(nn.Module):
         self.backbone = backbone
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
         self.encoder = self.encoder.to(device)
         self.decoder = self.decoder.to(device)
         self.backbone = backbone.to(device)
