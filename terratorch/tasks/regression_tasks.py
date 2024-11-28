@@ -1,7 +1,7 @@
 """This module contains the regression task and its auxiliary classes."""
 
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, Optional
 
 import lightning
 import matplotlib.pyplot as plt
@@ -132,6 +132,7 @@ class PixelwiseRegressionTask(BaseTask):
         self,
         model_args: dict,
         model_factory: str,
+        model: Optional[torch.nn.Module]=None,
         loss: str = "mse",
         aux_heads: list[AuxiliaryHead] | None = None,
         aux_loss: dict[str, float] | None = None,
@@ -184,6 +185,22 @@ class PixelwiseRegressionTask(BaseTask):
         self.tiled_inference_parameters = tiled_inference_parameters
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
+
+        if model_factory:  
+            self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
+            self.model_builder = self._build
+        elif model:
+            self.model_builder = self._bypass_build
+        else:
+            raise Exception("Or a model_factory or a torch.nn.Module object must be provided.")
+
+        self._model_module = None 
+
+        super().__init__()
+
+        self._model_module = model
+        self.model = model
+
         self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
         super().__init__()
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
@@ -365,6 +382,19 @@ class PixelwiseRegressionTask(BaseTask):
         self.test_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat = model_output.output
         self.test_metrics.update(y_hat, y)
+
+    @property
+    def model_module(self):
+        return self._model_module
+
+    def _bypass_build(self):
+        return self.model_module
+
+    def _build(self):
+
+        return self.model_factory.build_model(
+            "segmentation", aux_decoders=self.aux_heads, **self.hparams["model_args"]
+        )
 
     def on_test_epoch_end(self) -> None:
         self.log_dict(self.test_metrics.compute(), sync_dist=True)

@@ -149,8 +149,10 @@ class PatchEmbed(nn.Module):
         # h, w = imgs.shape[3], imgs.shape[4]
         t, h, w = imgs.shape[-3:]
         h_pad, w_pad = (p - h % p) % p, (p - w % p) % p  # Ensure padding is within bounds
-        if h_pad > 0 or w_pad > 0:
-            imgs = nn.functional.pad(imgs, (0, w_pad, 0, h_pad), mode=padding)
+        #if h_pad > 0 or w_pad > 0:
+        print(w_pad, h_pad)
+        imgs = nn.functional.pad(imgs, (0, w_pad, 0, h_pad), mode=padding)
+        print(imgs.shape)
         return imgs
 
 
