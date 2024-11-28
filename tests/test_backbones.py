@@ -35,7 +35,7 @@ def input_386():
     return torch.ones((1, NUM_CHANNELS, 386, 386))
 
 
-@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_vit_300", "prithvi_swin_B"])
+@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_eo_v2_300", "prithvi_swin_B"])
 @pytest.mark.parametrize("test_input", ["input_224", "input_512"])
 def test_can_create_backbones_from_timm(model_name, test_input, request):
     backbone = timm.create_model(model_name, pretrained=False)
@@ -43,32 +43,32 @@ def test_can_create_backbones_from_timm(model_name, test_input, request):
     backbone(input_tensor)
     gc.collect()
 
-@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_vit_300", "prithvi_swin_B"])
+@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_eo_v2_300", "prithvi_swin_B"])
 @pytest.mark.parametrize("test_input", ["input_224", "input_512"])
 def test_can_create_backbones_from_timm_features_only(model_name, test_input, request):
     backbone = timm.create_model(model_name, pretrained=False, features_only=True)
     input_tensor = request.getfixturevalue(test_input)
     backbone(input_tensor)
     gc.collect()
-@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_vit_300", "prithvi_swin_B"])
+@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_eo_v2_300", "prithvi_swin_B"])
 @pytest.mark.parametrize("prefix", ["", "timm_"])
 def test_can_create_timm_backbones_from_registry(model_name, input_224, prefix):
     backbone = BACKBONE_REGISTRY.build(prefix+model_name, pretrained=False)
     backbone(input_224)
     gc.collect()
 
-@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_vit_300"])
+@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_eo_v2_300"])
 def test_vit_models_accept_multitemporal(model_name, input_224_multitemporal):
     backbone = timm.create_model(model_name, pretrained=False, num_frames=NUM_FRAMES)
     backbone(input_224_multitemporal)
     gc.collect()
-@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_vit_300"])
+@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_eo_v2_300"])
 def test_vit_models_non_divisible_input(model_name, input_non_divisible):
     #padding 'none','constant', 'reflect', 'replicate' or 'circular' default is 'none'
     backbone = timm.create_model(model_name, pretrained=False, num_frames=NUM_FRAMES,padding='constant')
     backbone(input_non_divisible)
     gc.collect()
-@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_vit_300"])
+@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_eo_v2_300"])
 @pytest.mark.parametrize("patch_size", [8, 16])
 @pytest.mark.parametrize("tubelet_size", [1, 2, 4])
 def test_vit_models_different_patch_tubelet_sizes(model_name, patch_size, tubelet_size, input_224_multitemporal):
@@ -101,7 +101,7 @@ def test_vit_models_different_patch_tubelet_sizes(model_name, patch_size, tubele
         {backbone.embed_dim} = {expected_t * backbone.embed_dim} but was {e.shape[1]}"
 
     gc.collect()
-@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_vit_300"])
+@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_eo_v2_300"])
 def test_out_indices(model_name, input_224):
     out_indices = [2, 4, 8, 10]
     backbone = timm.create_model(model_name, pretrained=False, features_only=True, out_indices=out_indices)
@@ -113,7 +113,7 @@ def test_out_indices(model_name, input_224):
     for filtered_index, full_index in enumerate(out_indices):
         assert torch.allclose(full_output[full_index], output[filtered_index])
     gc.collect()
-@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_vit_300"])
+@pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_eo_v2_300"])
 def test_out_indices_non_divisible(model_name, input_non_divisible):
     out_indices = [2, 4, 8, 10]
     backbone = timm.create_model(model_name, pretrained=False, features_only=True, num_frames=NUM_FRAMES, out_indices=out_indices, padding='constant')
