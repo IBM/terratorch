@@ -16,7 +16,7 @@
 # timm: https://github.com/rwightman/pytorch-image-models/tree/master/timm
 # transformers: https://github.com/huggingface/transformers
 # --------------------------------------------------------
-
+import logging
 
 import torch
 import torch.nn as nn
@@ -488,6 +488,10 @@ class PatchEmbed(nn.Module):
     def forward(self, x):
         if len(x.shape) == 4 and self.num_frames == 1:
             x = x.reshape(-1, self.in_chans, self.num_frames, *x.shape[-2:])
+
+        if x.shape[-1] / self.patch_size % 1 or x.shape[-2] / self.patch_size % 1:
+            logging.warning(f"Input {x.shape[-2:]} is not divisible by patch size {self.patch_size}."
+                            f"The border will be ignored, add backbone_padding for pixel-wise tasks.")
 
         x = self.proj(x)
         if self.flatten:
