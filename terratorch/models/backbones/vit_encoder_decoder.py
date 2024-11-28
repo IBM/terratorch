@@ -144,17 +144,28 @@ class PatchEmbed(nn.Module):
         )
         self.norm = norm_layer(embed_dim) if norm_layer else nn.Identity()
 
+    """
     def pad_images(self, imgs: Tensor, padding:str="constant") -> Tensor:
         p = self.patch_size[1]
         # h, w = imgs.shape[3], imgs.shape[4]
         t, h, w = imgs.shape[-3:]
         h_pad, w_pad = (p - h % p) % p, (p - w % p) % p  # Ensure padding is within bounds
         #if h_pad > 0 or w_pad > 0:
-        print(w_pad, h_pad)
         imgs = nn.functional.pad(imgs, (0, w_pad, 0, h_pad), mode=padding)
         print(imgs.shape)
         return imgs
+    """
 
+    def pad_images(self, imgs: Tensor, patch_size:int=None, padding:str='constant') -> Tensor:
+
+        p = self.patch_size[0]
+
+        t, h, w = imgs.shape[-3:]
+        h_pad = (h // p) * p - h  # Ensure padding is within bounds
+        w_pad = (w // p) * p - w  # Ensure padding is within bounds
+        # padding can be negative
+        imgs = nn.functional.pad(imgs, (0, w_pad, 0, h_pad), mode=padding)
+        return imgs
 
     def forward(self, x):
         if len(x.shape) == B_C_H_W_SHAPE_LEN and self.num_frames == 1:
@@ -166,7 +177,7 @@ class PatchEmbed(nn.Module):
         if self.flatten:
             x = x.flatten(2).transpose(1, 2)  # B,C,T,H,W -> B,C,L -> B,L,C
         x = self.norm(x)
-        print(x.shape)
+
         return x
 
 
@@ -476,7 +487,7 @@ class TemporalViTEncoder(nn.Module):
             x = x.reshape(-1, self.in_chans, 1, *x.shape[-2:])
         t, h, w = x.shape[-3:]
         x = self.patch_embed(x)
-        print(self.patch_embed.patch_size)
+
         pos_embed = torch.from_numpy(
             get_3d_sincos_pos_embed(
                 self.embed_dim,
