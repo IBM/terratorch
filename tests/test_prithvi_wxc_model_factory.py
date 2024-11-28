@@ -7,6 +7,7 @@ from lightning.pytorch import Trainer
 import os
 from huggingface_hub import hf_hub_download
 import torch.distributed as dist
+import torch
 
 
 
@@ -105,7 +106,39 @@ def test_wxc_unet_pincer_inference():
 
     from prithviwxc.gravitywave.datamodule import ERA5DataModule
     from terratorch.tasks.wxc_gravity_wave_task import WxCGravityWaveTask
-    task = WxCGravityWaveTask(WxCModelFactory(), mode='eval')
+
+    model_args = {
+        "in_channels": 1280,
+        "input_size_time": 1,
+        "n_lats_px": 64,
+        "n_lons_px": 128,
+        "patch_size_px": [2, 2],
+        "mask_unit_size_px": [8, 16],
+        "mask_ratio_inputs": 0.5,
+        "embed_dim": 2560,
+        "n_blocks_encoder": 12,
+        "n_blocks_decoder": 2,
+        "mlp_multiplier": 4,
+        "n_heads": 16,
+        "dropout": 0.0,
+        "drop_path": 0.05,
+        "parameter_dropout": 0.0,
+        "residual": "none",
+        "masking_mode": "both",
+        "decoder_shifting": False,
+        "positional_encoding": "absolute",
+        "checkpoint_encoder": [3, 6, 9, 12, 15, 18, 21, 24],
+        "checkpoint_decoder": [1, 3],
+        "in_channels_static": 3,
+        "input_scalers_mu": torch.tensor([0] * 1280),
+        "input_scalers_sigma": torch.tensor([1] * 1280),
+        "input_scalers_epsilon": 0,
+        "static_input_scalers_mu": torch.tensor([0] * 3),
+        "static_input_scalers_sigma": torch.tensor([1] * 3),
+        "static_input_scalers_epsilon": 0,
+        "output_scalers": torch.tensor([0] * 1280),
+    }
+    task = WxCGravityWaveTask(WxCModelFactory(), model_args=model_args, mode='eval')
 
     trainer = Trainer(
         max_epochs=1,
@@ -151,7 +184,38 @@ def test_wxc_unet_pincer_train():
 
     from prithviwxc.gravitywave.datamodule import ERA5DataModule
     from terratorch.tasks.wxc_gravity_wave_task import WxCGravityWaveTask
-    task = WxCGravityWaveTask(WxCModelFactory(), mode='train')
+    model_args = {
+        "in_channels": 1280,
+        "input_size_time": 1,
+        "n_lats_px": 64,
+        "n_lons_px": 128,
+        "patch_size_px": [2, 2],
+        "mask_unit_size_px": [8, 16],
+        "mask_ratio_inputs": 0.5,
+        "embed_dim": 2560,
+        "n_blocks_encoder": 12,
+        "n_blocks_decoder": 2,
+        "mlp_multiplier": 4,
+        "n_heads": 16,
+        "dropout": 0.0,
+        "drop_path": 0.05,
+        "parameter_dropout": 0.0,
+        "residual": "none",
+        "masking_mode": "both",
+        "decoder_shifting": False,
+        "positional_encoding": "absolute",
+        "checkpoint_encoder": [3, 6, 9, 12, 15, 18, 21, 24],
+        "checkpoint_decoder": [1, 3],
+        "in_channels_static": 3,
+        "input_scalers_mu": torch.tensor([0] * 1280),
+        "input_scalers_sigma": torch.tensor([1] * 1280),
+        "input_scalers_epsilon": 0,
+        "static_input_scalers_mu": torch.tensor([0] * 3),
+        "static_input_scalers_sigma": torch.tensor([1] * 3),
+        "static_input_scalers_epsilon": 0,
+        "output_scalers": torch.tensor([0] * 1280),
+    }
+    task = WxCGravityWaveTask(WxCModelFactory(), model_args=model_args, mode='train')
 
     trainer = Trainer(
         max_epochs=1,

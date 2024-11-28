@@ -55,38 +55,6 @@ class WxCModelFactory(ModelFactory):
         **kwargs,
     ) -> Model:
         if backbone == 'prithviwxc':
-            kwargs = {
-                "in_channels": 1280,
-                "input_size_time": 1,
-                "n_lats_px": 64,
-                "n_lons_px": 128,
-                "patch_size_px": [2, 2],
-                "mask_unit_size_px": [8, 16],
-                "mask_ratio_inputs": 0.5,
-                "embed_dim": 2560,
-                "n_blocks_encoder": 12,
-                "n_blocks_decoder": 2,
-                "mlp_multiplier": 4,
-                "n_heads": 16,
-                "dropout": 0.0,
-                "drop_path": 0.05,
-                "parameter_dropout": 0.0,
-                "residual": "none",
-                "masking_mode": "both",
-                "decoder_shifting": False,
-                "positional_encoding": "absolute",
-                "checkpoint_encoder": [3, 6, 9, 12, 15, 18, 21, 24],
-                "checkpoint_decoder": [1, 3],
-                "in_channels_static": 3,
-                "input_scalers_mu": torch.tensor([0] * 1280),
-                "input_scalers_sigma": torch.tensor([1] * 1280),
-                "input_scalers_epsilon": 0,
-                "static_input_scalers_mu": torch.tensor([0] * 3),
-                "static_input_scalers_sigma": torch.tensor([1] * 3),
-                "static_input_scalers_epsilon": 0,
-                "output_scalers": torch.tensor([0] * 1280),
-            }
-
             try:
                 prithviwxc = importlib.import_module('PrithviWxC.model')
             except ModuleNotFoundError as e:
@@ -137,7 +105,18 @@ class WxCModelFactory(ModelFactory):
 
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             backbone.to(device)
-            model_to_return = UNetPincer(backbone).to(device)
+
+            defaults = {
+                "encoder_hidden_channels_multiplier" : [1, 2, 4, 8],
+                "encoder_num_encoder_blocks" : 4,
+                "decoder_hidden_channels_multiplier" : [(16, 8), (12, 4), (6, 2), (3, 1)],
+                "decoder_num_decoder_blocks" : 4,
+            }
+            valid_overrides = {k: v for k, v in kwargs.items() if k in defaults}
+            kwargs_updated = defaults.copy()
+            kwargs_updated.update(valid_overrides)
+
+            model_to_return = UNetPincer(backbone, **kwargs_updated).to(device)
             return model_to_return
             #return WxCModuleWrapper(backbone)
 

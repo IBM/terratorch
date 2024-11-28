@@ -5,9 +5,10 @@ import torch.nn as nn
 import torch
 
 class WxCGravityWaveTask(BaseTask):
-    def __init__(self, model_factory, mode, learning_rate=0.1):
+    def __init__(self, model_factory, model_args: dict, mode, learning_rate=0.1):
         if mode not in ['train', 'eval']:
             raise ValueError(f'mode {mode} is not supported. (train, eval)')
+        self.model_args = model_args
         self.model_factory = model_factory
         self.learning_rate = learning_rate
         super().__init__()
@@ -17,7 +18,8 @@ class WxCGravityWaveTask(BaseTask):
     
     def configure_models(self):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = self.model_factory.build_model(backbone='prithviwxc', aux_decoders=None)
+        #self.model = self.model_factory.build_model(backbone='prithviwxc', aux_decoders=None, **self.hparams["model_args"])
+        self.model = self.model_factory.build_model(backbone='prithviwxc', aux_decoders=None, **self.model_args)
         self.model = self.model.to(device)
         layer_devices = []
         for name, module in self.model.named_children():
