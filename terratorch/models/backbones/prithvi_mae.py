@@ -20,6 +20,7 @@ import logging
 
 import torch
 import torch.nn as nn
+import numpy as np
 from functools import partial
 from typing import List, Tuple, Union
 from einops import rearrange
@@ -98,6 +99,9 @@ class PrithviMAE(nn.Module):
         imgs: B, C, T, H, W
         x: B, L, D
         """
+        if len(imgs.shape) == 4:  # B, C, H, W
+            imgs = imgs.unsqueeze(2)
+
         s = self.encoder.patch_embed.tubelet_size
         p = q = self.encoder.patch_embed.patch_size
         x = rearrange(imgs, 'b c (t s) (h p) (w q) -> b (t h w) (s p q c)', s=s, p=p, q=q)
@@ -232,8 +236,8 @@ class PrithviViT(nn.Module):
         nn.init.normal_(self.cls_token, std=0.02)
         self.apply(_init_weights)
 
-        # pos_embed = get_3d_sincos_pos_embed(self.pos_embed.shape[-1], self.grid_size, cls_token=True)
-        # self.pos_embed.data.copy_(pos_embed.unsqueeze(0))
+        pos_embed = get_3d_sincos_pos_embed(self.pos_embed.shape[-1], self.grid_size, cls_token=True)
+        self.pos_embed.data.copy_(pos_embed.unsqueeze(0))
 
         w = self.patch_embed.proj.weight.data
         torch.nn.init.xavier_uniform_(w.view([w.shape[0], -1]))
@@ -263,6 +267,9 @@ class PrithviViT(nn.Module):
                 location_coords: None | torch.Tensor = None,
                 mask_ratio=0.75
                 ):
+        if len(x.shape) == 4 and self.patch_embed.num_frames == 1:
+            x = x.unsqueeze(2)
+
         t, h, w = x.shape[-3:]
         # Drop input channels
         x = self.drop_channels(x)
@@ -270,8 +277,17 @@ class PrithviViT(nn.Module):
         # embed patches
         x = self.patch_embed(x)
 
+        pos_embed = get_3d_sincos_pos_embed(
+                self.embed_dim,
+                (
+                    t // self.patch_embed.tubelet_size,
+                    h // self.patch_embed.patch_size,
+                    w // self.patch_embed.patch_size,
+                ),
+                cls_token=True,
+            ).to(x)
         # add pos embed w/o cls token
-        x = x + self.pos_embed[:, 1:, :]
+        x = x + pos_embed[1:, :]
 
         if self.temporal_encoding:
             num_tokens_per_frame = x.shape[1] // self.num_frames
@@ -287,7 +303,7 @@ class PrithviViT(nn.Module):
         x, mask, ids_restore = self.random_masking(x, mask_ratio)
 
         # append cls token
-        cls_token = self.cls_token + self.pos_embed[:, :1, :]
+        cls_token = self.cls_token + pos_embed[:1, :]
         cls_tokens = cls_token.expand(x.shape[0], -1, -1)
         x = torch.cat((cls_tokens, x), dim=1)
 
@@ -343,6 +359,24 @@ class PrithviViT(nn.Module):
 
         x = self.norm(x)
         out[-1] = x
+        return out
+
+    def prepare_features_for_image_model(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
+        out = []
+        effective_time_dim = self.patch_embed.num_frames // self.patch_embed.tubelet_size
+        for x in features:
+            x_no_token = x[:, 1:, :]
+            number_of_tokens = x_no_token.shape[1]
+            tokens_per_timestep = number_of_tokens // effective_time_dim
+            h = int(np.sqrt(tokens_per_timestep))
+            encoded = rearrange(
+                x_no_token,
+                "batch (t h w) e -> batch (t e) h w",
+                e=self.embed_dim,
+                t=effective_time_dim,
+                h=h,
+            )
+            out.append(encoded)
         return out
 
 
@@ -441,10 +475,10 @@ class MAEDecoder(nn.Module):
         # apply Transformer blocks
         for block in self.decoder_blocks:
             x = block(x)
-        x = self.norm(x)
+        x = self.decoder_norm(x)
 
         # predictor projection
-        pred = self.pred(x)
+        pred = self.decoder_pred(x)
 
         # remove cls token
         pred = pred[:, 1:, :]

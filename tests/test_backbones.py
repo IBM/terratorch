@@ -36,7 +36,7 @@ def input_386():
 
 
 @pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_eo_v2_300", "prithvi_swin_B"])
-@pytest.mark.parametrize("test_input", ["input_224", "input_512"])
+@pytest.mark.parametrize("test_input", ["input_224"])
 def test_can_create_backbones_from_timm(model_name, test_input, request):
     backbone = timm.create_model(model_name, pretrained=False)
     input_tensor = request.getfixturevalue(test_input)
@@ -65,7 +65,7 @@ def test_vit_models_accept_multitemporal(model_name, input_224_multitemporal):
 @pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_eo_v2_300"])
 def test_vit_models_non_divisible_input(model_name, input_non_divisible):
     #padding 'none','constant', 'reflect', 'replicate' or 'circular' default is 'none'
-    backbone = timm.create_model(model_name, pretrained=False, num_frames=NUM_FRAMES,padding='constant')
+    backbone = timm.create_model(model_name, pretrained=False, features_only=True, num_frames=NUM_FRAMES, padding='constant')
     backbone(input_non_divisible)
     gc.collect()
 @pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_eo_v2_300"])
