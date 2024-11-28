@@ -64,7 +64,7 @@ data:
     test_split: data/sen1floods11/splits/splits/flood_handlabeled/dev_test.txt
 
     allow_substring_file_names: True
-    img_grep:
+    image_grep:
       S2L2A: "*_S2L2AHand.tif"
       S1: "*_S1Hand.tif"
       LULC: "*_LULCHand.npy"
@@ -130,9 +130,9 @@ model:
         - S1
         - S2L2A
         - LULC
-      decoder: UperNetDecoder # FCNDecoder
-      # decoder_num_convs: 4  # only for FCNDecoder
-      decoder_scale_modules: True  # only for UperNetDecoder
+      decoder: FCNDecoder  # UperNetDecoder
+      decoder_num_convs: 4  # only for FCNDecoder
+      # decoder_scale_modules: True  # only for UperNetDecoder
       decoder_channels: 256
       num_classes: 2
       head_dropout: 0.1
