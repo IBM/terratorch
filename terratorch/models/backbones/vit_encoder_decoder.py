@@ -144,25 +144,14 @@ class PatchEmbed(nn.Module):
         )
         self.norm = norm_layer(embed_dim) if norm_layer else nn.Identity()
 
-    """
-    def pad_images(self, imgs: Tensor, padding:str="constant") -> Tensor:
-        p = self.patch_size[1]
-        # h, w = imgs.shape[3], imgs.shape[4]
-        t, h, w = imgs.shape[-3:]
-        h_pad, w_pad = (p - h % p) % p, (p - w % p) % p  # Ensure padding is within bounds
-        #if h_pad > 0 or w_pad > 0:
-        imgs = nn.functional.pad(imgs, (0, w_pad, 0, h_pad), mode=padding)
-        print(imgs.shape)
-        return imgs
-    """
-
     def pad_images(self, imgs: Tensor, patch_size:int=None, padding:str='constant') -> Tensor:
 
         p = self.patch_size[0]
 
         t, h, w = imgs.shape[-3:]
-        h_pad = (h // p) * p - h  # Ensure padding is within bounds
-        w_pad = (w // p) * p - w  # Ensure padding is within bounds
+        h_pad = (h // p) * p - h  
+        w_pad = (w // p) * p - w 
+
         # padding can be negative
         imgs = nn.functional.pad(imgs, (0, w_pad, 0, h_pad), mode=padding)
         return imgs
