@@ -36,7 +36,7 @@ def input_386():
 
 
 @pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_eo_v2_300", "prithvi_swin_B"])
-@pytest.mark.parametrize("test_input", ["input_224"])
+@pytest.mark.parametrize("test_input", ["input_224", "input_512"])
 def test_can_create_backbones_from_timm(model_name, test_input, request):
     backbone = timm.create_model(model_name, pretrained=False)
     input_tensor = request.getfixturevalue(test_input)
@@ -70,21 +70,20 @@ def test_vit_models_non_divisible_input(model_name, input_non_divisible):
     gc.collect()
 @pytest.mark.parametrize("model_name", ["prithvi_vit_100", "prithvi_eo_v2_300"])
 @pytest.mark.parametrize("patch_size", [8, 16])
-@pytest.mark.parametrize("tubelet_size", [1, 2, 4])
-def test_vit_models_different_patch_tubelet_sizes(model_name, patch_size, tubelet_size, input_224_multitemporal):
+@pytest.mark.parametrize("patch_size_time", [1, 2, 4])
+def test_vit_models_different_patch_tubelet_sizes(model_name, patch_size, patch_size_time, input_224_multitemporal):
     backbone = timm.create_model(
         model_name,
         pretrained=False,
         num_frames=NUM_FRAMES,
-        patch_size=patch_size,
-        tubelet_size=tubelet_size,
+        patch_size=[patch_size_time, patch_size, patch_size],
         features_only=True,
     )
     embedding = backbone(input_224_multitemporal)
     processed_embedding = backbone.prepare_features_for_image_model(embedding)
 
     expected_h_w = 224 // patch_size
-    expected_t = NUM_FRAMES // tubelet_size
+    expected_t = NUM_FRAMES // patch_size_time
 
     for e in processed_embedding:
         assert (
