@@ -394,15 +394,6 @@ class PixelwiseRegressionTask(BaseTask):
     def model_module(self):
         return self._model_module
 
-    def _bypass_build(self):
-        return self.model_module
-
-    def _build(self):
-
-        return self.model_factory.build_model(
-            "segmentation", aux_decoders=self.aux_heads, **self.hparams["model_args"]
-        )
-
     def on_test_epoch_end(self) -> None:
         self.log_dict(self.test_metrics.compute(), sync_dist=True)
         self.test_metrics.reset()

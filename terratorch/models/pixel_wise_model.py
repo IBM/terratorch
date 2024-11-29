@@ -117,6 +117,7 @@ class PixelWiseModel(Model, SegmentationModel):
 
     def _get_head(self, task: str, input_embed_dim: int, head_kwargs):
         if task == "segmentation":
+            print(head_kwargs)
             if "num_classes" not in head_kwargs:
                 msg = "num_classes must be defined for segmentation task"
                 raise Exception(msg)
