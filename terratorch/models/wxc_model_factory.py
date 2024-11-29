@@ -39,8 +39,7 @@ class WxCModuleWrapper(Model, nn.Module):
     
     def load_state_dict(self, state_dict: os.Mapping[str, typing.Any], strict: bool = True, assign: bool = False):
 
-        return self.module.load_state_dict(state_dict, strict, assign)
-
+        self.module.load_state_dict(state_dict, strict, assign)
 
 @MODEL_FACTORY_REGISTRY.register
 class WxCModelFactory(ModelFactory):
@@ -48,6 +47,7 @@ class WxCModelFactory(ModelFactory):
         self,
         backbone: str | nn.Module,
         aux_decoders,
+        checkpoint_path:str=None,
         **kwargs,
     ) -> Model:
         if backbone == 'gravitywave':
@@ -56,7 +56,10 @@ class WxCModelFactory(ModelFactory):
                 from prithviwxc.gravitywave.inference import get_model
                 from prithviwxc.gravitywave.config import get_cfg
                 cfg = get_cfg()
-                return WxCModuleWrapper(get_model(cfg,'uvtp122', cfg.singular_sharded_checkpoint))
+                model_wrapper = WxCModuleWrapper(get_model(cfg,'uvtp122', cfg.singular_sharded_checkpoint))
+                if checkpoint_path:
+                    model_wrapper.load_state_dict(torch.load(checkpoint_path, weights_only=True))
+                return model_wrapper
             except ImportError as e:
                 missing_module = e.name if hasattr(e, 'name') else "unknown module"
                 print('prithvi wxc gravitywave not installed, missing module: {missing_module}')
@@ -67,6 +70,10 @@ class WxCModelFactory(ModelFactory):
                 from granitewxc.utils.config import get_config
                 from granitewxc.utils.downscaling_model import get_finetune_model
                 module = get_finetune_model(kwargs['model_config'])
-                return WxCModuleWrapper(module)
+                model_wrapper = WxCModuleWrapper(module)
+                
+                if checkpoint_path:
+                    model_wrapper.load_state_dict(torch.load(checkpoint_path, weights_only=True))
+                return model_wrapper
             except ImportError:
                 print('granite wxc downscaling not installed')
