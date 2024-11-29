@@ -201,22 +201,29 @@ class PixelwiseRegressionTask(BaseTask):
         self._model_module = model
         self.model = model
 
-        self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
-        super().__init__()
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
         self.test_loss_handler = LossHandler(self.test_metrics.prefix)
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
         self.monitor = f"{self.val_metrics.prefix}loss"
         self.plot_on_val = int(plot_on_val)
 
+    def _bypass_build(self):
+        return self.model_module
+
+    def _build(self):
+
+        return self.model_factory.build_model(
+            "regression", aux_decoders=self.aux_heads, **self.hparams["model_args"]
+        )
+
     # overwrite early stopping
     def configure_callbacks(self) -> list[Callback]:
         return []
 
     def configure_models(self) -> None:
-        self.model: Model = self.model_factory.build_model(
-            "regression", aux_decoders=self.aux_heads, **self.hparams["model_args"]
-        )
+
+        self.model: Model = self.model_builder()
+
         if self.hparams["freeze_backbone"]:
             self.model.freeze_encoder()
         if self.hparams["freeze_decoder"]:
