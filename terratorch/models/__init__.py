@@ -11,6 +11,7 @@ from terratorch.models.clay_model_factory import ClayModelFactory
 from terratorch.models.satmae_model_factory import SatMAEModelFactory
 from terratorch.models.smp_model_factory import SMPModelFactory
 from terratorch.models.timm_model_factory import TimmModelFactory
+from terratorch.models.object_detection_model_factory import ObjectDetectionModelFactory
 
 try:
     from terratorch.models.wxc_model_factory import WxCModelFactory
@@ -29,5 +30,6 @@ __all__ = (
     "AuxiliaryHeadWithDecoderWithoutInstantiatedHead",
     "UNet",
     "WxCModelFactory",
-    "EncoderDecoderFactory"
+    "EncoderDecoderFactory",
+    "ObjectDetectionModelFactory"
 )
