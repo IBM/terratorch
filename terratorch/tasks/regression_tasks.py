@@ -431,7 +431,7 @@ class PixelwiseRegressionTask(BaseTask):
         if self.tiled_inference_parameters:
             y_hat: Tensor = tiled_inference(model_forward, x, 1, self.tiled_inference_parameters)
         else:
-            y_hat: Tensor = self(x).output
+            y_hat: Tensor = self(x, **rest).output
         return y_hat, file_names
 
 class ScalarRegressionTask(PixelwiseRegressionTask):
