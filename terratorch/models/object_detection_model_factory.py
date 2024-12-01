@@ -15,6 +15,11 @@ from torchvision.models._api import WeightsEnum
 from terratorch.models.model import Model, ModelFactory, ModelOutput
 from terratorch.models.utils import extract_prefix_keys
 from torchvision.models import resnet as R
+import torchvision.models.detection
+from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
+from torchvision.models.detection.retinanet import RetinaNetHead
+from torchvision.models.detection.rpn import AnchorGenerator
+from torchvision.ops import MultiScaleRoIAlign, feature_pyramid_network, misc
 
 from terratorch.registry import MODEL_FACTORY_REGISTRY
 
@@ -48,11 +53,10 @@ class ObjectDetectionModelFactory(ModelFactory):
     def build_model(
         self,
         task: str,
-        model: str,
-        backbone: str,
-        in_channels: int,
-        num_classes: int,
-        pretrained: str | bool = True,
+        model: str = 'faster-rcnn',
+        backbone: str = 'resnet50',
+        num_classes: int = 1000,
+        trainable_layers: int = 3,
         weights: str | bool = True,
         **kwargs,
     ) -> Model:
@@ -60,12 +64,18 @@ class ObjectDetectionModelFactory(ModelFactory):
 
         Args:
             task (str): Must be "object_detection".
-            model (str): Name of the model in torchvision.
-            backbone (str): Name of the backbone in torchvision.
-            in_channels (int): Number of input channels.
-            num_classes (int): Number of classes.
-            pretrained (bool): 
-            weights (bool):
+            model: Name of the `torchvision
+                <https://pytorch.org/vision/stable/models.html#object-detection>`__
+                model to use. One of 'faster-rcnn', 'fcos', or 'retinanet'.
+            backbone: Name of the `torchvision
+                <https://pytorch.org/vision/stable/models.html#classification>`__
+                backbone to use. One of 'resnet18', 'resnet34', 'resnet50',
+                'resnet101', 'resnet152', 'resnext50_32x4d', 'resnext101_32x8d',
+                'wide_resnet50_2', or 'wide_resnet101_2'.
+            weights: Initial model weights. True for ImageNet weights, False or None
+                for random weights.
+            num_classes: Number of prediction classes (including the background).
+            trainable_layers: Number of trainable layers.
 
         Returns:
             Model: Torchvision model wrapped in ObjectDetectionModelWrapper.
@@ -74,18 +84,11 @@ class ObjectDetectionModelFactory(ModelFactory):
             msg = f"torchvision models can only perform classification, but got task {task}"
             raise Exception(msg)
         backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
-        #if isinstance(pretrained, bool):
-        #    model = create_model(
-        #        backbone, pretrained=pretrained, num_classes=num_classes, in_chans=in_channels, **backbone_kwargs
-        #    )
-        #else:
-        #    model = create_model(backbone, num_classes=num_classes, in_chans=in_channels, **backbone_kwargs)
 
-        #-------------------------------------- from torchgeo begin
         if backbone in BACKBONE_LAT_DIM_MAP:
-            kwargs = {
+            kwargs = { # for model backbone parameter
                 'backbone_name': backbone,
-                'trainable_layers': self.hparams['trainable_layers'],
+                'trainable_layers': trainable_layers,
             }
             if weights:
                 kwargs['weights'] = BACKBONE_WEIGHT_MAP[backbone]
@@ -106,10 +109,6 @@ class ObjectDetectionModelFactory(ModelFactory):
                 featmap_names=['0', '1', '2', '3'], output_size=7, sampling_ratio=2
             )
 
-            if freeze_backbone:
-                for param in model_backbone.parameters():
-                    param.requires_grad = False
-
             self.model = torchvision.models.detection.FasterRCNN(
                 model_backbone,
                 num_classes,
@@ -127,10 +126,6 @@ class ObjectDetectionModelFactory(ModelFactory):
                 sizes=((8,), (16,), (32,), (64,), (128,), (256,)),
                 aspect_ratios=((1.0,), (1.0,), (1.0,), (1.0,), (1.0,), (1.0,)),
             )
-
-            if freeze_backbone:
-                for param in model_backbone.parameters():
-                    param.requires_grad = False
 
             self.model = torchvision.models.detection.FCOS(
                 model_backbone, num_classes, anchor_generator=anchor_generator
@@ -159,10 +154,6 @@ class ObjectDetectionModelFactory(ModelFactory):
                 norm_layer=partial(torch.nn.GroupNorm, 32),
             )
 
-            if freeze_backbone:
-                for param in model_backbone.parameters():
-                    param.requires_grad = False
-
             self.model = torchvision.models.detection.RetinaNet(
                 model_backbone,
                 num_classes,
@@ -171,12 +162,11 @@ class ObjectDetectionModelFactory(ModelFactory):
             )
         else:
             raise ValueError(f"Model type '{model}' is not valid.")
-        #-------------------------------------- torchvision end
 
         return ObjectDetectionModelWrapper(model)
 
 
-class ObjectDetectionModelWrapper(Model, nn.Module):
+class ObjectDetectionModelWrapper(Model):
     def __init__(self, torchvision_model) -> None:
         super().__init__()
         self.torchvision_model = torchvision_model
@@ -185,11 +175,8 @@ class ObjectDetectionModelWrapper(Model, nn.Module):
         return ModelOutput(self.torchvision_model(*args, **kwargs))
 
     def freeze_encoder(self):
-        for param in self.torchvision_model.parameters():
+        for param in self.torchvision_model.backbone.parameters():
             param.requires_grad = False
-        for param in self.torchvision_model.get_classifier().parameters():
-            param.requires_grad = True
 
     def freeze_decoder(self):
-        for param in self.torchvision_model.get_classifier().parameters():
-            param.requires_grad = False
+        pass  # FIXME

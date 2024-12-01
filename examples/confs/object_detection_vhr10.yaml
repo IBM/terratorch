@@ -86,13 +86,13 @@ model:
   init_args:
     model_factory: ObjectDetectionModelFactory
     model_args:
-      model: faster-rcnn  # Model name from TorchVision (one of faster-rcnn, fcos, or retinanet)
+      model: faster-rcnn  # Model name of TorchVision (one of faster-rcnn, fcos, or retinanet)
       backbone: resnet50  # One of resnet18, resnet34, resnet50, resnet101, resnet152, resnext50_32x4d, resnext101_32x8d, wide_resnet50_2, or wide_resnet101_2
-      in_channels: 3  #
-      num_classes: 1000  # Number of classes including background
-      pretrained: true
       weights: true  # True for ImageNet weight, False for random
+      num_classes: 1000  # Number of classes including background
+      trainable_layers: 3  # Number of trainable layers
     freeze_backbone: false
+    freeze_decoder: false
     loss: ce
     class_names:  # Optional class names (Alphabetic order for generic classification dataset)
       - Fish pond
@@ -108,11 +108,11 @@ model:
       - Small-scale oil palm plantation
       - Timber plantation
 
-optimizer:
-  class_path: torch.optim.AdamW
-  init_args:
-    lr: 1e-3
-    weight_decay: 0.05
+#optimizer:
+#  class_path: torch.optim.AdamW
+#  init_args:
+#    lr: 1e-3
+#    weight_decay: 0.05
 
 lr_scheduler:
   class_path: CosineAnnealingLR

@@ -74,7 +74,6 @@ class ObjectDetectionTask(BaseTask):
                 and the value is the weight to be applied to that loss.
                 The name of the loss should match the key in the dictionary output by the model's forward
                 method containing that output. Defaults to None.
-            class_weights (Union[list[float], None], optional): List of class weights to be applied to the loss.
             class_weights (list[float] | None, optional): List of class weights to be applied to the loss.
                 Defaults to None.
             ignore_index (int | None, optional): Label to ignore in the loss computation. Defaults to None.
@@ -115,7 +114,7 @@ class ObjectDetectionTask(BaseTask):
         if self.hparams["freeze_decoder"]:
             self.model.freeze_decoder()
 
-    def configure_optimizers(
+    def configure_optimizers(  # FIXME
         self,
     ) -> "lightning.pytorch.utilities.types.OptimizerLRSchedulerConfig":
         optimizer = self.hparams["optimizer"]
@@ -131,7 +130,7 @@ class ObjectDetectionTask(BaseTask):
             self.hparams["scheduler_hparams"],
         )
 
-    def configure_losses(self) -> None:
+    def configure_losses(self) -> None:  # FIXME
         """Initialize the loss criterion.
 
         Raises:
@@ -150,7 +149,7 @@ class ObjectDetectionTask(BaseTask):
             msg = f"Loss type '{loss}' is not valid."
             raise ValueError(msg)
 
-    def configure_metrics(self) -> None:
+    def configure_metrics(self) -> None:  # FIXME
         """Initialize the performance metrics."""
         num_classes: int = self.hparams["model_args"]["num_classes"]
         ignore_index: int = self.hparams["ignore_index"]
