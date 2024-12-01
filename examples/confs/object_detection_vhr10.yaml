@@ -108,11 +108,11 @@ model:
       - Small-scale oil palm plantation
       - Timber plantation
 
-#optimizer:
-#  class_path: torch.optim.AdamW
-#  init_args:
-#    lr: 1e-3
-#    weight_decay: 0.05
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 1e-3
+    weight_decay: 0.05
 
 lr_scheduler:
   class_path: CosineAnnealingLR
