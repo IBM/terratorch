@@ -154,13 +154,14 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         assert "mask" not in self.modalities, "Modality cannot be called 'mask'."
         self.image_modalities = image_modalities or self.modalities
         self.non_image_modalities = list(set(self.modalities) - set(image_modalities))
+        self.modalities = self.image_modalities + self.non_image_modalities  # Ensure image modalities to be first
         if scalar_label:
             self.non_image_modalities += ["label"]
 
-        # Convert path strings to lists as the code expects a list of paths per modality
-        for m, m_path in data_root.items():
-            if not isinstance(m_path, list):
-                data_root[m] = [m_path]
+        # Order by modalities and convert path strings to lists as the code expects a list of paths per modality
+        data_root = {m: data_root[m] if isinstance(data_root[m], list) else [data_root[m]]
+                     for m in self.modalities}
+
         if label_data_root is not None and not isinstance(label_data_root, list):
             label_data_root = [label_data_root]
 
