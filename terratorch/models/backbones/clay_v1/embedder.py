@@ -37,11 +37,8 @@ class Embedder(nn.Module):
         self.num_frames = num_frames
         self.bands = bands
 
-        if kwargs.get("datacuber", True) is not None:
-            self.datacuber = Datacuber(bands=bands)
-        else:
-            self.datacuber = None
-            
+        self.datacuber = Datacuber(bands=bands)
+
         # TODO: add support for various clay versions
         self.clay_encoder = (
             EmbeddingEncoder(  # Default parameters for the Clay base model
@@ -96,11 +93,15 @@ class Embedder(nn.Module):
         }
         return state_dict
 
-    def forward_features(self, x):
-        if self.datacuber is not None:
-            datacube = self.datacuber(x)
-        else:
-            datacube = x
+    def forward_features(
+        self,
+        x: torch.Tensor,
+        time: torch.Tensor | None = None,
+        latlon: torch.Tensor | None = None,
+        waves: torch.Tensor | None = None,
+        gsd: float | None = None,
+    ):
+        datacube = self.datacuber(x=x, time=time, latlon=latlon, waves=waves, gsd=gsd)
         embeddings = self.clay_encoder(datacube)
 
         # TODO: actually return features individually
