@@ -52,7 +52,7 @@ def test_unused_args_raise_exception(model_factory: EncoderDecoderFactory):
 
     gc.collect()
 
-@pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
+@pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_eo_v2_300"])
 def test_create_classification_model(backbone, model_factory: EncoderDecoderFactory, model_input):
     model = model_factory.build_model(
         "classification",
@@ -69,7 +69,7 @@ def test_create_classification_model(backbone, model_factory: EncoderDecoderFact
 
     gc.collect()
 
-@pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
+@pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_eo_v2_300"])
 def test_create_classification_model_no_in_channels(backbone, model_factory: EncoderDecoderFactory, model_input):
     model = model_factory.build_model(
         "classification",
