@@ -152,6 +152,9 @@ class SemanticSegmentationTask(BaseTask):
         self.model: Model = self.model_builder()
 
         if self.hparams["freeze_backbone"]:
+            if self.hparams.get("peft_config", None) is not None:
+                msg = "PEFT should be run with freeze_backbone = False"
+                raise ValueError(msg)
             self.model.freeze_encoder()
         if self.hparams["freeze_decoder"]:
             self.model.freeze_decoder()
