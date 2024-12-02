@@ -92,9 +92,13 @@ class PixelWiseModel(Model, SegmentationModel):
         self.check_input_shape(x)
         if isinstance(x, torch.Tensor):
             input_size = x.shape[-2:]
+        elif hasattr(kwargs, 'image_size'):
+            input_size = kwargs['image_size']
         elif isinstance(x, dict):
             # Multimodal input in passed as dict
             input_size = list(x.values())[0].shape[-2:]
+        else:
+            ValueError('Could not infer input shape.')
         features = self.encoder(x, **kwargs)
 
         ## only for backwards compatibility with pre-neck times.
