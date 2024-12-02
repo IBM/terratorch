@@ -36,6 +36,7 @@ def select_patch_embed_weights(
         dict: New state dict
     """
     _possible_keys_for_proj_weight = {
+        "encoder.patch_embed.proj.weight",
         "patch_embed.proj.weight",
         "module.patch_embed.proj.weight",
         "patch_embed.projection.weight",
