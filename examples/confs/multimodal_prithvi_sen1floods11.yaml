@@ -22,7 +22,7 @@ trainer:
         monitor: val/loss
         patience: 40
 
-  max_epochs: 5
+  max_epochs: 100
   check_val_every_n_epoch: 1
   log_every_n_steps: 50
   enable_checkpointing: True
@@ -32,9 +32,9 @@ data:
   class_path: GenericMultiModalDataModule
   init_args:
     task: 'segmentation'
-    batch_size: 2
-    num_workers: 0
-    modalities:
+    batch_size: 16
+    num_workers: 4
+    modalities: # Define names of modalities
       - S2L2A
       - S1
     rgb_modality: S2L2A # If not provided, uses first modality
@@ -43,6 +43,7 @@ data:
       - 2
       - 1
 
+    # Data roots are defined as dicts with modalities as keys
     train_data_root:
       S2L2A: data/sen1floods11/data/data/flood_events/HandLabeled/S2L2AHand
       S1: data/sen1floods11/data/data/flood_events/HandLabeled/S1Hand
@@ -56,9 +57,9 @@ data:
       S1: data/sen1floods11/data/data/flood_events/HandLabeled/S1Hand
     test_label_data_root: data/sen1floods11/data/data/flood_events/HandLabeled/LabelHand
 
-    train_split: data/sen1floods11/splits/splits/flood_handlabeled/dev_train.txt
-    val_split: data/sen1floods11/splits/splits/flood_handlabeled/dev_valid.txt
-    test_split: data/sen1floods11/splits/splits/flood_handlabeled/dev_test.txt
+    train_split: data/sen1floods11/splits/splits/flood_handlabeled/flood_train_data.txt
+    val_split: data/sen1floods11/splits/splits/flood_handlabeled/flood_valid_data.txt
+    test_split: data/sen1floods11/splits/splits/flood_handlabeled/flood_test_data.txt
 
     allow_substring_file_names: True
     image_grep:
@@ -67,8 +68,9 @@ data:
     label_grep: "*_LabelHand.tif"
     no_label_replace: -1
     no_data_replace: 0
-    concat_bands: true # Concatenate S2 and S2 bands
+    concat_bands: true # Concatenate modalities along band dim for single-modal models like Prithvi
 
+    # Define standardization values as dicts (no scaling if modality is not included)
     means:
       S2L2A:
         - 1793.243
@@ -107,6 +109,7 @@ data:
 
     num_classes: 2
 
+    # Transforms are shared between all image modalities (e.g. same crop area)
     train_transform:
       - class_path: albumentations.RandomCrop
         init_args:
