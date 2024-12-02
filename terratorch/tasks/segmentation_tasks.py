@@ -288,9 +288,15 @@ class SemanticSegmentationTask(BaseTask):
             try:
                 datamodule = self.trainer.datamodule
                 batch["prediction"] = y_hat_hard
+
                 if isinstance(batch["image"], dict):
-                    # Multimodal input
-                    batch["image"] = batch["image"][self.trainer.datamodule.rgb_modality]
+                    if hasattr(datamodule, 'rgb_modality'):
+                        # Generic multimodal dataset
+                        batch["image"] = batch["image"][datamodule.rgb_modality]
+                    else:
+                        # Multimodal dataset. Assuming first item to be the modality to visualize.
+                        batch["image"] = batch["image"][list(batch["image"].keys())[0]]
+
                 for key in ["image", "mask", "prediction"]:
                     batch[key] = batch[key].cpu()
                 sample = unbind_samples(batch)[0]
