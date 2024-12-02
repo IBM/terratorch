@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Copyright contributors to the Terratorch project
 
 """
@@ -54,12 +53,6 @@ def collate_samples(batch_list):
                 else:
                     batch[key] = [chunk[key] for chunk in batch_list]
     return batch
-=======
-from collections.abc import Callable, Iterable
-
-import albumentations as A
-import torch
->>>>>>> 1321f59 (adds new datasets)
 
 
 def wrap_in_compose_is_list(transform_list, image_modalities=None, non_image_modalities=None):
@@ -75,10 +68,6 @@ def wrap_in_compose_is_list(transform_list, image_modalities=None, non_image_mod
     return A.Compose(transform_list, is_check_shapes=False, additional_targets=additional_targets) \
         if isinstance(transform_list, Iterable) else transform_list
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 1321f59 (adds new datasets)
 class MultimodalNormalize(Callable):
     def __init__(self, means, stds):
         super().__init__()
@@ -106,8 +95,6 @@ class MultimodalNormalize(Callable):
                 # C, H, W
                 means = torch.tensor(self.means[m], device=image.device).view(-1, 1, 1)
                 stds = torch.tensor(self.stds[m], device=image.device).view(-1, 1, 1)
-<<<<<<< HEAD
-=======
 
             elif len(image.shape) == 2:
                 means = torch.tensor(self.means[m], device=image.device)
@@ -117,7 +104,6 @@ class MultimodalNormalize(Callable):
                 means = torch.tensor(self.means[m], device=image.device)
                 stds = torch.tensor(self.stds[m], device=image.device)
 
->>>>>>> 1321f59 (adds new datasets)
             else:
                 msg = (f"Expected batch with 5 or 4 dimensions (B, C, (T,) H, W), sample with 3 dimensions (C, H, W) "
                        f"or a single channel, but got {len(image.shape)}")
@@ -125,7 +111,6 @@ class MultimodalNormalize(Callable):
             batch["image"][m] = (image - means) / stds
         return batch
 
-<<<<<<< HEAD
 
 class MultiModalBatchSampler(BatchSampler):
     """
@@ -562,5 +547,3 @@ class GenericMultiModalDataModule(NonGeoDataModule):
             collate_fn=self.collate_fn,
             pin_memory=self.pin_memory,
         )
-=======
->>>>>>> 1321f59 (adds new datasets)

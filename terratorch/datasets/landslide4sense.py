@@ -137,7 +137,7 @@ class Landslide4SenseNonGeo(NonGeoDataset):
         ax[2].axis("off")
 
         if "prediction" in sample:
-            prediction = sample["prediction"].numpy()
+            prediction = sample["prediction"]
             ax[3].imshow(prediction, cmap=cmap, norm=norm)
             ax[3].set_title("Predicted Mask")
             ax[3].axis("off")

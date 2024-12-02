@@ -51,6 +51,9 @@ from terratorch.datamodules.landslide4sense import Landslide4SenseNonGeoDataModu
 from terratorch.datamodules.biomassters import BioMasstersNonGeoDataModule
 from terratorch.datamodules.forestnet import ForestNetNonGeoDataModule
 
+# miscellaneous datamodules
+from terratorch.datamodules.openearthmap import OpenEarthMapNonGeoDataModule
+
 # Generic classification datamodule
 from terratorch.datamodules.sen4map import Sen4MapLucasDataModule
 
