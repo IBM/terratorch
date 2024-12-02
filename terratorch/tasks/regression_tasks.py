@@ -207,6 +207,11 @@ class PixelwiseRegressionTask(BaseTask):
         self.monitor = f"{self.val_metrics.prefix}loss"
         self.plot_on_val = int(plot_on_val)
 
+    @property
+    def model_module(self):
+        return self._model_module
+
+
     def _bypass_build(self):
         return self.model_module
 
