@@ -50,7 +50,7 @@ __all__ = (
     "GenericNonGeoSegmentationDataset",
     "GenericNonGeoPixelwiseRegressionDataset",
     "GenericNonGeoClassificationDataset",
-    "GenericNonGeoRegressionDataset",
+    #"GenericNonGeoRegressionDataset",
     "BurnIntensityNonGeo",
     "CarbonFluxNonGeo",
     "Landslide4SenseNonGeo",
