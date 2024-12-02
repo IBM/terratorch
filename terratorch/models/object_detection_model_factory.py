@@ -1,13 +1,13 @@
 # Copyright contributors to the Terratorch project
 
 """
-This is just an example of a possible structure to include timm models
+This is just an example of a possible structure to include torchvision models
 """
 
 import os
+from functools import partial
 
-from timm import create_model
-from torch import nn
+import torch
 from torchgeo.models import get_weight
 from torchgeo.trainers import utils
 from torchvision.models._api import WeightsEnum
@@ -163,13 +163,14 @@ class ObjectDetectionModelFactory(ModelFactory):
         else:
             raise ValueError(f"Model type '{model}' is not valid.")
 
-        return ObjectDetectionModelWrapper(model)
+        return ObjectDetectionModelWrapper(self.model, model)
 
 
 class ObjectDetectionModelWrapper(Model):
-    def __init__(self, torchvision_model) -> None:
+    def __init__(self, torchvision_model, model_name) -> None:
         super().__init__()
         self.torchvision_model = torchvision_model
+        self.model_name = model_name
 
     def forward(self, *args, **kwargs):
         return ModelOutput(self.torchvision_model(*args, **kwargs))
@@ -179,4 +180,16 @@ class ObjectDetectionModelWrapper(Model):
             param.requires_grad = False
 
     def freeze_decoder(self):
-        pass  # FIXME
+        if self.model_name == 'faster-rcnn':
+            for param in self.torchvision_model.rpn.parameters():
+                param.requires_grad = False
+                for param in self.torchvision_model.roi_heads.parameters():
+                    param.requires_grad = False
+        elif self.model_name == 'fcos':
+            for param in self.torchvision_model.head.parameters():
+                param.requires_grad = False
+        elif self.model_name == 'retinanet':
+            for param in self.torchvision_model.head.parameters():
+                param.requires_grad = False
+        else:
+            raise ValueError(f"Model type '{self.model_name}' is not valid.")
