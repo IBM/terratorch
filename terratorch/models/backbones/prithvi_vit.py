@@ -60,7 +60,7 @@ def checkpoint_filter_fn_vit(
         else:
             clean_dict[k] = v
 
-        state_dict = clean_dict
+    state_dict = clean_dict
 
     state_dict = select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands)
 
@@ -93,7 +93,7 @@ def checkpoint_filter_fn_mae(
         else:
             clean_dict["encoder." + k] = v
 
-        state_dict = clean_dict
+    state_dict = clean_dict
 
     state_dict = select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands)
 
