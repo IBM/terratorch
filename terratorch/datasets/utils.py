@@ -87,13 +87,13 @@ def _split_filter_function(file_name, valid_files: list[str], ignore_extensions=
     return False
 
 
-def to_tensor(d):
+def to_tensor(d, transpose=True):
     new_dict = {}
     for k, v in d.items():
         if not isinstance(v, np.ndarray):
             new_dict[k] = v
         else:
-            if k == "image":
+            if k == "image" and transpose:
                 v = np.moveaxis(v, -1, 0)
             new_dict[k] = torch.from_numpy(v)
     return new_dict

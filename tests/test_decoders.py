@@ -9,6 +9,7 @@ import torch
 import terratorch  # noqa: F401
 
 from terratorch.models.decoders.aspp_head import ASPPSegmentationHead
+import gc
 
 def test_aspphead():
     dilations = (1, 6, 12, 18)
@@ -19,3 +20,5 @@ def test_aspphead():
     image = [torch.from_numpy(np.random.rand(2, 6, 224, 224).astype("float32"))]
 
     assert decoder(image).shape == (2, 2, 224, 224)
+
+    gc.collect()

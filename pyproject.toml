@@ -69,8 +69,12 @@ wxc = [
   "granitewxc @ git+https://github.com/IBM/granite-wxc.git"
 ]
 
-geobench = [
-  "geobench @ git+https://github.com/fmartiescofet/geo-bench.git" # pull from fork until depenedencies for geobench are relaxed
+#geobench = [
+#  "geobench @ git+https://github.com/fmartiescofet/geo-bench.git" # pull from fork until depenedencies for geobench are relaxed
+#]
+
+peft = [
+  "peft"
 ]
 
 [project.urls]

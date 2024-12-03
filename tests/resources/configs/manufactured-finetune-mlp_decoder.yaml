@@ -94,15 +94,12 @@ model:
   class_path: terratorch.tasks.PixelwiseRegressionTask
   init_args:
     model_args:
-      decoder: UperNetDecoder
+      decoder: MLPDecoder
       pretrained: false
       backbone: prithvi_vit_100
-        #backbone_pretrained_cfg_overlay:
-        #file: tests/all_ecos_random/version_0/checkpoints/epoch=0_state_dict.ckpt #tests/prithvi_vit_100.pt
+      decoder_activation: ReLU
       backbone_drop_path_rate: 0.3
       num_frames: 1
-      # backbone_window_size: 8
-      decoder_channels: 64
       in_channels: 6
       bands:
         - BLUE
@@ -112,7 +109,7 @@ model:
         - SWIR_1
         - SWIR_2
       head_dropout: 0.5708022831486758
-      head_final_act: torch.nn.ReLU
+      head_final_act: torch.nn.Identity
       head_learned_upscale_layers: 2
     loss: rmse
     #aux_heads:

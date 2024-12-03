@@ -202,6 +202,9 @@ class PixelwiseRegressionTask(BaseTask):
             "regression", aux_decoders=self.aux_heads, **self.hparams["model_args"]
         )
         if self.hparams["freeze_backbone"]:
+            if self.hparams.get("peft_config", None) is not None:
+                msg = "PEFT should be run with freeze_backbone = False"
+                raise ValueError(msg)
             self.model.freeze_encoder()
         if self.hparams["freeze_decoder"]:
             self.model.freeze_decoder()
@@ -283,10 +286,14 @@ class PixelwiseRegressionTask(BaseTask):
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat = model_output.output
-        self.train_metrics(y_hat, y)
-        self.log_dict(self.train_metrics, on_epoch=True)
+        self.train_metrics.update(y_hat, y)
 
         return loss["loss"]
+
+    def on_train_epoch_end(self) -> None:
+        self.log_dict(self.train_metrics.compute(), sync_dist=True)
+        self.train_metrics.reset()
+        return super().on_train_epoch_end()
 
     def _do_plot_samples(self, batch_index):
         if not self.plot_on_val:  # dont plot if self.plot_on_val is 0
@@ -317,10 +324,7 @@ class PixelwiseRegressionTask(BaseTask):
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat = model_output.output
-        out = y_hat[y != -1]
-        mask = y[y != -1]
-        self.val_metrics(out, mask)
-        self.log_dict(self.val_metrics, on_epoch=True)
+        self.val_metrics.update(y_hat, y)
 
         if self._do_plot_samples(batch_idx):
             try:
@@ -346,6 +350,11 @@ class PixelwiseRegressionTask(BaseTask):
             finally:
                 plt.close()
 
+    def on_validation_epoch_end(self) -> None:
+        self.log_dict(self.val_metrics.compute(), sync_dist=True)
+        self.val_metrics.reset()
+        return super().on_validation_epoch_end()
+
     def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         """Compute the test loss and additional metrics.
 
@@ -362,8 +371,12 @@ class PixelwiseRegressionTask(BaseTask):
         loss = self.test_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.test_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat = model_output.output
-        self.test_metrics(y_hat, y)
-        self.log_dict(self.test_metrics, on_epoch=True)
+        self.test_metrics.update(y_hat, y)
+
+    def on_test_epoch_end(self) -> None:
+        self.log_dict(self.test_metrics.compute(), sync_dist=True)
+        self.test_metrics.reset()
+        return super().on_test_epoch_end()
 
     def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         """Compute the predicted class probabilities.
