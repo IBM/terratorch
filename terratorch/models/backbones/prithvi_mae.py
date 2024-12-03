@@ -240,7 +240,7 @@ class PrithviViT(nn.Module):
                  depth: int = 24,
                  num_heads: int = 16,
                  mlp_ratio: float = 4.,
-                 norm_layer: nn.Module = partial(nn.LayerNorm, eps=1e-6),
+                 norm_layer: nn.Module = nn.LayerNorm,
                  coords_encoding: List[str] | None = None,
                  coords_scale_learn: bool = False,
                  encoder_only: bool = True,  # needed for timm
@@ -598,7 +598,7 @@ class PrithviMAE(nn.Module):
                  decoder_depth: int = 8,
                  decoder_num_heads: int = 16,
                  mlp_ratio: float = 4.,
-                 norm_layer: nn.Module = partial(nn.LayerNorm, eps=1e-6),
+                 norm_layer: nn.Module = nn.LayerNorm,
                  norm_pix_loss: bool = False,
                  coords_encoding: List[str] | None = None,
                  coords_scale_learn: bool = False,
