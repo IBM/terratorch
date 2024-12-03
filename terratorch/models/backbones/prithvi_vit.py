@@ -146,6 +146,8 @@ def _create_prithvi(
 
     padding = kwargs.get("padding", "none")
     patch_size = kwargs.get("patch_size", 16)
+    if isinstance(patch_size, list):
+        patch_size = patch_size[-1]
 
     # Little hack because VIT does not support timm's features_only
     encoder_only = kwargs.pop("features_only", False)
