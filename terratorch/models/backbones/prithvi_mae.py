@@ -151,13 +151,15 @@ class PatchEmbed(nn.Module):
 
         self.proj = nn.Conv3d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size, bias=bias)
         self.norm = norm_layer(embed_dim) if norm_layer else nn.Identity()
+        self.warn_counter = 0 
 
     def forward(self, x):
         B, C, T, H, W = x.shape
 
-        if T / self.patch_size[0] % 1 or H / self.patch_size[1] % 1 or W / self.patch_size[2] % 1:
+        if (T / self.patch_size[0] % 1 or H / self.patch_size[1] % 1 or W / self.patch_size[2] % 1) and self.warn_counter == 0 :
             logging.warning(f"Input {x.shape[-3:]} is not divisible by patch size {self.patch_size}."
                             f"The border will be ignored, add backbone_padding for pixel-wise tasks.")
+            self.warn_counter += 1
 
         x = self.proj(x)
         if self.flatten:
