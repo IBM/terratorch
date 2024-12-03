@@ -373,11 +373,11 @@ class PrithviViT(nn.Module):
         # add pos embed w/o cls token
         x = x + pos_embed[:, 1:, :]
 
-        if self.temporal_encoding:
+        if self.temporal_encoding and temporal_coords is not None:
             num_tokens_per_frame = x.shape[1] // self.num_frames
             temporal_encoding = self.temporal_embed_enc(temporal_coords, num_tokens_per_frame)
             x = x + temporal_encoding
-        if self.location_encoding:
+        if self.location_encoding and location_coords is not None:
             location_encoding = self.location_embed_enc(location_coords)
             x = x + location_encoding
 
@@ -417,11 +417,11 @@ class PrithviViT(nn.Module):
         # add pos embed w/o cls token
         x = x + pos_embed[:, 1:, :]
 
-        if self.temporal_encoding:
+        if self.temporal_encoding and temporal_coords is not None:
             num_tokens_per_frame = x.shape[1] // self.num_frames
             temporal_encoding = self.temporal_embed_enc(temporal_coords, num_tokens_per_frame)
             x = x + temporal_encoding
-        if self.location_encoding:
+        if self.location_encoding and location_coords is not None:
             location_encoding = self.location_embed_enc(location_coords)
             x = x + location_encoding
 
@@ -556,12 +556,12 @@ class MAEDecoder(nn.Module):
         # remove cls token
         x_ = x[:, 1:, :]
 
-        if self.temporal_encoding:
+        if self.temporal_encoding and temporal_coords is not None:
             num_tokens_per_frame = x_.shape[1] // self.num_frames
             temporal_encoding = self.temporal_embed_dec(temporal_coords, num_tokens_per_frame)
             # Add temporal encoding w/o cls token
             x_ = x_ + temporal_encoding
-        if self.location_encoding:
+        if self.location_encoding and location_coords is not None:
             location_encoding = self.location_embed_dec(location_coords)
             # Add location encoding w/o cls token
             x_ = x_ + location_encoding
