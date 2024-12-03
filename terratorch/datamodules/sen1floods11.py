@@ -69,7 +69,7 @@ class Sen1Floods11NonGeoDataModule(NonGeoDataModule):
 
         means = [MEANS[b] for b in bands]
         stds = [STDS[b] for b in bands]
-        self.bands = bands,
+        self.bands = bands
         self.train_transform = wrap_in_compose_is_list(train_transform)
         self.val_transform = wrap_in_compose_is_list(val_transform)
         self.test_transform = wrap_in_compose_is_list(test_transform)

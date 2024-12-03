@@ -31,14 +31,13 @@ def test_prithvi_vit_patch_embed_loading_compatible(patch_size, tubelet_size, nu
 
     gc.collect()
 
-@pytest.mark.parametrize("tubelet_size,tubelet_size_other", [(1, 2), (2, 4)])
-def test_prithvi_vit_patch_embed_loading_not_compatible_tubelet(tubelet_size, tubelet_size_other):
+@pytest.mark.parametrize("patch_size_time,patch_size_time_other", [(1, 2), (2, 4)])
+def test_prithvi_vit_patch_embed_loading_not_compatible_tubelet(patch_size_time,patch_size_time_other):
     model = timm.create_model(
         "prithvi_vit_100",
         pretrained=False,
         num_frames=4,
-        patch_size=16,
-        tubelet_size=tubelet_size,
+        patch_size=[patch_size_time, 16, 16],
         features_only=True,
     )
 
@@ -46,8 +45,7 @@ def test_prithvi_vit_patch_embed_loading_not_compatible_tubelet(tubelet_size, tu
         "prithvi_vit_100",
         pretrained=False,
         num_frames=4,
-        patch_size=16,
-        tubelet_size=tubelet_size_other,
+        patch_size=[patch_size_time_other, 16, 16],
         features_only=True,
     ).state_dict()
 
