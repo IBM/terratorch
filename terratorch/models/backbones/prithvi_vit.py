@@ -27,7 +27,7 @@ PRETRAINED_BANDS = [
 default_cfgs = generate_default_cfgs(
     {
         "prithvi_vit_100": {
-            "hf_hub_id": "ibm-nasa-geospatial/Prithvi-EO-1.0-100M",
+            "hf_hub_id": "ibm-nasa-geospatial/Prithvi-100M",
             "hf_hub_filename": "Prithvi_EO_V1_100M.pt",
         },
         "prithvi_eo_v2_300": {
