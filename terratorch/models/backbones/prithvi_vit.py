@@ -226,6 +226,7 @@ def create_prithvi_from_config(
     model_name: str,
     pretrained: bool = False,  # noqa: FBT001, FBT002
     bands: list[HLSBands] | None = None,
+    default_cfg: dict = None,
     **kwargs,
 ) -> PrithviViT:
     pretrained_bands = PRETRAINED_BANDS
@@ -236,7 +237,11 @@ def create_prithvi_from_config(
             Pretrained patch_embed layer may be misaligned with current bands"
         )
 
-    config, _ = load_model_config_from_hf(default_cfgs[model_name].default.hf_hub_id)
+    try:
+        config, _ = load_model_config_from_hf(default_cfgs[model_name].default.hf_hub_id)
+    except:
+        # No connection to hf
+        config = default_cfg
     config.update(num_frames=1)  # Assume one timestamp by default
     config.update(kwargs)  # Overwrite with keyword args
 
@@ -284,7 +289,22 @@ def prithvi_vit_100(
     bands: list[HLSBands] | None = None,
     **kwargs,
 ) -> PrithviViT:
-    return create_prithvi_from_config("prithvi_vit_100", pretrained, bands, **kwargs)
+
+    default_config = {
+        "img_size": 224,
+        "patch_size": [1, 16, 16],
+        "num_frames": 3,
+        "in_chans": 6,
+        "embed_dim": 768,
+        "depth": 12,
+        "num_heads": 12,
+        "decoder_embed_dim": 512,
+        "decoder_depth": 8,
+        "decoder_num_heads": 16,
+        "mlp_ratio": 4,
+    }
+
+    return create_prithvi_from_config("prithvi_vit_100", pretrained, bands, default_config, **kwargs)
 
 
 @register_model
@@ -293,7 +313,24 @@ def prithvi_eo_v2_300(
     bands: list[HLSBands] | None = None,
     **kwargs,
 ) -> PrithviViT:
-    return create_prithvi_from_config("prithvi_eo_v2_300", pretrained, bands, **kwargs)
+
+    default_config = {
+        "img_size": 224,
+        "num_frames": 4,
+        "patch_size": [1, 16, 16],
+        "in_chans": 6,
+        "embed_dim": 1024,
+        "depth": 24,
+        "num_heads": 16,
+        "decoder_embed_dim": 512,
+        "decoder_depth": 8,
+        "decoder_num_heads": 16,
+        "mlp_ratio": 4,
+        "coords_encoding": [],
+        "coords_scale_learn": True,
+    }
+
+    return create_prithvi_from_config("prithvi_eo_v2_300", pretrained, bands, default_config, **kwargs)
 
 
 @register_model
@@ -302,7 +339,24 @@ def prithvi_eo_v2_600(
     bands: list[HLSBands] | None = None,
     **kwargs,
 ) -> PrithviViT:
-    return create_prithvi_from_config("prithvi_eo_v2_600", pretrained, bands, **kwargs)
+
+    default_config = {
+        "img_size": 224,
+        "num_frames": 4,
+        "patch_size": [1, 14, 14],
+        "in_chans": 6,
+        "embed_dim": 1280,
+        "depth": 32,
+        "num_heads": 16,
+        "decoder_embed_dim": 512,
+        "decoder_depth": 8,
+        "decoder_num_heads": 16,
+        "mlp_ratio": 4,
+        "coords_encoding": [],
+        "coords_scale_learn": True,
+    }
+
+    return create_prithvi_from_config("prithvi_eo_v2_600", pretrained, bands, default_config, **kwargs)
 
 
 @register_model
@@ -311,7 +365,24 @@ def prithvi_eo_v2_300_tl(
     bands: list[HLSBands] | None = None,
     **kwargs,
 ) -> PrithviViT:
-    return create_prithvi_from_config("prithvi_eo_v2_300_tl", pretrained, bands, **kwargs)
+
+    default_config = {
+        "img_size": 224,
+        "num_frames": 4,
+        "patch_size": [1, 16, 16],
+        "in_chans": 6,
+        "embed_dim": 1024,
+        "depth": 24,
+        "num_heads": 16,
+        "decoder_embed_dim": 512,
+        "decoder_depth": 8,
+        "decoder_num_heads": 16,
+        "mlp_ratio": 4,
+        "coords_encoding": ["time", "location"],
+        "coords_scale_learn": True,
+    }
+
+    return create_prithvi_from_config("prithvi_eo_v2_300_tl", pretrained, bands, default_config, **kwargs)
 
 
 @register_model
@@ -320,4 +391,21 @@ def prithvi_eo_v2_600_tl(
     bands: list[HLSBands] | None = None,
     **kwargs,
 ) -> PrithviViT:
-    return create_prithvi_from_config("prithvi_eo_v2_600_tl", pretrained, bands, **kwargs)
+
+    default_config = {
+        "img_size": 224,
+        "num_frames": 4,
+        "patch_size": [1, 14, 14],
+        "in_chans": 6,
+        "embed_dim": 1280,
+        "depth": 32,
+        "num_heads": 16,
+        "decoder_embed_dim": 512,
+        "decoder_depth": 8,
+        "decoder_num_heads": 16,
+        "mlp_ratio": 4,
+        "coords_encoding": ["time", "location"],
+        "coords_scale_learn": True,
+    }
+
+    return create_prithvi_from_config("prithvi_eo_v2_600_tl", pretrained, bands, default_config, **kwargs)
