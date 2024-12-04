@@ -1,7 +1,7 @@
 """This module contains the regression task and its auxiliary classes."""
 
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any
 
 import lightning
 import matplotlib.pyplot as plt
@@ -132,7 +132,7 @@ class PixelwiseRegressionTask(BaseTask):
         self,
         model_args: dict,
         model_factory: str,
-        model: Optional[torch.nn.Module]=None,
+        model: torch.nn.Module | None = None,
         loss: str = "mse",
         aux_heads: list[AuxiliaryHead] | None = None,
         aux_loss: dict[str, float] | None = None,

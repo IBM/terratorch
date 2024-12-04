@@ -1,5 +1,5 @@
 
-from typing import Any, Optional
+from typing import Any 
 from functools import partial
 import os
 
@@ -44,7 +44,7 @@ class SemanticSegmentationTask(BaseTask):
         self,
         model_args: dict,
         model_factory: str,
-        model: Optional[torch.nn.Module]=None,
+        model: torch.nn.Module | None = None,
         loss: str = "ce",
         aux_heads: list[AuxiliaryHead] | None = None,
         aux_loss: dict[str, float] | None = None,
