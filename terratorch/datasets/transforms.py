@@ -1,9 +1,9 @@
 # Copyright contributors to the Terratorch project
 
+import albumentations as A
 import torch
 from albumentations import BasicTransform, Compose, ImageOnlyTransform
 from einops import rearrange
-import albumentations as A
 
 N_DIMS_FOR_TEMPORAL = 4
 N_DIMS_FLATTENED_TEMPORAL = 3
@@ -19,6 +19,11 @@ def albumentations_to_callable_with_dict(albumentation: list[BasicTransform] | N
 
     return fn
 
+def default_non_image_transform(array):
+    if array.dtype in (float, int):
+        return torch.from_numpy(array)
+    else:
+        return array
 
 class FlattenTemporalIntoChannels(ImageOnlyTransform):
     """Flatten the temporal dimension into channels"""
@@ -183,9 +188,9 @@ class MultimodalTransforms:
         if self.shared:
             # albumentations requires a key 'image' and treats all other keys as additional targets
             image_modality = list(set(data.keys()) - set(self.non_image_modalities))[0]
-            data['image'] = data.pop(image_modality)
+            data["image"] = data.pop(image_modality)
             data = self.transforms(**data)
-            data[image_modality] = data.pop('image')
+            data[image_modality] = data.pop("image")
 
             # Process sequence data which is ignored by albumentations as 'global_label'
             for modality in self.non_image_modalities:
@@ -193,6 +198,5 @@ class MultimodalTransforms:
         else:
             # Applies transformations for each modality separate
             for key, value in data.items():
-                data[key] = self.transforms[key](image=value)['image']  # Only works with image modalities
-
+                data[key] = self.transforms[key](image=value)["image"]  # Only works with image modalities
         return data
