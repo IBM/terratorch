@@ -24,8 +24,8 @@ PRETRAINED_BANDS = [
 
 default_cfgs = generate_default_cfgs(
     {
-        "prithvi_vit_100": {
-            "hf_hub_id": "ibm-nasa-geospatial/Prithvi-100M",
+        "prithvi_eo_v1_100": {
+            "hf_hub_id": "ibm-nasa-geospatial/Prithvi-EO-1.0-100M",
             "hf_hub_filename": "Prithvi_EO_V1_100M.pt",
         },
         "prithvi_eo_v2_300": {
@@ -290,6 +290,19 @@ def prithvi_vit_100(
     **kwargs,
 ) -> PrithviViT:
 
+    logging.warning(f'The model prithvi_vit_100 was renamed to prithvi_eo_v1_100. '
+                    f'prithvi_vit_100 will be removed in a future version.')
+
+    return prithvi_eo_v1_100(pretrained=pretrained, bands=bands, **kwargs)
+
+
+@register_model
+def prithvi_eo_v1_100(
+    pretrained: bool = False,  # noqa: FBT001, FBT002
+    bands: list[HLSBands] | None = None,
+    **kwargs,
+) -> PrithviViT:
+
     default_config = {
         "img_size": 224,
         "patch_size": [1, 16, 16],
@@ -304,7 +317,7 @@ def prithvi_vit_100(
         "mlp_ratio": 4,
     }
 
-    return create_prithvi_from_config("prithvi_vit_100", pretrained, bands, default_config, **kwargs)
+    return create_prithvi_from_config("prithvi_eo_v1_100", pretrained, bands, default_config, **kwargs)
 
 
 @register_model
