@@ -2,7 +2,7 @@ torchgeo==0.6.0
 rioxarray==0.18.1
 albumentations==1.4.21
 albucore<=0.0.16
-rasterio==1.4.2
+rasterio==1.4.3
 torch==2.5.1
 torchvision==0.20.1
 torchmetrics==1.3.1
