@@ -8,6 +8,12 @@ from terratorch.datasets.generic_pixel_wise_dataset import (
 from terratorch.datasets.generic_scalar_label_dataset import (
     GenericNonGeoClassificationDataset,
 )
+from terratorch.datasets.generic_multimodal_dataset import (
+    GenericMultimodalDataset,
+    GenericMultimodalSegmentationDataset,
+    GenericMultimodalPixelwiseRegressionDataset,
+    GenericMultimodalScalarDataset,
+)
 from terratorch.datasets.hls import HLSL30, HLSS30
 from terratorch.datasets.m_bigearthnet import MBigEarthNonGeo
 from terratorch.datasets.m_brick_kiln import MBrickKilnNonGeo
@@ -61,6 +67,11 @@ __all__ = (
     "Landslide4SenseNonGeo",
     "BioMasstersNonGeo",
     "ForestNetNonGeo",
+    # "GenericNonGeoRegressionDataset",
+    "GenericMultimodalDataset",
+    "GenericMultimodalSegmentationDataset",
+    "GenericMultimodalPixelwiseRegressionDataset",
+    "GenericMultimodalScalarDataset",
     "FireScarsNonGeo",
     "FireScarsHLS",
     "FireScarsSegmentationMask",

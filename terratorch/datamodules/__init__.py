@@ -39,6 +39,7 @@ except ImportError as e:
 from terratorch.datamodules.sen1floods11 import Sen1Floods11NonGeoDataModule
 from terratorch.datamodules.sen4agrinet import Sen4AgriNetDataModule
 from terratorch.datamodules.torchgeo_data_module import TorchGeoDataModule, TorchNonGeoDataModule
+from terratorch.datamodules.generic_multimodal_data_module import GenericMultiModalDataModule
 
 from terratorch.datamodules.burn_intensity import BurnIntensityNonGeoDataModule
 from terratorch.datamodules.carbonflux import CarbonFluxNonGeoDataModule
@@ -84,7 +85,8 @@ __all__ = (
     "OpenEarthMapModule"
     "OpenSentinelMapDataModule",
     "PASTISDataModule",
-    "Sen4AgriNetDataModule"
+    "Sen4AgriNetDataModule",
+    "GenericMultiModalDataModule",
 )
 
 if wxc_present:
