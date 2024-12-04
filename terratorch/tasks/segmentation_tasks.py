@@ -114,15 +114,12 @@ class SemanticSegmentationTask(BaseTask):
             self.model_builder = self._build
         elif model:
             self.model_builder = self._bypass_build
+            self._model_module = model
         else:
             raise Exception("Or a model_factory or a torch.nn.Module object must be provided.")
 
-        self._model_module = None 
 
         super().__init__()
-
-        self._model_module = model
-        self.model = model
         
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
         self.test_loss_handler: list[LossHandler] = []
