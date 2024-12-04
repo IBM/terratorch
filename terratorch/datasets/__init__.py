@@ -40,6 +40,12 @@ from terratorch.datasets.sen1floods11 import Sen1Floods11NonGeo
 from terratorch.datasets.sen4agrinet import Sen4AgriNet
 from terratorch.datasets.utils import HLSBands
 
+from terratorch.datasets.burn_intensity import BurnIntensityNonGeo
+from terratorch.datasets.carbonflux import CarbonFluxNonGeo
+from terratorch.datasets.landslide4sense import Landslide4SenseNonGeo
+from terratorch.datasets.forestnet import ForestNetNonGeo
+from terratorch.datasets.biomassters import BioMasstersNonGeo
+
 # TorchGeo RasterDatasets
 from terratorch.datasets.wsf import WSF2019, WSFEvolution
 
@@ -60,6 +66,12 @@ __all__ = (
     "GenericMultimodalSegmentationDataset",
     "GenericMultimodalPixelwiseRegressionDataset",
     "GenericMultimodalScalarDataset",
+    "GenericNonGeoRegressionDataset",
+    "BurnIntensityNonGeo",
+    "CarbonFluxNonGeo",
+    "Landslide4SenseNonGeo",
+    "BioMasstersNonGeo",
+    "ForestNetNonGeo",
     "FireScarsNonGeo",
     "FireScarsHLS",
     "FireScarsSegmentationMask",

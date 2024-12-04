@@ -19,6 +19,11 @@ def albumentations_to_callable_with_dict(albumentation: list[BasicTransform] | N
 
     return fn
 
+def default_non_image_transform(array):
+    if array.dtype in (float, int):
+        return torch.from_numpy(array)
+    else:
+        return array
 
 class FlattenTemporalIntoChannels(ImageOnlyTransform):
     """Flatten the temporal dimension into channels"""
