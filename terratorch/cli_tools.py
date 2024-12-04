@@ -386,9 +386,9 @@ class MyLightningCLI(LightningCLI):
 
         # Custom modules path
         if hasattr(self.config, "fit") and hasattr(self.config.fit, "custom_modules_path"):
-            custom_modules_path =  self.config.fit.custom_modules_path
-        if hasattr(self.config, "test") and hasattr(self.config.test, "custom_modules_path"):
-            custom_modules_path =  self.config.test.custom_modules_path
+            custom_modules_path = self.config.fit.custom_modules_path
+        elif hasattr(self.config, "test") and hasattr(self.config.test, "custom_modules_path"):
+            custom_modules_path = self.config.test.custom_modules_path
         else:
             default_path = Path(".") / "custom_modules"
             custom_modules_path = os.environ.get("TERRATORCH_CUSTOM_MODULE_PATH", default_path)
