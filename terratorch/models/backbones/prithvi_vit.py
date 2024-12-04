@@ -4,11 +4,9 @@
 import torch
 import logging
 from functools import partial
-
-from timm.models import FeatureInfo
-from timm.models._builder import build_model_with_cfg
-from timm.models._registry import generate_default_cfgs, register_model
 from torch import nn, Tensor
+from timm.models import (FeatureInfo, load_model_config_from_hf, build_model_with_cfg, generate_default_cfgs,
+                         register_model)
 
 from terratorch.datasets import HLSBands
 from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
@@ -28,15 +26,28 @@ default_cfgs = generate_default_cfgs(
     {
         "prithvi_vit_100": {
             "hf_hub_id": "ibm-nasa-geospatial/Prithvi-100M",
-            "hf_hub_filename": "Prithvi_100M.pt",
+            "hf_hub_filename": "Prithvi_EO_V1_100M.pt",
         },
-        "prithvi_eo_v2_300": {},
-        "prithvi_eo_v2_300_tl": {},
-        "prithvi_eo_v2_600": {},
-        "prithvi_eo_v2_600_tl": {},
+        "prithvi_eo_v2_300": {
+            "hf_hub_id": "ibm-nasa-geospatial/Prithvi-EO-2.0-300M",
+            "hf_hub_filename": "Prithvi_EO_V2_300M.pt",
+        },
+        "prithvi_eo_v2_300_tl": {
+            "hf_hub_id": "ibm-nasa-geospatial/Prithvi-EO-2.0-300M-TL",
+            "hf_hub_filename": "Prithvi_EO_V2_300M_TL.pt",
+        },
+        "prithvi_eo_v2_600": {
+            "hf_hub_id": "ibm-nasa-geospatial/Prithvi-EO-2.0-600M",
+            "hf_hub_filename": "Prithvi_EO_V2_600M.pt",
+        },
+        "prithvi_eo_v2_600_tl": {
+            "hf_hub_id": "ibm-nasa-geospatial/Prithvi-EO-2.0-600M-TL",
+            "hf_hub_filename": "Prithvi_EO_V2_600M_TL.pt",
+        },
         "prithvi_vit_tiny": {}
     }
 )
+
 
 def checkpoint_filter_fn_vit(
     state_dict, model: PrithviViT, pretrained_bands: list[HLSBands | int], model_bands: list[HLSBands | int]
@@ -112,6 +123,7 @@ def pad_images(imgs: Tensor,patch_size: int, padding:str) -> Tensor:
         ])
     return imgs
 
+
 def _create_prithvi(
     variant: str,
     pretrained: bool = False,  # noqa: FBT001, FBT002
@@ -134,6 +146,8 @@ def _create_prithvi(
 
     padding = kwargs.get("padding", "none")
     patch_size = kwargs.get("patch_size", 16)
+    if isinstance(patch_size, list):
+        patch_size = patch_size[-1]
 
     # Little hack because VIT does not support timm's features_only
     encoder_only = kwargs.pop("features_only", False)
@@ -207,13 +221,14 @@ def _create_prithvi(
 
     return model
 
-def create_prithvi_vit_100(
+
+def create_prithvi_from_config(
     model_name: str,
     pretrained: bool = False,  # noqa: FBT001, FBT002
     bands: list[HLSBands] | None = None,
+    default_cfg: dict = None,
     **kwargs,
 ) -> PrithviViT:
-    """Prithvi ViT 100M"""
     pretrained_bands = PRETRAINED_BANDS
     if bands is None:
         bands = pretrained_bands
@@ -222,99 +237,22 @@ def create_prithvi_vit_100(
             Pretrained patch_embed layer may be misaligned with current bands"
         )
 
-    model_args = {
-        "patch_size": 16,
-        "embed_dim": 768,
-        "depth": 12,
-        "num_heads": 12,
-        "decoder_embed_dim": 512,
-        "decoder_depth": 8,
-        "decoder_num_heads": 16,
-        "mlp_ratio": 4,
-        "norm_layer": partial(nn.LayerNorm, eps=1e-6),
-        "num_frames": 1,
-    }
+    try:
+        config, _ = load_model_config_from_hf(default_cfgs[model_name].default.hf_hub_id)
+    except:
+        # No connection to hf
+        config = default_cfg
+    config.update(num_frames=1)  # Assume one timestamp by default
+    config.update(kwargs)  # Overwrite with keyword args
 
     model = _create_prithvi(
         model_name,
         pretrained=pretrained,
         model_bands=bands,
         pretrained_bands=pretrained_bands,
-        **dict(model_args,**kwargs),
+        **config,
     )
     
-    return model
-
-
-def create_prithvi_vit_300(
-    model_name: str,
-    pretrained: bool = False,  # noqa: FBT001, FBT002
-    bands: list[HLSBands | int] | None = None,
-    **kwargs,
-) -> PrithviViT:
-    """Prithvi ViT 300M"""
-    pretrained_bands = PRETRAINED_BANDS
-    if bands is None:
-        bands = pretrained_bands
-        logging.info(
-            f"Model bands not passed. Assuming bands are ordered in the same way as {PRETRAINED_BANDS}.\
-            Pretrained patch_embed layer may be misaligned with current bands"
-        )
-    model_args = {
-        "patch_size": 16,
-        "embed_dim": 1024,
-        "depth": 24,
-        "num_heads": 16,
-        "decoder_embed_dim": 512,
-        "decoder_depth": 8,
-        "decoder_num_heads": 16,
-        "mlp_ratio": 4,
-        "norm_layer": partial(nn.LayerNorm, eps=1e-6),
-        "num_frames": 1,
-    }
-    model = _create_prithvi(
-        model_name,
-        pretrained=pretrained,
-        pretrained_bands=pretrained_bands,
-        model_bands=bands,
-        **dict(model_args, **kwargs),
-    )
-    return model
-
-
-def create_prithvi_vit_600(
-    model_name: str,
-    pretrained: bool = False,  # noqa: FBT001, FBT002
-    bands: list[HLSBands] | None = None,
-    **kwargs,
-) -> PrithviViT:
-    """Prithvi ViT 600M"""
-    pretrained_bands = PRETRAINED_BANDS
-    if bands is None:
-        bands = pretrained_bands
-        logging.info(
-            f"Model bands not passed. Assuming bands are ordered in the same way as {PRETRAINED_BANDS}.\
-            Pretrained patch_embed layer may be misaligned with current bands"
-        )
-    model_args = {
-        "patch_size": 14,
-        "embed_dim": 1280,
-        "depth": 32,
-        "num_heads": 16,
-        "decoder_embed_dim": 512,
-        "decoder_depth": 8,
-        "decoder_num_heads": 16,
-        "mlp_ratio": 4,
-        "norm_layer": partial(nn.LayerNorm, eps=1e-6),
-        "num_frames": 1,
-    }
-    model = _create_prithvi(
-        model_name,
-        pretrained=pretrained,
-        pretrained_bands=pretrained_bands,
-        model_bands=bands,
-        **dict(model_args, **kwargs),
-    )
     return model
 
 
@@ -340,8 +278,10 @@ def prithvi_vit_tiny(
         "num_frames": 1,
         "model_bands": bands,
     }
-    model = _create_prithvi("prithvi_vit_tiny", **dict(model_args, **kwargs))
+    model_args.update(kwargs)
+    model = _create_prithvi("prithvi_vit_tiny", **model_args)
     return model
+
 
 @register_model
 def prithvi_vit_100(
@@ -349,7 +289,22 @@ def prithvi_vit_100(
     bands: list[HLSBands] | None = None,
     **kwargs,
 ) -> PrithviViT:
-    return create_prithvi_vit_100("prithvi_vit_100", pretrained, bands, **kwargs)
+
+    default_config = {
+        "img_size": 224,
+        "patch_size": [1, 16, 16],
+        "num_frames": 3,
+        "in_chans": 6,
+        "embed_dim": 768,
+        "depth": 12,
+        "num_heads": 12,
+        "decoder_embed_dim": 512,
+        "decoder_depth": 8,
+        "decoder_num_heads": 16,
+        "mlp_ratio": 4,
+    }
+
+    return create_prithvi_from_config("prithvi_vit_100", pretrained, bands, default_config, **kwargs)
 
 
 @register_model
@@ -358,7 +313,24 @@ def prithvi_eo_v2_300(
     bands: list[HLSBands] | None = None,
     **kwargs,
 ) -> PrithviViT:
-    return create_prithvi_vit_300("prithvi_eo_v2_300", pretrained, bands, **kwargs)
+
+    default_config = {
+        "img_size": 224,
+        "num_frames": 4,
+        "patch_size": [1, 16, 16],
+        "in_chans": 6,
+        "embed_dim": 1024,
+        "depth": 24,
+        "num_heads": 16,
+        "decoder_embed_dim": 512,
+        "decoder_depth": 8,
+        "decoder_num_heads": 16,
+        "mlp_ratio": 4,
+        "coords_encoding": [],
+        "coords_scale_learn": True,
+    }
+
+    return create_prithvi_from_config("prithvi_eo_v2_300", pretrained, bands, default_config, **kwargs)
 
 
 @register_model
@@ -367,7 +339,24 @@ def prithvi_eo_v2_600(
     bands: list[HLSBands] | None = None,
     **kwargs,
 ) -> PrithviViT:
-    return create_prithvi_vit_600("prithvi_eo_v2_600", pretrained, bands, **kwargs)
+
+    default_config = {
+        "img_size": 224,
+        "num_frames": 4,
+        "patch_size": [1, 14, 14],
+        "in_chans": 6,
+        "embed_dim": 1280,
+        "depth": 32,
+        "num_heads": 16,
+        "decoder_embed_dim": 512,
+        "decoder_depth": 8,
+        "decoder_num_heads": 16,
+        "mlp_ratio": 4,
+        "coords_encoding": [],
+        "coords_scale_learn": True,
+    }
+
+    return create_prithvi_from_config("prithvi_eo_v2_600", pretrained, bands, default_config, **kwargs)
 
 
 @register_model
@@ -376,7 +365,24 @@ def prithvi_eo_v2_300_tl(
     bands: list[HLSBands] | None = None,
     **kwargs,
 ) -> PrithviViT:
-    return create_prithvi_vit_300("prithvi_eo_v2_300_tl", pretrained, bands, **kwargs)
+
+    default_config = {
+        "img_size": 224,
+        "num_frames": 4,
+        "patch_size": [1, 16, 16],
+        "in_chans": 6,
+        "embed_dim": 1024,
+        "depth": 24,
+        "num_heads": 16,
+        "decoder_embed_dim": 512,
+        "decoder_depth": 8,
+        "decoder_num_heads": 16,
+        "mlp_ratio": 4,
+        "coords_encoding": ["time", "location"],
+        "coords_scale_learn": True,
+    }
+
+    return create_prithvi_from_config("prithvi_eo_v2_300_tl", pretrained, bands, default_config, **kwargs)
 
 
 @register_model
@@ -385,4 +391,21 @@ def prithvi_eo_v2_600_tl(
     bands: list[HLSBands] | None = None,
     **kwargs,
 ) -> PrithviViT:
-    return create_prithvi_vit_600("prithvi_eo_v2_600_tl", pretrained, bands, **kwargs)
+
+    default_config = {
+        "img_size": 224,
+        "num_frames": 4,
+        "patch_size": [1, 14, 14],
+        "in_chans": 6,
+        "embed_dim": 1280,
+        "depth": 32,
+        "num_heads": 16,
+        "decoder_embed_dim": 512,
+        "decoder_depth": 8,
+        "decoder_num_heads": 16,
+        "mlp_ratio": 4,
+        "coords_encoding": ["time", "location"],
+        "coords_scale_learn": True,
+    }
+
+    return create_prithvi_from_config("prithvi_eo_v2_600_tl", pretrained, bands, default_config, **kwargs)
