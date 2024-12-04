@@ -74,6 +74,27 @@ class SARBands(Enum):
         except ValueError:
             return x
 
+class S1Bands(Enum):
+    VV = 'VV'
+    VH = 'VH'
+
+
+class DEMBands(Enum):
+    DEM = 'DEM'
+
+
+class LULCclasses(Enum):
+    LULC = 'LULC'
+
+
+class Modalities(Enum):
+    S1 = "S1"
+    S2L1C = "S2L1C"
+    S2L2A = "S2L2A"
+    S2RGB = "S2RGB"
+    DEM = "DEM"
+    LULC = "LULC"
+
 
 def default_transform(**batch):
     return to_tensor(batch)

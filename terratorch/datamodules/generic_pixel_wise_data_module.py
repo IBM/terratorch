@@ -109,6 +109,7 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
         no_data_replace: float | None = None,
         no_label_replace: int | None = None,
         drop_last: bool = True,
+        pin_memory: bool = False,
         **kwargs: Any,
     ) -> None:
         """Constructor
@@ -170,6 +171,8 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
             reduce_zero_label (bool): Subtract 1 from all labels. Useful when labels start from 1 instead of the
                 expected 0. Defaults to False.
             drop_last (bool): Drop the last batch if it is not complete. Defaults to True.
+            pin_memory (bool): If ``True``, the data loader will copy Tensors
+            into device/CUDA pinned memory before returning them. Defaults to False.
         """
         super().__init__(GenericNonGeoSegmentationDataset, batch_size, num_workers, **kwargs)
         self.num_classes = num_classes
@@ -188,6 +191,7 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
         self.no_data_replace = no_data_replace
         self.no_label_replace = no_label_replace
         self.drop_last = drop_last
+        self.pin_memory = pin_memory
 
         self.train_label_data_root = train_label_data_root
         self.val_label_data_root = val_label_data_root
@@ -318,6 +322,7 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
             num_workers=self.num_workers,
             collate_fn=self.collate_fn,
             drop_last=split == "train" and self.drop_last,
+            pin_memory=self.pin_memory,
         )
 
 
@@ -361,6 +366,7 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         no_data_replace: float | None = None,
         no_label_replace: int | None = None,
         drop_last: bool = True,
+        pin_memory: bool = False,
         **kwargs: Any,
     ) -> None:
         """Constructor
@@ -421,6 +427,9 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
             reduce_zero_label (bool): Subtract 1 from all labels. Useful when labels start from 1 instead of the
                 expected 0. Defaults to False.
             drop_last (bool): Drop the last batch if it is not complete. Defaults to True.
+            pin_memory (bool): If ``True``, the data loader will copy Tensors
+            into device/CUDA pinned memory before returning them. Defaults to False.
+
         """
         super().__init__(GenericNonGeoPixelwiseRegressionDataset, batch_size, num_workers, **kwargs)
         self.img_grep = img_grep
@@ -435,6 +444,7 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         self.ignore_split_file_extensions = ignore_split_file_extensions
         self.allow_substring_split_file = allow_substring_split_file
         self.drop_last = drop_last
+        self.pin_memory = pin_memory
         self.expand_temporal_dimension = expand_temporal_dimension
         self.reduce_zero_label = reduce_zero_label
 
@@ -564,4 +574,5 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
             num_workers=self.num_workers,
             collate_fn=self.collate_fn,
             drop_last=split == "train" and self.drop_last,
+            pin_memory=self.pin_memory,
         )
