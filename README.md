@@ -21,8 +21,8 @@ In order to use th file `pyproject.toml` it is necessary to guarantee `pip>=21.8
 [comment]: <For a stable point-release, use `pip install terratorch`.>
 [comment]: <If you prefer to get the most recent version of the main branch, install the library with `pip install git+https://github.com/IBM/terratorch.git`.>
 To get the most recent version of the main branch, install the library with `pip install git+https://github.com/IBM/terratorch.git`.
-[comment]: <Another alternative is to install using [pipx](https://github.com/pypa/pipx) via `pipx install terratorch`, which creates an isolated environment and allows the user to run the application as >
-[comment]: <a common CLI tool, with no need of installing dependencies or activating environments.>
+
+[comment]: <Another alternative is to install using [pipx](https://github.com/pypa/pipx) via `pipx install terratorch`, which creates an isolated environment and allows the user to run the application as a common CLI tool, with no need of installing dependencies or activating environments.>
 
 TerraTorch requires gdal to be installed, which can be quite a complex process. If you don't have GDAL set up on your system, we reccomend using a conda environment and installing it with `conda install -c conda-forge gdal`.
 
