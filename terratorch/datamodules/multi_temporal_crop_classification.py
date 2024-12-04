@@ -52,13 +52,13 @@ class MultiTemporalCropClassificationDataModule(NonGeoDataModule):
         super().__init__(MultiTemporalCropClassification, batch_size, num_workers, **kwargs)
         self.data_root = data_root
 
-        means = [MEANS[b] for b in bands]
-        stds = [STDS[b] for b in bands]
+        self.means = [MEANS[b] for b in bands]
+        self.stds = [STDS[b] for b in bands]
         self.bands = bands
         self.train_transform = wrap_in_compose_is_list(train_transform)
         self.val_transform = wrap_in_compose_is_list(val_transform)
         self.test_transform = wrap_in_compose_is_list(test_transform)
-        self.aug = Normalize(means, stds)
+        self.aug = Normalize(self.means, self.stds)
         self.drop_last = drop_last
         self.no_data_replace = no_data_replace
         self.no_label_replace = no_label_replace
