@@ -123,7 +123,7 @@ def import_custom_modules(custom_modules_path:None | Path | str =None) -> None:
         else:
             raise ValueError(f"Modules path {custom_modules_path} isn't a directory. Check if you have defined it properly.")
     else:
-        logger.info("No custom module is being used.")
+        logger.debug("No custom module is being used.")
 
 class CustomWriter(BasePredictionWriter):
     """Callback class to write geospatial data to file."""
@@ -385,9 +385,10 @@ class MyLightningCLI(LightningCLI):
             self.trainer.deploy_config = config.deploy_config_file
 
         # Custom modules path
-        if hasattr(self.config.fit, "custom_modules_path"):
-
+        if hasattr(self.config, "fit") and hasattr(self.config.fit, "custom_modules_path"):
             custom_modules_path =  self.config.fit.custom_modules_path
+        if hasattr(self.config, "test") and hasattr(self.config.test, "custom_modules_path"):
+            custom_modules_path =  self.config.test.custom_modules_path
         else:
             default_path = Path(".") / "custom_modules"
             custom_modules_path = os.environ.get("TERRATORCH_CUSTOM_MODULE_PATH", default_path)
