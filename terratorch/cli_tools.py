@@ -394,10 +394,11 @@ class MyLightningCLI(LightningCLI):
         elif hasattr(self.config, "predict") and hasattr(self.config.predict, "custom_modules_path"):
             custom_modules_path = self.config.predict.custom_modules_path
         else:
-            default_path = Path(".") / "custom_modules"
-            custom_modules_path = os.environ.get("TERRATORCH_CUSTOM_MODULE_PATH", default_path)
+            logger.info("No custom module is being used.")
+            custom_modules_path = None 
 
-        import_custom_modules(custom_modules_path)
+        if custom_modules_path:
+            import_custom_modules(custom_modules_path)
 
 def build_lightning_cli(
     args: ArgsType = None,
