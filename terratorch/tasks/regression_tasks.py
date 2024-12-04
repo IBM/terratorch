@@ -1,7 +1,7 @@
 """This module contains the regression task and its auxiliary classes."""
 
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, Optional
 
 import lightning
 import matplotlib.pyplot as plt
@@ -115,7 +115,6 @@ class IgnoreIndexMetricWrapper(WrapperMetric):
     def reset(self) -> None:
         self.metric.reset()
 
-
 class PixelwiseRegressionTask(BaseTask):
     """Pixelwise Regression Task that accepts models from a range of sources.
 
@@ -133,6 +132,7 @@ class PixelwiseRegressionTask(BaseTask):
         self,
         model_args: dict,
         model_factory: str,
+        model: Optional[torch.nn.Module]=None,
         loss: str = "mse",
         aux_heads: list[AuxiliaryHead] | None = None,
         aux_loss: dict[str, float] | None = None,
@@ -185,22 +185,50 @@ class PixelwiseRegressionTask(BaseTask):
         self.tiled_inference_parameters = tiled_inference_parameters
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
-        self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
+
+        if model_factory:  
+            self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
+            self.model_builder = self._build
+        elif model:
+            self.model_builder = self._bypass_build
+        else:
+            raise Exception("Or a model_factory or a torch.nn.Module object must be provided.")
+
+        self._model_module = None 
+
         super().__init__()
+
+        self._model_module = model
+        self.model = model
+
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
         self.test_loss_handler = LossHandler(self.test_metrics.prefix)
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
         self.monitor = f"{self.val_metrics.prefix}loss"
         self.plot_on_val = int(plot_on_val)
 
+    @property
+    def model_module(self):
+        return self._model_module
+
+
+    def _bypass_build(self):
+        return self.model_module
+
+    def _build(self):
+
+        return self.model_factory.build_model(
+            "regression", aux_decoders=self.aux_heads, **self.hparams["model_args"]
+        )
+
     # overwrite early stopping
     def configure_callbacks(self) -> list[Callback]:
         return []
 
     def configure_models(self) -> None:
-        self.model: Model = self.model_factory.build_model(
-            "regression", aux_decoders=self.aux_heads, **self.hparams["model_args"]
-        )
+
+        self.model: Model = self.model_builder()
+
         if self.hparams["freeze_backbone"]:
             if self.hparams.get("peft_config", None) is not None:
                 msg = "PEFT should be run with freeze_backbone = False"
@@ -370,6 +398,10 @@ class PixelwiseRegressionTask(BaseTask):
         y_hat = model_output.output
         self.test_metrics.update(y_hat, y)
 
+    @property
+    def model_module(self):
+        return self._model_module
+
     def on_test_epoch_end(self) -> None:
         self.log_dict(self.test_metrics.compute(), sync_dist=True)
         self.test_metrics.reset()
@@ -398,5 +430,70 @@ class PixelwiseRegressionTask(BaseTask):
         if self.tiled_inference_parameters:
             y_hat: Tensor = tiled_inference(model_forward, x, 1, self.tiled_inference_parameters)
         else:
-            y_hat: Tensor = self(x).output
+            y_hat: Tensor = self(x, **rest).output
         return y_hat, file_names
+
+class ScalarRegressionTask(PixelwiseRegressionTask):
+
+    def __init__(
+        self,
+        model_args: dict,
+        model_factory: str,
+        loss: str = "mse",
+        aux_heads: list[AuxiliaryHead] | None = None,
+        aux_loss: dict[str, float] | None = None,
+        class_weights: list[float] | None = None,
+        ignore_index: int | None = None,
+        lr: float = 0.001,
+        # the following are optional so CLI doesnt need to pass them
+        optimizer: str | None = None,
+        optimizer_hparams: dict | None = None,
+        scheduler: str | None = None,
+        scheduler_hparams: dict | None = None,
+        #
+        freeze_backbone: bool = False,  # noqa: FBT001, FBT002
+        freeze_decoder: bool = False,  # noqa: FBT001, FBT002
+        plot_on_val: bool | int = 10,
+        tiled_inference_parameters: TiledInferenceParameters | None = None,
+    ) -> None:
+
+        super().__init__(model_args=model_args,
+                     model_factory=model_factory,
+                     loss=loss, 
+                     aux_heads=aux_heads,
+                     aux_loss=aux_loss,
+                     class_weights=class_weights,
+                     ignore_index=ignore_index,
+                     lr=lr,
+                     optimizer=optimizer,
+                     optimizer_hparams=optimizer_hparams,
+                     scheduler=scheduler,
+                     scheduler_hparams=scheduler_hparams,
+                     freeze_backbone=freeze_backbone,
+                     freeze_decoder=freeze_decoder,
+                     plot_on_val=plot_on_val,
+                     tiled_inference_parameters=tiled_inference_parameters,)
+
+    def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
+        """Compute the validation loss and additional metrics.
+
+        Args:
+            batch: The output of your DataLoader.
+            batch_idx: Integer displaying index of this batch.
+            dataloader_idx: Index of the current dataloader.
+        """
+        x = batch["image"]
+        y = batch["mask"]
+        other_keys = batch.keys() - {"image", "mask", "filename"}
+        rest = {k:batch[k] for k in other_keys}
+        model_output: ModelOutput = self(x, **rest)
+        loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
+        self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
+        y_hat = model_output.output
+        self.val_metrics.update(y_hat, y)
+
+        ##############
+        # Custom plots
+        # ############
+
+

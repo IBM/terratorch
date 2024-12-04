@@ -36,13 +36,17 @@ from huggingface_hub import hf_hub_download, snapshot_download
 # 
 
 
-config = get_config('../confs/granite-wxc-merra2-downscale-config.yaml')
-config.download_path = './'
+config = get_config('../confs/granite-wxc-merra2-downscale-large-config.yaml')
+download_path = os.getcwd()
+config.download_path = download_path
 
-config.data.data_path_surface = os.path.join(config.download_path,'merra-2')
-config.data.data_path_vertical = os.path.join(config.download_path, 'merra-2')
-config.data.climatology_path_surface = os.path.join(config.download_path,'climatology')
-config.data.climatology_path_vertical = os.path.join(config.download_path,'climatology')
+config.data.data_path_surface = os.path.join(download_path,'merra-2')
+config.data.data_path_vertical = os.path.join(download_path, 'merra-2')
+config.data.climatology_path_surface = os.path.join(download_path,'climatology')
+config.data.climatology_path_vertical = os.path.join(download_path,'climatology')
+
+extra_kwargs = config.model.init_args["extra_kwargs"]
+model_args = config.model.init_args["model_args"]
 
 config.model.input_scalers_surface_path = os.path.join(config.download_path,'climatology/musigma_surface.nc')
 config.model.input_scalers_vertical_path = os.path.join(config.download_path,'climatology/musigma_vertical.nc')
@@ -130,7 +134,7 @@ if not len(files):
 
 print("This is our config:")
 
-task = WxCDownscalingTask(model_args = {}, model_factory = 'WxCModelFactory', model_config=config, optimizer='AdamW', optimizer_hparams={'weight_decay': 0.05})
+task = WxCDownscalingTask(model_args = model_args, model_factory = 'WxCModelFactory',extra_kwargs=extra_kwargs, model_config=config, optimizer='AdamW', optimizer_hparams={'weight_decay': 0.05})
 
 
 # 
