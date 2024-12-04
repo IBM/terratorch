@@ -387,6 +387,8 @@ class MyLightningCLI(LightningCLI):
         # Custom modules path
         if hasattr(self.config, "fit") and hasattr(self.config.fit, "custom_modules_path"):
             custom_modules_path = self.config.fit.custom_modules_path
+        elif hasattr(self.config, "validate") and hasattr(self.config.validate, "custom_modules_path"):
+            custom_modules_path = self.config.validate.custom_modules_path
         elif hasattr(self.config, "test") and hasattr(self.config.test, "custom_modules_path"):
             custom_modules_path = self.config.test.custom_modules_path
         elif hasattr(self.config, "predict") and hasattr(self.config.predict, "custom_modules_path"):
