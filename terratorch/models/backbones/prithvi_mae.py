@@ -141,6 +141,7 @@ class PatchEmbed(nn.Module):
             norm_layer: nn.Module | None = None,
             flatten: bool = True,
             bias: bool = True,
+            log_warning: bool = False,
     ):
         super().__init__()
         self.input_size = input_size
@@ -151,15 +152,26 @@ class PatchEmbed(nn.Module):
 
         self.proj = nn.Conv3d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size, bias=bias)
         self.norm = norm_layer(embed_dim) if norm_layer else nn.Identity()
-        self.warn_counter = 0 
+        self.log_warning = log_warning
+
+        if self.log_warning:
+            self.log_warning_func = self._logging
+        else:
+            self.log_warning_func = self._bypass_logging
+
+    def _bypass_logging(self, *args):
+        pass
+
+    def _logging(self, x, T, H, W):
+
+        if (T / self.patch_size[0] % 1 or H / self.patch_size[1] % 1 or W / self.patch_size[2] % 1):
+            logging.warning(f"Input {x.shape[-3:]} is not divisible by patch size {self.patch_size}."
+                            f"The border will be ignored, add backbone_padding for pixel-wise tasks.")
 
     def forward(self, x):
         B, C, T, H, W = x.shape
 
-        if (T / self.patch_size[0] % 1 or H / self.patch_size[1] % 1 or W / self.patch_size[2] % 1) and self.warn_counter == 0 :
-            logging.warning(f"Input {x.shape[-3:]} is not divisible by patch size {self.patch_size}."
-                            f"The border will be ignored, add backbone_padding for pixel-wise tasks.")
-            self.warn_counter += 1
+        self.log_warning_func(x, T, H, W)
 
         x = self.proj(x)
         if self.flatten:
