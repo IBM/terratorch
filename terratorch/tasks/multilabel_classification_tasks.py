@@ -4,10 +4,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
-from torchmetrics import MetricCollection
+from torchmetrics import ClasswiseWrapper, MetricCollection
 from torchmetrics.classification import (
     MultilabelAccuracy,
     MultilabelFBetaScore,
+    MultilabelPrecision,
+    MultilabelRecall,
 )
 
 from terratorch.models.model import ModelOutput
@@ -50,6 +52,18 @@ class MultiLabelClassificationTask(ClassificationTask):
                 ),
                 "Multilabel_F1_Score": MultilabelFBetaScore(
                     num_labels=self.hparams["model_args"]["num_classes"], beta=1.0, average="micro"
+                ),
+                "F1_Score": ClasswiseWrapper(
+                    MultilabelFBetaScore(num_labels=self.hparams["model_args"]["num_classes"], beta=1.0, average=None),
+                    labels=self.hparams["class_names"],
+                ),
+                "Precision": ClasswiseWrapper(
+                    MultilabelPrecision(num_labels=self.hparams["model_args"]["num_classes"], average=None),
+                    labels=self.hparams["class_names"],
+                ),
+                "Recall": ClasswiseWrapper(
+                    MultilabelRecall(num_labels=self.hparams["model_args"]["num_classes"], average=None),
+                    labels=self.hparams["class_names"],
                 ),
             }
         )
