@@ -18,3 +18,4 @@ tests/all_ecos_random/*
 **/*.bin
 *.stdout
 *.log
+**/*.un~
