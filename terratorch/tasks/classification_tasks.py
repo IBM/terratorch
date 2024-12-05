@@ -142,8 +142,14 @@ class ClassificationTask(BaseTask):
             ValueError: If *loss* is invalid.
         """
         loss: str = self.hparams["loss"]
+        ignore_index = self.hparams["ignore_index"]
+
+        class_weights = (
+                    torch.Tensor(self.hparams["class_weights"]) if self.hparams["class_weights"] is not None else None
+                )
         if loss == "ce":
-            self.criterion: nn.Module = nn.CrossEntropyLoss(weight=self.hparams["class_weights"])
+            ignore_value = -100 if ignore_index is None else ignore_index
+            self.criterion = nn.CrossEntropyLoss(ignore_index=ignore_value, weight=class_weights)
         elif loss == "bce":
             self.criterion = nn.BCEWithLogitsLoss()
         elif loss == "jaccard":
