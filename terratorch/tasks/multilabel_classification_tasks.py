@@ -53,17 +53,23 @@ class MultiLabelClassificationTask(ClassificationTask):
                 "Multilabel_F1_Score": MultilabelFBetaScore(
                     num_labels=self.hparams["model_args"]["num_classes"], beta=1.0, average="micro"
                 ),
+                "Multilabel_F1_Score_Macro": MultilabelFBetaScore(
+                    num_labels=self.hparams["model_args"]["num_classes"], beta=1.0, average="macro"
+                ),
                 "F1_Score": ClasswiseWrapper(
                     MultilabelFBetaScore(num_labels=self.hparams["model_args"]["num_classes"], beta=1.0, average=None),
                     labels=self.hparams["class_names"],
+                    prefix="F1_Score_",
                 ),
                 "Precision": ClasswiseWrapper(
                     MultilabelPrecision(num_labels=self.hparams["model_args"]["num_classes"], average=None),
                     labels=self.hparams["class_names"],
+                    prefix="Precision_",
                 ),
                 "Recall": ClasswiseWrapper(
                     MultilabelRecall(num_labels=self.hparams["model_args"]["num_classes"], average=None),
                     labels=self.hparams["class_names"],
+                    prefix="Recall_",
                 ),
             }
         )
