@@ -16,6 +16,7 @@ from terratorch.models.backbones.multimae.criterion import MaskedMSELoss, Masked
 from terratorch.models.backbones.multimae.input_adapters import PatchedInputAdapter, SemSegInputAdapter
 from terratorch.models.backbones.multimae.output_adapters import SpatialOutputAdapter, ConvNeXtAdapter
 
+logger = logging.getLogger(__name__)
 
 def _cfg(file: Path = "", **kwargs) -> dict:
     return {
@@ -317,7 +318,7 @@ def multimae_base(
 
     if input_adapters is None:
         input_adapters = ['S1', 'S2L1C', 'S2L2A', 'DEM', 'LULC']
-        logging.warning(f'')
+        logger.warning(f'Using default adapters.')
     input_adapters = _parse_input_adapters(input_adapters)
 
     if output_adapters is not None:
