@@ -133,6 +133,7 @@ class PixelwiseRegressionTask(BaseTask):
         self,
         model_args: dict,
         model_factory: str,
+        model: torch.nn.Module | None = None,
         loss: str = "mse",
         aux_heads: list[AuxiliaryHead] | None = None,
         aux_loss: dict[str, float] | None = None,
@@ -185,7 +186,16 @@ class PixelwiseRegressionTask(BaseTask):
         self.tiled_inference_parameters = tiled_inference_parameters
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
-        self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
+
+        if model_factory:  
+            self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
+            self.model_builder = self._build
+        elif model:
+            self.model_builder = self._bypass_build
+            self._model_module = model
+        else:
+            raise Exception("Or a model_factory or a torch.nn.Module object must be provided.")
+
         super().__init__()
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
         self.test_loss_handler = LossHandler(self.test_metrics.prefix)
@@ -193,14 +203,27 @@ class PixelwiseRegressionTask(BaseTask):
         self.monitor = f"{self.val_metrics.prefix}loss"
         self.plot_on_val = int(plot_on_val)
 
+    @property
+    def model_module(self):
+        return self._model_module
+
+    def _bypass_build(self):
+        return self.model_module
+
+    def _build(self):
+
+        return self.model_factory.build_model(
+            "regression", aux_decoders=self.aux_heads, **self.hparams["model_args"]
+        )
+
     # overwrite early stopping
     def configure_callbacks(self) -> list[Callback]:
         return []
 
     def configure_models(self) -> None:
-        self.model: Model = self.model_factory.build_model(
-            "regression", aux_decoders=self.aux_heads, **self.hparams["model_args"]
-        )
+
+        self.model: Model = self.model_builder()
+
         if self.hparams["freeze_backbone"]:
             if self.hparams.get("peft_config", None) is not None:
                 msg = "PEFT should be run with freeze_backbone = False"
@@ -372,6 +395,10 @@ class PixelwiseRegressionTask(BaseTask):
         self.test_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat = model_output.output
         self.test_metrics.update(y_hat, y)
+
+    @property
+    def model_module(self):
+        return self._model_module
 
     def on_test_epoch_end(self) -> None:
         self.log_dict(self.test_metrics.compute(), sync_dist=True)
