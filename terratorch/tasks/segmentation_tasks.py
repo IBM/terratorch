@@ -71,7 +71,9 @@ class SemanticSegmentationTask(BaseTask):
 
             Defaults to None.
             model_args (Dict): Arguments passed to the model factory.
-            model_factory (str): ModelFactory class to be used to instantiate the model.
+            model_factory (str, optional): ModelFactory class to be used to instantiate the model.
+                Is ignored when model is provided.
+            model (torch.nn.Module, optional): Custom model.
             loss (str, optional): Loss to be used. Currently, supports 'ce', 'jaccard' or 'focal' loss.
                 Defaults to "ce".
             aux_loss (dict[str, float] | None, optional): Auxiliary loss weights.
@@ -111,8 +113,8 @@ class SemanticSegmentationTask(BaseTask):
 
         if model is not None and model_factory is not None:
             logger.warning("A model_factory and a model was provided. The model_factory is ignored.")
-        assert model is not None or model_factory is not None, \
-            "A model_factory or a model (torch.nn.Module) must be provided."
+        if model is None and model_factory is None:
+            raise ValueError("A model_factory or a model (torch.nn.Module) must be provided.")
 
         if model_factory and model is None:
             self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
@@ -137,9 +139,9 @@ class SemanticSegmentationTask(BaseTask):
 
     def configure_models(self) -> None:
         if not hasattr(self, "model_factory"):
-            # Custom model is provided
             if self.hparams["freeze_backbone"] or self.hparams["freeze_decoder"]:
                 logger.warning("freeze_backbone and freeze_decoder are ignored if a custom model is provided.")
+            # Skipping model factory because custom model is provided
             return
 
         self.model: Model = self.model_factory.build_model(
