@@ -6,7 +6,8 @@ try:
     wxc_present = True
     from terratorch.tasks.wxc_downscaling_task import WxCDownscalingTask 
 except ImportError as e:
-    print('wxc_downscaling not installed')
+    import logging
+    logging.getLogger('terratorch').debug('wxc_downscaling not installed')
     wxc_present = False
 
 
