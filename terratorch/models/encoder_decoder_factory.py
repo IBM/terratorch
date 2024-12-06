@@ -15,12 +15,14 @@ from terratorch.models.necks import Neck, build_neck_list
 from terratorch.models.peft_utils import get_peft_backbone
 from terratorch.models.pixel_wise_model import PixelWiseModel
 from terratorch.models.scalar_output_model import ScalarOutputModel
+from terratorch.models.pretrain_model import PreTrainModel
 from terratorch.models.utils import extract_prefix_keys
 from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY, MODEL_FACTORY_REGISTRY
 
 PIXEL_WISE_TASKS = ["segmentation", "regression"]
 SCALAR_TASKS = ["classification"]
-SUPPORTED_TASKS = PIXEL_WISE_TASKS + SCALAR_TASKS
+PRETRAIN_TASK = "pretrain"
+SUPPORTED_TASKS = PIXEL_WISE_TASKS + SCALAR_TASKS + PRETRAIN_TASK
 
 
 def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
@@ -146,18 +148,31 @@ class EncoderDecoderFactory(ModelFactory):
 
         if necks is None:
             necks = []
-        neck_list, channel_list = build_neck_list(necks, out_channels)
+
+        # Necks are not defined for pretraining task
+        if task != PRETRAIN_TASK:
+            neck_list, channel_list = build_neck_list(necks, out_channels)
+        else:
+            neck_list = None
+            channel_list = None
 
         # some decoders already include a head
         # for these, we pass the num_classes to them
         # others dont include a head
         # for those, we dont pass num_classes
-        decoder_kwargs, kwargs = extract_prefix_keys(kwargs, "decoder_")
-        head_kwargs, kwargs = extract_prefix_keys(kwargs, "head_")
 
-        decoder, head_kwargs, decoder_includes_head = _get_decoder_and_head_kwargs(
-            decoder, channel_list, decoder_kwargs, head_kwargs, num_classes=num_classes
-        )
+        if task != PRETRAIN_TASK:
+
+            decoder_kwargs, kwargs = extract_prefix_keys(kwargs, "decoder_")
+            head_kwargs, kwargs = extract_prefix_keys(kwargs, "head_")
+
+            decoder, head_kwargs, decoder_includes_head = _get_decoder_and_head_kwargs(
+                decoder, channel_list, decoder_kwargs, head_kwargs, num_classes=num_classes
+            )
+        else:
+            decoder = None
+            head_kwargs = None 
+            decoder_includes_head = None
 
         if aux_decoders is None:
             _check_all_args_used(kwargs)
@@ -202,6 +217,7 @@ def _build_appropriate_model(
     task: str,
     backbone: nn.Module,
     decoder: nn.Module,
+    model: nn.Module | None,
     head_kwargs: dict,
     decoder_includes_head: bool = False,
     necks: list[Neck] | None = None,
@@ -232,4 +248,9 @@ def _build_appropriate_model(
             decoder_includes_head=decoder_includes_head,
             neck=neck_module,
             auxiliary_heads=auxiliary_heads,
+        )
+
+    elif task == PRETRAIN_TASK:
+        return PreTrainModel(
+            model
         )
