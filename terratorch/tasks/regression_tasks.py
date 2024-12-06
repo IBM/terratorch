@@ -419,12 +419,12 @@ class PixelwiseRegressionTask(BaseTask):
         file_names = batch["filename"]
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k:batch[k] for k in other_keys}
-        model_output: ModelOutput = self(x, **rest)
 
         def model_forward(x):
             return self(x).output
 
         if self.tiled_inference_parameters:
+            # TODO: tiled inference does not work with additional input data (**rest)
             y_hat: Tensor = tiled_inference(model_forward, x, 1, self.tiled_inference_parameters)
         else:
             y_hat: Tensor = self(x, **rest).output

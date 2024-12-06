@@ -394,16 +394,16 @@ class SemanticSegmentationTask(BaseTask):
         file_names = batch["filename"]
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
-        model_output: ModelOutput = self(x, **rest)
 
         def model_forward(x):
             return self(x).output
 
         if self.tiled_inference_parameters:
             y_hat: Tensor = tiled_inference(
+                # TODO: tiled inference does not work with additional input data (**rest)
                 model_forward, x, self.hparams["model_args"]["num_classes"], self.tiled_inference_parameters
             )
         else:
-            y_hat: Tensor = self(x).output
+            y_hat: Tensor = self(x, **rest).output
         y_hat = y_hat.argmax(dim=1)
         return y_hat, file_names
