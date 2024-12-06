@@ -399,10 +399,6 @@ class PixelwiseRegressionTask(BaseTask):
         y_hat = model_output.output
         self.test_metrics.update(y_hat, y)
 
-    @property
-    def model_module(self):
-        return self._model_module
-
     def on_test_epoch_end(self) -> None:
         self.log_dict(self.test_metrics.compute(), sync_dist=True)
         self.test_metrics.reset()
