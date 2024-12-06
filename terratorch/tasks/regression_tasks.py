@@ -3,6 +3,7 @@
 from collections.abc import Sequence
 from typing import Any
 
+import logging
 import lightning
 import matplotlib.pyplot as plt
 import torch
@@ -23,6 +24,7 @@ from terratorch.tasks.tiled_inference import TiledInferenceParameters, tiled_inf
 
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
 
+logger = logging.getLogger('terratorch')
 
 class RootLossWrapper(nn.Module):
     def __init__(self, loss_function: nn.Module, reduction: None | str = "mean") -> None:
@@ -132,7 +134,8 @@ class PixelwiseRegressionTask(BaseTask):
     def __init__(
         self,
         model_args: dict,
-        model_factory: str,
+        model_factory: str | None = None,
+        model: torch.nn.Module | None = None,
         loss: str = "mse",
         aux_heads: list[AuxiliaryHead] | None = None,
         aux_loss: dict[str, float] | None = None,
@@ -154,7 +157,9 @@ class PixelwiseRegressionTask(BaseTask):
 
         Args:
             model_args (Dict): Arguments passed to the model factory.
-            model_factory (str): Name of ModelFactory class to be used to instantiate the model.
+            model_factory (str, optional): Name of ModelFactory class to be used to instantiate the model.
+                Is ignored when model is provided.
+            model (torch.nn.Module, optional): Custom model.
             loss (str, optional): Loss to be used. Currently, supports 'mse', 'rmse', 'mae' or 'huber' loss.
                 Defaults to "mse".
             aux_loss (dict[str, float] | None, optional): Auxiliary loss weights.
@@ -185,8 +190,21 @@ class PixelwiseRegressionTask(BaseTask):
         self.tiled_inference_parameters = tiled_inference_parameters
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
-        self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
+
+        if model is not None and model_factory is not None:
+            logger.warning("A model_factory and a model was provided. The model_factory is ignored.")
+        if model is None and model_factory is None:
+            raise ValueError("A model_factory or a model (torch.nn.Module) must be provided.")
+
+        if model_factory and model is None:
+            self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
+
         super().__init__()
+        
+        if model:
+            # Custom_model
+            self.model = model
+
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
         self.test_loss_handler = LossHandler(self.test_metrics.prefix)
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
@@ -198,14 +216,22 @@ class PixelwiseRegressionTask(BaseTask):
         return []
 
     def configure_models(self) -> None:
+        if not hasattr(self, "model_factory"):
+            if self.hparams["freeze_backbone"] or self.hparams["freeze_decoder"]:
+                logger.warning("freeze_backbone and freeze_decoder are ignored if a custom model is provided.")
+            # Skipping model factory because custom model is provided
+            return
+
         self.model: Model = self.model_factory.build_model(
             "regression", aux_decoders=self.aux_heads, **self.hparams["model_args"]
         )
+
         if self.hparams["freeze_backbone"]:
             if self.hparams.get("peft_config", None) is not None:
                 msg = "PEFT should be run with freeze_backbone = False"
                 raise ValueError(msg)
             self.model.freeze_encoder()
+
         if self.hparams["freeze_decoder"]:
             self.model.freeze_decoder()
 
@@ -393,13 +419,13 @@ class PixelwiseRegressionTask(BaseTask):
         file_names = batch["filename"]
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k:batch[k] for k in other_keys}
-        model_output: ModelOutput = self(x, **rest)
 
         def model_forward(x):
             return self(x).output
 
         if self.tiled_inference_parameters:
+            # TODO: tiled inference does not work with additional input data (**rest)
             y_hat: Tensor = tiled_inference(model_forward, x, 1, self.tiled_inference_parameters)
         else:
-            y_hat: Tensor = self(x).output
+            y_hat: Tensor = self(x, **rest).output
         return y_hat, file_names
