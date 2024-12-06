@@ -32,7 +32,8 @@ try:
     wxc_present = True
     from terratorch.datamodules.merra2_downscale import Merra2DownscaleNonGeoDataModule 
 except ImportError as e:
-    print('wxc_downscaling not installed')
+    import logging
+    logging.getLogger("terratorch").debug("wxc_downscaling not installed")
     wxc_present = False
 
 # GenericNonGeoRegressionDataModule,

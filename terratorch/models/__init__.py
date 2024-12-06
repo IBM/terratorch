@@ -15,7 +15,8 @@ from terratorch.models.timm_model_factory import TimmModelFactory
 try:
     from terratorch.models.wxc_model_factory import WxCModelFactory
 except ImportError:
-    logging.debug("granitewcx is not installed.")
+    import logging
+    logging.getLogger("terratorch").debug("granitewcx not installed")
 
 __all__ = (
     "PrithviModelFactory",
