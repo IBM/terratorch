@@ -187,28 +187,29 @@ class PixelwiseRegressionTask(BaseTask):
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
 
+        self._model_module = None 
+
         if model_factory:  
             self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
             self.model_builder = self._build
         elif model:
             self.model_builder = self._bypass_build
-            self._model_module = model
         else:
             raise Exception("Or a model_factory or a torch.nn.Module object must be provided.")
 
         super().__init__()
+        
+        if model:
+            self.model = model
+
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
         self.test_loss_handler = LossHandler(self.test_metrics.prefix)
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
         self.monitor = f"{self.val_metrics.prefix}loss"
         self.plot_on_val = int(plot_on_val)
 
-    @property
-    def model_module(self):
-        return self._model_module
-
     def _bypass_build(self):
-        return self.model_module
+        return self._model_module
 
     def _build(self):
 
@@ -428,5 +429,5 @@ class PixelwiseRegressionTask(BaseTask):
         if self.tiled_inference_parameters:
             y_hat: Tensor = tiled_inference(model_forward, x, 1, self.tiled_inference_parameters)
         else:
-            y_hat: Tensor = self(x).output
+            y_hat: Tensor = self(x, **rest).output
         return y_hat, file_names

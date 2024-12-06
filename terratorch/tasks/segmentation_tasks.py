@@ -109,6 +109,8 @@ class SemanticSegmentationTask(BaseTask):
         self.aux_heads = aux_heads
         self._model_module = None
 
+        self._model_module = None 
+
         if model_factory:  
             self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
             self.model_builder = self._build
@@ -118,9 +120,11 @@ class SemanticSegmentationTask(BaseTask):
         else:
             raise Exception("Or a model_factory or a torch.nn.Module object must be provided.")
 
-
         super().__init__()
-        
+
+        if model:
+            self.model = model
+
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
         self.test_loss_handler: list[LossHandler] = []
         for metrics in self.test_metrics:
@@ -128,14 +132,6 @@ class SemanticSegmentationTask(BaseTask):
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
         self.monitor = f"{self.val_metrics.prefix}loss"
         self.plot_on_val = int(plot_on_val)
-
-    @property
-    def model_module(self):
-        return self._model_module
-
-       # overwrite early stopping
-    def configure_callbacks(self) -> list[Callback]:
-        return []
 
     def _bypass_build(self):
         return self.model_module
@@ -145,6 +141,10 @@ class SemanticSegmentationTask(BaseTask):
         return self.model_factory.build_model(
             "segmentation", aux_decoders=self.aux_heads, **self.hparams["model_args"]
         )
+
+       # overwrite early stopping
+    def configure_callbacks(self) -> list[Callback]:
+        return []
 
     def configure_models(self) -> None:
         self.model: Model = self.model_builder()
