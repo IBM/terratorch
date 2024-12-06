@@ -156,8 +156,9 @@ class PatchEmbed(nn.Module):
         B, C, T, H, W = x.shape
 
         if T / self.patch_size[0] % 1 or H / self.patch_size[1] % 1 or W / self.patch_size[2] % 1:
-            logging.warning(f"Input {x.shape[-3:]} is not divisible by patch size {self.patch_size}."
-                            f"The border will be ignored, add backbone_padding for pixel-wise tasks.")
+            logging.getLogger(__name__).warning(
+                f"Input {x.shape[-3:]} is not divisible by patch size {self.patch_size}."
+                f"The border will be ignored, add backbone_padding for pixel-wise tasks.")
 
         x = self.proj(x)
         if self.flatten:

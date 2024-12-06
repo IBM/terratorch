@@ -17,6 +17,8 @@ from terratorch.models.backbones.select_patch_embed_weights import select_patch_
 from terratorch.models.backbones.swin_encoder_decoder import MMSegSwinTransformer
 from terratorch.datasets.utils import generate_bands_intervals
 
+logger = logging.getLogger(__name__)
+
 PRETRAINED_BANDS = [
     HLSBands.BLUE,
     HLSBands.GREEN,
@@ -169,7 +171,7 @@ def _create_swin_mmseg_transformer(
 
     if model_bands is None:
         model_bands: list[HLSBands | int] = pretrained_bands
-        logging.info(
+        logger.info(
             f"Model bands not passed. Assuming bands are ordered in the same way as {PRETRAINED_BANDS}.\
             Pretrained patch_embed layer may be misaligned with current bands"
         )
@@ -238,7 +240,7 @@ def prithvi_swin_B(
         pretrained_bands = PRETRAINED_BANDS
     if bands is None:
         bands = pretrained_bands
-        logging.info(
+        logger.info(
             f"Model bands not passed. Assuming bands are ordered in the same way as {PRETRAINED_BANDS}.\
             Pretrained patch_embed layer may be misaligned with current bands"
         )
@@ -269,7 +271,7 @@ def prithvi_swin_L(
         pretrained_bands = PRETRAINED_BANDS
     if bands is None:
         bands = pretrained_bands
-        logging.info(
+        logger.info(
             f"Model bands not passed. Assuming bands are ordered in the same way as {PRETRAINED_BANDS}.\
             Pretrained patch_embed layer may be misaligned with current bands"
         )
