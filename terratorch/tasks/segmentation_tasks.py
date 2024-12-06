@@ -2,7 +2,7 @@
 from typing import Any 
 from functools import partial
 import os
-
+import logging
 import lightning
 import matplotlib.pyplot as plt
 import segmentation_models_pytorch as smp
@@ -22,6 +22,7 @@ from terratorch.tasks.tiled_inference import TiledInferenceParameters, tiled_inf
 
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
 
+logger = logging.getLogger('terratorch')
 
 def to_segmentation_prediction(y: ModelOutput) -> Tensor:
     y_hat = y.output
@@ -43,7 +44,7 @@ class SemanticSegmentationTask(BaseTask):
     def __init__(
         self,
         model_args: dict,
-        model_factory: str,
+        model_factory: str | None = None,
         model: torch.nn.Module | None = None,
         loss: str = "ce",
         aux_heads: list[AuxiliaryHead] | None = None,
@@ -107,24 +108,19 @@ class SemanticSegmentationTask(BaseTask):
         self.tiled_inference_parameters = tiled_inference_parameters
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
-        self._model_module = None
 
-        # This is an workaround, since BaseTask doesn't allow the
-        # assignament of model before executing __init__
-        self._model_module = None 
+        if model is not None and model_factory is not None:
+            logger.warning("A model_factory and a model was provided. The model_factory is ignored.")
+        assert model is not None or model_factory is not None, \
+            "A model_factory or a model (torch.nn.Module) must be provided."
 
-        if model_factory:  
+        if model_factory and model is None:
             self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
-            self.model_builder = self._build
-        elif model:
-            self.model_builder = self._bypass_build
-            self._model_module = model
-        else:
-            raise Exception("Or a model_factory or a torch.nn.Module object must be provided.")
 
         super().__init__()
 
-        if model:
+        if model is not None:
+            # Custom model
             self.model = model
 
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
@@ -135,21 +131,20 @@ class SemanticSegmentationTask(BaseTask):
         self.monitor = f"{self.val_metrics.prefix}loss"
         self.plot_on_val = int(plot_on_val)
 
-    def _bypass_build(self):
-        return self.model_module
-
-    def _build(self):
-
-        return self.model_factory.build_model(
-            "segmentation", aux_decoders=self.aux_heads, **self.hparams["model_args"]
-        )
-
-       # overwrite early stopping
+    # overwrite early stopping
     def configure_callbacks(self) -> list[Callback]:
         return []
 
     def configure_models(self) -> None:
-        self.model: Model = self.model_builder()
+        if not hasattr(self, "model_factory"):
+            # Custom model is provided
+            if self.hparams["freeze_backbone"] or self.hparams["freeze_decoder"]:
+                logger.warning("freeze_backbone and freeze_decoder are ignored if a custom model is provided.")
+            return
+
+        self.model: Model = self.model_factory.build_model(
+            "segmentation", aux_decoders=self.aux_heads, **self.hparams["model_args"]
+        )
 
         if self.hparams["freeze_backbone"]:
             if self.hparams.get("peft_config", None) is not None:
