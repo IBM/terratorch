@@ -235,37 +235,35 @@ class MultiTemporalCropClassification(NonGeoDataset):
             raise ValueError(msg)
 
         images = sample["image"]
-        if not self.expand_temporal_dimension:
-            images = rearrange(images, "(channels time) h w -> channels time h w", channels=len(self.bands))
+        images = images[rgb_indices, ...]  # Shape: (T, 3, H, W)
 
-        # RGB -> channels-last
-        images = images[rgb_indices, ...].permute(1, 2, 3, 0).numpy()
+        processed_images = []
+        for t in range(self.time_steps):
+            img = images[t]
+            img = img.permute(1, 2, 0)
+            img = img.numpy()
+            img = clip_image(img)
+            processed_images.append(img)
+
         mask = sample["mask"].numpy()
-
-        images = [clip_image(img) for img in images]
-
         if "prediction" in sample:
-            prediction = sample["prediction"]
             num_images += 1
-        else:
-            prediction = None
-
         fig, ax = plt.subplots(1, num_images, figsize=(12, 5), layout="compressed")
-
         ax[0].axis("off")
 
         norm = mpl.colors.Normalize(vmin=0, vmax=self.num_classes - 1)
+        for i, img in enumerate(processed_images):
+            ax[i + 1].axis("off")
+            ax[i + 1].title.set_text(f"T{i}")
+            ax[i + 1].imshow(img)
 
-        for i, img in enumerate(images):
-            ax[i+1].axis("off")
-            ax[i+1].title.set_text(f"T{i}")
-            ax[i+1].imshow(img)
+        ax[self.time_steps + 1].axis("off")
+        ax[self.time_steps + 1].title.set_text("Ground Truth Mask")
+        ax[self.time_steps + 1].imshow(mask, cmap="jet", norm=norm)
 
-        ax[self.time_steps+1].axis("off")
-        ax[self.time_steps+1].title.set_text("Ground Truth Mask")
-        ax[self.time_steps+1].imshow(mask, cmap="jet", norm=norm)
-
-        if prediction:
+        if "prediction" in sample:
+            prediction = sample["prediction"]
+            ax[self.time_steps + 1].axis("off")
             ax[self.time_steps+2].title.set_text("Predicted Mask")
             ax[self.time_steps+2].imshow(prediction, cmap="jet", norm=norm)
 
@@ -274,6 +272,7 @@ class MultiTemporalCropClassification(NonGeoDataset):
         handles = [Rectangle((0, 0), 1, 1, color=tuple(v for v in c)) for k, c, n in legend_data]
         labels = [n for k, c, n in legend_data]
         ax[0].legend(handles, labels, loc="center")
+
         if suptitle is not None:
             plt.suptitle(suptitle)
 
