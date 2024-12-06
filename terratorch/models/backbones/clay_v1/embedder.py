@@ -16,7 +16,7 @@ default_cfgs = generate_default_cfgs(
     {
         "clay_v1_base": {
             "hf_hub_id": "made-with-clay/Clay",
-            "hf_hub_filename": "clay-v1-base.ckpt"
+            "hf_hub_filename": "v1/clay-v1-base.ckpt",
         }
     }
 )
