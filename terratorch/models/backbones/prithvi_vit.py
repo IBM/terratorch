@@ -206,8 +206,13 @@ def _create_prithvi(
         assert variant in pretrained_cfgs, (f"No pre-trained model found for variant {variant} "
                                             f"(pretrained models: {pretrained_cfgs.keys()})")
         # Load pre-trained config from hf
-        model_args, _ = load_model_config_from_hf(pretrained_cfgs[variant].default.hf_hub_id)
-        model_args.update(kwargs)
+        try:
+            model_args, _ = load_model_config_from_hf(pretrained_cfgs[variant].default.hf_hub_id)
+            model_args.update(kwargs)
+        except:
+            logger.warning(f"No pretrained configuration was found on HuggingFace for the model {variant}.")
+            model_args = prithvi_default_cfgs[variant]
+            model_args.update(kwargs)
     else:
         # Load default config
         model_args = prithvi_default_cfgs[variant]
@@ -224,7 +229,7 @@ def _create_prithvi(
             **model_args,
         )
     except RuntimeError:
-        print(f"No pretrained configuration was found for the model {variant}.")
+        logger.warning(f"No pretrained configuration was found for the model {variant}.")
         model = build_model_with_cfg(
             prithvi_model_class,
             variant,
