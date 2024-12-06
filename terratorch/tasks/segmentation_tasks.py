@@ -109,6 +109,8 @@ class SemanticSegmentationTask(BaseTask):
         self.aux_heads = aux_heads
         self._model_module = None
 
+        # This is an workaround, since BaseTask doesn't allow the
+        # assignament of model before executing __init__
         self._model_module = None 
 
         if model_factory:  

@@ -187,6 +187,8 @@ class PixelwiseRegressionTask(BaseTask):
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
 
+        # This is an workaround, since BaseTask doesn't allow the
+        # assignament of model before executing __init__
         self._model_module = None 
 
         if model_factory:  
