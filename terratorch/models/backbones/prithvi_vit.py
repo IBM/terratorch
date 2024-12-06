@@ -211,11 +211,11 @@ def _create_prithvi(
             model_args.update(kwargs)
         except:
             logger.warning(f"No pretrained configuration was found on HuggingFace for the model {variant}.")
-            model_args = prithvi_default_cfgs[variant]
+            model_args = prithvi_default_cfgs[variant].copy()
             model_args.update(kwargs)
     else:
         # Load default config
-        model_args = prithvi_default_cfgs[variant]
+        model_args = prithvi_default_cfgs[variant].copy()
         model_args.update(kwargs)
 
     # When the pretrained configuration is not available in HF, we shift to pretrained=False

@@ -146,6 +146,7 @@ class PatchEmbed(nn.Module):
         self.input_size = input_size
         self.patch_size = patch_size
         self.grid_size = [s // p for s, p in zip(self.input_size, self.patch_size)]
+        assert self.grid_size >= [1,1,1], "Patch size is bigger than input size."
         self.num_patches = self.grid_size[0] * self.grid_size[1] * self.grid_size[2]
         self.flatten = flatten
 
