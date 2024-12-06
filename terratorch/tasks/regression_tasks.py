@@ -193,6 +193,7 @@ class PixelwiseRegressionTask(BaseTask):
         super().__init__()
         
         if model:
+            self.custom_model = True
             self.model = model
 
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
@@ -207,16 +208,18 @@ class PixelwiseRegressionTask(BaseTask):
 
     def configure_models(self) -> None:
 
-        if not hasattr(self, "model_factory"):
-            # Custom model is provided
-            if self.hparams["freeze_backbone"] or self.hparams["freeze_decoder"]:
-                logger.warning("freeze_backbone and freeze_decoder are ignored if a custom model is provided.")
-            return
+        if self.custom_model:
+            # Custom model is provided, so no action is required.
+            pass 
 
-        self.model: Model = self.model_factory.build_model(
-            "regression", aux_decoders=self.aux_heads, **self.hparams["model_args"]
-        )
+        elif hasattr(self, "model_factory"):
+            self.model: Model = self.model_factory.build_model(
+                "regression", aux_decoders=self.aux_heads, **self.hparams["model_args"]
+            )
+        else:
+            raise Exception("There is no way to instantiate the model. Provide `model_factory` or `model`.")
 
+        # In any case, we can freeze parts of the model. 
         if self.hparams["freeze_backbone"]:
             if self.hparams.get("peft_config", None) is not None:
                 msg = "PEFT should be run with freeze_backbone = False"
