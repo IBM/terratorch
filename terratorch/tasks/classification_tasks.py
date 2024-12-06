@@ -44,6 +44,7 @@ class ClassificationTask(BaseTask):
         self,
         model_args: dict,
         model_factory: str,
+        model: torch.nn.Module | None = None,
         loss: str = "ce",
         aux_heads: list[AuxiliaryHead] | None = None,
         aux_loss: dict[str, float] | None = None,
@@ -96,21 +97,36 @@ class ClassificationTask(BaseTask):
         """
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
-        self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
+
         super().__init__()
+
+        if model:
+            self.model = model
+
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
         self.test_loss_handler = LossHandler(self.test_metrics.prefix)
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
         self.monitor = f"{self.val_metrics.prefix}loss"
+
+        if model_factory and model is None:
+            self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
 
     # overwrite early stopping
     def configure_callbacks(self) -> list[Callback]:
         return []
 
     def configure_models(self) -> None:
+
+        if not hasattr(self, "model_factory"):
+            # Custom model is provided
+            if self.hparams["freeze_backbone"] or self.hparams["freeze_decoder"]:
+                logger.warning("freeze_backbone and freeze_decoder are ignored if a custom model is provided.")
+            return
+
         self.model: Model = self.model_factory.build_model(
             "classification", aux_decoders=self.aux_heads, **self.hparams["model_args"]
         )
+
         if self.hparams["freeze_backbone"]:
             if self.hparams.get("peft_config", None) is not None:
                 msg = "PEFT should be run with freeze_backbone = False"
