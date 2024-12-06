@@ -22,7 +22,6 @@ def setup_and_cleanup(model_name):
     if os.path.isdir(os.path.join("tests", "all_ecos_random")):
         shutil.rmtree(os.path.join("tests", "all_ecos_random"))
 
-#@pytest.mark.skip(reason="Flakey on github runner")
 @pytest.mark.parametrize("model_name", ["prithvi_swin_B", "prithvi_vit_100"])
 @pytest.mark.parametrize("case", ["fit", "test", "validate"])
 def test_finetune_multiple_backbones(model_name, case):
@@ -31,7 +30,6 @@ def test_finetune_multiple_backbones(model_name, case):
 
     gc.collect()
 
-#@pytest.mark.skip(reason="Flakey on github runner")
 @pytest.mark.parametrize("model_name", ["prithvi_swin_B"])
 @pytest.mark.parametrize("case", ["fit", "test", "validate"])
 def test_finetune_bands_intervals(model_name, case):
@@ -40,7 +38,6 @@ def test_finetune_bands_intervals(model_name, case):
 
     gc.collect()
 
-#@pytest.mark.skip(reason="Flakey on github runner")
 @pytest.mark.parametrize("model_name", ["prithvi_swin_B"])
 @pytest.mark.parametrize("case", ["fit", "test", "validate"])
 def test_finetune_bands_str(model_name, case):
@@ -49,7 +46,6 @@ def test_finetune_bands_str(model_name, case):
 
     gc.collect()
 
-#@pytest.mark.skip(reason="Flakey on github runner")
 @pytest.mark.parametrize("model_name", ["prithvi_swin_B"])
 def test_finetune_metrics_from_file(model_name):
 
