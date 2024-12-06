@@ -23,21 +23,21 @@ from terratorch.datasets.utils import clip_image, default_transform, filter_vali
 
 class Sen1Floods11NonGeo(NonGeoDataset):
     """NonGeo dataset implementation for sen1floods11."""
-    all_band_names = (
-        "COASTAL_AEROSOL",
-        "BLUE",
-        "GREEN",
-        "RED",
-        "RED_EDGE_1",
-        "RED_EDGE_2",
-        "RED_EDGE_3",
-        "NIR_BROAD",
-        "NIR_NARROW",
-        "WATER_VAPOR",
-        "CIRRUS",
-        "SWIR_1",
-        "SWIR_2",
-    )
+        all_band_names = (
+            "COASTAL_AEROSOL",
+            "BLUE",
+            "GREEN",
+            "RED",
+            "RED_EDGE_1",
+            "RED_EDGE_2",
+            "RED_EDGE_3",
+            "NIR_BROAD",
+            "NIR_NARROW",
+            "WATER_VAPOR",
+            "CIRRUS",
+            "SWIR_1",
+            "SWIR_2",
+        )
 
     rgb_bands = ("RED", "GREEN", "BLUE")
 

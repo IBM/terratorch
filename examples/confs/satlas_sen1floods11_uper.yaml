@@ -1,0 +1,162 @@
+# lightning.pytorch==2.1.1
+seed_everything: 0
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  # precision: bf16
+  logger:
+    class_path: TensorBoardLogger
+    init_args:
+      save_dir: /dccstor/geofm-finetuning/carlosgomes/torchgeo_floods
+      name: satlas
+  callbacks:
+    - class_path: RichProgressBar
+    - class_path: LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+
+  max_epochs: 50
+  check_val_every_n_epoch: 1
+  log_every_n_steps: 50
+  enable_checkpointing: true
+  default_root_dir: /dccstor/geofm-finetuning/carlosgomes/torchgeo_floods
+data:
+  class_path: GenericNonGeoSegmentationDataModule
+  init_args:
+    batch_size: 16
+    num_workers: 8
+    constant_scale: 0.0001
+    dataset_bands:
+      - COASTAL_AEROSOL
+      - BLUE
+      - GREEN
+      - RED
+      - RED_EDGE_1
+      - RED_EDGE_2
+      - RED_EDGE_3
+      - NIR_BROAD
+      - NIR_NARROW
+      - WATER_VAPOR
+      - CIRRUS
+      - SWIR_1
+      - SWIR_2
+    output_bands:
+      - BLUE
+      - GREEN
+      - RED
+      - NIR_NARROW
+      - SWIR_1
+      - SWIR_2
+    rgb_indices:
+      - 2
+      - 1
+      - 0
+    train_data_root: /dccstor/geofm-finetuning/flood_mapping/sen1floods11/data/data/flood_events/HandLabeled/S2Hand/
+    train_label_data_root: /dccstor/geofm-finetuning/flood_mapping/sen1floods11/data/data/flood_events/HandLabeled/LabelHand
+    val_data_root: /dccstor/geofm-finetuning/flood_mapping/sen1floods11/data/data/flood_events/HandLabeled/S2Hand/
+    val_label_data_root: /dccstor/geofm-finetuning/flood_mapping/sen1floods11/data/data/flood_events/HandLabeled/LabelHand
+    test_data_root: /dccstor/geofm-finetuning/flood_mapping/sen1floods11/data/data/flood_events/HandLabeled/S2Hand/
+    test_label_data_root: /dccstor/geofm-finetuning/flood_mapping/sen1floods11/data/data/flood_events/HandLabeled/LabelHand
+    # these must be obtained by running terratorch/examples/scripts/convert_sen1floods11_splits.py on the original split csv files
+    train_split: /dccstor/geofm-finetuning/flood_mapping/sen1floods11/splits/splits/flood_handlabeled/flood_train_data_S2.txt
+    test_split: /dccstor/geofm-finetuning/flood_mapping/sen1floods11/splits/splits/flood_handlabeled/flood_test_data_S2.txt
+    val_split: /dccstor/geofm-finetuning/flood_mapping/sen1floods11/splits/splits/flood_handlabeled/flood_valid_data_S2.txt
+    img_grep: "*_S2Hand.tif"
+    label_grep: "*_LabelHand.tif"
+    no_label_replace: -1
+    no_data_replace: 0
+    means:
+      - 0.1412956
+      - 0.13795798
+      - 0.12353792
+      - 0.30902815
+      - 0.2044958
+      - 0.11912015
+    stds:
+      - 0.07406382
+      - 0.07370365
+      - 0.08692279
+      - 0.11798815
+      - 0.09772074
+      - 0.07659938
+    num_classes: 2
+    # train_transform:
+    #   - class_path: albumentations.RandomCrop
+    #     init_args:
+    #         height: 224
+    #         width: 224
+    #   - class_path: albumentations.HorizontalFlip
+    #     init_args:
+    #         p: 0.5
+    #   - class_path: ToTensorV2
+    # val_transform:
+    #   - class_path: albumentations.RandomCrop
+    #     init_args:
+    #         height: 224
+    #         width: 224
+    #   - class_path: ToTensorV2
+    # test_transform:
+    #   - class_path: albumentations.CenterCrop
+    #     init_args:
+    #         height: 224
+    #         width: 224
+    #   - class_path: ToTensorV2
+
+model:
+  class_path: terratorch.tasks.SemanticSegmentationTask
+  init_args:
+    model_args:
+      decoder: UperNetDecoder
+      backbone_pretrained: True
+      # backbone: satlas_swin_b_sentinel2_si_ms
+      backbone: ssl4eol_resnet18_landsat_oli_tirs_toa_moco
+      # backbone_pretrain_img_size: 512
+      # decoder_scale_modules: True
+      # decoder_in_channels: 1024
+      decoder_channels: 256
+      # backbone_in_channels: 6
+      backbone_model_bands:
+        - BLUE
+        - GREEN
+        - RED
+        - NIR_NARROW
+        - SWIR_1
+        - SWIR_2
+      backbone_out_indices:
+          - 1
+          - 3
+          - 5
+          - 7
+      # num_frames: 1
+      num_classes: 2
+      head_dropout: 0.1
+      head_channel_list:
+        - 256
+      necks:
+        # - name: SelectIndices
+        #   indices:
+        #     - 5
+        #     - 11
+        #     - 17
+        #     - 23
+        - name: ReshapeTokensToImage
+    loss: ce
+    
+    ignore_index: -1
+    class_weights:
+      - 0.3
+      - 0.7
+    freeze_backbone: true
+    freeze_decoder: false
+    model_factory: EncoderDecoderFactory
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 6.e-5
+    weight_decay: 0.05
+lr_scheduler:
+  class_path: ReduceLROnPlateau
+  init_args:
+    monitor: val/loss

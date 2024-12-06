@@ -6,7 +6,7 @@ from torch import nn
 
 from terratorch.models.heads import ClassificationHead
 from terratorch.models.model import AuxiliaryHeadWithDecoderWithoutInstantiatedHead, Model, ModelOutput
-
+import pdb
 
 def freeze_module(module: nn.Module):
     for param in module.parameters():
@@ -77,7 +77,6 @@ class ScalarOutputModel(Model, SegmentationModel):
 
     def forward(self, x: torch.Tensor, **kwargs) -> ModelOutput:
         """Sequentially pass `x` through model`s encoder, decoder and heads"""
-
         self.check_input_shape(x)
         features = self.encoder(x, **kwargs)
 
