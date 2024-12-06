@@ -28,6 +28,7 @@ from einops import rearrange
 from timm.layers import to_2tuple
 from timm.models.vision_transformer import Block
 
+logger = logging.getLogger(__name__)
 
 def get_3d_sincos_pos_embed(embed_dim, grid_size, add_cls_token=False):
     """
@@ -146,18 +147,22 @@ class PatchEmbed(nn.Module):
         self.input_size = input_size
         self.patch_size = patch_size
         self.grid_size = [s // p for s, p in zip(self.input_size, self.patch_size)]
+        assert self.grid_size >= [1,1,1], "Patch size is bigger than input size."
         self.num_patches = self.grid_size[0] * self.grid_size[1] * self.grid_size[2]
         self.flatten = flatten
 
         self.proj = nn.Conv3d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size, bias=bias)
         self.norm = norm_layer(embed_dim) if norm_layer else nn.Identity()
+        self.log_warning = True
 
     def forward(self, x):
         B, C, T, H, W = x.shape
 
-        if T / self.patch_size[0] % 1 or H / self.patch_size[1] % 1 or W / self.patch_size[2] % 1:
-            logging.warning(f"Input {x.shape[-3:]} is not divisible by patch size {self.patch_size}."
-                            f"The border will be ignored, add backbone_padding for pixel-wise tasks.")
+        if (self.log_warning and
+                (T / self.patch_size[0] % 1 or H / self.patch_size[1] % 1 or W / self.patch_size[2] % 1)):
+            logger.warning(f"Input {x.shape[-3:]} is not divisible by patch size {self.patch_size}."
+                           f"The border will be ignored, add backbone_padding for pixel-wise tasks.")
+            self.log_warning = False
 
         x = self.proj(x)
         if self.flatten:

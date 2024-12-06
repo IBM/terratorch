@@ -1,8 +1,8 @@
 
+from typing import Any 
 from functools import partial
 import os
-from typing import Any
-
+import logging
 import lightning
 import matplotlib.pyplot as plt
 import segmentation_models_pytorch as smp
@@ -22,6 +22,7 @@ from terratorch.tasks.tiled_inference import TiledInferenceParameters, tiled_inf
 
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
 
+logger = logging.getLogger('terratorch')
 
 def to_segmentation_prediction(y: ModelOutput) -> Tensor:
     y_hat = y.output
@@ -43,7 +44,8 @@ class SemanticSegmentationTask(BaseTask):
     def __init__(
         self,
         model_args: dict,
-        model_factory: str,
+        model_factory: str | None = None,
+        model: torch.nn.Module | None = None,
         loss: str = "ce",
         aux_heads: list[AuxiliaryHead] | None = None,
         aux_loss: dict[str, float] | None = None,
@@ -69,7 +71,9 @@ class SemanticSegmentationTask(BaseTask):
 
             Defaults to None.
             model_args (Dict): Arguments passed to the model factory.
-            model_factory (str): ModelFactory class to be used to instantiate the model.
+            model_factory (str, optional): ModelFactory class to be used to instantiate the model.
+                Is ignored when model is provided.
+            model (torch.nn.Module, optional): Custom model.
             loss (str, optional): Loss to be used. Currently, supports 'ce', 'jaccard' or 'focal' loss.
                 Defaults to "ce".
             aux_loss (dict[str, float] | None, optional): Auxiliary loss weights.
@@ -106,8 +110,21 @@ class SemanticSegmentationTask(BaseTask):
         self.tiled_inference_parameters = tiled_inference_parameters
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
-        self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
+
+        if model is not None and model_factory is not None:
+            logger.warning("A model_factory and a model was provided. The model_factory is ignored.")
+        if model is None and model_factory is None:
+            raise ValueError("A model_factory or a model (torch.nn.Module) must be provided.")
+
+        if model_factory and model is None:
+            self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
+
         super().__init__()
+
+        if model is not None:
+            # Custom model
+            self.model = model
+
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
         self.test_loss_handler: list[LossHandler] = []
         for metrics in self.test_metrics:
@@ -121,9 +138,16 @@ class SemanticSegmentationTask(BaseTask):
         return []
 
     def configure_models(self) -> None:
+        if not hasattr(self, "model_factory"):
+            if self.hparams["freeze_backbone"] or self.hparams["freeze_decoder"]:
+                logger.warning("freeze_backbone and freeze_decoder are ignored if a custom model is provided.")
+            # Skipping model factory because custom model is provided
+            return
+
         self.model: Model = self.model_factory.build_model(
             "segmentation", aux_decoders=self.aux_heads, **self.hparams["model_args"]
         )
+
         if self.hparams["freeze_backbone"]:
             if self.hparams.get("peft_config", None) is not None:
                 msg = "PEFT should be run with freeze_backbone = False"
@@ -279,9 +303,11 @@ class SemanticSegmentationTask(BaseTask):
         """
         x = batch["image"]
         y = batch["mask"]
+
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
+
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat_hard = to_segmentation_prediction(model_output)
@@ -368,16 +394,16 @@ class SemanticSegmentationTask(BaseTask):
         file_names = batch["filename"]
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
-        model_output: ModelOutput = self(x, **rest)
 
         def model_forward(x):
             return self(x).output
 
         if self.tiled_inference_parameters:
             y_hat: Tensor = tiled_inference(
+                # TODO: tiled inference does not work with additional input data (**rest)
                 model_forward, x, self.hparams["model_args"]["num_classes"], self.tiled_inference_parameters
             )
         else:
-            y_hat: Tensor = self(x).output
+            y_hat: Tensor = self(x, **rest).output
         y_hat = y_hat.argmax(dim=1)
         return y_hat, file_names

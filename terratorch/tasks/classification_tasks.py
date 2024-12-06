@@ -1,5 +1,5 @@
 from typing import Any
-
+import logging
 import lightning
 import matplotlib.pyplot as plt
 import torch
@@ -16,6 +16,7 @@ from terratorch.registry.registry import MODEL_FACTORY_REGISTRY
 from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
 
+logger = logging.getLogger('terratorch')
 
 def to_class_prediction(y: ModelOutput) -> Tensor:
     y_hat = y.output
@@ -43,7 +44,8 @@ class ClassificationTask(BaseTask):
     def __init__(
         self,
         model_args: dict,
-        model_factory: str,
+        model_factory: str | None = None,
+        model: torch.nn.Module | None = None,
         loss: str = "ce",
         aux_heads: list[AuxiliaryHead] | None = None,
         aux_loss: dict[str, float] | None = None,
@@ -67,7 +69,9 @@ class ClassificationTask(BaseTask):
 
             Defaults to None.
             model_args (Dict): Arguments passed to the model factory.
-            model_factory (str): ModelFactory class to be used to instantiate the model.
+            model_factory (str, optional): ModelFactory class to be used to instantiate the model.
+                Is ignored when model is provided.
+            model (torch.nn.Module, optional): Custom model.
             loss (str, optional): Loss to be used. Currently, supports 'ce', 'jaccard' or 'focal' loss.
                 Defaults to "ce".
             aux_loss (dict[str, float] | None, optional): Auxiliary loss weights.
@@ -96,8 +100,21 @@ class ClassificationTask(BaseTask):
         """
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
-        self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
+
+        if model is not None and model_factory is not None:
+            logger.warning("A model_factory and a model was provided. The model_factory is ignored.")
+        if model is None and model_factory is None:
+            raise ValueError("A model_factory or a model (torch.nn.Module) must be provided.")
+
+        if model_factory and model is None:
+            self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
+
         super().__init__()
+
+        if model:
+            # Custom model
+            self.model = model
+
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
         self.test_loss_handler = LossHandler(self.test_metrics.prefix)
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
@@ -108,9 +125,16 @@ class ClassificationTask(BaseTask):
         return []
 
     def configure_models(self) -> None:
+        if not hasattr(self, "model_factory"):
+            if self.hparams["freeze_backbone"] or self.hparams["freeze_decoder"]:
+                logger.warning("freeze_backbone and freeze_decoder are ignored if a custom model is provided.")
+            # Skipping model factory because custom model is provided
+            return
+
         self.model: Model = self.model_factory.build_model(
             "classification", aux_decoders=self.aux_heads, **self.hparams["model_args"]
         )
+
         if self.hparams["freeze_backbone"]:
             if self.hparams.get("peft_config", None) is not None:
                 msg = "PEFT should be run with freeze_backbone = False"

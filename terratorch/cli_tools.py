@@ -56,7 +56,7 @@ from terratorch.tasks import (
     SemanticSegmentationTask,  # noqa: F401
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("terratorch")
 
 def flatten(list_of_lists):
     return list(itertools.chain.from_iterable(list_of_lists))
@@ -101,7 +101,8 @@ def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16"):
     logger.info(f"Saving output to {out_file_name} ...")
     write_tiff(result, os.path.join(out_dir, out_file_name), metadata)
 
-def import_custom_modules(custom_modules_path:None | Path | str =None) -> None:
+
+def import_custom_modules(custom_modules_path: str | Path | None = None) -> None:
 
     if custom_modules_path:
 
@@ -394,11 +395,9 @@ class MyLightningCLI(LightningCLI):
         elif hasattr(self.config, "predict") and hasattr(self.config.predict, "custom_modules_path"):
             custom_modules_path = self.config.predict.custom_modules_path
         else:
-            logger.info("No custom module is being used.")
-            custom_modules_path = None 
+            custom_modules_path = os.getenv("TERRATORCH_CUSTOM_MODULE_PATH", None)
 
-        if custom_modules_path:
-            import_custom_modules(custom_modules_path)
+        import_custom_modules(custom_modules_path)
 
 def build_lightning_cli(
     args: ArgsType = None,
