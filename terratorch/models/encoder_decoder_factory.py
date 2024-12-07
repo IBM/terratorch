@@ -22,7 +22,7 @@ from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY, MODEL_FACTO
 PIXEL_WISE_TASKS = ["segmentation", "regression"]
 SCALAR_TASKS = ["classification"]
 PRETRAIN_TASK = "pretrain"
-SUPPORTED_TASKS = PIXEL_WISE_TASKS + SCALAR_TASKS + PRETRAIN_TASK
+SUPPORTED_TASKS = PIXEL_WISE_TASKS + SCALAR_TASKS + [PRETRAIN_TASK]
 
 
 def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
