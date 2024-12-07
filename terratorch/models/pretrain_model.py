@@ -4,6 +4,7 @@ import torch
 import torch.nn.functional as F  # noqa: N812
 from torch import nn
 
+from terratorch.models.model import AuxiliaryHeadWithDecoderWithoutInstantiatedHead, Model, ModelOutput
 
 def freeze_module(module: nn.Module):
     for param in module.parameters():
