@@ -10,7 +10,7 @@ def freeze_module(module: nn.Module):
     for param in module.parameters():
         param.requires_grad_(False)
 
-class PreTrainModel(Model, SegmentationModel):
+class PreTrainModel(Model):
     """Model that encapsulates encoder and decoder and heads
     Expects decoder to have a "forward_features" method, an embed_dims property
     and optionally a "prepare_features_for_image_model" method.
