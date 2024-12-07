@@ -1,14 +1,24 @@
 
+from lightning.pytorch.callbacks import Callback
 from torchgeo.trainers import BaseTask
 
 
 class TerraTorchTask(BaseTask):
+
+    """
+    Parent used to share common methods among all the 
+    tasks implemented in terratorch 
+    """
 
     def __init__(self, task:str=None):
 
         self.task = task 
 
         super().__init__()
+
+    # overwrite early stopping
+    def configure_callbacks(self) -> list[Callback]:
+        return []
 
     def configure_models(self) -> None:
         if not hasattr(self, "model_factory"):

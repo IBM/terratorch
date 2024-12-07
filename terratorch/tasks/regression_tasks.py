@@ -11,7 +11,6 @@ import torch.nn.functional as F
 from lightning.pytorch.callbacks import Callback
 from torch import Tensor, nn
 from torchgeo.datasets.utils import unbind_samples
-from torchgeo.trainers import BaseTask
 from torchmetrics import MeanAbsoluteError, MeanSquaredError, MetricCollection
 from torchmetrics.metric import Metric
 from torchmetrics.wrappers.abstract import WrapperMetric
@@ -21,6 +20,7 @@ from terratorch.registry.registry import MODEL_FACTORY_REGISTRY
 from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
 from terratorch.tasks.tiled_inference import TiledInferenceParameters, tiled_inference
+from terratorch.tasks.base_task import TerraTorchTask
 
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
 
@@ -118,7 +118,7 @@ class IgnoreIndexMetricWrapper(WrapperMetric):
         self.metric.reset()
 
 
-class PixelwiseRegressionTask(BaseTask):
+class PixelwiseRegressionTask(TerraTorchTask):
     """Pixelwise Regression Task that accepts models from a range of sources.
 
     This class is analog in functionality to
@@ -199,8 +199,8 @@ class PixelwiseRegressionTask(BaseTask):
         if model_factory and model is None:
             self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
 
-        super().__init__()
-        
+        super().__init__(task="regression")
+
         if model:
             # Custom_model
             self.model = model
@@ -210,46 +210,6 @@ class PixelwiseRegressionTask(BaseTask):
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
         self.monitor = f"{self.val_metrics.prefix}loss"
         self.plot_on_val = int(plot_on_val)
-
-    # overwrite early stopping
-    def configure_callbacks(self) -> list[Callback]:
-        return []
-
-    def configure_models(self) -> None:
-        if not hasattr(self, "model_factory"):
-            if self.hparams["freeze_backbone"] or self.hparams["freeze_decoder"]:
-                logger.warning("freeze_backbone and freeze_decoder are ignored if a custom model is provided.")
-            # Skipping model factory because custom model is provided
-            return
-
-        self.model: Model = self.model_factory.build_model(
-            "regression", aux_decoders=self.aux_heads, **self.hparams["model_args"]
-        )
-
-        if self.hparams["freeze_backbone"]:
-            if self.hparams.get("peft_config", None) is not None:
-                msg = "PEFT should be run with freeze_backbone = False"
-                raise ValueError(msg)
-            self.model.freeze_encoder()
-
-        if self.hparams["freeze_decoder"]:
-            self.model.freeze_decoder()
-
-    def configure_optimizers(
-        self,
-    ) -> "lightning.pytorch.utilities.types.OptimizerLRSchedulerConfig":
-        optimizer = self.hparams["optimizer"]
-        if optimizer is None:
-            optimizer = "Adam"
-        return optimizer_factory(
-            optimizer,
-            self.hparams["lr"],
-            self.parameters(),
-            self.hparams["optimizer_hparams"],
-            self.hparams["scheduler"],
-            self.monitor,
-            self.hparams["scheduler_hparams"],
-        )
 
     def configure_losses(self) -> None:
         """Initialize the loss criterion.
@@ -316,24 +276,6 @@ class PixelwiseRegressionTask(BaseTask):
 
         return loss["loss"]
 
-    def on_train_epoch_end(self) -> None:
-        self.log_dict(self.train_metrics.compute(), sync_dist=True)
-        self.train_metrics.reset()
-        return super().on_train_epoch_end()
-
-    def _do_plot_samples(self, batch_index):
-        if not self.plot_on_val:  # dont plot if self.plot_on_val is 0
-            return False
-
-        return (
-            batch_index < BATCH_IDX_FOR_VALIDATION_PLOTTING
-            and hasattr(self.trainer, "datamodule")
-            and self.logger
-            and not self.current_epoch % self.plot_on_val  # will be True every self.plot_on_val epochs
-            and hasattr(self.logger, "experiment")
-            and (hasattr(self.logger.experiment, "add_figure") or hasattr(self.logger.experiment, "log_figure"))
-        )
-
     def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         """Compute the validation loss and additional metrics.
 
@@ -376,11 +318,6 @@ class PixelwiseRegressionTask(BaseTask):
             finally:
                 plt.close()
 
-    def on_validation_epoch_end(self) -> None:
-        self.log_dict(self.val_metrics.compute(), sync_dist=True)
-        self.val_metrics.reset()
-        return super().on_validation_epoch_end()
-
     def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         """Compute the test loss and additional metrics.
 
@@ -398,11 +335,6 @@ class PixelwiseRegressionTask(BaseTask):
         self.test_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat = model_output.output
         self.test_metrics.update(y_hat, y)
-
-    def on_test_epoch_end(self) -> None:
-        self.log_dict(self.test_metrics.compute(), sync_dist=True)
-        self.test_metrics.reset()
-        return super().on_test_epoch_end()
 
     def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         """Compute the predicted class probabilities.
