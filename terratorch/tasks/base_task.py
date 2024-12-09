@@ -1,7 +1,7 @@
-
 from lightning.pytorch.callbacks import Callback
 from torchgeo.trainers import BaseTask
 
+from terratorch.tasks.optimizer_factory import optimizer_factory
 
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
 
