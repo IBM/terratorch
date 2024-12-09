@@ -3,6 +3,8 @@ from lightning.pytorch.callbacks import Callback
 from torchgeo.trainers import BaseTask
 
 
+BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
+
 class TerraTorchTask(BaseTask):
 
     """
