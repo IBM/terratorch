@@ -1,4 +1,4 @@
-torchgeo==0.6.0
+torchgeo==0.6.1
 rioxarray==0.18.1
 albumentations==1.4.21
 albucore<=0.0.16
