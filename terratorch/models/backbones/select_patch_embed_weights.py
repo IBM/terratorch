@@ -36,6 +36,7 @@ def select_patch_embed_weights(
         dict: New state dict
     """
     _possible_keys_for_proj_weight = {
+        "encoder.patch_embed.proj.weight",
         "patch_embed.proj.weight",
         "module.patch_embed.proj.weight",
         "patch_embed.projection.weight",
@@ -60,7 +61,7 @@ def select_patch_embed_weights(
         torch.nn.init.xavier_uniform_(temp_weight.view([temp_weight.shape[0], -1]))
         for index, band in enumerate(model_bands):
             if band in pretrained_bands:
-                logging.debug(f"Loaded weights for {band} in position {index} of patch embed")
+                logging.info(f"Loaded weights for {band} in position {index} of patch embed")
                 temp_weight[:, index] = patch_embed_weight[:, pretrained_bands.index(band)]
     else:
         warnings.warn(

@@ -3,7 +3,7 @@
 import importlib.util
 import itertools
 import json
-import logging  # noqa: I001
+import logging
 import os
 import shutil
 import sys
@@ -26,10 +26,10 @@ import yaml
 from albumentations.pytorch import ToTensorV2  # noqa: F401
 from jsonargparse import set_dumper
 from lightning.fabric.utilities.cloud_io import get_filesystem
-from lightning.fabric.utilities.types import _PATH  # noqa: F401
-from lightning.pytorch import LightningDataModule, LightningModule, Trainer  # noqa: F401
+from lightning.fabric.utilities.types import _PATH
+from lightning.pytorch import LightningDataModule, LightningModule, Trainer
 from lightning.pytorch.callbacks import BasePredictionWriter, ModelCheckpoint, RichProgressBar
-from lightning.pytorch.cli import ArgsType, LightningArgumentParser, LightningCLI, SaveConfigCallback  # noqa: F401
+from lightning.pytorch.cli import ArgsType, LightningArgumentParser, LightningCLI, SaveConfigCallback
 from torchgeo.trainers import BaseTask
 
 import terratorch.datamodules
@@ -56,7 +56,7 @@ from terratorch.tasks import (
     SemanticSegmentationTask,  # noqa: F401
 )
 
-CUSTOM_MODULES_DIR_NAME = "custom_modules"
+logger = logging.getLogger("terratorch")
 
 def flatten(list_of_lists):
     return list(itertools.chain.from_iterable(list_of_lists))
@@ -88,7 +88,7 @@ def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16"):
     mask, metadata = open_tiff(input_file_name)
     mask = np.where(mask == metadata["nodata"], 1, 0)
     mask = np.max(mask, axis=0)
-    result = np.where(mask == 1, -1, prediction)
+    result = np.where(mask == 1, -1, prediction.detach().cpu())
 
     ##### Save file to disk
     metadata["count"] = 1
@@ -98,9 +98,33 @@ def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16"):
     file_name = os.path.basename(input_file_name)
     file_name_no_ext = os.path.splitext(file_name)[0]
     out_file_name = file_name_no_ext + "_pred.tif"
-    logging.info(f"Saving output to {out_file_name} ...")
+    logger.info(f"Saving output to {out_file_name} ...")
     write_tiff(result, os.path.join(out_dir, out_file_name), metadata)
 
+
+def import_custom_modules(custom_modules_path: str | Path | None = None) -> None:
+
+    if custom_modules_path:
+
+        custom_modules_path = Path(custom_modules_path)
+
+        if custom_modules_path.is_dir():
+
+            # Add 'custom_modules' folder to sys.path
+            workdir = custom_modules_path.parents[0]
+            module_dir = custom_modules_path.name
+
+            sys.path.append(workdir)
+
+            try:
+                importlib.import_module(module_dir)
+                logger.info(f"Found {custom_modules_path}")
+            except ImportError:
+                raise ImportError(f"It was not possible to import modules from {custom_modules_path}.")
+        else:
+            raise ValueError(f"Modules path {custom_modules_path} isn't a directory. Check if you have defined it properly.")
+    else:
+        logger.debug("No custom module is being used.")
 
 class CustomWriter(BasePredictionWriter):
     """Callback class to write geospatial data to file."""
@@ -206,8 +230,8 @@ class StudioDeploySaveConfigCallback(SaveConfigCallback):
         # Preparing information to save config file to log dir
         config_dict = config.as_dict()
         self.config_path_original = str(config_dict["config"][0])
-        _, self.config_file_original = os.path.split(self.config_path_original)         
-        
+        _, self.config_file_original = os.path.split(self.config_path_original)
+
         self.deploy_config_file = config_dict["deploy_config_file"]
 
     def setup(self, trainer: Trainer, pl_module: LightningModule, stage: str) -> None:
@@ -326,6 +350,7 @@ class MyLightningCLI(LightningCLI):
         parser.add_argument("--predict_output_dir", default=None)
         parser.add_argument("--out_dtype", default="int16")
         parser.add_argument("--deploy_config_file", type=bool, default=True)
+        parser.add_argument("--custom_modules_path", type=str, default=None)
 
         # parser.set_defaults({"trainer.enable_checkpointing": False})
 
@@ -344,6 +369,7 @@ class MyLightningCLI(LightningCLI):
         parser.link_arguments("ModelCheckpoint.dirpath", "StateDictModelCheckpoint.dirpath")
 
     def instantiate_classes(self) -> None:
+
         super().instantiate_classes()
         # get the predict_output_dir. Depending on the value of run, it may be in the subcommand
         try:
@@ -352,13 +378,26 @@ class MyLightningCLI(LightningCLI):
             config = self.config
         if hasattr(config, "predict_output_dir"):
             self.trainer.predict_output_dir = config.predict_output_dir
-        
+
         if hasattr(config, "out_dtype"):
             self.trainer.out_dtype = config.out_dtype
 
         if hasattr(config, "deploy_config_file"):
             self.trainer.deploy_config = config.deploy_config_file
 
+        # Custom modules path
+        if hasattr(self.config, "fit") and hasattr(self.config.fit, "custom_modules_path"):
+            custom_modules_path = self.config.fit.custom_modules_path
+        elif hasattr(self.config, "validate") and hasattr(self.config.validate, "custom_modules_path"):
+            custom_modules_path = self.config.validate.custom_modules_path
+        elif hasattr(self.config, "test") and hasattr(self.config.test, "custom_modules_path"):
+            custom_modules_path = self.config.test.custom_modules_path
+        elif hasattr(self.config, "predict") and hasattr(self.config.predict, "custom_modules_path"):
+            custom_modules_path = self.config.predict.custom_modules_path
+        else:
+            custom_modules_path = os.getenv("TERRATORCH_CUSTOM_MODULE_PATH", None)
+
+        import_custom_modules(custom_modules_path)
 
 def build_lightning_cli(
     args: ArgsType = None,
@@ -386,15 +425,6 @@ def build_lightning_cli(
                 UserWarning,
                 stacklevel=1,
             )
-
-    # import any custom modules
-    current_working_dir = os.getcwd()
-    custom_modules_path = os.path.join(current_working_dir, CUSTOM_MODULES_DIR_NAME)
-    if os.path.exists(custom_modules_path) and os.path.isdir(custom_modules_path):
-        # Add 'custom_modules' folder to sys.path
-        sys.path.append(os.getcwd())
-        logging.info(f"Found {CUSTOM_MODULES_DIR_NAME}")
-        importlib.import_module(CUSTOM_MODULES_DIR_NAME)
 
     return MyLightningCLI(
         model_class=BaseTask,

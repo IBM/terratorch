@@ -30,12 +30,10 @@ def posemb_sincos_2d_with_gsd(
 
 
 def posemb_sincos_1d(pos, dim, temperature: int = 10000, dtype=torch.float32):
-    assert (
-        dim % 2 == 0
-    ), "Feature dimension must be a multiple of 2 for sincos embedding"
+    assert dim % 2 == 0, "Feature dimension must be a multiple of 2 for sincos embedding"
     pos = torch.arange(pos) if isinstance(pos, int) else pos
 
-    omega = torch.arange(dim // 2) / (dim // 2 - 1)
+    omega = torch.arange(dim // 2).to(pos) / (dim // 2 - 1)
     omega = 1.0 / (temperature**omega)
 
     scaled_pos = pos[:, None] * omega[None, :]
