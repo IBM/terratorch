@@ -20,7 +20,8 @@ from terratorch import BACKBONE_REGISTRY
 
 # find available prithvi models
 print([model_name for model_name in BACKBONE_REGISTRY if "prithvi" in model_name])
->>> ['timm_prithvi_swin_B', 'timm_prithvi_swin_L', 'timm_prithvi_vit_100', 'timm_prithvi_vit_300', 'timm_prithvi_vit_tiny']
+>>> ['timm_prithvi_eo_tiny', 'timm_prithvi_eo_v1_100', 'timm_prithvi_eo_v2_300', 'timm_prithvi_eo_v2_300_tl', 'timm_prithvi_eo_v2_600',
+     'timm_prithvi_eo_v2_600_tl', 'timm_prithvi_swin_B', 'timm_prithvi_swin_L', 'timm_prithvi_vit_100', 'timm_prithvi_vit_tiny']
 
 # show all models with list(BACKBONE_REGISTRY)
 
