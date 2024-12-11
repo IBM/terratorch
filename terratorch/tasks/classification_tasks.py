@@ -62,6 +62,7 @@ class ClassificationTask(TerraTorchTask):
         freeze_backbone: bool = False,  # noqa: FBT001, FBT002
         freeze_decoder: bool = False,  # noqa: FBT002, FBT001
         class_names: list[str] | None = None,
+        reduce_lr: list[tuple[str, float]] | None = None,
     ) -> None:
         """Constructor
 
@@ -97,6 +98,8 @@ class ClassificationTask(TerraTorchTask):
             freeze_decoder (bool, optional): Whether to freeze the decoder and segmentation head. Defaults to False.
             class_names (list[str] | None, optional): List of class names passed to metrics for better naming.
                 Defaults to numeric ordering.
+            reduce_lr (list[tuple[str, float]] | None, optional): List of tuples with a substring of the parameter names
+                to reduce the learning rate and the factor to reduce it by. Defaults to None.
         """
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
@@ -119,7 +122,6 @@ class ClassificationTask(TerraTorchTask):
         self.test_loss_handler = LossHandler(self.test_metrics.prefix)
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
         self.monitor = f"{self.val_metrics.prefix}loss"
-
 
     def configure_losses(self) -> None:
         """Initialize the loss criterion.

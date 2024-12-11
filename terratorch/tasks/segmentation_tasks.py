@@ -64,6 +64,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         class_names: list[str] | None = None,
         tiled_inference_parameters: TiledInferenceParameters = None,
         test_dataloaders_names: list[str] | None = None,
+        reduce_lr: list[tuple[str, float]] | None = None,
     ) -> None:
         """Constructor
 
@@ -106,6 +107,8 @@ class SemanticSegmentationTask(TerraTorchTask):
             test_dataloaders_names (list[str] | None, optional): Names used to differentiate metrics when
                 multiple dataloaders are returned by test_dataloader in the datamodule. Defaults to None,
                 which assumes only one test dataloader is used.
+            reduce_lr (list[tuple[str, float]] | None, optional): List of tuples with a substring of the parameter names
+                to reduce the learning rate and the factor to reduce it by. Defaults to None.
         """
         self.tiled_inference_parameters = tiled_inference_parameters
         self.aux_loss = aux_loss
