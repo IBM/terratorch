@@ -96,7 +96,7 @@ model:
     model_args:
       decoder: UperNetDecoder
       pretrained: false
-      backbone: prithvi_eo_v2_300
+      backbone: prithvi_eo_v2_600
       # backbone_pretrained_cfg_overlay:
       #   file: tests/prithvi_vit_300.pt
       backbone_drop_path_rate: 0.3
