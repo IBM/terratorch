@@ -1,20 +1,24 @@
+import logging
 
+import lightning
 from lightning.pytorch.callbacks import Callback
 from torchgeo.trainers import BaseTask
 
+from terratorch.models.model import Model
+from terratorch.tasks.optimizer_factory import optimizer_factory
 
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
+logger = logging.getLogger("terratorch")
+
 
 class TerraTorchTask(BaseTask):
-
     """
-    Parent used to share common methods among all the 
-    tasks implemented in terratorch 
+    Parent used to share common methods among all the
+    tasks implemented in terratorch
     """
 
-    def __init__(self, task:str=None):
-
-        self.task = task 
+    def __init__(self, task: str | None = None):
+        self.task = task
 
         super().__init__()
 
@@ -61,13 +65,14 @@ class TerraTorchTask(BaseTask):
     def on_train_epoch_end(self) -> None:
         self.log_dict(self.train_metrics.compute(), sync_dist=True)
         self.train_metrics.reset()
-        return super().on_train_epoch_end()
 
     def on_validation_epoch_end(self) -> None:
         self.log_dict(self.val_metrics.compute(), sync_dist=True)
         self.val_metrics.reset()
-        return super().on_validation_epoch_end()
 
+    def on_test_epoch_end(self) -> None:
+        self.log_dict(self.test_metrics.compute(), sync_dist=True)
+        self.test_metrics.reset()
 
     def _do_plot_samples(self, batch_index):
         if not self.plot_on_val:  # dont plot if self.plot_on_val is 0
@@ -81,5 +86,3 @@ class TerraTorchTask(BaseTask):
             and hasattr(self.logger, "experiment")
             and (hasattr(self.logger.experiment, "add_figure") or hasattr(self.logger.experiment, "log_figure"))
         )
-
-

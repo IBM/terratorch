@@ -1,5 +1,4 @@
-
-from typing import Any 
+from typing import Any
 from functools import partial
 import os
 import logging
@@ -13,7 +12,7 @@ from torchgeo.datasets.utils import unbind_samples
 from torchmetrics import ClasswiseWrapper, MetricCollection
 from torchmetrics.classification import MulticlassAccuracy, MulticlassF1Score, MulticlassJaccardIndex
 
-from terratorch.models.model import AuxiliaryHead, Model, ModelOutput
+from terratorch.models.model import AuxiliaryHead, ModelOutput
 from terratorch.registry import MODEL_FACTORY_REGISTRY
 from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
@@ -22,7 +21,8 @@ from terratorch.tasks.base_task import TerraTorchTask
 
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
 
-logger = logging.getLogger('terratorch')
+logger = logging.getLogger("terratorch")
+
 
 def to_segmentation_prediction(y: ModelOutput) -> Tensor:
     y_hat = y.output
@@ -132,7 +132,6 @@ class SemanticSegmentationTask(TerraTorchTask):
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
         self.monitor = f"{self.val_metrics.prefix}loss"
         self.plot_on_val = int(plot_on_val)
-
 
     def configure_losses(self) -> None:
         """Initialize the loss criterion.
@@ -262,8 +261,12 @@ class SemanticSegmentationTask(TerraTorchTask):
         y_hat_hard = to_segmentation_prediction(model_output)
         self.test_metrics[dataloader_idx].update(y_hat_hard, y)
 
-    def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
+    def on_test_epoch_end(self) -> None:
+        for metrics in self.test_metrics:
+            self.log_dict(metrics.compute(), sync_dist=True)
+            metrics.reset()
 
+    def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         """Compute the validation loss and additional metrics.
         Args:
             batch: The output of your DataLoader.
