@@ -76,7 +76,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         rgb_modality: str | None = None,
         rgb_indices: list[int] | None = None,
         allow_missing_modalities: bool = False,
-        allow_substring_file_names: bool = False,
+        allow_substring_file_names: bool = True,
         dataset_bands: dict[str, list] | None = None,
         output_bands: dict[str, list] | None = None,
         constant_scale: dict[str, float] = None,
@@ -204,11 +204,11 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                 image_files["mask"] = sorted([p for l in dir_lists for p in l])  # Concatenate
 
             if allow_substring_file_names:
-                # Get exact match of filenames
-                get_file_id = lambda s: os.path.basename(s)
-            else:
                 # Remove file extensions
                 get_file_id = lambda s: os.path.splitext(os.path.basename(s))[0]
+            else:
+                # Get exact match of filenames
+                get_file_id = lambda s: os.path.basename(s)
 
             if allow_missing_modalities:
                 valid_files = set([get_file_id(file) for file in np.concatenate(list(image_files.values()))])
@@ -270,7 +270,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                     else:
                         # Exact match
                         file_path = os.path.join(m_path, file)
-                        if os.path.isfile(file_path):
+                        if os.path.exists(file_path):
                             sample[m] = file_path
                             break
             if label_data_root is not None:
@@ -289,7 +289,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                         else:
                             # Exact match
                             file_path = os.path.join(l_dir, file)
-                            if os.path.isfile(file_path):
+                            if os.path.exists(file_path):
                                 sample["mask"] = file_path
                                 break
                     if "mask" not in sample:
