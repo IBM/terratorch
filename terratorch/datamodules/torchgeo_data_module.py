@@ -79,6 +79,7 @@ class TorchNonGeoDataModule(NonGeoDataModule):
         # self.__dict__["datamodule"] = cls(num_workers=num_workers, **kwargs)
         self._proxy = cls(num_workers=num_workers, **kwargs)
         super().__init__(self._proxy.dataset_class)  # dummy arg
+        self._proxy = cls(num_workers=num_workers, **kwargs)
 
     @property
     def collate_fn(self):
