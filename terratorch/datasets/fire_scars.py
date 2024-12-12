@@ -4,9 +4,8 @@ import dataclasses
 import glob
 import os
 import re
-from collections.abc import Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 import albumentations as A
 import matplotlib as mpl
@@ -20,11 +19,22 @@ from torch import Tensor
 from torchgeo.datasets import NonGeoDataset, RasterDataset
 from xarray import DataArray
 
-from terratorch.datasets.utils import clip_image_percentile, default_transform, validate_bands
+from terratorch.datasets.utils import clip_image_percentile, default_transform, filter_valid_files, validate_bands
 
 
 class FireScarsNonGeo(NonGeoDataset):
-    """NonGeo dataset implementation for fire scars."""
+    """NonGeo dataset implementation for fire scars.
+    
+    If using the version 2 dataset, we use the version 2 train/val/test splits from the dataset.
+    If using the version 1 dataset, we use the version 1 train/val splits from the dataset.
+    """
+    versions = ('1', '2')
+
+    splits_per_version = {
+        '1': {"train": "train", "val": "val", "test": "val"},
+        '2': {"train": "train", "val": "val", "test": "test"},
+    }
+
     all_band_names = (
         "BLUE",
         "GREEN",
@@ -39,11 +49,11 @@ class FireScarsNonGeo(NonGeoDataset):
     BAND_SETS = {"all": all_band_names, "rgb": rgb_bands}
 
     num_classes = 2
-    splits = {"train": "training", "val": "validation"}   # Only train and val splits available
 
     def __init__(
         self,
         data_root: str,
+        version: str = '2',
         split: str = "train",
         bands: Sequence[str] = BAND_SETS["all"],
         transform: A.Compose | None = None,
@@ -66,20 +76,39 @@ class FireScarsNonGeo(NonGeoDataset):
             use_metadata (bool): whether to return metadata info (time and location).
         """
         super().__init__()
-        if split not in self.splits:
-            msg = f"Incorrect split '{split}', please choose one of {self.splits}."
+        if version not in self.versions:
+            msg = f"Incorrect version '{version}', please choose one of {self.versions}."
             raise ValueError(msg)
-        split_name = self.splits[split]
-        self.split = split
+        splits = self.splits_per_version[version]
+        if split not in splits:
+            msg = f"Incorrect split '{split}', please choose one of {list(splits.keys())}."
+            raise ValueError(msg)
+        self.split = splits[split]
 
         validate_bands(bands, self.all_band_names)
         self.bands = bands
         self.band_indices = np.asarray([self.all_band_names.index(b) for b in bands])
         self.data_root = Path(data_root)
 
-        input_dir = self.data_root / split_name
-        self.image_files = sorted(glob.glob(os.path.join(input_dir, "*_merged.tif")))
-        self.segmentation_mask_files = sorted(glob.glob(os.path.join(input_dir, "*.mask.tif")))
+        self.image_files = sorted(glob.glob(os.path.join(self.data_root, "*_merged.tif")))
+        self.segmentation_mask_files = sorted(glob.glob(os.path.join(self.data_root, "*.mask.tif")))
+
+        split_file = self.data_root / f"{self.split}_v{version}_data.txt"
+        with open(split_file) as f:
+            split = f.readlines()
+        valid_files = {rf"{substring.strip()}" for substring in split}
+        self.image_files = filter_valid_files(
+            self.image_files,
+            valid_files=valid_files,
+            ignore_extensions=True,
+            allow_substring=True,
+        )
+        self.segmentation_mask_files = filter_valid_files(
+            self.segmentation_mask_files,
+            valid_files=valid_files,
+            ignore_extensions=True,
+            allow_substring=True,
+        )
 
         self.use_metadata = use_metadata
         self.no_data_replace = no_data_replace

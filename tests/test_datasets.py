@@ -84,28 +84,52 @@ def mpv4ger_data_root(tmp_path):
 @pytest.fixture(scope="function")
 def fire_scars_data_root(tmp_path):
     data_root = tmp_path / "fire_scars"
-    split = "train"
-    split_dir = data_root / FireScarsNonGeo.splits[split]
-    split_dir.mkdir(parents=True, exist_ok=True)
 
+    data_root.mkdir(parents=True, exist_ok=True)
+
+    chip_ids = []
     for i in range(5):
         random_seq = "".join(np.random.choice(list("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"), 5))
         year = 2021
         julian_day = i + 1
         date = f"{year}{julian_day:03d}"
-        image_filename = f"subsetted_512x512_HLS.S30.T{random_seq}.{date}.v1.4_merged.tif"
-        mask_filename = f"subsetted_512x512_HLS.S30.T{random_seq}.{date}.v1.4.mask.tif"
-        image_path = split_dir / image_filename
-        mask_path = split_dir / mask_filename
+        base_name = f"subsetted_512x512_HLS.S30.T{random_seq}.{date}.v1.4"
+        image_filename = f"{base_name}_merged.tif"
+        mask_filename = f"{base_name}.mask.tif"
+        image_path = data_root / image_filename
+        mask_path = data_root / mask_filename
 
         create_dummy_tiff(image_path)
         create_dummy_tiff(mask_path, count=1, dtype="uint8")
 
-    image_files = list(split_dir.glob("*_merged.tif"))
-    mask_files = list(split_dir.glob("*.mask.tif"))
+        chip_ids.append(base_name)
+
+    train_ids = chip_ids[:3]
+    val_ids = chip_ids[3:4]
+    test_ids = chip_ids[4:]
+
+    with open(data_root / "train_v2_data.txt", "w") as f:
+        f.write("\n".join(train_ids))
+
+    with open(data_root / "val_v2_data.txt", "w") as f:
+        f.write("\n".join(val_ids))
+
+    with open(data_root / "test_v2_data.txt", "w") as f:
+        f.write("\n".join(test_ids))
+
+    image_files = list(data_root.glob("*_merged.tif"))
+    mask_files = list(data_root.glob("*.mask.tif"))
 
     assert len(image_files) == 5, f"Expected 5 image files, but found {len(image_files)}"
     assert len(mask_files) == 5, f"Expected 5 mask files, but found {len(mask_files)}"
+
+    split_files = ["train_v2_data.txt", "val_v2_data.txt", "test_v2_data.txt"]
+    for split_file in split_files:
+        file_path = data_root / split_file
+        assert file_path.exists(), f"Expected split file {split_file} to exist."
+        with open(file_path, "r") as f:
+            lines = f.read().splitlines()
+            assert len(lines) > 0, f"Split file {split_file} should not be empty."
 
     return str(data_root)
 
@@ -507,32 +531,30 @@ def chesapeake_data_root(tmp_path):
 @pytest.fixture(scope="function")
 def crop_classification_data_root(tmp_path):
     data_root = tmp_path / "crop_classification"
-    training_dir = data_root / "training_chips"
-    validation_dir = data_root / "validation_chips"
+    
+    data_root.mkdir(parents=True, exist_ok=True)
 
-    training_dir.mkdir(parents=True, exist_ok=True)
-    validation_dir.mkdir(parents=True, exist_ok=True)
+    for i in range(2):
+        filename = f"chip_{i}_merged.tif"
+        label_filename = f"chip_{i}.mask.tif"
+        img_data = DataArray(np.random.rand(18, 64, 64).astype(np.float32), dims=["band", "y", "x"])
+        mask_data = DataArray(np.random.randint(0, 13, size=(1, 64, 64), dtype=np.uint8), dims=["band", "y", "x"])
+        img_data = img_data.rio.set_spatial_dims(x_dim="x", y_dim="y")
+        mask_data = mask_data.rio.set_spatial_dims(x_dim="x", y_dim="y")
+        img_data = img_data.rio.write_crs("EPSG:4326")
+        mask_data = mask_data.rio.write_crs("EPSG:4326")    
+        image_path = data_root / filename
+        mask_path = data_root / label_filename
+        img_data.rio.to_raster(str(image_path))
+        mask_data.rio.to_raster(str(mask_path))
 
-    for directory in [training_dir, validation_dir]:
-        for i in range(2):
-            filename = f"chip_{i}_merged.tif"
-            label_filename = f"chip_{i}.mask.tif"
-            img_data = DataArray(np.random.rand(18, 64, 64).astype(np.float32), dims=["band", "y", "x"])
-            mask_data = DataArray(np.random.randint(0, 13, size=(1, 64, 64), dtype=np.uint8), dims=["band", "y", "x"])
-
-            img_data.rio.set_spatial_dims(x_dim="x", y_dim="y", inplace=True)
-            mask_data.rio.set_spatial_dims(x_dim="x", y_dim="y", inplace=True)
-            img_data.rio.write_crs("EPSG:4326", inplace=True)
-            mask_data.rio.write_crs("EPSG:4326", inplace=True)
-            image_path = directory / filename
-            mask_path = directory / label_filename
-            img_data.rio.to_raster(str(image_path))
-            mask_data.rio.to_raster(str(mask_path))
-
-    with open(training_dir / "training_data.txt", "w") as f:
+    with open(data_root / "train_v2_data.txt", "w") as f:
         f.write("\n".join([f"chip_{i}" for i in range(2)]))
 
-    with open(validation_dir / "validation_data.txt", "w") as f:
+    with open(data_root / "val_v2_data.txt", "w") as f:
+        f.write("\n".join([f"chip_{i}" for i in range(2)]))
+
+    with open(data_root / "test_v2_data.txt", "w") as f:
         f.write("\n".join([f"chip_{i}" for i in range(2)]))
 
     metadata = pd.DataFrame({
@@ -632,7 +654,7 @@ class TestMEuroSATNonGeo:
 class TestFireScarsNonGeo:
     def test_dataset_length(self, fire_scars_data_root):
         dataset = FireScarsNonGeo(data_root=fire_scars_data_root, split="train")
-        expected_length = 5
+        expected_length = 3
         actual_length = len(dataset)
         assert actual_length == expected_length, f"Expected {expected_length}, but got {actual_length}"
 
