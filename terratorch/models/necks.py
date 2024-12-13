@@ -5,8 +5,11 @@ import torch
 import torch.nn.functional as F
 from einops import rearrange
 from torch import nn
+from torchvision.ops import FeaturePyramidNetwork
 
 from terratorch.registry import NECK_REGISTRY, TERRATORCH_NECK_REGISTRY
+
+from collections import OrderedDict
 
 
 class Neck(ABC, nn.Module):
@@ -216,6 +219,69 @@ class LearnedInterpolateToPyramidal(Neck):
 
     def process_channel_list(self, channel_list: list[int]) -> list[int]:
         return [channel_list[0] // 4, channel_list[1] // 2, channel_list[2], channel_list[3]]
+
+@TERRATORCH_NECK_REGISTRY.register
+class Transform(Neck):
+    """Use learned convolutions to transform the output of a non-pyramidal encoder into pyramidal ones
+
+    Always requires exactly 4 embeddings
+    """
+
+    def __init__(self, channel_list: list[int]):
+        super().__init__(channel_list)
+        if len(channel_list) != 4:
+            msg = "This class can only handle exactly 4 input embeddings"
+            raise Exception(msg)
+        self.fpn1 = nn.Sequential(
+            nn.ConvTranspose2d(channel_list[0], channel_list[0] // 2, 2, 2),
+            nn.BatchNorm2d(channel_list[0] // 2),
+            nn.GELU(),
+            nn.ConvTranspose2d(channel_list[0] // 2, channel_list[0] // 4, 2, 2),
+        )
+        self.fpn2 = nn.Sequential(nn.ConvTranspose2d(channel_list[1], channel_list[1] // 2, 2, 2))
+        self.fpn3 = nn.Sequential(nn.Identity())
+        self.fpn4 = nn.Sequential(nn.MaxPool2d(kernel_size=2, stride=2))
+        self.embedding_dim = [channel_list[0] // 4, channel_list[1] // 2, channel_list[2], channel_list[3]]
+
+    def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
+        scaled_inputs = []
+        scaled_inputs.append(self.fpn1(features[0]))
+        scaled_inputs.append(self.fpn2(features[1]))
+        scaled_inputs.append(self.fpn3(features[2]))
+        scaled_inputs.append(self.fpn4(features[3]))
+        return scaled_inputs
+
+    def process_channel_list(self, channel_list: list[int]) -> list[int]:
+        return [channel_list[0] // 4, channel_list[1] // 2, channel_list[2], channel_list[3]]
+
+@TERRATORCH_NECK_REGISTRY.register
+class FeaturePyramidNetwork(Neck):
+    """Use learned convolutions to transform the output of a non-pyramidal encoder into pyramidal ones
+
+    Always requires exactly 4 embeddings
+    """
+
+    def __init__(self, channel_list: list[int], out_channel_list: list[int] | None=None, output_ordered_dict: bool= True):
+        super().__init__(channel_list)
+        self.out_channel_list = out_channel_list if out_channel_list is not None else channel_list
+        self.fpn = FeaturePyramidNetwork(self.channel_list, self.out_channel_list)
+        self.output_ordered_dict = output_ordered_dict
+
+    def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
+
+        if type(features) != "OrderedDict":
+            keys = [f'feat{str(i)}' for i, x in enumerate(features)]
+            features = OrderedDict(zip(keys, features))
+                    
+        reconstructed_features = self.fpn(features)
+
+        if output_ordered_dict == False:
+            reconstructed_features = list(reconstructed_features.values())
+    
+        return reconstructed_features
+
+    def process_channel_list(self, channel_list: list[int]) -> list[int]:
+        return super().process_channel_list(channel_list)
 
 
 def build_neck_list(ops: list[dict], channel_list: list[int]) -> tuple[list[Neck], list[int]]:
