@@ -6,7 +6,11 @@ trainer:
   devices: auto
   num_nodes: 1
   precision: 16-mixed
-  logger: True # will use tensorboardlogger
+  logger:
+    class_path: TensorBoardLogger
+    init_args:
+      save_dir: /dccstor/geofm-finetuning/benchmark-geo-bench-paolo/
+      name: od
   callbacks:
     - class_path: RichProgressBar
     - class_path: LearningRateMonitor
@@ -16,19 +20,31 @@ trainer:
   check_val_every_n_epoch: 1
   log_every_n_steps: 50
   enable_checkpointing: true
-  default_root_dir: output/VHR10
+  default_root_dir: /dccstor/geofm-finetuning/benchmark-geo-bench-paolo/
 data:
   class_path: terratorch.datamodules.TorchNonGeoDataModule
   init_args:
     transforms:
-      - class_path: albumentations.augmentations.geometric.resize.Resize
-        init_args:
-          height: 224
-          width: 224
-      - class_path: ToTensorV2
+      # - class_path: albumentations.augmentations.geometric.resize.Resize
+      #   init_args:
+      #     height: 224
+      #     width: 224
+      # - class_path: ToTensorV2
     cls: torchgeo.datamodules.VHR10DataModule
     batch_size: 16
     num_workers: 8
+    # dataset_bands:
+    #   - RED
+    #   - GREEN
+    #   - BLUE
+    # output_bands:
+    #   - RED
+    #   - GREEN
+    #   - BLUE
+    # rgb_indices:
+    #   - 0
+    #   - 1
+    #   - 2
     #constant_scale: 0.0001
     #dataset_bands:
     #  - BLUE
@@ -76,9 +92,9 @@ data:
     #val_transform:
     #test_transform:
   dict_kwargs:
-    root: data/VHR10
+    root: /dccstor/geofm-finetuning/datasets/VHR10/
     split: positive
-    download: True
+    # download: True
 
 
 model:
@@ -86,14 +102,35 @@ model:
   init_args:
     model_factory: ObjectDetectionModelFactory
     model_args:
-      model: faster-rcnn  # Model name of TorchVision (one of faster-rcnn, fcos, or retinanet)
-      backbone: resnet50  # One of resnet18, resnet34, resnet50, resnet101, resnet152, resnext50_32x4d, resnext101_32x8d, wide_resnet50_2, or wide_resnet101_2
-      weights: true  # True for ImageNet weight, False for random
-      num_classes: 1000  # Number of classes including background
-      trainable_layers: 3  # Number of trainable layers
+      framework: faster-rcnn  # Model name of TorchVision (one of faster-rcnn, fcos, or retinanet)
+      backbone: prithvi_eo_v2_300_tl  # One of resnet18, resnet34, resnet50, resnet101, resnet152, resnext50_32x4d, resnext101_32x8d, wide_resnet50_2, or wide_resnet101_2
+      num_classes: 12  # Number of classes including background
+      # trainable_layers: 3  # Number of trainable layers
+      backbone_bands:
+        - RED
+        - GREEN
+        - BLUE
+      necks:
+        # - name: SelectIndices
+        #   indices:
+        #     - 5
+        #     - 11
+        #     - 17
+        #     - 23
+        # - name: ReshapeTokensToImage
+        - name: SelectIndices
+          indices:
+            # - 5
+            # - 11
+            # - 17
+            - 23
+        - name: ReshapeTokensToImage
+
+        # - name: FeaturePyramidNetwork
+        
     freeze_backbone: false
     freeze_decoder: false
-    loss: ce
+    # loss: ce
     class_names:  # Optional class names (Alphabetic order for generic classification dataset)
       - Fish pond
       - Grassland shrubland
@@ -107,6 +144,8 @@ model:
       - Small-scale mixed plantation
       - Small-scale oil palm plantation
       - Timber plantation
+    
+
 
 optimizer:
   class_path: torch.optim.AdamW
