@@ -2,7 +2,7 @@ from terratorch.tasks.classification_tasks import ClassificationTask
 from terratorch.tasks.regression_tasks import PixelwiseRegressionTask
 from terratorch.tasks.segmentation_tasks import SemanticSegmentationTask
 from terratorch.tasks.multilabel_classification_tasks import MultiLabelClassificationTask
-from terratorch.tasks.object_detection_tasks import ObjectDetectionTask
+from terratorch.tasks.object_detection_task import ObjectDetectionTask
 try:
     wxc_present = True
     from terratorch.tasks.wxc_downscaling_task import WxCDownscalingTask 

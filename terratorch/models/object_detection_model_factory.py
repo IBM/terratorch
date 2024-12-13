@@ -1,51 +1,42 @@
 # Copyright contributors to the Terratorch project
 
-"""
-This is just an example of a possible structure to include torchvision models
-"""
-
-import os
-from functools import partial
-
-import torch
-from torchgeo.models import get_weight
-from torchgeo.trainers import utils
-from torchvision.models._api import WeightsEnum
-
-from terratorch.models.model import Model, ModelFactory, ModelOutput
+from dataclasses import dataclass
+from torch import nn
+import pdb
+from terratorch.models.model import (
+    AuxiliaryHead,
+    AuxiliaryHeadWithDecoderWithoutInstantiatedHead,
+    Model,
+    ModelFactory,
+)
+from terratorch.models.necks import Neck, build_neck_list
+# from terratorch.models.pixel_wise_model import PixelWiseModel
+from terratorch.models.model import ModelOutput
 from terratorch.models.utils import extract_prefix_keys
-from torchvision.models import resnet as R
+from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY, MODEL_FACTORY_REGISTRY
+
 import torchvision.models.detection
 from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
 from torchvision.models.detection.retinanet import RetinaNetHead
 from torchvision.models.detection.rpn import AnchorGenerator
 from torchvision.ops import MultiScaleRoIAlign, feature_pyramid_network, misc
 
-from terratorch.registry import MODEL_FACTORY_REGISTRY
+from terratorch.tasks.loss_handler import LossHandler
+from terratorch.tasks.optimizer_factory import optimizer_factory
 
-BACKBONE_LAT_DIM_MAP = {
-    'resnet18': 512,
-    'resnet34': 512,
-    'resnet50': 2048,
-    'resnet101': 2048,
-    'resnet152': 2048,
-    'resnext50_32x4d': 2048,
-    'resnext101_32x8d': 2048,
-    'wide_resnet50_2': 2048,
-    'wide_resnet101_2': 2048,
-}
+SUPPORTED_TASKS = ['object_detection']
 
-BACKBONE_WEIGHT_MAP = {
-    'resnet18': R.ResNet18_Weights.DEFAULT,
-    'resnet34': R.ResNet34_Weights.DEFAULT,
-    'resnet50': R.ResNet50_Weights.DEFAULT,
-    'resnet101': R.ResNet101_Weights.DEFAULT,
-    'resnet152': R.ResNet152_Weights.DEFAULT,
-    'resnext50_32x4d': R.ResNeXt50_32X4D_Weights.DEFAULT,
-    'resnext101_32x8d': R.ResNeXt101_32X8D_Weights.DEFAULT,
-    'wide_resnet50_2': R.Wide_ResNet50_2_Weights.DEFAULT,
-    'wide_resnet101_2': R.Wide_ResNet101_2_Weights.DEFAULT,
-}
+def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
+    if isinstance(backbone, nn.Module):
+        return backbone
+    return BACKBONE_REGISTRY.build(backbone, **backbone_kwargs)
+
+
+
+def _check_all_args_used(kwargs):
+    if kwargs:
+        msg = f"arguments {kwargs} were passed but not used."
+        raise ValueError(msg)
 
 
 @MODEL_FACTORY_REGISTRY.register
@@ -53,54 +44,65 @@ class ObjectDetectionModelFactory(ModelFactory):
     def build_model(
         self,
         task: str,
-        model: str = 'faster-rcnn',
-        backbone: str = 'resnet50',
-        num_classes: int = 1000,
-        trainable_layers: int = 3,
-        weights: str | bool = True,
+        backbone: str | nn.Module,
+        framework: str,
+        num_classes: int | None = None,
+        necks: list[dict] | None = None,
+        # aux_decoders: list[AuxiliaryHead] | None = None,
+        # rescale: bool = True,  # noqa: FBT002, FBT001
         **kwargs,
     ) -> Model:
-        """Build a classifier from torchvision
+        """Generic model factory that combines an encoder and decoder, together with a head, for a specific task.
+
+        Further arguments to be passed to the backbone, decoder or head. They should be prefixed with
+        `backbone_`, `decoder_` and `head_` respectively.
 
         Args:
-            task (str): Must be "object_detection".
-            model: Name of the `torchvision
-                <https://pytorch.org/vision/stable/models.html#object-detection>`__
-                model to use. One of 'faster-rcnn', 'fcos', or 'retinanet'.
-            backbone: Name of the `torchvision
-                <https://pytorch.org/vision/stable/models.html#classification>`__
-                backbone to use. One of 'resnet18', 'resnet34', 'resnet50',
-                'resnet101', 'resnet152', 'resnext50_32x4d', 'resnext101_32x8d',
-                'wide_resnet50_2', or 'wide_resnet101_2'.
-            weights: Initial model weights. True for ImageNet weights, False or None
-                for random weights.
-            num_classes: Number of prediction classes (including the background).
-            trainable_layers: Number of trainable layers.
+            task (str): Task to be performed. Currently supports "segmentation" and "regression".
+            backbone (str, nn.Module): Backbone to be used. If a string, will look for such models in the different
+                registries supported (internal terratorch registry, timm, ...). If a torch nn.Module, will use it
+                directly. The backbone should have and `out_channels` attribute and its `forward` should return a list[Tensor].
+            framework (str): object detection framework to be used between "faster-rcnn", "fcos", "retinanet".
+            num_classes (int, optional): Number of classes. None for regression tasks.
+            necks (list[dict]): nn.Modules to be called in succession on encoder features
+                before passing them to the decoder. Should be registered in the NECKS_REGISTRY registry.
+                Expects each one to have a key "name" and subsequent keys for arguments, if any.
+                Defaults to None, which applies the identity function.
+            aux_decoders (list[AuxiliaryHead] | None): List of AuxiliaryHead decoders to be added to the model.
+                These decoders take the input from the encoder as well.
+            rescale (bool): Whether to apply bilinear interpolation to rescale the model output if its size
+                is different from the ground truth. Only applicable to pixel wise models
+                (e.g. segmentation, pixel wise regression). Defaults to True.
+
 
         Returns:
-            Model: Torchvision model wrapped in ObjectDetectionModelWrapper.
+            nn.Module: Full model with encoder, decoder and head.
         """
-        if task != "object_detection":
-            msg = f"torchvision models can only perform classification, but got task {task}"
-            raise Exception(msg)
+        task = task.lower()
+        if task not in SUPPORTED_TASKS:
+            msg = f"Task {task} not supported. Please choose one of {SUPPORTED_TASKS}"
+            raise NotImplementedError(msg)
+
         backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
+        backbone = _get_backbone(backbone, **backbone_kwargs)
 
-        if backbone in BACKBONE_LAT_DIM_MAP:
-            kwargs = { # for model backbone parameter
-                'backbone_name': backbone,
-                'trainable_layers': trainable_layers,
-            }
-            if weights:
-                kwargs['weights'] = BACKBONE_WEIGHT_MAP[backbone]
-            else:
-                kwargs['weights'] = None
+        try:
+            out_channels = backbone.out_channels
+        except AttributeError as e:
+            msg = "backbone must have out_channels attribute"
+            raise AttributeError(msg) from e
+        pdb.set_trace()
+        if necks is None:
+            necks = []
+        neck_list, channel_list = build_neck_list(necks, out_channels)
+                                                  
+        neck_module = nn.Sequential(*neck_list)
 
-            latent_dim = BACKBONE_LAT_DIM_MAP[backbone]
-        else:
-            raise ValueError(f"Backbone type '{backbone}' is not valid.")
+        combined_backbone = BackboneWrapper(backbone, neck_module)
 
-        if model == 'faster-rcnn':
-            model_backbone = resnet_fpn_backbone(**kwargs)
+        if framework == 'faster-rcnn':
+
+            pdb.set_trace()
             anchor_generator = AnchorGenerator(
                 sizes=((32), (64), (128), (256), (512)), aspect_ratios=((0.5, 1.0, 2.0))
             )
@@ -109,32 +111,23 @@ class ObjectDetectionModelFactory(ModelFactory):
                 featmap_names=['0', '1', '2', '3'], output_size=7, sampling_ratio=2
             )
 
-            self.model = torchvision.models.detection.FasterRCNN(
-                model_backbone,
+            model = torchvision.models.detection.FasterRCNN(
+                combined_backbone,
                 num_classes,
                 rpn_anchor_generator=anchor_generator,
                 box_roi_pool=roi_pooler,
             )
-        elif model == 'fcos':
-            kwargs['extra_blocks'] = feature_pyramid_network.LastLevelP6P7(256, 256)
-            kwargs['norm_layer'] = (
-                misc.FrozenBatchNorm2d if weights else torch.nn.BatchNorm2d
-            )
+        elif framework == 'fcos':
 
-            model_backbone = resnet_fpn_backbone(**kwargs)
             anchor_generator = AnchorGenerator(
                 sizes=((8,), (16,), (32,), (64,), (128,), (256,)),
                 aspect_ratios=((1.0,), (1.0,), (1.0,), (1.0,), (1.0,), (1.0,)),
             )
 
-            self.model = torchvision.models.detection.FCOS(
-                model_backbone, num_classes, anchor_generator=anchor_generator
+            model = torchvision.models.detection.FCOS(
+                combined_backbone, num_classes, anchor_generator=anchor_generator
             )
-        elif model == 'retinanet':
-            kwargs['extra_blocks'] = feature_pyramid_network.LastLevelP6P7(
-                latent_dim, 256
-            )
-            model_backbone = resnet_fpn_backbone(**kwargs)
+        elif framework == 'retinanet':
 
             anchor_sizes = (
                 (16, 20, 25),
@@ -148,14 +141,14 @@ class ObjectDetectionModelFactory(ModelFactory):
             anchor_generator = AnchorGenerator(anchor_sizes, aspect_ratios)
 
             head = RetinaNetHead(
-                model_backbone.out_channels,
+                combined_backbone.out_channels,
                 anchor_generator.num_anchors_per_location()[0],
                 num_classes,
                 norm_layer=partial(torch.nn.GroupNorm, 32),
             )
 
-            self.model = torchvision.models.detection.RetinaNet(
-                model_backbone,
+            model = torchvision.models.detection.RetinaNet(
+                combined_backbone,
                 num_classes,
                 anchor_generator=anchor_generator,
                 head=head,
@@ -163,17 +156,36 @@ class ObjectDetectionModelFactory(ModelFactory):
         else:
             raise ValueError(f"Model type '{model}' is not valid.")
 
-        return ObjectDetectionModelWrapper(self.model, model)
+        # some decoders already include a head
+        # for these, we pass the num_classes to them
+        # others dont include a head
+        # for those, we dont pass num_classes
+
+        return ObjectDetectionModel(model, framework)
 
 
-class ObjectDetectionModelWrapper(Model):
+class BackboneWrapper(nn.Module):
+    def __init__(self, backbone, necks):
+        super().__init__()
+        self.backbone = backbone
+        self.necks = necks
+        self.out_channels = self.backbone.out_channels[-1] if len(self.necks) == 0 else self.necks[-1].channel_list[-1]
+
+    def forward(self, x, **kwargs):
+
+        x = self.backbone(x, **kwargs)
+        x = necks(x)
+        return x
+
+
+class ObjectDetectionModel(Model):
     def __init__(self, torchvision_model, model_name) -> None:
         super().__init__()
         self.torchvision_model = torchvision_model
         self.model_name = model_name
 
     def forward(self, *args, **kwargs):
-        return ModelOutput(self.torchvision_model(*args, **kwargs))
+        return ModelOutputObjectDetection(self.torchvision_model(*args, **kwargs))
 
     def freeze_encoder(self):
         for param in self.torchvision_model.backbone.parameters():
@@ -193,3 +205,7 @@ class ObjectDetectionModelWrapper(Model):
                 param.requires_grad = False
         else:
             raise ValueError(f"Model type '{self.model_name}' is not valid.")
+
+@dataclass
+class ModelOutputObjectDetection(ModelOutput):
+    output: dict
