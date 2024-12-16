@@ -47,6 +47,9 @@ from terratorch.datamodules.openearthmap import OpenEarthMapNonGeoDataModule
 # Generic classification datamodule
 from terratorch.datamodules.sen4map import Sen4MapLucasDataModule
 
+from terratorch.datamodules.m_VHR10 import mVHR10DataModule
+
+
 __all__ = (
     "GenericNonGeoSegmentationDataModule",
     "GenericNonGeoPixelwiseRegressionDataModule",
@@ -74,7 +77,8 @@ __all__ = (
     "OpenEarthMapModule"
     "OpenSentinelMapDataModule",
     "PASTISDataModule",
-    "Sen4AgriNetDataModule"
+    "Sen4AgriNetDataModule",
+    "mVHR10DataModule"
 )
 
 if wxc_present:

@@ -44,6 +44,7 @@ from terratorch.datasets.openearthmap import OpenEarthMapNonGeo
 # Generic Classification Dataset
 from terratorch.datasets.sen4map import Sen4MapDatasetMonthlyComposites
 
+from terratorch.datasets.m_VHR10 import mVHR10
 
 __all__ = (
     "GenericNonGeoSegmentationDataset",
@@ -76,5 +77,6 @@ __all__ = (
     "WSFEvolution",
     "HLSL30",
     "HLSS30",
-    "OpenEarthMapNonGeo"
+    "OpenEarthMapNonGeo",
+    "mVHR10"
 )
