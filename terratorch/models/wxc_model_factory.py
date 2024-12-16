@@ -6,6 +6,7 @@ from torch import nn
 import os
 import typing 
 import logging
+import importlib
 
 import terratorch.models.decoders as decoder_registry
 from terratorch.datasets import HLSBands
@@ -15,6 +16,8 @@ from terratorch.models.model import (
     ModelOutput,
 )
 from terratorch.registry import MODEL_FACTORY_REGISTRY
+
+from terratorch.models.pincers.unet_pincer import UNetPincer
 
 logger = logging.getLogger(__name__)
 
@@ -48,8 +51,77 @@ class WxCModelFactory(ModelFactory):
         backbone: str | nn.Module,
         aux_decoders,
         checkpoint_path:str=None,
+        backbone_weights: str = None,
         **kwargs,
     ) -> Model:
+        if backbone == 'prithviwxc':
+            try:
+                prithviwxc = importlib.import_module('PrithviWxC.model')
+            except ModuleNotFoundError as e:
+                print(f"Module not found: {e.name}. Please install PrithviWxC using pip install PrithviWxC")
+                raise
+
+            backbone = prithviwxc.PrithviWxC(**kwargs)
+
+            # Freeze PrithviWxC model parameters
+            for param in backbone.parameters():
+                param.requires_grad = False
+
+            # Load pre-trained weights if checkpoint is provided
+            if backbone_weights is not None:
+
+                print(f"Starting to load model from {backbone_weights}")
+                state_dict = torch.load(
+                    f=backbone_weights, weights_only=True
+                )
+
+                # Compare the keys in model and saved state_dict
+                model_keys = set(backbone.state_dict().keys())
+                saved_state_dict_keys = set(state_dict.keys())
+
+                # Find keys that are in the model but not in the saved state_dict
+                missing_in_saved = model_keys - saved_state_dict_keys
+                # Find keys that are in the saved state_dict but not in the model
+                missing_in_model = saved_state_dict_keys - model_keys
+                # Find keys that are common between the model and the saved state_dict
+                common_keys = model_keys & saved_state_dict_keys
+
+                # Print the common keys
+                if common_keys:
+                    print(f"Keys loaded : {common_keys}")
+
+                # Print the discrepancies
+                if missing_in_saved:
+                    print(f"Keys present in model but missing in saved state_dict: {missing_in_saved}")
+                if missing_in_model:
+                    print(f"Keys present in saved state_dict but missing in model: {missing_in_model}")
+
+                # Load the state_dict with strict=False to allow partial loading
+                backbone.load_state_dict(state_dict=state_dict, strict=False)
+                print('=>'*10, f"Model loaded from {backbone_weights}...")
+                print("Loaded backbone weights")
+            else:
+                print('Not loading backbone model weigts')
+
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            backbone.to(device)
+
+            defaults = {
+                "encoder_hidden_channels_multiplier" : [1, 2, 4, 8],
+                "encoder_num_encoder_blocks" : 4,
+                "decoder_hidden_channels_multiplier" : [(16, 8), (12, 4), (6, 2), (3, 1)],
+                "decoder_num_decoder_blocks" : 4,
+            }
+            valid_overrides = {k: v for k, v in kwargs.items() if k in defaults}
+            kwargs_updated = defaults.copy()
+            kwargs_updated.update(valid_overrides)
+
+            model_to_return = UNetPincer(backbone, **kwargs_updated).to(device)
+            return model_to_return
+            #return WxCModuleWrapper(backbone)
+
+
+        # starting from there only for backwards compatibility, deprecated
         if backbone == 'gravitywave':
             try:
                 __import__('prithviwxc.gravitywave.inference')
