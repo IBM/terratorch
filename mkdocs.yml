@@ -1,6 +1,6 @@
 site_name: TerraTorch
 theme:
-  name: material
+  name: readthedocs #material
   palette:
     scheme: slate
   features:
@@ -31,8 +31,9 @@ nav:
     - Registries: registry.md
     - EncoderDecoderFactory: encoder_decoder_factory.md
   - Examples: examples.md
-  - FAQ: faq.md
+    #- FAQ: faq.md
   - For Developers: architecture.md
+  - License: license.md
 
 markdown_extensions:
   - pymdownx.highlight:
