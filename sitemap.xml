@@ -2,42 +2,42 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://ibm.github.io/terratorch/</loc>
-         <lastmod>2024-10-24</lastmod>
+         <lastmod>2024-12-16</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/architecture/</loc>
-         <lastmod>2024-10-24</lastmod>
+         <lastmod>2024-12-16</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/data/</loc>
-         <lastmod>2024-10-24</lastmod>
+         <lastmod>2024-12-16</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/encoder_decoder_factory/</loc>
-         <lastmod>2024-10-24</lastmod>
+         <lastmod>2024-12-16</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/examples/</loc>
-         <lastmod>2024-10-24</lastmod>
+         <lastmod>2024-12-16</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/faq/</loc>
-         <lastmod>2024-10-24</lastmod>
+         <loc>https://ibm.github.io/terratorch/license/</loc>
+         <lastmod>2024-12-16</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/models/</loc>
-         <lastmod>2024-10-24</lastmod>
+         <lastmod>2024-12-16</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/quick_start/</loc>
-         <lastmod>2024-10-24</lastmod>
+         <lastmod>2024-12-16</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/registry/</loc>
-         <lastmod>2024-10-24</lastmod>
+         <lastmod>2024-12-16</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/tasks/</loc>
-         <lastmod>2024-10-24</lastmod>
+         <lastmod>2024-12-16</lastmod>
     </url>
 </urlset>
