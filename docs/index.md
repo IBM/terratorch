@@ -1,4 +1,4 @@
-# Welcome to Terratorch
+# Welcome to TerraTorch
 
 ## Overview
 

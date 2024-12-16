@@ -1,6 +1,6 @@
 # Quick start
-We suggest using Python>=3.10.
-To get started, make sure to have [PyTorch](https://pytorch.org/get-started/locally/) >= 2.0.0 and [GDAL](https://gdal.org/index.html) installed.
+We suggest using `3.10 <= Python <= 3.12`.
+To get started, make sure to have `[PyTorch](https://pytorch.org/get-started/locally/) >= 2.0.0` and [GDAL](https://gdal.org/index.html) installed.
 
 Installing GDAL can be quite a complex process. If you don't have GDAL set up on your system, we reccomend using a conda environment and installing it with `conda install -c conda-forge gdal`.
 
@@ -36,7 +36,7 @@ print([model_name for model_name in BACKBONE_REGISTRY if "prithvi" in model_name
 # instantiate your desired model
 # the backbone registry prefix (in this case 'timm') is optional
 # in this case, the underlying registry is timm, so we can pass timm arguments to it
-model = BACKBONE_REGISTRY.build("prithvi_vit_100", num_frames=1, pretrained=True)
+model = BACKBONE_REGISTRY.build("prithvi_eo_v1_100", num_frames=1, pretrained=True)
 
 # instantiate your model with more options, for instance, passing weights of your own through timm
 model = BACKBONE_REGISTRY.build(
@@ -89,6 +89,10 @@ model = model_factory.build_model(task="segmentation",
     )
 
 # Rest of your PyTorch / PyTorchLightning code
+.
+.
+.
+
 ```
 
 ## Training with Lightning Tasks
@@ -128,7 +132,7 @@ task = PixelwiseRegressionTask(
 
 # Pass this LightningModule to a Lightning Trainer, together with some LightningDataModule
 ```
-
+Alternatively, all the process can be summarized in configuration files written in YAML format, as seen below.
 ```yaml title="Configuration file for a Semantic Segmentation Task"
 # lightning.pytorch==2.1.1
 seed_everything: 0
@@ -221,8 +225,17 @@ lr_scheduler:
 
 ```
 
-To run this training task, simply execute `terratorch fit --config <path_to_config_file>`
+To run this training task using the YAML, simply execute:
+```sh
+terratorch fit --config <path_to_config_file>
+```
 
-To test your model on the test set, execute `terratorch test --config  <path_to_config_file> --ckpt_path <path_to_checkpoint_file>`
+To test your model on the test set, execute:
+```sh
+terratorch test --config  <path_to_config_file> --ckpt_path <path_to_checkpoint_file>
+```
 
-For inference, execute `terratorch predict -c <path_to_config_file> --ckpt_path<path_to_checkpoint> --predict_output_dir <path_to_output_dir> --data.init_args.predict_data_root <path_to_input_dir> --data.init_args.predict_dataset_bands <all bands in the predicted dataset, e.g. [BLUE,GREEN,RED,NIR_NARROW,SWIR_1,SWIR_2,0]>`
+For inference, execute:
+```sh
+terratorch predict -c <path_to_config_file> --ckpt_path<path_to_checkpoint> --predict_output_dir <path_to_output_dir> --data.init_args.predict_data_root <path_to_input_dir> --data.init_args.predict_dataset_bands <all bands in the predicted dataset, e.g. [BLUE,GREEN,RED,NIR_NARROW,SWIR_1,SWIR_2,0]>
+```

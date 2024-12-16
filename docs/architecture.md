@@ -58,5 +58,6 @@ Refer to the section on [data](data.md)
 
 ## Exporting models
 Models are saved using the PyTorch format, which basically serializes the model weights using pickle
-stores it into a binary file. 
-[comment]: <A future feature would be the possibility to save models in ONNX format, and export them that way. This would bring all the benefits of onnx.>
+and store them into a binary file. 
+
+<A future feature would be the possibility to save models in ONNX format, and export them that way. This would bring all the benefits of onnx.>
