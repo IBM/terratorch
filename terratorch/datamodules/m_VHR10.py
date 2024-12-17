@@ -18,7 +18,7 @@ from functools import partial
 
 from terratorch.datasets import mVHR10
 
-from torch.utils.data._utils.collate import default_collate
+from torchgeo.datamodules.utils import collate_fn_detection
 from torchgeo.datamodules import NonGeoDataModule
 
 import albumentations as A
@@ -30,24 +30,24 @@ import torch
 
 import numpy as np
 
-def custom_collate(batch):
+# def custom_collate(batch):
+
+#     pdb.set_trace()
+#     transformed_images = [item['image'] for item in batch]
+#     transformed_bboxes = [item['boxes'] for item in batch]
+#     transformed_masks = [item['masks'] for item in batch]
+#     transformed_labels = [item['labels'] for item in batch]
     
-    images = [item['image'] for item in batch]
-    bboxes = [item['boxes'] for item in batch]
-    masks = [item['masks'] for item in batch]
     
-    # Apply transforms to each sample in the batch
-    transformed = [transforms(image, {'boxes': bbox, 'masks': mask}) for image, bbox, mask in zip(images, bboxes, masks)]
+#     # Collate the transformed data
+#     collated_images = default_collate(transformed_images)
+#     collated_bboxes = default_collate(transformed_bboxes)
+#     collated_masks = default_collate(transformed_masks)
+#     collated_labels = default_collate(transformed_labels)
     
-    # Separate transformed images and targets
-    transformed_images = [t[0] for t in transformed]
-    transformed_targets = [t[1] for t in transformed]
+#     # collated_targets = [{k: default_collate([d[k] for d in transformed_targets]) for k in transformed_targets[0]}]
     
-    # Collate the transformed data
-    collated_images = default_collate(transformed_images)
-    collated_targets = [{k: default_collate([d[k] for d in transformed_targets]) for k in transformed_targets[0]}]
-    
-    return {'image': collated_images, 'bbox': collated_targets[0]['boxes'], 'mask': collated_targets[0]['masks'], 'labels': batch['labels']}
+#     return {'image': collated_images, 'bboxes': collated_bboxes, 'masks': collated_masks, 'labels': collated_labels}
 
 
 def get_transform(train):
@@ -112,7 +112,7 @@ class mVHR10DataModule(NonGeoDataModule):
         self.second_level_split_proportions = second_level_split_proportions
         self.batch_size = batch_size
         self.num_workers = num_workers
-        self.collate_fn = self.collate_fn if collate_fn is None else collate_fn
+        self.collate_fn = collate_fn_detection if collate_fn is None else collate_fn
         self.download = download
         self.checksum = checksum
 
