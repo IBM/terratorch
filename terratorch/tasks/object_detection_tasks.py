@@ -1,5 +1,4 @@
 from typing import Any
-
 import lightning
 import matplotlib.pyplot as plt
 import torch
@@ -200,12 +199,35 @@ class ObjectDetectionTask(BaseTask):
             batch_idx: Integer displaying index of this batch.
             dataloader_idx: Index of the current dataloader.
         """
+        print(f'XXX ObjectDetectionTask.training_step() {batch_idx=} {dataloader_idx=}')
         x = batch["image"]
-        y = batch["label"]
-        other_keys = batch.keys() - {"image", "label", "filename"}
-        rest = {k:batch[k] for k in other_keys}
-
-        model_output: ModelOutput = self(x, **rest)
+        batch_size = len(x)  # Set batch size (number of images)
+        y = [
+            {"boxes": batch["boxes"][i], "labels": batch["labels"][i]}
+            for i in range(batch_size)
+        ] # Extract bounding box and label information for each image
+        torchgeo_way = True
+        if torchgeo_way:
+            model_output = self(x, y)  # Loss
+            loss_dict = model_output.output
+            print(f'XXX: training_step:')
+            print(f'XXX: {len(x)=}')
+            print(f'XXX: {x[0].size()}')
+            print(f'XXX: {len(y)=}')
+            print(f"XXX: {len(y[0]['labels'])=}")
+            print(f"XXX: {y[0]['labels'][0].size()=}")
+            print(f"XXX: {y[0]['labels'][0]=}")
+            print(f"XXX: {y[0]['boxes'][0].size()=}")
+            print(f'XXX: {type(loss_dict)=}')
+            print(f'XXX: {loss_dict.keys()=}')
+            print(f"XXX: {loss_dict['loss_classifier']=}")
+            print(f"XXX: {loss_dict['loss_box_reg']=}")
+            print(f"XXX: {loss_dict['loss_objectness']=}")
+            print(f"XXX: {loss_dict['loss_rpn_box_reg']=}")
+            train_loss: Tensor = sum(loss_dict.values())  # Training loss (sum of loss values)
+            self.log_dict(loss_dict)  # Record loss values
+            return train_loss  # Return training loss
+        model_output: ModelOutput = self(x, y)
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat_hard = to_class_prediction(model_output)
@@ -226,13 +248,79 @@ class ObjectDetectionTask(BaseTask):
             batch_idx: Integer displaying index of this batch.
             dataloader_idx: Index of the current dataloader.
         """
+        print(f'XXX ObjectDetectionTask.validation_step() {batch_idx=} {dataloader_idx=}')
         x = batch["image"]
-        y = batch["label"]
-        other_keys = batch.keys() - {"image", "label", "filename"}
-        rest = {k:batch[k] for k in other_keys}
-        model_output: ModelOutput = self(x, **rest)
+        batch_size = len(x)  # Set batch size (number of images)
+        y = [
+            {"boxes": batch["boxes"][i], "labels": batch["labels"][i]}
+            for i in range(batch_size)
+        ]
+        torchgeo_way = True
+        if torchgeo_way:
+            y_hat = self(x).output
+            metrics = self.val_metrics(y_hat, y)
+
+            # https://github.com/Lightning-AI/torchmetrics/pull/1832#issuecomment-1623890714
+            metrics.pop('val_classes', None)
+
+            self.log_dict(metrics, batch_size=batch_size)
+
+            if (
+                batch_idx < 10
+                and hasattr(self.trainer, 'datamodule')
+                and hasattr(self.trainer.datamodule, 'plot')
+                and self.logger
+                and hasattr(self.logger, 'experiment')
+                and hasattr(self.logger.experiment, 'add_figure')
+            ):
+                datamodule = self.trainer.datamodule
+                batch['prediction_boxes'] = [b['boxes'].cpu() for b in y_hat]
+                batch['prediction_labels'] = [b['labels'].cpu() for b in y_hat]
+                batch['prediction_scores'] = [b['scores'].cpu() for b in y_hat]
+                batch['image'] = batch['image'].cpu()
+                sample = unbind_samples(batch)[0]
+                # Convert image to uint8 for plotting
+                if torch.is_floating_point(sample['image']):
+                    sample['image'] *= 255
+                    sample['image'] = sample['image'].to(torch.uint8)
+
+                fig: Figure | None = None
+                try:
+                    fig = datamodule.plot(sample)
+                except RGBBandsMissingError:
+                    pass
+
+                if fig:
+                    summary_writer = self.logger.experiment
+                    summary_writer.add_figure(
+                        f'image/{batch_idx}', fig, global_step=self.global_step
+                    )
+                    plt.close()
+            model_output = self(x, y)  # Loss  # torchgeo way
+            loss_dict = model_output.output
+            # model_output.auxiliary_heads  # Is usually None
+            print(f'XXX validation_step:')
+            print(f'XXX {len(x)=}')
+            print(f'XXX {x[0].size()}')
+            print(f'XXX {len(y)=}')
+            print(f"XXX {len(y[0]['labels'])=}")
+            print(f"XXX {y[0]['labels'][0].size()=}")
+            print(f"XXX {y[0]['labels'][0]=}")
+            print(f"XXX {y[0]['boxes'][0].size()=}")
+            print(f"XXX")
+            print(f'XXX {type(loss_dict)=}')
+            print(f'XXX {len(loss_dict)=}')
+            print(f'XXX {type(loss_dict[0])=}')
+            print(f'XXX {loss_dict[0].keys()=}')
+            print(f'XXX {loss_dict[0]=}')
+            print(f'XXX {model_output.auxiliary_heads=}')
+            train_loss: Tensor = sum(loss_dict.values())  # Training loss (sum of loss values)  # torchgeo way
+            self.log_dict(loss_dict)  # Record loss values
+            return train_loss  # Return training loss
+        model_output: ModelOutput = self(x, y)
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
+        # model_output.auxiliary_heads  # Is usually None
         y_hat_hard = to_class_prediction(model_output)
         self.val_metrics.update(y_hat_hard, y)
 
@@ -250,10 +338,12 @@ class ObjectDetectionTask(BaseTask):
             dataloader_idx: Index of the current dataloader.
         """
         x = batch["image"]
-        y = batch["label"]
-        other_keys = batch.keys() - {"image", "label", "filename"}
-        rest = {k:batch[k] for k in other_keys}
-        model_output: ModelOutput = self(x, **rest)
+        batch_size = len(x)  # Set batch size (number of images)
+        y = [
+            {"boxes": batch["boxes"][i], "labels": batch["labels"][i]}
+            for i in range(batch_size)
+        ] # Extract bounding box and label information for each image
+        model_output: ModelOutput = self(x, y)
         loss = self.test_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.test_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat_hard = to_class_prediction(model_output)
@@ -276,11 +366,13 @@ class ObjectDetectionTask(BaseTask):
             Output predicted probabilities.
         """
         x = batch["image"]
-        file_names = batch["filename"]
-        other_keys = batch.keys() - {"image", "label", "filename"}
-        rest = {k:batch[k] for k in other_keys}
-        model_output: ModelOutput = self(x, **rest)
+        batch_size = len(x)  # Set batch size (number of images)
+        y = [
+            {"boxes": batch["boxes"][i], "labels": batch["labels"][i]}
+            for i in range(batch_size)
+        ] # Extract bounding box and label information for each image
+        model_output: ModelOutput = self(x, y)
 
         y_hat = self(x).output
         y_hat = y_hat.argmax(dim=1)
-        return y_hat, file_names
+        return y_hat
