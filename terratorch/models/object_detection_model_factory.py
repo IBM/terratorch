@@ -49,7 +49,7 @@ BACKBONE_WEIGHT_MAP = {
 
 
 @MODEL_FACTORY_REGISTRY.register
-class CNNModelFactory(ModelFactory):
+class ObjectDetectionModelFactory(ModelFactory):
     def build_model(
         self,
         task: str,
