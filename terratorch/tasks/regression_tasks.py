@@ -24,7 +24,8 @@ from terratorch.tasks.base_task import TerraTorchTask
 
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
 
-logger = logging.getLogger('terratorch')
+logger = logging.getLogger("terratorch")
+
 
 class RootLossWrapper(nn.Module):
     def __init__(self, loss_function: nn.Module, reduction: None | str = "mean") -> None:
@@ -152,7 +153,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
         freeze_decoder: bool = False,  # noqa: FBT001, FBT002
         plot_on_val: bool | int = 10,
         tiled_inference_parameters: TiledInferenceParameters | None = None,
-        reduce_lr: list[tuple[str, float]] | None = None,
+        lr_overrides: list[tuple[str, float]] | None = None,
     ) -> None:
         """Constructor
 
@@ -187,8 +188,9 @@ class PixelwiseRegressionTask(TerraTorchTask):
                 If true, log every epoch. Defaults to 10. If int, will plot every plot_on_val epochs.
             tiled_inference_parameters (TiledInferenceParameters | None, optional): Inference parameters
                 used to determine if inference is done on the whole image or through tiling.
-            reduce_lr (list[tuple[str, float]] | None, optional): List of tuples with a substring of the parameter names
-                to reduce the learning rate and the factor to reduce it by. Defaults to None.
+            lr_overrides (list[tuple[str, float]] | None, optional): List of tuples with a substring of the parameter
+                names (it will check the substring is contained in the parameter name) to override the learning rate and
+                the new lr. Defaults to None.
         """
         self.tiled_inference_parameters = tiled_inference_parameters
         self.aux_loss = aux_loss

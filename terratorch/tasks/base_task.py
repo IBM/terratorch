@@ -55,15 +55,15 @@ class TerraTorchTask(BaseTask):
             optimizer = "Adam"
 
         parameters: Iterable
-        if self.hparams.get("reduce_lr", None) is not None and len(self.hparams["reduce_lr"]) > 0:
+        if self.hparams.get("lr_overrides", None) is not None and len(self.hparams["lr_overrides"]) > 0:
             parameters = []
-            for param_name, reduce_factor in self.hparams["reduce_lr"]:
+            for param_name, custom_lr in self.hparams["lr_overrides"]:
                 p = [p for n, p in self.model.named_parameters() if param_name in n]
-                parameters.append({"params": p, "lr": self.hparams["lr"] / reduce_factor})
+                parameters.append({"params": p, "lr": custom_lr})
             rest_p = [
                 p
                 for n, p in self.model.named_parameters()
-                if all(param_name not in n for param_name, _ in self.hparams["reduce_lr"])
+                if all(param_name not in n for param_name, _ in self.hparams["lr_overrides"])
             ]
             parameters.append({"params": rest_p})
         else:
