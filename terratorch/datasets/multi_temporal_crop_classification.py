@@ -22,8 +22,17 @@ from terratorch.datasets.utils import clip_image, default_transform, filter_vali
 
 
 class MultiTemporalCropClassification(NonGeoDataset):
-    """NonGeo dataset implementation for multi-temporal crop classification."""
+    """NonGeo dataset implementation for multi-temporal crop classification.
 
+    If using the version 2 dataset, we use the version 2 train/val/test splits from the dataset.
+    If using the version 1 dataset, we use the version 1 train/val splits from the dataset.
+    """
+    versions = ('1', '2')
+
+    splits_per_version = {
+        '1': {"train": "train", "val": "val", "test": "val"},
+        '2': {"train": "train", "val": "val", "test": "test"},
+    }
     all_band_names = (
         "BLUE",
         "GREEN",
@@ -55,7 +64,6 @@ class MultiTemporalCropClassification(NonGeoDataset):
 
     num_classes = 13
     time_steps = 3
-    splits = {"train": "training", "val": "validation"}  # Only train and val splits available
     metadata_file_name = "chip_df_final.csv"
     col_name = "chip_id"
     date_columns = ["first_img_date", "middle_img_date", "last_img_date"]
@@ -63,6 +71,7 @@ class MultiTemporalCropClassification(NonGeoDataset):
     def __init__(
         self,
         data_root: str,
+        version: str = '2',
         split: str = "train",
         bands: Sequence[str] = BAND_SETS["all"],
         transform: A.Compose | None = None,
@@ -92,21 +101,23 @@ class MultiTemporalCropClassification(NonGeoDataset):
             use_metadata (bool): whether to return metadata info (time and location).
         """
         super().__init__()
-        if split not in self.splits:
-            msg = f"Incorrect split '{split}', please choose one of {self.splits}."
+        if version not in self.versions:
+            msg = f"Incorrect version '{version}', please choose one of {self.versions}."
             raise ValueError(msg)
-        split_name = self.splits[split]
-        self.split = split
+        splits = self.splits_per_version[version]
+        if split not in splits:
+            msg = f"Incorrect split '{split}', please choose one of {list(splits.keys())}."
+            raise ValueError(msg)
+        self.split = splits[split]
 
         validate_bands(bands, self.all_band_names)
         self.bands = bands
         self.band_indices = np.asarray([self.all_band_names.index(b) for b in bands])
         self.data_root = Path(data_root)
 
-        data_dir = self.data_root / f"{split_name}_chips"
-        self.image_files = sorted(glob.glob(os.path.join(data_dir, "*_merged.tif")))
-        self.segmentation_mask_files = sorted(glob.glob(os.path.join(data_dir, "*.mask.tif")))
-        split_file = data_dir / f"{split_name}_data.txt"
+        self.image_files = sorted(glob.glob(os.path.join(self.data_root, "*_merged.tif")))
+        self.segmentation_mask_files = sorted(glob.glob(os.path.join(self.data_root, "*.mask.tif")))
+        split_file = self.data_root / f"{self.split}_v{version}_data.txt"
 
         with open(split_file) as f:
             split = f.readlines()
@@ -235,7 +246,9 @@ class MultiTemporalCropClassification(NonGeoDataset):
             raise ValueError(msg)
 
         images = sample["image"]
-        images = images[rgb_indices, ...]  # Shape: (T, 3, H, W)
+        if not self.expand_temporal_dimension:
+            images = rearrange(images, "(channels time) h w -> channels time h w", channels=len(self.bands))
+        images = images[rgb_indices, ...]  # Shape: (3, T, H, W)
 
         processed_images = []
         for t in range(self.time_steps):
@@ -247,7 +260,10 @@ class MultiTemporalCropClassification(NonGeoDataset):
 
         mask = sample["mask"].numpy()
         if "prediction" in sample:
+            prediction = sample["prediction"]
             num_images += 1
+        else:
+            prediction = None
         fig, ax = plt.subplots(1, num_images, figsize=(12, 5), layout="compressed")
         ax[0].axis("off")
 
@@ -261,11 +277,9 @@ class MultiTemporalCropClassification(NonGeoDataset):
         ax[self.time_steps + 1].title.set_text("Ground Truth Mask")
         ax[self.time_steps + 1].imshow(mask, cmap="jet", norm=norm)
 
-        if "prediction" in sample:
-            prediction = sample["prediction"]
-            ax[self.time_steps + 1].axis("off")
-            ax[self.time_steps+2].title.set_text("Predicted Mask")
-            ax[self.time_steps+2].imshow(prediction, cmap="jet", norm=norm)
+        if prediction is not None:
+            ax[self.time_steps + 2].title.set_text("Predicted Mask")
+            ax[self.time_steps + 2].imshow(prediction, cmap="jet", norm=norm)
 
         cmap = plt.get_cmap("jet")
         legend_data = [[i, cmap(norm(i)), self.class_names[i]] for i in range(self.num_classes)]

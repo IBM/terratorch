@@ -15,22 +15,42 @@ from torchgeo.transforms import AugmentationSequential
 from terratorch.datamodules.utils import wrap_in_compose_is_list
 from terratorch.datasets import FireScarsHLS, FireScarsNonGeo, FireScarsSegmentationMask
 
-MEANS = {
-    "BLUE": 0.033349706741586264,
-    "GREEN": 0.05701185520536176,
-    "RED": 0.05889748132001316,
-    "NIR_NARROW": 0.2323245113436119,
-    "SWIR_1": 0.1972854853760658,
-    "SWIR_2": 0.11944914225186566,
+MEANS_PER_VERSION = {
+    '1': {
+        "BLUE": 0.0535,
+        "GREEN": 0.0788,
+        "RED": 0.0963,
+        "NIR_NARROW": 0.2119,
+        "SWIR_1": 0.2360,
+        "SWIR_2": 0.1731,
+    },
+    '2': {
+        "BLUE": 0.0535,
+        "GREEN": 0.0788,
+        "RED": 0.0963,
+        "NIR_NARROW": 0.2119,
+        "SWIR_1": 0.2360,
+        "SWIR_2": 0.1731,
+    }
 }
 
-STDS = {
-    "BLUE": 0.02269135568823774,
-    "GREEN": 0.026807560223070237,
-    "RED": 0.04004109844362779,
-    "NIR_NARROW": 0.07791732423672691,
-    "SWIR_1": 0.08708738838140137,
-    "SWIR_2": 0.07241979477437814,
+STDS_PER_VERSION = {
+    '1': {
+        "BLUE": 0.0308,
+        "GREEN": 0.0378,
+        "RED": 0.0550,
+        "NIR_NARROW": 0.0707,
+        "SWIR_1": 0.0919,
+        "SWIR_2": 0.0841,
+    },
+    '2': {
+        "BLUE": 0.0308,
+        "GREEN": 0.0378,
+        "RED": 0.0550,
+        "NIR_NARROW": 0.0707,
+        "SWIR_1": 0.0919,
+        "SWIR_2": 0.0841,
+    }
 }
 
 
@@ -40,6 +60,7 @@ class FireScarsNonGeoDataModule(NonGeoDataModule):
     def __init__(
         self,
         data_root: str,
+        version: str = '2',
         batch_size: int = 4,
         num_workers: int = 0,
         bands: Sequence[str] = FireScarsNonGeo.all_band_names,
@@ -54,14 +75,16 @@ class FireScarsNonGeoDataModule(NonGeoDataModule):
     ) -> None:
         super().__init__(FireScarsNonGeo, batch_size, num_workers, **kwargs)
         self.data_root = data_root
-
-        means = [MEANS[b] for b in bands]
-        stds = [STDS[b] for b in bands]
+        means = MEANS_PER_VERSION[version]
+        stds = STDS_PER_VERSION[version] 
+        self.means = [means[b] for b in bands]
+        self.stds = [stds[b] for b in bands]
+        self.version = version
         self.bands = bands
         self.train_transform = wrap_in_compose_is_list(train_transform)
         self.val_transform = wrap_in_compose_is_list(val_transform)
         self.test_transform = wrap_in_compose_is_list(test_transform)
-        self.aug = AugmentationSequential(K.Normalize(means, stds), data_keys=["image"])
+        self.aug = AugmentationSequential(K.Normalize(self.means, self.stds), data_keys=["image"])
         self.drop_last = drop_last
         self.no_data_replace = no_data_replace
         self.no_label_replace = no_label_replace
@@ -71,6 +94,7 @@ class FireScarsNonGeoDataModule(NonGeoDataModule):
         if stage in ["fit"]:
             self.train_dataset = self.dataset_class(
                 split="train",
+                version=self.version,
                 data_root=self.data_root,
                 transform=self.train_transform,
                 bands=self.bands,
@@ -81,6 +105,7 @@ class FireScarsNonGeoDataModule(NonGeoDataModule):
         if stage in ["fit", "validate"]:
             self.val_dataset = self.dataset_class(
                 split="val",
+                version=self.version,
                 data_root=self.data_root,
                 transform=self.val_transform,
                 bands=self.bands,
@@ -90,7 +115,8 @@ class FireScarsNonGeoDataModule(NonGeoDataModule):
             )
         if stage in ["test"]:
             self.test_dataset = self.dataset_class(
-                split="val",
+                split="test",
+                version=self.version,
                 data_root=self.data_root,
                 transform=self.test_transform,
                 bands=self.bands,
