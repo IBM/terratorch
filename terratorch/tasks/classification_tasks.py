@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Any
 import logging
 import lightning
@@ -16,7 +17,8 @@ from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
 from terratorch.tasks.base_task import TerraTorchTask
 
-logger = logging.getLogger('terratorch')
+logger = logging.getLogger("terratorch")
+
 
 def to_class_prediction(y: ModelOutput) -> Tensor:
     y_hat = y.output
@@ -33,6 +35,7 @@ class ClassificationTask(TerraTorchTask):
         - Does not have any callbacks by default (TorchGeo tasks do early stopping by default)
         - Allows the setting of optimizers in the constructor
         - It provides mIoU with both Micro and Macro averaging
+        - Allows to evaluate on multiple test dataloaders
 
     .. note::
            * 'Micro' averaging suits overall performance evaluation but may not reflect
@@ -62,6 +65,7 @@ class ClassificationTask(TerraTorchTask):
         freeze_backbone: bool = False,  # noqa: FBT001, FBT002
         freeze_decoder: bool = False,  # noqa: FBT002, FBT001
         class_names: list[str] | None = None,
+        test_dataloaders_names: list[str] | None = None,
     ) -> None:
         """Constructor
 
@@ -97,6 +101,9 @@ class ClassificationTask(TerraTorchTask):
             freeze_decoder (bool, optional): Whether to freeze the decoder and segmentation head. Defaults to False.
             class_names (list[str] | None, optional): List of class names passed to metrics for better naming.
                 Defaults to numeric ordering.
+            test_dataloaders_names (list[str] | None, optional): Names used to differentiate metrics when
+                multiple dataloaders are returned by test_dataloader in the datamodule. Defaults to None,
+                which assumes only one test dataloader is used.
         """
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
@@ -116,10 +123,11 @@ class ClassificationTask(TerraTorchTask):
             self.model = model
 
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
-        self.test_loss_handler = LossHandler(self.test_metrics.prefix)
+        self.test_loss_handler: list[LossHandler] = []
+        for metrics in self.test_metrics:
+            self.test_loss_handler.append(LossHandler(metrics.prefix))
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
         self.monitor = f"{self.val_metrics.prefix}loss"
-
 
     def configure_losses(self) -> None:
         """Initialize the loss criterion.
@@ -131,8 +139,8 @@ class ClassificationTask(TerraTorchTask):
         ignore_index = self.hparams["ignore_index"]
 
         class_weights = (
-                    torch.Tensor(self.hparams["class_weights"]) if self.hparams["class_weights"] is not None else None
-                )
+            torch.Tensor(self.hparams["class_weights"]) if self.hparams["class_weights"] is not None else None
+        )
         if loss == "ce":
             ignore_value = -100 if ignore_index is None else ignore_index
             self.criterion = nn.CrossEntropyLoss(ignore_index=ignore_value, weight=class_weights)
@@ -187,7 +195,12 @@ class ClassificationTask(TerraTorchTask):
         )
         self.train_metrics = metrics.clone(prefix="train/")
         self.val_metrics = metrics.clone(prefix="val/")
-        self.test_metrics = metrics.clone(prefix="test/")
+        if self.hparams["test_dataloaders_names"] is not None:
+            self.test_metrics = nn.ModuleList(
+                [metrics.clone(prefix=f"test/{dl_name}/") for dl_name in self.hparams["test_dataloaders_names"]]
+            )
+        else:
+            self.test_metrics = nn.ModuleList([metrics.clone(prefix="test/")])
 
     def training_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         """Compute the train loss and additional metrics.
@@ -200,7 +213,7 @@ class ClassificationTask(TerraTorchTask):
         x = batch["image"]
         y = batch["label"]
         other_keys = batch.keys() - {"image", "label", "filename"}
-        rest = {k:batch[k] for k in other_keys}
+        rest = {k: batch[k] for k in other_keys}
 
         model_output: ModelOutput = self(x, **rest)
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
@@ -221,7 +234,7 @@ class ClassificationTask(TerraTorchTask):
         x = batch["image"]
         y = batch["label"]
         other_keys = batch.keys() - {"image", "label", "filename"}
-        rest = {k:batch[k] for k in other_keys}
+        rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
@@ -239,12 +252,19 @@ class ClassificationTask(TerraTorchTask):
         x = batch["image"]
         y = batch["label"]
         other_keys = batch.keys() - {"image", "label", "filename"}
-        rest = {k:batch[k] for k in other_keys}
+        rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
-        loss = self.test_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
-        self.test_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
+        if dataloader_idx >= len(self.test_loss_handler):
+            msg = "You are returning more than one test dataloader but not defining enough test_dataloaders_names."
+            raise ValueError(msg)
+        loss = self.test_loss_handler[dataloader_idx].compute_loss(model_output, y, self.criterion, self.aux_loss)
+        self.test_loss_handler[dataloader_idx].log_loss(
+            partial(self.log, add_dataloader_idx=False),  # We don't need the dataloader idx as prefixes are different
+            loss_dict=loss,
+            batch_size=x.shape[0],
+        )
         y_hat_hard = to_class_prediction(model_output)
-        self.test_metrics.update(y_hat_hard, y)
+        self.test_metrics[dataloader_idx].update(y_hat_hard, y)
 
     def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         """Compute the predicted class probabilities.
@@ -260,7 +280,7 @@ class ClassificationTask(TerraTorchTask):
         x = batch["image"]
         file_names = batch["filename"]
         other_keys = batch.keys() - {"image", "label", "filename"}
-        rest = {k:batch[k] for k in other_keys}
+        rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
 
         y_hat = self(x).output
