@@ -153,7 +153,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
         freeze_decoder: bool = False,  # noqa: FBT001, FBT002
         plot_on_val: bool | int = 10,
         tiled_inference_parameters: TiledInferenceParameters | None = None,
-        lr_overrides: list[tuple[str, float]] | None = None,
+        lr_overrides: dict[str, float] | None = None,
     ) -> None:
         """Constructor
 
@@ -188,9 +188,9 @@ class PixelwiseRegressionTask(TerraTorchTask):
                 If true, log every epoch. Defaults to 10. If int, will plot every plot_on_val epochs.
             tiled_inference_parameters (TiledInferenceParameters | None, optional): Inference parameters
                 used to determine if inference is done on the whole image or through tiling.
-            lr_overrides (list[tuple[str, float]] | None, optional): List of tuples with a substring of the parameter
-                names (it will check the substring is contained in the parameter name) to override the learning rate and
-                the new lr. Defaults to None.
+            lr_overrides (dict[str, float] | None, optional): Dictionary to override the default lr in specific
+                parameters. The key should be a substring of the parameter names (it will check the substring is
+                contained in the parameter name)and the value should be the new lr. Defaults to None.
         """
         self.tiled_inference_parameters = tiled_inference_parameters
         self.aux_loss = aux_loss
@@ -271,7 +271,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
         x = batch["image"]
         y = batch["mask"]
         other_keys = batch.keys() - {"image", "mask", "filename"}
-        rest = {k:batch[k] for k in other_keys}
+        rest = {k: batch[k] for k in other_keys}
 
         model_output: ModelOutput = self(x, **rest)
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
@@ -292,7 +292,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
         x = batch["image"]
         y = batch["mask"]
         other_keys = batch.keys() - {"image", "mask", "filename"}
-        rest = {k:batch[k] for k in other_keys}
+        rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
@@ -334,7 +334,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
         x = batch["image"]
         y = batch["mask"]
         other_keys = batch.keys() - {"image", "mask", "filename"}
-        rest = {k:batch[k] for k in other_keys}
+        rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
         loss = self.test_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.test_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
@@ -355,7 +355,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
         x = batch["image"]
         file_names = batch["filename"]
         other_keys = batch.keys() - {"image", "mask", "filename"}
-        rest = {k:batch[k] for k in other_keys}
+        rest = {k: batch[k] for k in other_keys}
 
         def model_forward(x):
             return self(x).output

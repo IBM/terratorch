@@ -57,13 +57,13 @@ class TerraTorchTask(BaseTask):
         parameters: Iterable
         if self.hparams.get("lr_overrides", None) is not None and len(self.hparams["lr_overrides"]) > 0:
             parameters = []
-            for param_name, custom_lr in self.hparams["lr_overrides"]:
+            for param_name, custom_lr in self.hparams["lr_overrides"].items():
                 p = [p for n, p in self.model.named_parameters() if param_name in n]
                 parameters.append({"params": p, "lr": custom_lr})
             rest_p = [
                 p
                 for n, p in self.model.named_parameters()
-                if all(param_name not in n for param_name, _ in self.hparams["lr_overrides"])
+                if all(param_name not in n for param_name in self.hparams["lr_overrides"])
             ]
             parameters.append({"params": rest_p})
         else:
