@@ -24,14 +24,14 @@ from torchvision.ops import MultiScaleRoIAlign, feature_pyramid_network, misc
 from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
 
+import numpy as np
+
 SUPPORTED_TASKS = ['object_detection']
 
 def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
     if isinstance(backbone, nn.Module):
         return backbone
     return BACKBONE_REGISTRY.build(backbone, **backbone_kwargs)
-
-
 
 def _check_all_args_used(kwargs):
     if kwargs:
@@ -85,13 +85,14 @@ class ObjectDetectionModelFactory(ModelFactory):
 
         backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
         backbone = _get_backbone(backbone, **backbone_kwargs)
-
+        in_channels = len(backbone_kwargs["bands"])
+        
         try:
             out_channels = backbone.out_channels
         except AttributeError as e:
             msg = "backbone must have out_channels attribute"
             raise AttributeError(msg) from e
-        pdb.set_trace()
+        # pdb.set_trace()
         if necks is None:
             necks = []
         neck_list, channel_list = build_neck_list(necks, out_channels)
@@ -102,7 +103,7 @@ class ObjectDetectionModelFactory(ModelFactory):
 
         if framework == 'faster-rcnn':
 
-            pdb.set_trace()
+            # pdb.set_trace()
             anchor_generator = AnchorGenerator(
                 sizes=((32), (64), (128), (256), (512)), aspect_ratios=((0.5, 1.0, 2.0))
             )
@@ -116,6 +117,9 @@ class ObjectDetectionModelFactory(ModelFactory):
                 num_classes,
                 rpn_anchor_generator=anchor_generator,
                 box_roi_pool=roi_pooler,
+                _skip_resize=True,
+                image_mean = np.repeat(0, in_channels),
+                image_std = np.repeat(0, in_channels)
             )
         elif framework == 'fcos':
 
@@ -125,7 +129,13 @@ class ObjectDetectionModelFactory(ModelFactory):
             )
 
             model = torchvision.models.detection.FCOS(
-                combined_backbone, num_classes, anchor_generator=anchor_generator
+                combined_backbone, 
+                num_classes,
+                anchor_generator=anchor_generator, 
+                _skip_resize=True,
+                image_mean = np.repeat(0, in_channels),
+                image_std = np.repeat(0, in_channels)
+
             )
         elif framework == 'retinanet':
 
@@ -152,6 +162,9 @@ class ObjectDetectionModelFactory(ModelFactory):
                 num_classes,
                 anchor_generator=anchor_generator,
                 head=head,
+                _skip_resize=True,
+                image_mean = np.repeat(0, in_channels),
+                image_std = np.repeat(0, in_channels)   
             )
         else:
             raise ValueError(f"Model type '{model}' is not valid.")
@@ -160,7 +173,8 @@ class ObjectDetectionModelFactory(ModelFactory):
         # for these, we pass the num_classes to them
         # others dont include a head
         # for those, we dont pass num_classes
-
+        # model.transform = IdentityTransform()
+        
         return ObjectDetectionModel(model, framework)
 
 
@@ -172,9 +186,10 @@ class BackboneWrapper(nn.Module):
         self.out_channels = self.backbone.out_channels[-1] if len(self.necks) == 0 else self.necks[-1].channel_list[-1]
 
     def forward(self, x, **kwargs):
-
+        pdb.set_trace()
         x = self.backbone(x, **kwargs)
-        x = necks(x)
+        x = self.necks(x)
+        x = {i: v for i, v in enumerate(x)}
         return x
 
 
@@ -184,8 +199,10 @@ class ObjectDetectionModel(Model):
         self.torchvision_model = torchvision_model
         self.model_name = model_name
 
-    def forward(self, *args, **kwargs):
-        return ModelOutputObjectDetection(self.torchvision_model(*args, **kwargs))
+    def forward(self, x, *args, **kwargs):
+        # pdb.set_trace()
+        # x = ImageContainer(x)
+        return ModelOutputObjectDetection(self.torchvision_model(x, *args, **kwargs))
 
     def freeze_encoder(self):
         for param in self.torchvision_model.backbone.parameters():
@@ -209,3 +226,7 @@ class ObjectDetectionModel(Model):
 @dataclass
 class ModelOutputObjectDetection(ModelOutput):
     output: dict
+
+class ImageContainer:
+    def __init__(self, tensor):
+        self.tensors = tensor
