@@ -20,6 +20,7 @@ from terratorch.datasets import (GenericMultimodalDataset, GenericMultimodalSegm
 from terratorch.datamodules.generic_pixel_wise_data_module import Normalize
 from terratorch.io.file import load_from_file_or_attribute
 
+logger = logging.getLogger("terratorch")
 
 def collate_chunk_dicts(batch_list):
     batch = {}
@@ -68,7 +69,6 @@ def wrap_in_compose_is_list(transform_list, image_modalities=None, non_image_mod
     return A.Compose(transform_list, is_check_shapes=False, additional_targets=additional_targets) \
         if isinstance(transform_list, Iterable) else transform_list
 
-
 class MultimodalNormalize(Callable):
     def __init__(self, means, stds):
         super().__init__()
@@ -96,6 +96,15 @@ class MultimodalNormalize(Callable):
                 # C, H, W
                 means = torch.tensor(self.means[m], device=image.device).view(-1, 1, 1)
                 stds = torch.tensor(self.stds[m], device=image.device).view(-1, 1, 1)
+
+            elif len(image.shape) == 2:
+                means = torch.tensor(self.means[m], device=image.device)
+                stds = torch.tensor(self.stds[m], device=image.device)
+
+            elif len(image.shape) == 1:
+                means = torch.tensor(self.means[m], device=image.device)
+                stds = torch.tensor(self.stds[m], device=image.device)
+
             else:
                 msg = (f"Expected batch with 5 or 4 dimensions (B, C, (T,) H, W), sample with 3 dimensions (C, H, W) "
                        f"or a single channel, but got {len(image.shape)}")
@@ -432,7 +441,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 channel_position=self.channel_position,
                 concat_bands=self.concat_bands ,
             )
-            logging.info(f"Train dataset: {len(self.train_dataset)}")
+            logger.info(f"Train dataset: {len(self.train_dataset)}")
         if stage in ["fit", "validate"]:
             self.val_dataset = self.dataset_class(
                 data_root=self.val_root,
@@ -456,7 +465,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 channel_position=self.channel_position,
                 concat_bands=self.concat_bands,
             )
-            logging.info(f"Val dataset: {len(self.val_dataset)}")
+            logger.info(f"Val dataset: {len(self.val_dataset)}")
         if stage in ["test"]:
             self.test_dataset = self.dataset_class(
                 data_root=self.test_root,
@@ -480,7 +489,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 channel_position=self.channel_position,
                 concat_bands=self.concat_bands,
             )
-            logging.info(f"Test dataset: {len(self.test_dataset)}")
+            logger.info(f"Test dataset: {len(self.test_dataset)}")
         if stage in ["predict"] and self.predict_root:
             self.predict_dataset = self.dataset_class(
                 data_root=self.predict_root,
@@ -500,7 +509,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 channel_position=self.channel_position,
                 concat_bands=self.concat_bands,
             )
-            logging.info(f"Predict dataset: {len(self.predict_dataset)}")
+            logger.info(f"Predict dataset: {len(self.predict_dataset)}")
 
     def _dataloader_factory(self, split: str) -> DataLoader[dict[str, Tensor]]:
         """Implement one or more PyTorch DataLoaders.

@@ -25,6 +25,7 @@ from torchgeo.datasets import NonGeoDataset
 from terratorch.datasets.utils import HLSBands, default_transform, filter_valid_files, generate_bands_intervals
 from terratorch.datasets.transforms import MultimodalTransforms
 
+logger = logging.getLogger("terratorch")
 
 def load_table_data(file_path: str | Path) -> pd.DataFrame:
     file_path = str(file_path)
@@ -329,8 +330,8 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                 self.filter_indices[m] = [self.dataset_bands[m].index(band) for band in self.output_bands[m]]
 
             if not self.channel_position:
-                logging.warning("output_bands is defined but no channel_position is provided. "
-                                "Channels must be in the last dimension, otherwise provide channel_position.")
+                logger.warning("output_bands is defined but no channel_position is provided. "
+                               "Channels must be in the last dimension, otherwise provide channel_position.")
 
         # If no transform is given, apply only to transform to torch tensor
         if isinstance(transform, A.Compose):

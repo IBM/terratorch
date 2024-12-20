@@ -37,7 +37,6 @@ def select_patch_embed_weights(
     """
     if (type(pretrained_bands) == type(model_bands)) | (type(pretrained_bands) == int) | (type(model_bands) == int): 
 
-        
         if custom_proj_key is None:
             _possible_keys_for_proj_weight = {
                 "patch_embed.proj.weight",
@@ -47,7 +46,7 @@ def select_patch_embed_weights(
             }
         else:
             _possible_keys_for_proj_weight = {custom_proj_key}
-            
+
         patch_embed_proj_weight_key = state_dict.keys() & _possible_keys_for_proj_weight if (type(state_dict) in [collections.OrderedDict, dict]) else state_dict().keys() & _possible_keys_for_proj_weight
         if len(patch_embed_proj_weight_key) == 0:
             msg = "Could not find key for patch embed weight"
@@ -79,4 +78,27 @@ def select_patch_embed_weights(
     
         state_dict[patch_embed_proj_weight_key] = temp_weight
         
+    # extract the single element from the set
+    (patch_embed_proj_weight_key,) = patch_embed_proj_weight_key
+    patch_embed_weight = state_dict[patch_embed_proj_weight_key]
+
+    temp_weight = model.state_dict()[patch_embed_proj_weight_key].clone()
+
+    # only do this if the patch size and tubelet size match. If not, start with random weights
+    if patch_embed_weights_are_compatible(temp_weight, patch_embed_weight):
+        torch.nn.init.xavier_uniform_(temp_weight.view([temp_weight.shape[0], -1]))
+        for index, band in enumerate(model_bands):
+            if band in pretrained_bands:
+                logging.info(f"Loaded weights for {band} in position {index} of patch embed")
+                temp_weight[:, index] = patch_embed_weight[:, pretrained_bands.index(band)]
+    else:
+        warnings.warn(
+            f"Incompatible shapes between patch embedding of model {temp_weight.shape} and\
+            of checkpoint {patch_embed_weight.shape}",
+            category=UserWarning,
+            stacklevel=1,
+        )
+
+    state_dict[patch_embed_proj_weight_key] = temp_weight
+>>>>>>> main
     return state_dict

@@ -228,7 +228,7 @@ class Sen1Floods11NonGeo(NonGeoDataset):
         ax[3].imshow(image)
         ax[3].imshow(mask, cmap="jet", alpha=0.3, norm=norm)
 
-        if prediction:
+        if "prediction" in sample:
             ax[4].title.set_text("Predicted Mask")
             ax[4].imshow(prediction, cmap="jet", norm=norm)
 
