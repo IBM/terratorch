@@ -10,7 +10,7 @@ geopandas==0.14.4
 lightly==1.5.15
 h5py==3.10.0
 mlflow==2.18.0
-lightning==2.4.0
+lightning==2.5.0
 segmentation-models-pytorch==0.3.4
 
 # These dependencies are optional
