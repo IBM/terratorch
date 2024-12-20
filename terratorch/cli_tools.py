@@ -31,6 +31,8 @@ from lightning.pytorch import LightningDataModule, LightningModule, Trainer
 from lightning.pytorch.callbacks import BasePredictionWriter, ModelCheckpoint, RichProgressBar
 from lightning.pytorch.cli import ArgsType, LightningArgumentParser, LightningCLI, SaveConfigCallback
 from torchgeo.trainers import BaseTask
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 import terratorch.datamodules
 import terratorch.tasks  # noqa: F401
@@ -399,6 +401,13 @@ class MyLightningCLI(LightningCLI):
 
         import_custom_modules(custom_modules_path)
 
+    @staticmethod
+    def subcommands() -> dict[str, set[str]]:
+        existing_subcommands = LightningCLI.subcommands()
+        existing_subcommands["compute_statistics"] = {"datamodule"}
+        return existing_subcommands
+
+
 def build_lightning_cli(
     args: ArgsType = None,
     run=True,  # noqa: FBT002
@@ -437,6 +446,7 @@ def build_lightning_cli(
         # save only state_dict as well as full state. Only state_dict will be used for exporting the model
         trainer_defaults={"callbacks": [CustomWriter(write_interval="batch")]},
         run=run,
+        trainer_class=MyTrainer,
     )
 
 
@@ -559,3 +569,46 @@ class LightningInferenceModel:
                 tmpdir,
             )
             return prediction.squeeze(0)
+
+
+class MyTrainer(Trainer):
+    def compute_statistics(self, datamodule: LightningDataModule, **kwargs) -> None:
+        datamodule.setup("fit")
+        original_dataloader = datamodule.train_dataloader()
+        if not isinstance(original_dataloader, DataLoader):
+            msg = "DataLoader not found in datamodule.train_dataloader()"
+            raise ValueError(msg)
+        new_dataloader = DataLoader(
+            dataset=original_dataloader.dataset,
+            batch_size=original_dataloader.batch_size,
+            shuffle=False,
+            num_workers=original_dataloader.num_workers,
+            collate_fn=original_dataloader.collate_fn,
+            pin_memory=original_dataloader.pin_memory,
+            drop_last=False,
+        )
+        n_bands = original_dataloader.dataset[0]["image"].shape[0]
+        n_data = torch.zeros([n_bands], dtype=torch.int64)
+        sum_data = torch.zeros([n_bands], dtype=torch.float64)
+
+        # First pass for mean
+        for batch in tqdm(new_dataloader, desc="Compute mean"):
+            imgs: torch.Tensor = batch["image"]
+            # switch batch and band dimensions and flatten
+            samples = imgs.transpose(0, 1).reshape(n_bands, -1).double()
+            sum_data += samples.sum(dim=1)
+            n_data += samples.shape[1]
+        mean = sum_data / n_data
+
+        sum_squared = torch.zeros(n_bands, dtype=torch.float64)
+        for batch in tqdm(new_dataloader, desc="Compute variance"):
+            imgs = batch["image"]
+            samples = imgs.transpose(0, 1).reshape(n_bands, -1).double()
+            sum_squared += ((samples - mean.unsqueeze(1)) ** 2).sum(dim=1)
+
+        variance = sum_squared / n_data
+        std = torch.sqrt(variance)
+
+        torch.set_printoptions(precision=10)
+        logger.info(f"Dataset mean: {mean}")
+        logger.info(f"Dataset std: {std}")
