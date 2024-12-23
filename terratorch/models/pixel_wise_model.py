@@ -7,7 +7,7 @@ from torch import nn
 
 from terratorch.models.heads import RegressionHead, SegmentationHead
 from terratorch.models.model import AuxiliaryHeadWithDecoderWithoutInstantiatedHead, Model, ModelOutput
-
+from terratorch.models.backbones.prithvi_vit import pad_images
 
 def freeze_module(module: nn.Module):
     for param in module.parameters():
@@ -70,6 +70,9 @@ class PixelWiseModel(Model, SegmentationModel):
         self.neck = neck
         self.rescale = rescale
 
+        # TODO Maybe it's better to pass it an input argument
+        self.patch_size = self.encoder._timm_module.patch_embed.patch_size[-1]
+
     def freeze_encoder(self):
         freeze_module(self.encoder)
 
@@ -77,9 +80,14 @@ class PixelWiseModel(Model, SegmentationModel):
         freeze_module(self.decoder)
         freeze_module(self.head)
 
-    # TODO: do this properly
     def check_input_shape(self, x: torch.Tensor) -> bool:  # noqa: ARG002
-        return True
+
+        x_shape = x.shape[2:]
+        if all([i//self.patch_size==0 for i in x_shape]):
+           return x
+        else:
+           x = pad_images(x, self.patch_size, "constant") 
+           return x
 
     @staticmethod
     def _check_for_single_channel_and_squeeze(x):
