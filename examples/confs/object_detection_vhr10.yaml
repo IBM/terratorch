@@ -12,6 +12,10 @@ trainer:
     - class_path: LearningRateMonitor
       init_args:
         logging_interval: epoch
+    - class_path: EarlyStopping
+      init_args:
+        monitor: val/loss
+        patience: 20
   #max_epochs: 100
   max_epochs: 2  # XXX For debugging
   check_val_every_n_epoch: 1
@@ -19,6 +23,7 @@ trainer:
   enable_checkpointing: true
   default_root_dir: output/VHR10
   num_sanity_val_steps: 0  # XXX To avoid running validation batches in sanity check runs
+
 data:
   class_path: terratorch.datamodules.TorchNonGeoDataModule
   init_args:
@@ -45,17 +50,26 @@ model:
   class_path: terratorch.tasks.ObjectDetectionTask
   init_args:
     model_factory: ObjectDetectionModelFactory
-    model_args:
+    model_args: # This will be passed to model builder
       model: faster-rcnn  # Model name of TorchVision (one of faster-rcnn, fcos, or retinanet)
       backbone: resnet50  # One of resnet18, resnet34, resnet50, resnet101, resnet152, resnext50_32x4d, resnext101_32x8d, wide_resnet50_2, or wide_resnet101_2
-      weights: true  # Use pretrained weightsTrue for ImageNet weight, False for random
-      in_channels: 3  # Number of channels in the input image (RGB images)
       num_classes: 11  # Number of classes including background
       trainable_layers: 3  # Number of trainable layers
-      patience: 10  # Set the number of patience iterations for early stopping (XXX Is this OK to put this here ?)
+      weights: true  # Use pretrained weightsTrue for ImageNet weight, False for random
+      #---belows are optional
+    loss: ce  # XXX Is this OK to put this here ? OK
+    #aux_loss:  # Not necessary
+    #class_weights:
+    #ignore_index:
+    #optimizer: Adam  # or AdamW as in torchgeo ?
+    #optimizer_hparams:
+    #scheduler:  # ReduceLROnPlateau as in torchgeo
+    scheduler_hparams:
+      #patience: 10  # Set the number of patience iterations for early stopping
+      # XXX Is this OK to put this here ?
     freeze_backbone: false
     freeze_decoder: false
-    loss: ce  # XXX Is this OK to put this here ?
+    #class_names:
 
 optimizer:
   class_path: torch.optim.AdamW
@@ -67,5 +81,5 @@ lr_scheduler:
   class_path: CosineAnnealingLR
   init_args:
     T_max: 20
-
+    #patience: 10
 
