@@ -72,10 +72,11 @@ class ObjectDetectionModelFactory(ModelFactory):
                 backbone to use. One of 'resnet18', 'resnet34', 'resnet50',
                 'resnet101', 'resnet152', 'resnext50_32x4d', 'resnext101_32x8d',
                 'wide_resnet50_2', or 'wide_resnet101_2'.
+            num_classes: Number of prediction classes (including the background).
+            trainable_layers: Number of trainable layers. Will be passed to backbone
             weights: Initial model weights. True for ImageNet weights, False or None
                 for random weights.
-            num_classes: Number of prediction classes (including the background).
-            trainable_layers: Number of trainable layers.
+            kwargs: All kwargs must be preceded by 'backbone_', otherwise ignored.
 
         Returns:
             Model: Torchvision model wrapped in ObjectDetectionModelWrapper.
@@ -83,24 +84,24 @@ class ObjectDetectionModelFactory(ModelFactory):
         if task != "object_detection":
             msg = f"torchvision models can only perform classification, but got task {task}"
             raise Exception(msg)
-        backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
+        # All parameters other than 'backbone_' will be ignored
+        backbone_kwargs, _ = extract_prefix_keys(kwargs, "backbone_")
 
         if backbone in BACKBONE_LAT_DIM_MAP:
-            kwargs = { # for model backbone parameter
-                'backbone_name': backbone,
-                'trainable_layers': trainable_layers,
-            }
+            backbone_kwargs['backbone_name'] = backbone
+            backbone_kwargs['trainable_layers'] = trainable_layers
             if weights:
-                kwargs['weights'] = BACKBONE_WEIGHT_MAP[backbone]
+                backbone_kwargs['weights'] = BACKBONE_WEIGHT_MAP[backbone]
             else:
-                kwargs['weights'] = None
+                backbone_kwargs['weights'] = None
 
             latent_dim = BACKBONE_LAT_DIM_MAP[backbone]
         else:
             raise ValueError(f"Backbone type '{backbone}' is not valid.")
 
+        # Note backbone_kwargs may include 'backbone_name', 'trainable_layers', and 'weights'
         if model == 'faster-rcnn':
-            model_backbone = resnet_fpn_backbone(**kwargs)
+            model_backbone = resnet_fpn_backbone(**backbone_kwargs)
             anchor_generator = AnchorGenerator(
                 sizes=((32), (64), (128), (256), (512)), aspect_ratios=((0.5, 1.0, 2.0))
             )
@@ -116,12 +117,12 @@ class ObjectDetectionModelFactory(ModelFactory):
                 box_roi_pool=roi_pooler,
             )
         elif model == 'fcos':
-            kwargs['extra_blocks'] = feature_pyramid_network.LastLevelP6P7(256, 256)
-            kwargs['norm_layer'] = (
+            backbone_kwargs['extra_blocks'] = feature_pyramid_network.LastLevelP6P7(256, 256)
+            backbone_kwargs['norm_layer'] = (
                 misc.FrozenBatchNorm2d if weights else torch.nn.BatchNorm2d
             )
 
-            model_backbone = resnet_fpn_backbone(**kwargs)
+            model_backbone = resnet_fpn_backbone(**backbone_kwargs)
             anchor_generator = AnchorGenerator(
                 sizes=((8,), (16,), (32,), (64,), (128,), (256,)),
                 aspect_ratios=((1.0,), (1.0,), (1.0,), (1.0,), (1.0,), (1.0,)),
@@ -131,10 +132,10 @@ class ObjectDetectionModelFactory(ModelFactory):
                 model_backbone, num_classes, anchor_generator=anchor_generator
             )
         elif model == 'retinanet':
-            kwargs['extra_blocks'] = feature_pyramid_network.LastLevelP6P7(
+            backbone_kwargs['extra_blocks'] = feature_pyramid_network.LastLevelP6P7(
                 latent_dim, 256
             )
-            model_backbone = resnet_fpn_backbone(**kwargs)
+            model_backbone = resnet_fpn_backbone(**backbone_kwargs)
 
             anchor_sizes = (
                 (16, 20, 25),
