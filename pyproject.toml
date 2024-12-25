@@ -32,7 +32,7 @@ dependencies = [
   "rioxarray>=0.15.0",
   # see issue #64
   "albumentations>=1.3.1, <=1.4.21",
-  "albucore<=0.0.16",
+  "albucore<=0.0.23",
   "rasterio>=1.3.9",
   "torchmetrics<=1.3.1",
   "geopandas>=0.14.4",
