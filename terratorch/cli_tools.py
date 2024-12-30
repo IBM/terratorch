@@ -370,7 +370,6 @@ class MyLightningCLI(LightningCLI):
 
     def instantiate_classes(self) -> None:
 
-        super().instantiate_classes()
         # get the predict_output_dir. Depending on the value of run, it may be in the subcommand
         try:
             config = self.config.predict
@@ -398,6 +397,7 @@ class MyLightningCLI(LightningCLI):
             custom_modules_path = os.getenv("TERRATORCH_CUSTOM_MODULE_PATH", None)
 
         import_custom_modules(custom_modules_path)
+        super().instantiate_classes()
 
 def build_lightning_cli(
     args: ArgsType = None,
