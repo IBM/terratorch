@@ -26,6 +26,7 @@ class PixelWiseModel(Model, SegmentationModel):
         encoder: nn.Module,
         decoder: nn.Module,
         head_kwargs: dict,
+        patch_size: int, 
         decoder_includes_head: bool = False,
         auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
         neck: nn.Module | None = None,
@@ -69,9 +70,7 @@ class PixelWiseModel(Model, SegmentationModel):
 
         self.neck = neck
         self.rescale = rescale
-
-        # TODO Maybe it's better to pass it an input argument
-        self.patch_size = self.encoder._timm_module.patch_embed.patch_size[-1]
+        self.patch_size = patch_size
 
     def freeze_encoder(self):
         freeze_module(self.encoder)
