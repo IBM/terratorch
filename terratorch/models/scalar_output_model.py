@@ -71,14 +71,23 @@ class ScalarOutputModel(Model, SegmentationModel):
         freeze_module(self.decoder)
         freeze_module(self.head)
 
-    # TODO: do this properly
-    def check_input_shape(self, x: torch.Tensor) -> bool:  # noqa: ARG002
-        return True
+    def check_input_shape(self, x: torch.Tensor) -> torch.Tensor:  # noqa: ARG002
+
+        x_shape = x.shape[2:]
+        if all([i//self.patch_size==0 for i in x_shape]):
+           return x
+        else:
+           x = pad_images(x, self.patch_size, "constant") 
+           return x
+
+    def crop_image(self, x:torch.Tensor, size) -> torch.Tensor:
+
+        return crop(x, size[0], size[1])
 
     def forward(self, x: torch.Tensor, **kwargs) -> ModelOutput:
         """Sequentially pass `x` through model`s encoder, decoder and heads"""
 
-        self.check_input_shape(x)
+        x = self.check_input_shape(x)
         features = self.encoder(x, **kwargs)
 
         ## only for backwards compatibility with pre-neck times.
@@ -92,6 +101,8 @@ class ScalarOutputModel(Model, SegmentationModel):
 
         decoder_output = self.decoder([f.clone() for f in features])
         mask = self.head(decoder_output)
+        mask = self.crop_image(x)
+
         aux_outputs = {}
         for name, decoder in self.aux_heads.items():
             aux_output = decoder([f.clone() for f in features])
