@@ -130,16 +130,16 @@ class EncoderDecoderFactory(ModelFactory):
         backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
         backbone = _get_backbone(backbone, **backbone_kwargs)
 
-        # Getting necessary parameters
+        # Getting some necessary parameters
         # Patch size
         try:
             patch_size = backbone_kwargs["patch_size"]
         except KeyError:
-            print("Trying to get patch_size from the backbone")
+            print("Trying to get `patch_size` from the backbone")
             patch_size = _get_argument_from_instance(backbone, "patch_size")
-            print(f"Found patch_size as {patch_size}")
+            print(f"Found `patch_size` as {patch_size}")
         else:
-            print("patch_size could not be found. Define it in the config file.")
+            print("The argument `patch_size` could not be found. Define it in the config file.")
 
         if peft_config is not None:
             if not backbone_kwargs.get("pretrained", False):
