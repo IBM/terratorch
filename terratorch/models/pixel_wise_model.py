@@ -2,6 +2,7 @@
 
 import torch
 import torch.nn.functional as F  # noqa: N812
+import torchvision.transforms as transforms
 from segmentation_models_pytorch.base import SegmentationModel
 from torch import nn
 
@@ -79,7 +80,7 @@ class PixelWiseModel(Model, SegmentationModel):
         freeze_module(self.decoder)
         freeze_module(self.head)
 
-    def check_input_shape(self, x: torch.Tensor) -> bool:  # noqa: ARG002
+    def check_input_shape(self, x: torch.Tensor) -> torch.Tensor:  # noqa: ARG002
 
         x_shape = x.shape[2:]
         if all([i//self.patch_size==0 for i in x_shape]):
@@ -87,6 +88,10 @@ class PixelWiseModel(Model, SegmentationModel):
         else:
            x = pad_images(x, self.patch_size, "constant") 
            return x
+
+    def crop_image(self, x:torch.Tensor, size:tuple) -> torch.Tensor:
+
+        return transforms.CenterCrop(size)(x)
 
     @staticmethod
     def _check_for_single_channel_and_squeeze(x):
@@ -96,7 +101,7 @@ class PixelWiseModel(Model, SegmentationModel):
 
     def forward(self, x: torch.Tensor, **kwargs) -> ModelOutput:
         """Sequentially pass `x` through model`s encoder, decoder and heads"""
-        self.check_input_shape(x)
+
         if isinstance(x, torch.Tensor):
             input_size = x.shape[-2:]
         elif hasattr(kwargs, 'image_size'):
@@ -106,6 +111,8 @@ class PixelWiseModel(Model, SegmentationModel):
             input_size = list(x.values())[0].shape[-2:]
         else:
             ValueError('Could not infer input shape.')
+
+        x = self.check_input_shape(x)
         features = self.encoder(x, **kwargs)
 
         ## only for backwards compatibility with pre-neck times.
@@ -128,6 +135,10 @@ class PixelWiseModel(Model, SegmentationModel):
                 aux_output = F.interpolate(aux_output, size=input_size, mode="bilinear")
             aux_output = self._check_for_single_channel_and_squeeze(aux_output)
             aux_outputs[name] = aux_output
+
+        # Cropping image to reduce the effect of padding
+        mask = self.crop_image(mask, input_size)
+
         return ModelOutput(output=mask, auxiliary_heads=aux_outputs)
 
     def _get_head(self, task: str, input_embed_dim: int, head_kwargs):
