@@ -10,22 +10,42 @@ from terratorch.datamodules.generic_pixel_wise_data_module import Normalize
 from terratorch.datamodules.utils import wrap_in_compose_is_list
 from terratorch.datasets import MultiTemporalCropClassification
 
-MEANS = {
-    "BLUE": 494.905781,
-    "GREEN": 815.239594,
-    "RED": 924.335066,
-    "NIR_NARROW": 2968.881459,
-    "SWIR_1": 2634.621962,
-    "SWIR_2": 1739.579917,
+MEANS_PER_VERSION = {
+    '1': {
+        "BLUE": 830.5397,
+        "GREEN": 2427.1667,
+        "RED": 760.6795,
+        "NIR_NARROW": 2575.2020,
+        "SWIR_1": 649.9128,
+        "SWIR_2": 2344.4357,
+    },
+    '2': {
+        "BLUE": 829.5907,
+        "GREEN": 2437.3473,
+        "RED": 748.6308,
+        "NIR_NARROW": 2568.9369,
+        "SWIR_1": 638.9926,
+        "SWIR_2": 2336.4087,
+    }
 }
 
-STDS = {
-    "BLUE": 284.925432,
-    "GREEN": 357.84876,
-    "RED": 575.566823,
-    "NIR_NARROW": 896.601013,
-    "SWIR_1": 951.900334,
-    "SWIR_2": 921.407808,
+STDS_PER_VERSION = {
+    '1': {
+        "BLUE": 447.9155,
+        "GREEN": 910.8289,
+        "RED": 490.9398,
+        "NIR_NARROW": 1142.5207,
+        "SWIR_1": 430.9440,
+        "SWIR_2": 1094.0881,
+    },
+    '2': {
+        "BLUE": 447.1192,
+        "GREEN": 913.5633,
+        "RED": 480.5570,
+        "NIR_NARROW": 1140.6160,
+        "SWIR_1": 418.6212,
+        "SWIR_2": 1091.6073,
+    }
 }
 
 
@@ -35,6 +55,7 @@ class MultiTemporalCropClassificationDataModule(NonGeoDataModule):
     def __init__(
         self,
         data_root: str,
+        version: str = '2',
         batch_size: int = 4,
         num_workers: int = 0,
         bands: Sequence[str] = MultiTemporalCropClassification.all_band_names,
@@ -51,9 +72,11 @@ class MultiTemporalCropClassificationDataModule(NonGeoDataModule):
     ) -> None:
         super().__init__(MultiTemporalCropClassification, batch_size, num_workers, **kwargs)
         self.data_root = data_root
-
-        self.means = [MEANS[b] for b in bands]
-        self.stds = [STDS[b] for b in bands]
+        means = MEANS_PER_VERSION[version]
+        stds = STDS_PER_VERSION[version]    
+        self.means = [means[b] for b in bands]
+        self.stds = [stds[b] for b in bands]
+        self.version = version
         self.bands = bands
         self.train_transform = wrap_in_compose_is_list(train_transform)
         self.val_transform = wrap_in_compose_is_list(val_transform)
@@ -70,6 +93,7 @@ class MultiTemporalCropClassificationDataModule(NonGeoDataModule):
         if stage in ["fit"]:
             self.train_dataset = self.dataset_class(
                 split="train",
+                version=self.version,
                 data_root=self.data_root,
                 transform=self.train_transform,
                 bands=self.bands,
@@ -82,6 +106,7 @@ class MultiTemporalCropClassificationDataModule(NonGeoDataModule):
         if stage in ["fit", "validate"]:
             self.val_dataset = self.dataset_class(
                 split="val",
+                version=self.version,
                 data_root=self.data_root,
                 transform=self.val_transform,
                 bands=self.bands,
@@ -93,7 +118,8 @@ class MultiTemporalCropClassificationDataModule(NonGeoDataModule):
             )
         if stage in ["test"]:
             self.test_dataset = self.dataset_class(
-                split="val",
+                split="test",
+                version=self.version,
                 data_root=self.data_root,
                 transform=self.test_transform,
                 bands=self.bands,
