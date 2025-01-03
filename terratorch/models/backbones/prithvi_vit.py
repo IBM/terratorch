@@ -10,6 +10,7 @@ from terratorch.datasets import HLSBands
 from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
 from terratorch.datasets.utils import generate_bands_intervals
 from terratorch.models.backbones.prithvi_mae import PrithviViT, PrithviMAE
+from terratorch.models.utils import pad_images
 
 logger = logging.getLogger(__name__)
 
@@ -152,20 +153,6 @@ def checkpoint_filter_fn_mae(
     state_dict = select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands)
 
     return state_dict
-
-
-def pad_images(imgs: Tensor,patch_size: int, padding:str) -> Tensor:
-    p = patch_size
-    # h, w = imgs.shape[3], imgs.shape[4]
-    t, h, w = imgs.shape[-3:]
-    h_pad, w_pad = (p - h % p) % p, (p - w % p) % p  # Ensure padding is within bounds
-    if h_pad > 0 or w_pad > 0:
-        imgs = torch.stack([
-            nn.functional.pad(img, (0, w_pad, 0, h_pad), mode=padding)
-            for img in imgs  # Apply per image to avoid NotImplementedError from torch.nn.functional.pad
-        ])
-    return imgs
-
 
 def _create_prithvi(
     variant: str,

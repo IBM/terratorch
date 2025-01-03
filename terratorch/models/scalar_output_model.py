@@ -6,7 +6,7 @@ from torch import nn
 
 from terratorch.models.heads import ClassificationHead
 from terratorch.models.model import AuxiliaryHeadWithDecoderWithoutInstantiatedHead, Model, ModelOutput
-
+from terratorch.models.utils import pad_images
 
 def freeze_module(module: nn.Module):
     for param in module.parameters():

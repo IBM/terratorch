@@ -8,7 +8,7 @@ from torch import nn
 
 from terratorch.models.heads import RegressionHead, SegmentationHead
 from terratorch.models.model import AuxiliaryHeadWithDecoderWithoutInstantiatedHead, Model, ModelOutput
-from terratorch.models.backbones.prithvi_vit import pad_images
+from terratorch.models.utils import pad_images
 
 def freeze_module(module: nn.Module):
     for param in module.parameters():
