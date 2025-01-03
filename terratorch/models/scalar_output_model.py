@@ -87,9 +87,9 @@ class ScalarOutputModel(Model, SegmentationModel):
             # dataset is properly configured to work with the model being used. 
             return x
 
-    def crop_image(self, x:torch.Tensor, size) -> torch.Tensor:
+    def crop_image(self, x:torch.Tensor, size:tuple) -> torch.Tensor:
 
-        return crop(x, size[0], size[1])
+        return transforms.CenterCrop(size)(x)
 
     def forward(self, x: torch.Tensor, **kwargs) -> ModelOutput:
         """Sequentially pass `x` through model`s encoder, decoder and heads"""

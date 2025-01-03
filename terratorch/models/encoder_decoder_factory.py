@@ -139,7 +139,7 @@ class EncoderDecoderFactory(ModelFactory):
             # sizes, it can still work, but there is no way to fix possible
             # errors during execution if information about patch size is not
             # explicitly provided. 
-            logging.getLogger("terratorch").info(f"The argument `patch_size` could not be found. To avoid possible fails related to nondivisible images,\
+            logging.getLogger("terratorch").info(f"The argument `patch_size` could not be found. To avoid possible errors related to nondivisible images,\
                                                  it's better to define it in the config file.")
             patch_size = None 
 

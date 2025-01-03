@@ -1,6 +1,7 @@
 import importlib
 import sys
 from collections.abc import Callable
+import logging 
 
 import timm
 import torch
@@ -122,6 +123,19 @@ class ClayModelFactory(ModelFactory):
 
             backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
 
+            # Getting some necessary parameters
+            # Patch size
+            if "patch_size" in backbone_kwargs:
+                patch_size = backbone_kwargs["patch_size"]
+            else:
+                # If the configs for the model are right and images have the proper
+                # sizes, it can still work, but there is no way to fix possible
+                # errors during execution if information about patch size is not
+                # explicitly provided. 
+                logging.getLogger("terratorch").info(f"The argument `patch_size` could not be found. To avoid possible errors related to nondivisible images,\
+                                                     it's better to define it in the config file.")
+                patch_size = None 
+
             # Trying to find the model on HuggingFace.
             try:
                 backbone: nn.Module = timm.create_model(
@@ -157,7 +171,7 @@ class ClayModelFactory(ModelFactory):
             head_kwargs["num_classes"] = num_classes
         if aux_decoders is None:
             return _build_appropriate_model(
-                task, backbone, decoder, head_kwargs, prepare_features_for_image_model, rescale=rescale
+                task, backbone, decoder, head_kwargs, prepare_features_for_image_model, patch_size=patch_size, rescale=rescale
             )
 
         to_be_aux_decoders: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] = []
@@ -186,6 +200,7 @@ class ClayModelFactory(ModelFactory):
             decoder,
             head_kwargs,
             prepare_features_for_image_model,
+            patch_size=patch_size,
             rescale=rescale,
             auxiliary_heads=to_be_aux_decoders,
         )
@@ -197,6 +212,7 @@ def _build_appropriate_model(
     decoder: nn.Module,
     head_kwargs: dict,
     prepare_features_for_image_model: Callable,
+    patch_size:int=None, 
     rescale: bool = True,  # noqa: FBT001, FBT002
     auxiliary_heads: dict | None = None,
 ):
@@ -206,6 +222,7 @@ def _build_appropriate_model(
             backbone,
             decoder,
             head_kwargs,
+            patch_size=patch_size,
             rescale=rescale,
             auxiliary_heads=auxiliary_heads,
         )
@@ -215,6 +232,7 @@ def _build_appropriate_model(
             backbone,
             decoder,
             head_kwargs,
+            patch_size=patch_size,
             auxiliary_heads=auxiliary_heads,
         )
 
