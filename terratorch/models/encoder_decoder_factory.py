@@ -2,7 +2,7 @@
 
 
 import warnings
-
+import logging 
 from torch import nn
 
 from terratorch.models.model import (
@@ -132,14 +132,16 @@ class EncoderDecoderFactory(ModelFactory):
 
         # Getting some necessary parameters
         # Patch size
-        try:
+        if "patch_size" in backbone_kwargs:
             patch_size = backbone_kwargs["patch_size"]
-        except KeyError:
-            print("Trying to get `patch_size` from the backbone")
-            patch_size = _get_argument_from_instance(backbone, "patch_size")
-            print(f"Found `patch_size` as {patch_size}")
         else:
-            print("The argument `patch_size` could not be found. Define it in the config file.")
+            # If the configs for the model are right and images have the proper
+            # sizes, it can still work, but there is no way to fix possible
+            # errors during execution if information about patch size is not
+            # explicitly provided. 
+            logging.getLogger("terratorch").info(f"The argument `patch_size` could not be found. To avoid possible fails related to nondivisible images,\
+                                                 it's better to define it in the config file.")
+            patch_size = None 
 
         if peft_config is not None:
             if not backbone_kwargs.get("pretrained", False):
@@ -246,6 +248,7 @@ def _build_appropriate_model(
             backbone,
             decoder,
             head_kwargs,
+            patch_size=patch_size,
             decoder_includes_head=decoder_includes_head,
             neck=neck_module,
             auxiliary_heads=auxiliary_heads,

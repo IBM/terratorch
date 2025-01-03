@@ -25,6 +25,7 @@ class ScalarOutputModel(Model, SegmentationModel):
         encoder: nn.Module,
         decoder: nn.Module,
         head_kwargs: dict,
+        patch_size:int = None,
         decoder_includes_head: bool = False,
         auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
         neck: nn.Module | None = None,
@@ -63,6 +64,7 @@ class ScalarOutputModel(Model, SegmentationModel):
         self.aux_heads = nn.ModuleDict(aux_heads)
 
         self.neck = neck
+        self.patch_size = patch_size
 
     def freeze_encoder(self):
         freeze_module(self.encoder)
@@ -73,12 +75,17 @@ class ScalarOutputModel(Model, SegmentationModel):
 
     def check_input_shape(self, x: torch.Tensor) -> torch.Tensor:  # noqa: ARG002
 
-        x_shape = x.shape[2:]
-        if all([i//self.patch_size==0 for i in x_shape]):
-           return x
+        if self.patch_size:
+            x_shape = x.shape[2:]
+            if all([i//self.patch_size==0 for i in x_shape]):
+               return x
+            else:
+               x = pad_images(x, self.patch_size, "constant") 
+               return x
         else:
-           x = pad_images(x, self.patch_size, "constant") 
-           return x
+            # If patch size is not provided, the user should guarantee the
+            # dataset is properly configured to work with the model being used. 
+            return x
 
     def crop_image(self, x:torch.Tensor, size) -> torch.Tensor:
 
@@ -101,7 +108,6 @@ class ScalarOutputModel(Model, SegmentationModel):
 
         decoder_output = self.decoder([f.clone() for f in features])
         mask = self.head(decoder_output)
-        mask = self.crop_image(x)
 
         aux_outputs = {}
         for name, decoder in self.aux_heads.items():

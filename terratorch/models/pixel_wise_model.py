@@ -80,14 +80,19 @@ class PixelWiseModel(Model, SegmentationModel):
         freeze_module(self.decoder)
         freeze_module(self.head)
 
-    def check_input_shape(self, x: torch.Tensor) -> torch.Tensor:  # noqa: ARG002
+    def check_input_shape(self, x: torch.Tensor) -> torch.Tensor: 
 
-        x_shape = x.shape[2:]
-        if all([i//self.patch_size==0 for i in x_shape]):
-           return x
+        if self.patch_size:
+            x_shape = x.shape[2:]
+            if all([i//self.patch_size==0 for i in x_shape]):
+               return x
+            else:
+               x = pad_images(x, self.patch_size, "constant") 
+               return x
         else:
-           x = pad_images(x, self.patch_size, "constant") 
-           return x
+            # If patch size is not provided, the user should guarantee the
+            # dataset is properly configured to work with the model being used. 
+            return x
 
     def crop_image(self, x:torch.Tensor, size:tuple) -> torch.Tensor:
 
@@ -112,7 +117,9 @@ class PixelWiseModel(Model, SegmentationModel):
         else:
             ValueError('Could not infer input shape.')
 
+        # TODO make this verification optional to avoid unnecessary repetition
         x = self.check_input_shape(x)
+
         features = self.encoder(x, **kwargs)
 
         ## only for backwards compatibility with pre-neck times.
@@ -135,9 +142,6 @@ class PixelWiseModel(Model, SegmentationModel):
                 aux_output = F.interpolate(aux_output, size=input_size, mode="bilinear")
             aux_output = self._check_for_single_channel_and_squeeze(aux_output)
             aux_outputs[name] = aux_output
-
-        # Cropping image to reduce the effect of padding
-        mask = self.crop_image(mask, input_size)
 
         return ModelOutput(output=mask, auxiliary_heads=aux_outputs)
 
