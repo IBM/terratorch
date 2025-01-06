@@ -12,12 +12,12 @@ trainer:
     - class_path: LearningRateMonitor
       init_args:
         logging_interval: epoch
-    - class_path: EarlyStopping
-      init_args:
-        monitor: val/loss
-        patience: 20
+    #- class_path: EarlyStopping
+    #  init_args:
+    #    monitor: val/loss
+    #    patience: 20
   #max_epochs: 100
-  max_epochs: 2  # XXX For debugging
+  max_epochs: 10  # XXX or debugging
   check_val_every_n_epoch: 1
   log_every_n_steps: 50
   enable_checkpointing: true
@@ -29,22 +29,18 @@ data:
   init_args:
     cls: torchgeo.datamodules.VHR10DataModule  # TorchGeo DataModule class to be instantiated
     batch_size: 16
-    #num_workers: 8  # default 0
-    num_workers: 1
-    # XXX Disabled temporarily
-    #transforms:  # default none
-    #  - class_path: albumentations.augmentations.geometric.resize.Resize
-    #    init_args:
-    #      height: 224
-    #      width: 224
-    #      #interpolation: cv2.INTER_LINEAR
-    #      #p: 1
-    #  - class_path: ToTensorV2
+    #num_workers: 8
+    num_workers: 1  # for debugging
+    transforms:
+      # Resize is not required since Faster-RCNN performs it
+      - class_path: albumentations.augmentations.transforms.ToFloat
+        init_args:
+          max_value: 255
+      - class_path: ToTensorV2
   dict_kwargs:
     root: data/VHR10
     split: positive
     download: True
-
 
 model:
   class_path: terratorch.tasks.ObjectDetectionTask
@@ -55,21 +51,9 @@ model:
       backbone: resnet50  # One of resnet18, resnet34, resnet50, resnet101, resnet152, resnext50_32x4d, resnext101_32x8d, wide_resnet50_2, or wide_resnet101_2
       num_classes: 11  # Number of classes including background
       trainable_layers: 3  # Number of trainable layers
-      weights: true  # Use pretrained weightsTrue for ImageNet weight, False for random
-      #---belows are optional
-    loss: ce  # XXX Is this OK to put this here ? OK
-    #aux_loss:  # Not necessary
-    #class_weights:
-    #ignore_index:
-    #optimizer: Adam  # or AdamW as in torchgeo ?
-    #optimizer_hparams:
-    #scheduler:  # ReduceLROnPlateau as in torchgeo
-    scheduler_hparams:
-      #patience: 10  # Set the number of patience iterations for early stopping
-      # XXX Is this OK to put this here ?
+      weights: true  # Use pretrained weights. True for ImageNet weight, false for random
     freeze_backbone: false
     freeze_decoder: false
-    #class_names:
 
 optimizer:
   class_path: torch.optim.AdamW
@@ -78,8 +62,7 @@ optimizer:
     weight_decay: 0.05
 
 lr_scheduler:
-  class_path: CosineAnnealingLR
+  class_path: ReduceLROnPlateau
   init_args:
-    T_max: 20
-    #patience: 10
+    monitor: val/loss
 
