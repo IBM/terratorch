@@ -31,16 +31,16 @@ data:
     batch_size: 2
     num_workers: 4
     train_transform:
-      - class_path: albumentations.HorizontalFlip
-        init_args:
-          p: 0.5      
-      - class_path: albumentations.Rotate
-        init_args:
-          limit: 30
-          border_mode: 0 # cv2.BORDER_CONSTANT
-          value: 0
-          # mask_value: 1
-          p: 0.5
+      #- class_path: albumentations.HorizontalFlip
+      #  init_args:
+      #    p: 0.5      
+      #- class_path: albumentations.Rotate
+      #  init_args:
+      #    limit: 30
+      #    border_mode: 0 # cv2.BORDER_CONSTANT
+      #    value: 0
+      #    # mask_value: 1
+      #    p: 0.5
       - class_path: ToTensorV2
     dataset_bands:
       - 0
@@ -97,8 +97,8 @@ model:
       decoder: UperNetDecoder
       pretrained: false
       backbone: prithvi_vit_100
-      # backbone_pretrained_cfg_overlay:
-      #   file: tests/prithvi_vit_100.pt
+        #backbone_pretrained_cfg_overlay:
+        #file: tests/all_ecos_random/version_0/checkpoints/epoch=0_state_dict.ckpt #tests/prithvi_vit_100.pt
       backbone_drop_path_rate: 0.3
       num_frames: 1
       # backbone_window_size: 8

@@ -11,39 +11,38 @@ from timm.models._registry import generate_default_cfgs, register_model
 
 from terratorch.models.backbones.clay_v1.modules import EmbeddingEncoder, Datacuber
 
-warnings.filterwarnings("ignore", category=UserWarning)
-
 
 default_cfgs = generate_default_cfgs(
     {
         "clay_v1_base": {
             "hf_hub_id": "made-with-clay/Clay",
-            "hf_hub_filename": "clay-v1-base.ckpt"
+            "hf_hub_filename": "v1/clay-v1-base.ckpt",
         }
     }
 )
 
 
 class Embedder(nn.Module):
-    default_out_indices = (0,)  # Single out_indices for simplicity
+    default_out_indices = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
 
-    def __init__(self,
-                 img_size=256,
-                 num_frames=1,
-                 ckpt_path=None,
-                 bands=["blue", "green", "red", "nir", "swir16", "swir22"],
-                 **kwargs):
+    def __init__(
+        self,
+        img_size=256,
+        num_frames=1,
+        ckpt_path=None,
+        bands=["blue", "green", "red", "nir", "swir16", "swir22"],
+        out_indices: tuple[int] = default_out_indices,
+        **kwargs,
+    ):
         super().__init__()
         self.feature_info = []
         self.img_size = img_size
         self.num_frames = num_frames
         self.bands = bands
+        self.out_indices = out_indices
 
-        if kwargs.get("datacuber", True) is not None:
-            self.datacuber = Datacuber(bands=bands)
-        else:
-            self.datacuber = None
-            
+        self.datacuber = Datacuber(bands=bands)
+
         # TODO: add support for various clay versions
         self.clay_encoder = (
             EmbeddingEncoder(  # Default parameters for the Clay base model
@@ -57,8 +56,9 @@ class Embedder(nn.Module):
             )
         )
 
-        # for use in features list. Single layer feature for simplicity
-        self.feature_info.append({"num_chs": 768, "reduction": 1, "module": "clay_encoder"})
+        # for use in features list.
+        for i in range(12):
+            self.feature_info.append({"num_chs": 768, "reduction": 1, "module": f"blocks.{i}"})
 
         # assuming this is used to fine tune a network on top of the embeddings
 
@@ -98,15 +98,18 @@ class Embedder(nn.Module):
         }
         return state_dict
 
-    def forward_features(self, x):
-        if self.datacuber is not None:
-            datacube = self.datacuber(x)
-        else:
-            datacube = x
+    def forward_features(
+        self,
+        x: torch.Tensor,
+        time: torch.Tensor | None = None,
+        latlon: torch.Tensor | None = None,
+        waves: torch.Tensor | None = None,
+        gsd: float | None = None,
+    ):
+        datacube = self.datacuber(x=x, time=time, latlon=latlon, waves=waves, gsd=gsd)
         embeddings = self.clay_encoder(datacube)
 
-        # TODO: actually return features individually
-        return [embeddings]
+        return [embeddings[i] for i in self.out_indices]
 
     def fake_datacube(self):
         "Generate a fake datacube for model export."

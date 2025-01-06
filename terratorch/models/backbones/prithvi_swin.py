@@ -17,6 +17,8 @@ from terratorch.models.backbones.select_patch_embed_weights import select_patch_
 from terratorch.models.backbones.swin_encoder_decoder import MMSegSwinTransformer
 from terratorch.datasets.utils import generate_bands_intervals
 
+logger = logging.getLogger(__name__)
+
 PRETRAINED_BANDS = [
     HLSBands.BLUE,
     HLSBands.GREEN,
@@ -169,7 +171,7 @@ def _create_swin_mmseg_transformer(
 
     if model_bands is None:
         model_bands: list[HLSBands | int] = pretrained_bands
-        logging.info(
+        logger.info(
             f"Model bands not passed. Assuming bands are ordered in the same way as {PRETRAINED_BANDS}.\
             Pretrained patch_embed layer may be misaligned with current bands"
         )
@@ -188,15 +190,30 @@ def _create_swin_mmseg_transformer(
     def checkpoint_filter_wrapper_fn(state_dict, model):
         return checkpoint_filter_fn(state_dict, model, pretrained_bands, model_bands)
 
-    model: MMSegSwinTransformer = build_model_with_cfg(
-        MMSegSwinTransformer,
-        variant,
-        pretrained,
-        pretrained_filter_fn=checkpoint_filter_wrapper_fn,
-        pretrained_strict=False,
-        feature_cfg={"flatten_sequential": True, "out_indices": out_indices},
-        **kwargs,
-    )
+    # When the pretrained configuration is not available in HF, we shift to 
+    # pretrained=False
+    try:
+        model: MMSegSwinTransformer = build_model_with_cfg(
+            MMSegSwinTransformer,
+            variant,
+            pretrained,
+            pretrained_filter_fn=checkpoint_filter_wrapper_fn,
+            pretrained_strict=False,
+            feature_cfg={"flatten_sequential": True, "out_indices": out_indices},
+            **kwargs,
+        )
+    except RuntimeError:
+        print(f"No pretrained configuration was found for the model {variant}.")
+        model: MMSegSwinTransformer = build_model_with_cfg(
+            MMSegSwinTransformer,
+            variant,
+            False,
+            pretrained_filter_fn=checkpoint_filter_wrapper_fn,
+            pretrained_strict=False,
+            feature_cfg={"flatten_sequential": True, "out_indices": out_indices},
+            **kwargs,
+        )
+
     model.pretrained_bands = pretrained_bands
     model.model_bands = model_bands
 
@@ -223,7 +240,7 @@ def prithvi_swin_B(
         pretrained_bands = PRETRAINED_BANDS
     if bands is None:
         bands = pretrained_bands
-        logging.info(
+        logger.info(
             f"Model bands not passed. Assuming bands are ordered in the same way as {PRETRAINED_BANDS}.\
             Pretrained patch_embed layer may be misaligned with current bands"
         )
@@ -254,7 +271,7 @@ def prithvi_swin_L(
         pretrained_bands = PRETRAINED_BANDS
     if bands is None:
         bands = pretrained_bands
-        logging.info(
+        logger.info(
             f"Model bands not passed. Assuming bands are ordered in the same way as {PRETRAINED_BANDS}.\
             Pretrained patch_embed layer may be misaligned with current bands"
         )

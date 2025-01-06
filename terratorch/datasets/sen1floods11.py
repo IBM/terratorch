@@ -1,11 +1,10 @@
-# Copyright contributors to the Terratorch project
-
-import dataclasses
 import glob
 import os
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
+import albumentations as A
 import geopandas
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -13,39 +12,92 @@ import numpy as np
 import pandas as pd
 import rioxarray
 import torch
-from matplotlib import cm
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 from torch import Tensor
 from torchgeo.datasets import NonGeoDataset
+from xarray import DataArray
 
-from terratorch.datasets.utils import filter_valid_files
+from terratorch.datasets.utils import clip_image, default_transform, filter_valid_files, validate_bands
 
 
 class Sen1Floods11NonGeo(NonGeoDataset):
-    """NonGeo dataset implementation for fire scars."""
+    """NonGeo dataset implementation for sen1floods11."""
+        all_band_names = (
+            "COASTAL_AEROSOL",
+            "BLUE",
+            "GREEN",
+            "RED",
+            "RED_EDGE_1",
+            "RED_EDGE_2",
+            "RED_EDGE_3",
+            "NIR_BROAD",
+            "NIR_NARROW",
+            "WATER_VAPOR",
+            "CIRRUS",
+            "SWIR_1",
+            "SWIR_2",
+        )
 
-    def __init__(self, data_root: str, split="train", bands: None | list[int] = None) -> None:
+    rgb_bands = ("RED", "GREEN", "BLUE")
+
+    BAND_SETS = {"all": all_band_names, "rgb": rgb_bands}
+
+    num_classes = 2
+    splits = {"train": "train", "val": "valid", "test": "test"}
+
+    data_dir = "v1.1/data/flood_events/HandLabeled/S2Hand"
+    label_dir = "v1.1/data/flood_events/HandLabeled/LabelHand"
+    split_dir = "v1.1/splits/flood_handlabeled"
+    metadata_file = "v1.1/Sen1Floods11_Metadata.geojson"
+
+    def __init__(
+        self,
+        data_root: str,
+        split: str = "train",
+        bands: Sequence[str] = BAND_SETS["all"],
+        transform: A.Compose | None = None,
+        constant_scale: float = 0.0001,
+        no_data_replace: float | None = 0,
+        no_label_replace: int | None = -1,
+        use_metadata: bool = False,  # noqa: FBT001, FBT002
+    ) -> None:
+        """Constructor
+
+        Args:
+            data_root (str): Path to the data root directory.
+            split (str): one of 'train', 'val' or 'test'.
+            bands (list[str]): Bands that should be output by the dataset. Defaults to all bands.
+            transform (A.Compose | None): Albumentations transform to be applied.
+                Should end with ToTensorV2(). If used through the corresponding data module,
+                should not include normalization. Defaults to None, which applies ToTensorV2().
+            constant_scale (float): Factor to multiply image values by. Defaults to 0.0001.
+            no_data_replace (float | None): Replace nan values in input images with this value.
+                If None, does no replacement. Defaults to 0.
+            no_label_replace (int | None): Replace nan values in label with this value.
+                If none, does no replacement. Defaults to -1.
+            use_metadata (bool): whether to return metadata info (time and location).
+        """
         super().__init__()
-        if split not in ["train", "test", "val"]:
-            msg = "Split must be one of train, test, val."
-            raise Exception(msg)
-        if split == "val":
-            split = "valid"
+        if split not in self.splits:
+            msg = f"Incorrect split '{split}', please choose one of {self.splits}."
+            raise ValueError(msg)
+        split_name = self.splits[split]
+        self.split = split
 
+        validate_bands(bands, self.all_band_names)
         self.bands = bands
-        data_root = Path(data_root)
-        data_directory = data_root / "data/data/flood_events/HandLabeled/"
-        input_directory = data_directory / "S2Hand"
-        label_directory = data_directory / "LabelHand"
+        self.band_indices = np.asarray([self.all_band_names.index(b) for b in bands])
+        self.constant_scale = constant_scale
+        self.data_root = Path(data_root)
 
-        split_file = data_root / f"splits/splits/flood_handlabeled/flood_{split}_data_S2_geodn.txt"
-        metadata_file = data_root / "Sen1Floods11_Metadata.geojson"
-        self.metadata = geopandas.read_file(metadata_file)
+        data_dir = self.data_root / self.data_dir
+        label_dir = self.data_root / self.label_dir
 
-        self.image_files = sorted(glob.glob(os.path.join(input_directory, "*.tif")))
-        self.segmentation_mask_files = sorted(glob.glob(os.path.join(label_directory, "*.tif")))
+        self.image_files = sorted(glob.glob(os.path.join(data_dir, "*_S2Hand.tif")))
+        self.segmentation_mask_files = sorted(glob.glob(os.path.join(label_dir, "*_LabelHand.tif")))
 
+        split_file = self.data_root / self.split_dir / f"flood_{split_name}_data.txt"
         with open(split_file) as f:
             split = f.readlines()
         valid_files = {rf"{substring.strip()}" for substring in split}
@@ -62,39 +114,72 @@ class Sen1Floods11NonGeo(NonGeoDataset):
             allow_substring=True,
         )
 
-        self.rgb_indices = [2, 1, 0]
+        self.no_data_replace = no_data_replace
+        self.no_label_replace = no_label_replace
+        self.use_metadata = use_metadata
+        self.metadata = None
+        if self.use_metadata:
+            self.metadata = geopandas.read_file(self.data_root / self.metadata_file)
+
+        # If no transform is given, apply only to transform to torch tensor
+        self.transform = transform if transform else default_transform
 
     def __len__(self) -> int:
         return len(self.image_files)
 
-    def _get_date(self, index) -> np.ndarray:
-        # move this logic to the model?
+    def _get_date(self, index: int) -> torch.Tensor:
         file_name = self.image_files[index]
         location = os.path.basename(file_name).split("_")[0]
         if self.metadata[self.metadata["location"] == location].shape[0] != 1:
             date = pd.to_datetime("13-10-1998", dayfirst=True)
         else:
             date = pd.to_datetime(self.metadata[self.metadata["location"] == location]["s2_date"].item())
-        date_np = np.zeros((1, 3))
-        date_np[0, 0] = date.year
-        date_np[0, 1] = date.dayofyear - 1  # base 0
-        date_np[0, 2] = date.hour
-        return date_np
+
+        return torch.tensor([[date.year, date.dayofyear - 1]], dtype=torch.float32)  # (n_timesteps, coords)
+
+    def _get_coords(self, image: DataArray) -> torch.Tensor:
+
+        center_lat = image.y[image.y.shape[0] // 2]
+        center_lon = image.x[image.x.shape[0] // 2]
+        lat_lon = np.asarray([center_lat, center_lon])
+
+        return torch.tensor(lat_lon, dtype=torch.float32)
 
     def __getitem__(self, index: int) -> dict[str, Any]:
-        image = self._load_file(self.image_files[index]).astype(np.float32) * 0.0001
-        if self.bands:
-            image = image[self.bands, ...]
+        image = self._load_file(self.image_files[index], nan_replace=self.no_data_replace)
+
+        location_coords, temporal_coords = None, None
+        if self.use_metadata:
+            location_coords = self._get_coords(image)
+            temporal_coords = self._get_date(index)
+
+        # to channels last
+        image = image.to_numpy()
+        image = np.moveaxis(image, 0, -1)
+
+        # filter bands
+        image = image[..., self.band_indices]
+
         output = {
-            "image": image,
-            "timestamp": self._get_date(index).astype(np.float32),
-            "mask": self._load_file(self.segmentation_mask_files[index]).astype(np.int64),
+            "image": image.astype(np.float32) * self.constant_scale,
+            "mask": self._load_file(
+                self.segmentation_mask_files[index], nan_replace=self.no_label_replace).to_numpy()[0],
         }
+        if self.transform:
+            output = self.transform(**output)
+        output["mask"] = output["mask"].long()
+
+        if self.use_metadata:
+            output["location_coords"] = location_coords
+            output["temporal_coords"] = temporal_coords
+
         return output
 
-    def _load_file(self, path: Path):
-        data = rioxarray.open_rasterio(path)
-        return data.to_numpy()
+    def _load_file(self, path: Path, nan_replace: int | float | None = None) -> DataArray:
+        data = rioxarray.open_rasterio(path, masked=True)
+        if nan_replace is not None:
+            data = data.fillna(nan_replace)
+        return data
 
     def plot(self, sample: dict[str, Tensor], suptitle: str | None = None) -> Figure:
         """Plot a sample from the dataset.
@@ -106,63 +191,53 @@ class Sen1Floods11NonGeo(NonGeoDataset):
         Returns:
             a matplotlib Figure with the rendered sample
         """
-        image = sample["image"]
-        if torch.is_tensor(image):
-            image = image.numpy()
-        image = image.take(self.rgb_indices, axis=0)
-        image = np.transpose(image, (1, 2, 0))
-        image = (image - image.min(axis=(0, 1))) * (1 / image.max(axis=(0, 1)))
-        image = np.clip(image, 0, 1)
+        num_images = 4
 
-        label_mask = sample["mask"]
-        label_mask = np.transpose(label_mask, (1, 2, 0))
+        rgb_indices = [self.bands.index(band) for band in self.rgb_bands]
+        if len(rgb_indices) != 3:
+            msg = "Dataset doesn't contain some of the RGB bands"
+            raise ValueError(msg)
 
-        showing_predictions = "prediction" in sample
-        if showing_predictions:
-            prediction_mask = sample["prediction"]
+        # RGB -> channels-last
+        image = sample["image"][rgb_indices, ...].permute(1, 2, 0).numpy()
+        mask = sample["mask"].numpy()
 
-        return self._plot_sample(
-            image,
-            label_mask,
-            prediction=prediction_mask if showing_predictions else None,
-            suptitle=suptitle,
-        )
+        image = clip_image(image)
 
-    @staticmethod
-    def _plot_sample(image, label, num_classes, prediction=None, suptitle=None, class_names=None):
-        num_images = 5 if prediction else 4
-        fig, ax = plt.subplots(1, num_images, figsize=(8, 6))
+        if "prediction" in sample:
+            prediction = sample["prediction"]
+            num_images += 1
+        else:
+            prediction = None
 
-        # for legend
+        fig, ax = plt.subplots(1, num_images, figsize=(12, 5), layout="compressed")
+
         ax[0].axis("off")
 
-        norm = mpl.colors.Normalize(vmin=0, vmax=num_classes - 1)
+        norm = mpl.colors.Normalize(vmin=0, vmax=self.num_classes - 1)
         ax[1].axis("off")
         ax[1].title.set_text("Image")
         ax[1].imshow(image)
 
         ax[2].axis("off")
         ax[2].title.set_text("Ground Truth Mask")
-        ax[2].imshow(label, cmap="jet", norm=norm)
+        ax[2].imshow(mask, cmap="jet", norm=norm)
 
         ax[3].axis("off")
         ax[3].title.set_text("GT Mask on Image")
         ax[3].imshow(image)
-        ax[3].imshow(label, cmap="jet", alpha=0.3, norm=norm)
+        ax[3].imshow(mask, cmap="jet", alpha=0.3, norm=norm)
 
-        if prediction:
+        if "prediction" in sample:
             ax[4].title.set_text("Predicted Mask")
             ax[4].imshow(prediction, cmap="jet", norm=norm)
 
         cmap = plt.get_cmap("jet")
-        legend_data = []
-        for i, _ in enumerate(range(num_classes)):
-            class_name = class_names[i] if class_names else str(i)
-            data = [i, cmap(norm(i)), class_name]
-            legend_data.append(data)
+        legend_data = [[i, cmap(norm(i)), str(i)] for i in range(self.num_classes)]
         handles = [Rectangle((0, 0), 1, 1, color=tuple(v for v in c)) for k, c, n in legend_data]
         labels = [n for k, c, n in legend_data]
         ax[0].legend(handles, labels, loc="center")
         if suptitle is not None:
             plt.suptitle(suptitle)
+
         return fig

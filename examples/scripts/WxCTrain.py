@@ -36,7 +36,7 @@ from huggingface_hub import hf_hub_download, snapshot_download
 # 
 
 
-config = get_config('../confs/granite-wxc-merra2-downscale-small-config.yaml')
+config = get_config('../confs/granite-wxc-merra2-downscale-config.yaml')
 config.download_path = './'
 
 config.data.data_path_surface = os.path.join(config.download_path,'merra-2')

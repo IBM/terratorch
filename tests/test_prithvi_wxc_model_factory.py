@@ -1,6 +1,5 @@
 # Copyright contributors to the Terratorch project
 
-import pytest
 import yaml
 from granitewxc.utils.config import get_config
 from lightning.pytorch import Trainer
@@ -25,7 +24,8 @@ def teardown_function():
 
 @pytest.mark.parametrize("backbone", ["gravitywave", None, 'prithviwxc'])
 def test_can_create_wxc_models(backbone):
-    if backbone == "gravitywave":
+    if backbone == "gravitywave":import pytest
+
         config_data = {
             "singular_sharded_checkpoint": "./examples/notebooks/magnet-flux-uvtp122-epoch-99-loss-0.1022.pt",
         }

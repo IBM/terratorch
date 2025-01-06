@@ -4,6 +4,7 @@ import torch
 import torch.nn.functional as F
 from einops import rearrange, repeat
 from torch import nn, Tensor
+from timm.layers import use_fused_attn
 
 from terratorch.models.backbones.clay_v1.utils import posemb_sincos_1d, posemb_sincos_2d_with_gsd
 
@@ -55,14 +56,16 @@ class Attention(nn.Module):
         x = self.norm(x)
 
         qkv = self.to_qkv(x).chunk(3, dim=-1)
-        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h=self.heads), qkv)
+        q, k, v = map(lambda t: rearrange(t, "b n (h d) -> b h n d", h=self.heads), qkv)
 
-        dots = torch.matmul(q, k.transpose(-1, -2)) * self.scale
+        if use_fused_attn():
+            out = F.scaled_dot_product_attention(q, k, v)
+        else:
+            dots = torch.matmul(q, k.transpose(-1, -2)) * self.scale
+            attn = self.attend(dots)
+            out = torch.matmul(attn, v)
 
-        attn = self.attend(dots)
-
-        out = torch.matmul(attn, v)
-        out = rearrange(out, 'b h n d -> b n (h d)')
+        out = rearrange(out, "b h n d -> b n (h d)")
         return self.to_out(out)
 
 
@@ -77,11 +80,15 @@ class Transformer(nn.Module):
                 FeedForward(dim, mlp_dim)
             ]))
 
-    def forward(self, x):
+    def forward(self, x) -> list[torch.Tensor]:
+        out = []
         for attn, ff in self.layers:
             x = attn(x) + x
             x = ff(x) + x
-        return self.norm(x)
+            out.append(x.clone())
+        x = self.norm(x)
+        out[-1] = x.clone()
+        return out
 
 
 class Encoder(nn.Module):
@@ -365,12 +372,12 @@ class EmbeddingEncoder(Encoder):
         patches = torch.cat((cls_tokens, patches), dim=1)  # [B (1 + L) D]
 
         # pass the patches through the transformer
-        patches = self.transformer(patches)  # [B (1 + L) D]
+        patches = self.transformer(patches)  # list of [B (1 + L) D]
 
         # # remove the cls token
         # embeddings = patches[:, 1: , :]  # [B L D]
 
-        return patches  # [B (1 + L) D]
+        return patches  # list [B (1 + L) D]
 
 
 class FCBlock(nn.Module):
@@ -458,7 +465,6 @@ class DynamicEmbedding(nn.Module):
 
     def forward(self, batch, waves):
         waves = posemb_sincos_1d(waves, self.wave_dim)
-        waves = waves.to(batch.device)
         waves = self.fclayer(waves)
         weight, bias = self.weight_generator(waves)
 
@@ -500,34 +506,28 @@ class DynamicEmbedding(nn.Module):
 
 
 class Datacuber(nn.Module):
-    def __init__(self,
-                 bands=None) -> None:
+    def __init__(self, bands=None) -> None:
         super().__init__()
         self.bands = bands
 
-    def forward(self, x, **kwargs):
-        if not isinstance(x, dict):
-            datacube = {}
-            datacube['pixels'] = x
-            datacube['time'] = torch.zeros((x.shape[0], 4))
-            datacube['latlon'] = torch.zeros((x.shape[0], 4))
-            datacube['gsd'] = 1.0
-            datacube['waves'] = self._parse_wavelengths(self.bands, x.shape[1])
-            return datacube
-        else:
-            assert "pixels" in datacube
-            if "time" not in datacube:
-                datacube['time'] = torch.zeros((x.shape[0], 4))
-            if "latlon" not in datacube:
-                datacube['latlon'] = torch.zeros((x.shape[0], 4))
-            if "gsd" not in datacube:
-                datacube["gsd"] = 1.0
-            if "waves" not in datacube:
-                datacube['waves'] = self._parse_wavelengths(self.bands, x.shape[1])
-            return x
-        
+    def forward(
+        self,
+        x: torch.Tensor,
+        time: torch.Tensor | None = None,
+        latlon: torch.Tensor | None = None,
+        waves: torch.Tensor | None = None,
+        gsd: float | None = None,
+    ) -> dict[str, torch.Tensor | float]:
+        datacube: dict[str, torch.Tensor | float] = {}
+        datacube["pixels"] = x
+        datacube["time"] = torch.zeros((x.shape[0], 4), device=x.device) if time is None else time
+        datacube["latlon"] = torch.zeros((x.shape[0], 4), device=x.device) if latlon is None else latlon
+        datacube["gsd"] = 1.0 if gsd is None else gsd
+        datacube["waves"] = self._parse_wavelengths(self.bands, x.shape[1]).to(x.device) if waves is None else waves
+        return datacube
+
     def _parse_wavelengths(self, bands, channels):
-        if bands is not None and all([_ in WAVELENGTHS for  _ in bands]):
+        if bands is not None and all([_ in WAVELENGTHS for _ in bands]):
             return torch.tensor([WAVELENGTHS[_] for _ in bands])
         else:
             return torch.zeros(channels)
