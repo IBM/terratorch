@@ -1,5 +1,5 @@
 # Copyright contributors to the Terratorch project
-
+import logging 
 import torch
 import torch.nn.functional as F  # noqa: N812
 import torchvision.transforms as transforms
@@ -28,6 +28,7 @@ class PixelWiseModel(Model, SegmentationModel):
         decoder: nn.Module,
         head_kwargs: dict,
         patch_size: int = None, 
+        img_size:tuple = None,
         decoder_includes_head: bool = False,
         auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
         neck: nn.Module | None = None,
@@ -72,6 +73,7 @@ class PixelWiseModel(Model, SegmentationModel):
         self.neck = neck
         self.rescale = rescale
         self.patch_size = patch_size
+        self.img_size = (img_size, img_size)
 
     def freeze_encoder(self):
         freeze_module(self.encoder)
@@ -88,6 +90,7 @@ class PixelWiseModel(Model, SegmentationModel):
                return x
             else:
                x = pad_images(x, self.patch_size, "constant") 
+
                return x
         else:
             # If patch size is not provided, the user should guarantee the
@@ -96,7 +99,14 @@ class PixelWiseModel(Model, SegmentationModel):
 
     def _crop_image_when_necessary(self, x:torch.Tensor, size:tuple) -> torch.Tensor:
 
-        return transforms.CenterCrop(size)(x)
+            if all(self.img_size):
+
+                x_cropped = transforms.CenterCrop(self.img_size)(x)
+                return x_cropped
+            else:
+                logging.getLogger("terratorch").info("Cropping could be  necessary to adjust images, so define `img_size` in your config file \
+                                                     if you get a shape mismatch.")
+                return x
 
     @staticmethod
     def _check_for_single_channel_and_squeeze(x):
@@ -119,7 +129,6 @@ class PixelWiseModel(Model, SegmentationModel):
 
         # TODO make this verification optional to avoid unnecessary repetition
         x = self.check_input_shape(x)
-
         features = self.encoder(x, **kwargs)
 
         ## only for backwards compatibility with pre-neck times.
@@ -135,6 +144,7 @@ class PixelWiseModel(Model, SegmentationModel):
         if self.rescale and mask.shape[-2:] != input_size:
             mask = F.interpolate(mask, size=input_size, mode="bilinear")
         mask = self._check_for_single_channel_and_squeeze(mask)
+
         aux_outputs = {}
         for name, decoder in self.aux_heads.items():
             aux_output = decoder([f.clone() for f in features])
@@ -144,6 +154,8 @@ class PixelWiseModel(Model, SegmentationModel):
             aux_outputs[name] = aux_output
 
         mask = self._crop_image_when_necessary(mask, input_size)
+        print(mask.shape)
+        print(aux_outputs)
         return ModelOutput(output=mask, auxiliary_heads=aux_outputs)
 
     def _get_head(self, task: str, input_embed_dim: int, head_kwargs):

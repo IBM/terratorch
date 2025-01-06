@@ -26,6 +26,7 @@ class ScalarOutputModel(Model, SegmentationModel):
         decoder: nn.Module,
         head_kwargs: dict,
         patch_size:int = None,
+        img_size:tuple = None,
         decoder_includes_head: bool = False,
         auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
         neck: nn.Module | None = None,
@@ -65,6 +66,7 @@ class ScalarOutputModel(Model, SegmentationModel):
 
         self.neck = neck
         self.patch_size = patch_size
+        self.img_size = (img_size, img_size)
 
     def freeze_encoder(self):
         freeze_module(self.encoder)
@@ -89,7 +91,13 @@ class ScalarOutputModel(Model, SegmentationModel):
 
     def _crop_image_when_necessary(self, x:torch.Tensor, size:tuple) -> torch.Tensor:
 
-        return transforms.CenterCrop(size)(x)
+            if self.img_size:
+
+                return transforms.CenterCrop(self.img_size)(x)
+            else:
+                raise NameError("Cropping is necessary to adjust images, so define `img_size` in your config file.")
+                logging.getLogger("terratorch").info("Cropping could be  necessary to adjust images, so define `img_size` in your config file \
+                                                     if you get a shape mismatch.")
 
     def forward(self, x: torch.Tensor, **kwargs) -> ModelOutput:
         """Sequentially pass `x` through model`s encoder, decoder and heads"""
@@ -111,7 +119,7 @@ class ScalarOutputModel(Model, SegmentationModel):
         features = prepare(features)
 
         decoder_output = self.decoder([f.clone() for f in features])
-        decoder_output = self._crop_image_when_necessary(decoder_output, input_size)
+        decoder_output = self._crop_image_when_necessary(decoder_output, pad, input_size)
         mask = self.head(decoder_output)
 
         aux_outputs = {}
