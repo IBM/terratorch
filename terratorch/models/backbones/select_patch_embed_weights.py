@@ -1,6 +1,5 @@
 # Copyright contributors to the Terratorch project
 
-
 import logging
 import warnings
 
