@@ -21,7 +21,7 @@ for c in range(n_copies):
 
     pad = random.randint(1, pad_limit) 
     filename = os.path.split(input_file)[-1]
-    output_file  = os.path.join(output_dir, filename.replace(".tif", "_{c}.tif"))
+    output_file  = os.path.join(output_dir, filename.replace(".tif", f"_{c}.tif"))
     print(pad)
     imarray = tiff.imread(input_file) 
     im_shape = imarray.shape 
