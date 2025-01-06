@@ -1,5 +1,5 @@
-import torch
 from torch import nn, Tensor
+import torch 
 
 class DecoderNotFoundError(Exception):
     pass
