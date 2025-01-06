@@ -139,9 +139,16 @@ class EncoderDecoderFactory(ModelFactory):
             # sizes, it can still work, but there is no way to fix possible
             # errors during execution if information about patch size is not
             # explicitly provided. 
-            logging.getLogger("terratorch").info(f"The argument `patch_size` could not be found. To avoid possible errors related to nondivisible images,\
-                                                 it's better to define it in the config file.")
             patch_size = None 
+
+        if "img_size" in backbone_kwargs:
+            img_size = backbone_kwargs["img_size"]
+        else:
+            # If the configs for the model are right and images have the proper
+            # sizes, it can still work, but there is no way to fix possible
+            # errors during execution if information about img_size is not
+            # provided in order to perform cropping when necessary.
+            img_size = None 
 
         if peft_config is not None:
             if not backbone_kwargs.get("pretrained", False):
@@ -182,6 +189,7 @@ class EncoderDecoderFactory(ModelFactory):
                 decoder,
                 head_kwargs,
                 patch_size=patch_size,
+                img_size=img_size,
                 necks=neck_list,
                 decoder_includes_head=decoder_includes_head,
                 rescale=rescale,
@@ -208,6 +216,7 @@ class EncoderDecoderFactory(ModelFactory):
             decoder,
             head_kwargs,
             patch_size=patch_size,
+            img_size=img_size,
             necks=neck_list,
             decoder_includes_head=decoder_includes_head,
             rescale=rescale,
@@ -221,6 +230,7 @@ def _build_appropriate_model(
     decoder: nn.Module,
     head_kwargs: dict,
     patch_size: int,
+    img_size:int, 
     decoder_includes_head: bool = False,
     necks: list[Neck] | None = None,
     rescale: bool = True,  # noqa: FBT001, FBT002
@@ -237,6 +247,7 @@ def _build_appropriate_model(
             decoder,
             head_kwargs,
             patch_size=patch_size,
+            img_size=img_size,
             decoder_includes_head=decoder_includes_head,
             neck=neck_module,
             rescale=rescale,
@@ -249,6 +260,7 @@ def _build_appropriate_model(
             decoder,
             head_kwargs,
             patch_size=patch_size,
+            img_size=img_size,
             decoder_includes_head=decoder_includes_head,
             neck=neck_module,
             auxiliary_heads=auxiliary_heads,
