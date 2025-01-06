@@ -100,5 +100,4 @@ def select_patch_embed_weights(
         )
 
     state_dict[patch_embed_proj_weight_key] = temp_weight
->>>>>>> main
     return state_dict
