@@ -87,7 +87,7 @@ class ScalarOutputModel(Model, SegmentationModel):
             # dataset is properly configured to work with the model being used. 
             return x
 
-    def crop_image(self, x:torch.Tensor, size:tuple) -> torch.Tensor:
+    def _crop_image_when_necessary(self, x:torch.Tensor, size:tuple) -> torch.Tensor:
 
         return transforms.CenterCrop(size)(x)
 
@@ -96,6 +96,10 @@ class ScalarOutputModel(Model, SegmentationModel):
 
         x = self.check_input_shape(x)
         features = self.encoder(x, **kwargs)
+
+        # Collecting information about the size of the input tensor in order to 
+        # use it to possibly crop the image when necessary. 
+        input_size = x.shape[-2:]
 
         ## only for backwards compatibility with pre-neck times.
         if self.neck:
@@ -113,6 +117,8 @@ class ScalarOutputModel(Model, SegmentationModel):
         for name, decoder in self.aux_heads.items():
             aux_output = decoder([f.clone() for f in features])
             aux_outputs[name] = aux_output
+
+        mask = self._crop_image_when_necessary(mask, input_size)
         return ModelOutput(output=mask, auxiliary_heads=aux_outputs)
 
     def _get_head(self, task: str, input_embed_dim: int, head_kwargs: dict):

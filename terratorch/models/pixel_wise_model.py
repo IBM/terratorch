@@ -94,7 +94,7 @@ class PixelWiseModel(Model, SegmentationModel):
             # dataset is properly configured to work with the model being used. 
             return x
 
-    def crop_image(self, x:torch.Tensor, size:tuple) -> torch.Tensor:
+    def _crop_image_when_necessary(self, x:torch.Tensor, size:tuple) -> torch.Tensor:
 
         return transforms.CenterCrop(size)(x)
 
@@ -143,6 +143,7 @@ class PixelWiseModel(Model, SegmentationModel):
             aux_output = self._check_for_single_channel_and_squeeze(aux_output)
             aux_outputs[name] = aux_output
 
+        mask = self._crop_image_when_necessary(mask, input_size)
         return ModelOutput(output=mask, auxiliary_heads=aux_outputs)
 
     def _get_head(self, task: str, input_embed_dim: int, head_kwargs):
