@@ -79,7 +79,6 @@ def select_patch_embed_weights(
         state_dict[patch_embed_proj_weight_key] = temp_weight
         
     # extract the single element from the set
-    #(patch_embed_proj_weight_key,) = patch_embed_proj_weight_key
     patch_embed_weight = state_dict[patch_embed_proj_weight_key]
 
     temp_weight = model.state_dict()[patch_embed_proj_weight_key].clone()
