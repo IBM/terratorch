@@ -106,6 +106,51 @@ class TorchNonGeoDataModule(NonGeoDataModule):
     def predict_dataloader(self):
         return self._proxy.predict_dataloader()
 
+    @property
+    def aug(self):
+        return self._proxy.aug
+
+    @aug.setter
+    def aug(self, value):
+        if hasattr(self, '_proxy'):
+            self._proxy.aug = value
+
+    @property
+    def train_aug(self):
+        return self._proxy.train_aug
+
+    @train_aug.setter
+    def train_aug(self, value):
+        if hasattr(self, '_proxy'):
+            self._proxy.train_aug = value
+
+    @property
+    def val_aug(self):
+        return self._proxy.val_aug
+
+    @val_aug.setter
+    def val_aug(self, value):
+        if hasattr(self, '_proxy'):
+            self._proxy.val_aug = value
+
+    @property
+    def test_aug(self):
+        return self._proxy.test_aug
+
+    @test_aug.setter
+    def test_aug(self, value):
+        if hasattr(self, '_proxy'):
+            self._proxy.test_aug = value
+
+    @property
+    def predict_aug(self):
+        return self._proxy.predict_aug
+
+    @predict_aug.setter
+    def predict_aug(self, value):
+        if hasattr(self, '_proxy'):
+            self._proxy.predict_aug = value
+
 
 class TorchGeoDataModule(GeoDataModule):
     """Proxy object for using Geo data modules defined by TorchGeo.
