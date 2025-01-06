@@ -3,7 +3,7 @@
 import torch
 from segmentation_models_pytorch.base import SegmentationModel
 from torch import nn
-
+import torchvision.transforms as transforms
 from terratorch.models.heads import ClassificationHead
 from terratorch.models.model import AuxiliaryHeadWithDecoderWithoutInstantiatedHead, Model, ModelOutput
 from terratorch.models.utils import pad_images
@@ -111,6 +111,7 @@ class ScalarOutputModel(Model, SegmentationModel):
         features = prepare(features)
 
         decoder_output = self.decoder([f.clone() for f in features])
+        decoder_output = self._crop_image_when_necessary(decoder_output, input_size)
         mask = self.head(decoder_output)
 
         aux_outputs = {}
@@ -118,7 +119,6 @@ class ScalarOutputModel(Model, SegmentationModel):
             aux_output = decoder([f.clone() for f in features])
             aux_outputs[name] = aux_output
 
-        mask = self._crop_image_when_necessary(mask, input_size)
         return ModelOutput(output=mask, auxiliary_heads=aux_outputs)
 
     def _get_head(self, task: str, input_embed_dim: int, head_kwargs: dict):
