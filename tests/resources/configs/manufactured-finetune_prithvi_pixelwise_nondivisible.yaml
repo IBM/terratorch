@@ -28,8 +28,8 @@ trainer:
 data:
   class_path: GenericNonGeoPixelwiseRegressionDataModule
   init_args:
-    batch_size: 1
-    num_workers: 1
+    batch_size: 2
+    num_workers: 4
     train_transform:
       #- class_path: albumentations.HorizontalFlip
       #  init_args:
