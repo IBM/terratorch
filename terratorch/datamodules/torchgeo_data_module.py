@@ -185,8 +185,8 @@ class TorchGeoDataModule(GeoDataModule):
             transforms_as_callable = albumentations_to_callable_with_dict(transforms)
             kwargs["transforms"] = build_callable_transform_from_torch_tensor(transforms_as_callable)
         # self.__dict__["datamodule"] = cls(num_workers=num_workers, **kwargs)
+        super().__init__(None)
         self._proxy = cls(num_workers=num_workers, **kwargs)
-        super().__init__(self._proxy.dataset_class)  # dummy arg
 
     @property
     def collate_fn(self):
@@ -194,7 +194,8 @@ class TorchGeoDataModule(GeoDataModule):
 
     @collate_fn.setter
     def collate_fn(self, value):
-        self._proxy.collate_fn = value
+        if hasattr(self, '_proxy'):
+            self._proxy.collate_fn = value
 
     @property
     def patch_size(self):
@@ -221,3 +222,48 @@ class TorchGeoDataModule(GeoDataModule):
 
     def transfer_batch_to_device(self, batch, device, dataloader_idx):
         return self._proxy.predict_dataloader(batch, device, dataloader_idx)
+
+    @property
+    def aug(self):
+        return self._proxy.aug
+
+    @aug.setter
+    def aug(self, value):
+        if hasattr(self, '_proxy'):
+            self._proxy.aug = value
+
+    @property
+    def train_aug(self):
+        return self._proxy.train_aug
+
+    @train_aug.setter
+    def train_aug(self, value):
+        if hasattr(self, '_proxy'):
+            self._proxy.train_aug = value
+
+    @property
+    def val_aug(self):
+        return self._proxy.val_aug
+
+    @val_aug.setter
+    def val_aug(self, value):
+        if hasattr(self, '_proxy'):
+            self._proxy.val_aug = value
+
+    @property
+    def test_aug(self):
+        return self._proxy.test_aug
+
+    @test_aug.setter
+    def test_aug(self, value):
+        if hasattr(self, '_proxy'):
+            self._proxy.test_aug = value
+
+    @property
+    def predict_aug(self):
+        return self._proxy.predict_aug
+
+    @predict_aug.setter
+    def predict_aug(self, value):
+        if hasattr(self, '_proxy'):
+            self._proxy.predict_aug = value
