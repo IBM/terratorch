@@ -79,8 +79,7 @@ class TorchNonGeoDataModule(NonGeoDataModule):
             transforms_as_callable = albumentations_to_callable_with_dict(transforms)
             kwargs["transforms"] = build_callable_transform_from_torch_tensor(transforms_as_callable)
         # self.__dict__["datamodule"] = cls(num_workers=num_workers, **kwargs)
-        self._proxy = cls(num_workers=num_workers, **kwargs)
-        super().__init__(self._proxy.dataset_class)  # dummy arg
+        super().__init__(None)
         self._proxy = cls(num_workers=num_workers, **kwargs)
 
     @property
@@ -89,7 +88,8 @@ class TorchNonGeoDataModule(NonGeoDataModule):
 
     @collate_fn.setter
     def collate_fn(self, value):
-        self._proxy.collate_fn = value
+        if hasattr(self, '_proxy'):
+            self._proxy.collate_fn = value
 
     def setup(self, stage: str):
         return self._proxy.setup(stage)
