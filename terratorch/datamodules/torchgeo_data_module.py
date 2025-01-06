@@ -27,6 +27,7 @@ from torchgeo.datamodules import GeoDataModule, NonGeoDataModule
 from terratorch.datasets.transforms import albumentations_to_callable_with_dict
 
 ALBUMENTATIONS_TARGETS = ["image", "mask"]
+ALBUMENTATIONS_TARGETS_LIST = ["masks"]
 
 
 def build_callable_transform_from_torch_tensor(
@@ -39,6 +40,7 @@ def build_callable_transform_from_torch_tensor(
     def transforms_from_torch_tensor(tensor_dict: dict[str, Tensor]):
         numpy_dict = {k: (v.numpy() if k in ALBUMENTATIONS_TARGETS else v) for k, v in tensor_dict.items()}
         numpy_dict["image"] = np.moveaxis(numpy_dict["image"], 0, -1)  # image to channels last
+        numpy_dict = {k: ([v[i].numpy() for i in range(len(v))] if k in ALBUMENTATIONS_TARGETS_LIST else v) for k, v in numpy_dict.items()}
         return callable_transform(numpy_dict)
 
     return transforms_from_torch_tensor
