@@ -45,7 +45,6 @@ STDS = {
     "SWIR_2": 0.07659938,
 }
 
-
 class Sen1Floods11NonGeoDataModule(NonGeoDataModule):
     """NonGeo Fire Scars data module implementation"""
 
