@@ -154,8 +154,6 @@ class PixelWiseModel(Model, SegmentationModel):
             aux_outputs[name] = aux_output
 
         mask = self._crop_image_when_necessary(mask, input_size)
-        print(mask.shape)
-        print(aux_outputs)
         return ModelOutput(output=mask, auxiliary_heads=aux_outputs)
 
     def _get_head(self, task: str, input_embed_dim: int, head_kwargs):
