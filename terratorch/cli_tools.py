@@ -581,9 +581,13 @@ class MyTrainer(Trainer):
         unique value in the masks in case these are int and the mean and standard deviation of the mask values in case
         these are floats. The statistics are computed using the entire training dataset and are printed to the logger.
 
-        Please note that this method assumes that there is only one train dataloader in the datamodule and that the
-        dataset does not have any transforms that may introduce randomness.
+        Please note that this method assumes that there is only one train dataloader in the datamodule. The train
+        transforms are removed before computing the statistics to ensure that the statistics are computed on the raw
+        data without any augmentation and randomization.
         """
+        # remove train transforms, this may not work for all datamodules
+        if hasattr(datamodule, "train_transform"):
+            datamodule.train_transform = None
         datamodule.setup("fit")
         original_dataloader = datamodule.train_dataloader()
         if not isinstance(original_dataloader, DataLoader):
