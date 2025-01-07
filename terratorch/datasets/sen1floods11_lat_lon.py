@@ -38,6 +38,14 @@ class Sen1Floods11NonGeo(NonGeoDataset):
                 "SWIR_2",
             )
 
+    rgb_bands = ("RED", "GREEN", "BLUE")
+    BAND_SETS = {"all": all_band_names, "rgb": rgb_bands}
+    num_classes = 2
+    splits = {"train": "train", "val": "valid", "test": "test"}
+    data_dir = "v1.1/data/flood_events/HandLabeled/S2Hand"
+    label_dir = "v1.1/data/flood_events/HandLabeled/LabelHand"
+    split_dir = "v1.1/splits/flood_handlabeled"
+    metadata_file = "v1.1/Sen1Floods11_Metadata.geojson"
 
     def __init__(
         self,
