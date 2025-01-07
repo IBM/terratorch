@@ -35,7 +35,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 import terratorch.datamodules
-from terratorch.utils import compute_statistics
+from terratorch.utils import compute_mask_statistics, compute_statistics
 import terratorch.tasks  # noqa: F401
 from terratorch.datamodules import (  # noqa: F401
     GenericNonGeoClassificationDataModule,
@@ -574,6 +574,16 @@ class LightningInferenceModel:
 
 class MyTrainer(Trainer):
     def compute_statistics(self, datamodule: LightningDataModule, **kwargs) -> None:
+        """
+        Compute the dataset statistics for the training dataset.
+
+        This method will compute the mean and standard deviation of the image data and the count and percentage of each
+        unique value in the masks in case these are int and the mean and standard deviation of the mask values in case
+        these are floats. The statistics are computed using the entire training dataset and are printed to the logger.
+
+        Please note that this method assumes that there is only one train dataloader in the datamodule and that the
+        dataset does not have any transforms that may introduce randomness.
+        """
         datamodule.setup("fit")
         original_dataloader = datamodule.train_dataloader()
         if not isinstance(original_dataloader, DataLoader):
@@ -588,6 +598,10 @@ class MyTrainer(Trainer):
             pin_memory=original_dataloader.pin_memory,
             drop_last=False,
         )
-        mean, std = compute_statistics(new_dataloader)
-
-        logger.info(yaml.dump({"means": mean, "stds": std}))
+        image_stats = compute_statistics(new_dataloader)
+        logger.info("Image statistics:")
+        logger.info(yaml.dump(image_stats))
+        if "mask" in datamodule.train_dataloader().dataset[0]:
+            mask_stats = compute_mask_statistics(new_dataloader)
+            logger.info("Mask statistics:")
+            logger.info(yaml.dump(mask_stats))
