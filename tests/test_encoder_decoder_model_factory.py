@@ -181,7 +181,7 @@ def test_create_model_with_smp_deeplabv3plus_decoder(
     model.eval()
 
     with torch.no_grad():
-        assert model(model_input).output.shape == expected
+        assert model(model_input).output.shape == tuple(expected)
 
     gc.collect()
 
