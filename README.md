@@ -20,7 +20,7 @@ TerraTorch’s main purpose is to provide a flexible fine-tuning framework for G
       * Satlas (as implemented in [TorchGeo](https://github.com/microsoft/torchgeo))
       * DOFA (as implemented in [TorchGeo](https://github.com/microsoft/torchgeo))
       * SSL4EO-L and SSL4EO-S12 models (as implemented in [TorchGeo](https://github.com/microsoft/torchgeo))
-      * Clay
+      * [Clay](https://github.com/Clay-foundation/model)
     - Backbones available in the [timm](https://github.com/huggingface/pytorch-image-models) (Pytorch image models)
     - Decoders available in [SMP](https://github.com/qubvel/segmentation_models.pytorch) (Pytorch Segmentation models with pre-training backbones) and [mmsegmentation](https://github.com/open-mmlab/mmsegmentation) packages
     - Fine-tuned models such as [granite-geospatial-biomass](https://huggingface.co/ibm-granite/granite-geospatial-biomass)
@@ -52,7 +52,7 @@ To install terratorch with partial (work in development) support for Weather Fou
 
 ## Documentation
 
-To get started, check out the [quick start guide](https://ibm.github.io/terratorch/quick_start)
+To get started, check out the [quick start guide](https://ibm.github.io/terratorch/quick_start).
 
 Developers, check out the [architecture overview](https://ibm.github.io/terratorch/architecture).
 
