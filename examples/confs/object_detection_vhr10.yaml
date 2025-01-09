@@ -16,21 +16,18 @@ trainer:
     #  init_args:
     #    monitor: val/loss
     #    patience: 20
-  #max_epochs: 100
-  max_epochs: 10  # XXX or debugging
+  max_epochs: 100
   check_val_every_n_epoch: 1
   log_every_n_steps: 50
   enable_checkpointing: true
   default_root_dir: output/VHR10
-  num_sanity_val_steps: 0  # XXX To avoid running validation batches in sanity check runs
 
 data:
   class_path: terratorch.datamodules.TorchNonGeoDataModule
   init_args:
     cls: torchgeo.datamodules.VHR10DataModule  # TorchGeo DataModule class to be instantiated
     batch_size: 16
-    #num_workers: 8
-    num_workers: 1  # for debugging
+    num_workers: 7
     transforms:
       # Resize is not required since Faster-RCNN performs it
       - class_path: albumentations.augmentations.transforms.ToFloat
