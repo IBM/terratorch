@@ -42,7 +42,7 @@ def build_callable_transform_from_torch_tensor(
         numpy_dict["image"] = np.moveaxis(numpy_dict["image"], 0, -1)  # image to channels last
         numpy_dict = {k: ([v[i].numpy() for i in range(len(v))] if k in ALBUMENTATIONS_TARGETS_LIST else v) for k, v in numpy_dict.items()}
         ret_dict = callable_transform(numpy_dict)
-        if "image" in ret_dict:
+        if "masks" in ret_dict:
             ret_dict["masks"] = stack(ret_dict["masks"], dim=0)
         return ret_dict
 
@@ -108,6 +108,9 @@ class TorchNonGeoDataModule(NonGeoDataModule):
 
     def predict_dataloader(self):
         return self._proxy.predict_dataloader()
+
+    def transfer_batch_to_device(self, batch, device, dataloader_idx):
+        return self._proxy.transfer_batch_to_device(batch, device, dataloader_idx)
 
     @property
     def aug(self):
@@ -224,7 +227,7 @@ class TorchGeoDataModule(GeoDataModule):
         return self._proxy.predict_dataloader()
 
     def transfer_batch_to_device(self, batch, device, dataloader_idx):
-        return self._proxy.predict_dataloader(batch, device, dataloader_idx)
+        return self._proxy.transfer_batch_to_device(batch, device, dataloader_idx)
 
     @property
     def aug(self):
