@@ -120,7 +120,6 @@ class ScalarOutputModel(Model, SegmentationModel):
         features = prepare(features)
 
         decoder_output = self.decoder([f.clone() for f in features])
-        decoder_output = self._crop_image_when_necessary(decoder_output, input_size)
         mask = self.head(decoder_output)
 
         aux_outputs = {}
