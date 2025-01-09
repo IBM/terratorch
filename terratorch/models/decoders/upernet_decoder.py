@@ -37,7 +37,7 @@ class UperNetDecoder(nn.Module):
             warnings.warn(
                 "DeprecationWarning: scale_modules is deprecated and will be removed in future versions. "
                 "Use LearnedInterpolateToPyramidal neck instead.",
-                stacklevel=2,
+                stacklevel=1,
             )
 
         self.scale_modules = scale_modules
