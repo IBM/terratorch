@@ -16,9 +16,6 @@ from terratorch.registry.registry import MODEL_FACTORY_REGISTRY
 from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
 
-
-
-
 class ObjectDetectionTask(BaseTask):
     """ObjectDetection Task that accepts models from a range of sources.
 
@@ -146,6 +143,12 @@ class ObjectDetectionTask(BaseTask):
             for i in range(batch_size)
         ] # Extract bounding box and label information for each image
         loss_dict = self(x, y).output
+        # loss_dict = { # From Faster-RCNN
+        #     loss_classifier: tensor(torch.Size([])) (torch.float32 on cuda:0)
+        #     loss_box_reg: tensor(torch.Size([])) (torch.float32 on cuda:0)
+        #     loss_objectness: tensor(torch.Size([])) (torch.float32 on cuda:0)
+        #     loss_rpn_box_reg: tensor(torch.Size([])) (torch.float32 on cuda:0)
+        # }
         train_loss: Tensor = sum(loss_dict.values())
         loss_dict['loss'] = train_loss  # self.train_loss_handler.log_loss() below requires item 'loss'
 
@@ -157,6 +160,24 @@ class ObjectDetectionTask(BaseTask):
 
     def on_train_epoch_end(self) -> None:
         metrics = self.train_metrics.compute()
+        # metrics = { # From Faster-RCNN
+        #     train/map: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     train/map_50: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     train/map_75: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     train/map_small: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     train/map_medium: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     train/map_large: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     train/mar_1: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     train/mar_10: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     train/mar_100: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     train/mar_small: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     train/mar_medium: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     train/mar_large: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     train/map_per_class: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     train/mar_100_per_class: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     train/classes: tensor(torch.Size([0])) (torch.int32 on cpu)
+        # }
+
         metrics.pop('train/classes', None)
         self.log_dict(metrics, sync_dist=True)
         self.train_metrics.reset()
@@ -183,9 +204,9 @@ class ObjectDetectionTask(BaseTask):
         y_hat = self(x).output
         metrics = self.val_metrics(y_hat, y)
         metrics.pop('val/classes', None)
-
+        val_loss: Tensor = sum(metrics.values())  # FIXME
+        loss_dict = {'loss': val_loss}
         self.log_dict(metrics, batch_size=batch_size)
-        loss_dict = {'loss': 0.0}  # XXX FIXME
         self.val_loss_handler.log_loss(self.log, loss_dict=loss_dict, batch_size=batch_size)  # XXX FIXME
 
         if (
@@ -221,6 +242,23 @@ class ObjectDetectionTask(BaseTask):
 
     def on_validation_epoch_end(self) -> None:
         metrics = self.val_metrics.compute()
+        # metrics = { # From Faster-RCNN
+        #     val/map: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     val/map_50: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     val/map_75: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     val/map_small: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     val/map_medium: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     val/map_large: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     val/mar_1: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     val/mar_10: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     val/mar_100: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     val/mar_small: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     val/mar_medium: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     val/mar_large: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     val/map_per_class: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     val/mar_100_per_class: tensor(torch.Size([])) (torch.float32 on cpu)
+        #     val/classes: tensor(torch.Size([10])) (torch.int32 on cpu)
+        # }
         metrics.pop('val/classes', None)
         self.log_dict(metrics, sync_dist=True)
         self.val_metrics.reset()
