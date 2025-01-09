@@ -318,44 +318,6 @@ class SemanticSegmentationTask(TerraTorchTask):
             finally:
                 plt.close()
 
-    def on_validation_epoch_end(self) -> None:
-        self.log_dict(self.val_metrics.compute(), sync_dist=True)
-        self.val_metrics.reset()
-        return super().on_validation_epoch_end()
-
-    def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
-        """Compute the test loss and additional metrics.
-
-        Args:
-            batch: The output of your DataLoader.
-            batch_idx: Integer displaying index of this batch.
-            dataloader_idx: Index of the current dataloader.
-        """
-        x = batch["image"]
-        y = batch["mask"]
-
-        other_keys = batch.keys() - {"image", "mask", "filename"}
-        rest = {k: batch[k] for k in other_keys}
-        model_output: ModelOutput = self(x, **rest)
-        if dataloader_idx >= len(self.test_loss_handler):
-            msg = "You are returning more than one test dataloader but not defining enough test_dataloaders_names."
-            raise ValueError(msg)
-        loss = self.test_loss_handler[dataloader_idx].compute_loss(model_output, y, self.criterion, self.aux_loss)
-        self.test_loss_handler[dataloader_idx].log_loss(
-            partial(self.log, add_dataloader_idx=False),  # We don't need the dataloader idx as prefixes are different
-            loss_dict=loss,
-            batch_size=y.shape[0],
-        )
-
-        y_hat_hard = to_segmentation_prediction(model_output)
-        self.test_metrics[dataloader_idx].update(y_hat_hard, y)
-
-    def on_test_epoch_end(self) -> None:
-        for metrics in self.test_metrics:
-            self.log_dict(metrics.compute(), sync_dist=True)
-            metrics.reset()
-        return super().on_test_epoch_end()
-
     def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         """Compute the predicted class probabilities.
 
