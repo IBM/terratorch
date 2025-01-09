@@ -28,6 +28,7 @@ from einops import rearrange
 from timm.layers import to_2tuple
 from timm.models.vision_transformer import Block
 
+logger = logging.getLogger(__name__)
 
 def get_3d_sincos_pos_embed(embed_dim, grid_size, add_cls_token=False):
     """
@@ -146,18 +147,22 @@ class PatchEmbed(nn.Module):
         self.input_size = input_size
         self.patch_size = patch_size
         self.grid_size = [s // p for s, p in zip(self.input_size, self.patch_size)]
+        assert self.grid_size >= [1,1,1], "Patch size is bigger than input size."
         self.num_patches = self.grid_size[0] * self.grid_size[1] * self.grid_size[2]
         self.flatten = flatten
 
         self.proj = nn.Conv3d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size, bias=bias)
         self.norm = norm_layer(embed_dim) if norm_layer else nn.Identity()
+        self.log_warning = True
 
     def forward(self, x):
         B, C, T, H, W = x.shape
 
-        if T / self.patch_size[0] % 1 or H / self.patch_size[1] % 1 or W / self.patch_size[2] % 1:
-            logging.warning(f"Input {x.shape[-3:]} is not divisible by patch size {self.patch_size}."
-                            f"The border will be ignored, add backbone_padding for pixel-wise tasks.")
+        if (self.log_warning and
+                (T / self.patch_size[0] % 1 or H / self.patch_size[1] % 1 or W / self.patch_size[2] % 1)):
+            logger.warning(f"Input {x.shape[-3:]} is not divisible by patch size {self.patch_size}."
+                           f"The border will be ignored, add backbone_padding for pixel-wise tasks.")
+            self.log_warning = False
 
         x = self.proj(x)
         if self.flatten:
@@ -283,7 +288,7 @@ class PrithviViT(nn.Module):
         for i in range(depth):
             self.blocks.append(Block(embed_dim, num_heads, mlp_ratio, qkv_bias=True, norm_layer=norm_layer))
             self.feature_info.append(
-                {"num_chs": embed_dim * self.patch_embed.patch_size[0], "reduction": 1, "module": f"blocks.{i}"}
+                {"num_chs": embed_dim * self.patch_embed.grid_size[0], "reduction": 1, "module": f"blocks.{i}"}
             )
         self.blocks = nn.ModuleList(self.blocks)
 
@@ -373,11 +378,11 @@ class PrithviViT(nn.Module):
         # add pos embed w/o cls token
         x = x + pos_embed[:, 1:, :]
 
-        if self.temporal_encoding:
+        if self.temporal_encoding and temporal_coords is not None:
             num_tokens_per_frame = x.shape[1] // self.num_frames
             temporal_encoding = self.temporal_embed_enc(temporal_coords, num_tokens_per_frame)
             x = x + temporal_encoding
-        if self.location_encoding:
+        if self.location_encoding and location_coords is not None:
             location_encoding = self.location_embed_enc(location_coords)
             x = x + location_encoding
 
@@ -417,11 +422,11 @@ class PrithviViT(nn.Module):
         # add pos embed w/o cls token
         x = x + pos_embed[:, 1:, :]
 
-        if self.temporal_encoding:
-            num_tokens_per_frame = x.shape[1] // self.patch_embed.num_frames
+        if self.temporal_encoding and temporal_coords is not None:
+            num_tokens_per_frame = x.shape[1] // self.num_frames
             temporal_encoding = self.temporal_embed_enc(temporal_coords, num_tokens_per_frame)
             x = x + temporal_encoding
-        if self.location_encoding:
+        if self.location_encoding and location_coords is not None:
             location_encoding = self.location_embed_enc(location_coords)
             x = x + location_encoding
 
@@ -556,12 +561,12 @@ class MAEDecoder(nn.Module):
         # remove cls token
         x_ = x[:, 1:, :]
 
-        if self.temporal_encoding:
+        if self.temporal_encoding and temporal_coords is not None:
             num_tokens_per_frame = x_.shape[1] // self.num_frames
             temporal_encoding = self.temporal_embed_dec(temporal_coords, num_tokens_per_frame)
             # Add temporal encoding w/o cls token
             x_ = x_ + temporal_encoding
-        if self.location_encoding:
+        if self.location_encoding and location_coords is not None:
             location_encoding = self.location_embed_dec(location_coords)
             # Add location encoding w/o cls token
             x_ = x_ + location_encoding
@@ -589,11 +594,11 @@ class PrithviMAE(nn.Module):
     def __init__(self,
                  img_size: int | Tuple[int, int] = 224,
                  patch_size: int | Tuple[int, int, int] = (1, 16, 16),
-                 num_frames: int = 3,
-                 in_chans: int = 3,
-                 embed_dim: int = 1024,
-                 depth: int = 24,
-                 num_heads: int = 16,
+                 num_frames: int = 4,
+                 in_chans: int = 6,
+                 embed_dim: int = 768,
+                 depth: int = 12,
+                 num_heads: int = 12,
                  decoder_embed_dim: int = 512,
                  decoder_depth: int = 8,
                  decoder_num_heads: int = 16,

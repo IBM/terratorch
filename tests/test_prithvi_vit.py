@@ -7,23 +7,21 @@ from terratorch.models.backbones.select_patch_embed_weights import select_patch_
 import gc
 
 @pytest.mark.parametrize("patch_size", [4, 8, 16])
-@pytest.mark.parametrize("tubelet_size,num_frames", [(1, 1), (1, 2), (1, 3), (2, 2), (3,3)])
-def test_prithvi_vit_patch_embed_loading_compatible(patch_size, tubelet_size, num_frames):
+@pytest.mark.parametrize("patch_size_time,num_frames", [(1, 1), (1, 2), (1, 3), (2, 2), (3,3)])
+def test_prithvi_vit_patch_embed_loading_compatible(patch_size, patch_size_time, num_frames):
     model = timm.create_model(
-        "prithvi_vit_100",
+        "prithvi_eo_v1_100",
         pretrained=False,
         num_frames=num_frames,
-        patch_size=patch_size,
-        tubelet_size=tubelet_size,
+        patch_size=[patch_size_time, 16, 16],
         features_only=True,
     )
 
     weights = timm.create_model(
-        "prithvi_vit_100",
+        "prithvi_eo_v1_100",
         pretrained=False,
         num_frames=num_frames,
-        patch_size=patch_size,
-        tubelet_size=tubelet_size,
+        patch_size=[patch_size_time, 16, 16],
         features_only=True,
     ).state_dict()
 
@@ -32,9 +30,9 @@ def test_prithvi_vit_patch_embed_loading_compatible(patch_size, tubelet_size, nu
     gc.collect()
 
 @pytest.mark.parametrize("patch_size_time,patch_size_time_other", [(1, 2), (2, 4)])
-def test_prithvi_vit_patch_embed_loading_not_compatible_tubelet(patch_size_time,patch_size_time_other):
+def test_prithvi_vit_patch_embed_loading_time_patch_size_other(patch_size_time,patch_size_time_other):
     model = timm.create_model(
-        "prithvi_vit_100",
+        "prithvi_eo_v1_100",
         pretrained=False,
         num_frames=4,
         patch_size=[patch_size_time, 16, 16],
@@ -42,7 +40,7 @@ def test_prithvi_vit_patch_embed_loading_not_compatible_tubelet(patch_size_time,
     )
 
     weights = timm.create_model(
-        "prithvi_vit_100",
+        "prithvi_eo_v1_100",
         pretrained=False,
         num_frames=4,
         patch_size=[patch_size_time_other, 16, 16],
@@ -58,20 +56,18 @@ def test_prithvi_vit_patch_embed_loading_not_compatible_tubelet(patch_size_time,
 @pytest.mark.parametrize("patch_size,patch_size_other", [(2, 4), (4, 8), (16, 4)])
 def test_prithvi_vit_patch_embed_loading_not_compatible_patch(patch_size, patch_size_other):
     model = timm.create_model(
-        "prithvi_vit_100",
+        "prithvi_eo_v1_100",
         pretrained=False,
         num_frames=1,
         patch_size=patch_size,
-        tubelet_size=1,
         features_only=True,
     )
 
     weights = timm.create_model(
-        "prithvi_vit_100",
+        "prithvi_eo_v1_100",
         pretrained=False,
         num_frames=1,
         patch_size=patch_size_other,
-        tubelet_size=1,
         features_only=True,
     ).state_dict()
 
