@@ -33,9 +33,14 @@ class TerraTorchTask(BaseTask):
             # Skipping model factory because custom model is provided
             return
 
-        self.model: Model = self.model_factory.build_model(
-            self.task, aux_decoders=self.aux_heads, **self.hparams["model_args"]
-        )
+        if hasattr(self, "aux_heads"):
+            self.model: Model = self.model_factory.build_model(
+                self.task, aux_decoders=self.aux_heads, **self.hparams["model_args"]
+            )
+        else:
+            self.model: Model = self.model_factory.build_model(
+                self.task, **self.hparams["model_args"]
+            )
 
         if self.hparams["freeze_backbone"]:
             if self.hparams.get("peft_config", None) is not None:
