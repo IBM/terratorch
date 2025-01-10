@@ -1,17 +1,17 @@
 # Copyright contributors to the Terratorch project
 
+import os
+
 import pytest
+import torch
+import torch.distributed as dist
 import yaml
 from granitewxc.utils.config import get_config
-from lightning.pytorch import Trainer
-import os
 from huggingface_hub import hf_hub_download
-import torch.distributed as dist
-import torch
-
-
+from lightning.pytorch import Trainer
 
 from terratorch.models.wxc_model_factory import WxCModelFactory
+
 
 def setup_function():
     print("\nSetup function is called")
@@ -105,7 +105,7 @@ def test_wxc_unet_pincer_inference():
     )
 
     from prithviwxc.gravitywave.datamodule import ERA5DataModule
-    from terratorch.tasks.wxc_gravity_wave_task import WxCGravityWaveTask
+    from terratorch.tasks.wxc_task import WxCTask
 
     model_args = {
         "in_channels": 1280,
@@ -138,7 +138,7 @@ def test_wxc_unet_pincer_inference():
         "static_input_scalers_epsilon": 0,
         "output_scalers": torch.tensor([0] * 1280),
     }
-    task = WxCGravityWaveTask(WxCModelFactory(), model_args=model_args, mode='eval')
+    task = WxCTask(WxCModelFactory(), model_args=model_args, mode='eval')
 
     trainer = Trainer(
         max_epochs=1,
@@ -183,7 +183,6 @@ def test_wxc_unet_pincer_train():
     )
 
     from prithviwxc.gravitywave.datamodule import ERA5DataModule
-    from terratorch.tasks.wxc_gravity_wave_task import WxCGravityWaveTask
     model_args = {
         "in_channels": 1280,
         "input_size_time": 1,
@@ -214,8 +213,9 @@ def test_wxc_unet_pincer_train():
         "static_input_scalers_sigma": torch.tensor([1] * 3),
         "static_input_scalers_epsilon": 0,
         "output_scalers": torch.tensor([0] * 1280),
+        "backbone_weights": "magnet-flux-uvtp122-epoch-99-loss-0.1022.pt"
     }
-    task = WxCGravityWaveTask(WxCModelFactory(), model_args=model_args, mode='train')
+    task = WxCTask(WxCModelFactory(), model_args=model_args, mode='train')
 
     trainer = Trainer(
         max_epochs=1,

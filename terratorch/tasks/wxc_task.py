@@ -3,8 +3,10 @@
 from torchgeo.trainers import BaseTask
 import torch.nn as nn
 import torch
+import logging
+logger = logging.getLogger(__name__)
 
-class WxCGravityWaveTask(BaseTask):
+class WxCTask(BaseTask):
     def __init__(self, model_factory, model_args: dict, mode, learning_rate=0.1):
         if mode not in ['train', 'eval']:
             raise ValueError(f'mode {mode} is not supported. (train, eval)')
@@ -25,7 +27,7 @@ class WxCGravityWaveTask(BaseTask):
         for name, module in self.model.named_children():
             device = next(module.parameters(), torch.tensor([])).device
             layer_devices.append((name, str(device)))
-        print(layer_devices)
+        logging.debug(layer_devices)
 
     def training_step(self, batch, batch_idx):
         output: torch.Tensor = self.model(batch)
