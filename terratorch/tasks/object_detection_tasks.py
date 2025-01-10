@@ -6,7 +6,6 @@ from lightning.pytorch.callbacks import Callback
 from segmentation_models_pytorch.losses import FocalLoss, JaccardLoss
 from torch import Tensor, nn
 from torchgeo.datasets.utils import unbind_samples
-from torchgeo.trainers import BaseTask
 from torchmetrics import ClasswiseWrapper, MetricCollection
 from torchmetrics.detection import IntersectionOverUnion
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
@@ -14,9 +13,9 @@ from torchmetrics.detection.mean_ap import MeanAveragePrecision
 from terratorch.models.model import AuxiliaryHead, Model, ModelOutput
 from terratorch.registry.registry import MODEL_FACTORY_REGISTRY
 from terratorch.tasks.loss_handler import LossHandler
-from terratorch.tasks.optimizer_factory import optimizer_factory
+from terratorch.tasks.base_task import TerraTorchTask
 
-class ObjectDetectionTask(BaseTask):
+class ObjectDetectionTask(TerraTorchTask):
     """ObjectDetection Task that accepts models from a range of sources.
 
     This class is analog in functionality to class:ObjectDetectionTask defined by torchgeo.
@@ -67,44 +66,10 @@ class ObjectDetectionTask(BaseTask):
                 Defaults to numeric ordering.
         """
         self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
-        super().__init__()
+        super().__init__(task="object_detection")
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
         self.test_loss_handler = LossHandler(self.test_metrics.prefix)
-
-    # overwrite early stopping
-    def configure_callbacks(self) -> list[Callback]:
-        return []
-
-    def configure_models(self) -> None:
-        self.model: Model = self.model_factory.build_model(
-            "object_detection", **self.hparams["model_args"]
-        )
-        if self.hparams["freeze_backbone"]:
-            self.model.freeze_encoder()
-        if self.hparams["freeze_decoder"]:
-            self.model.freeze_decoder()
-
-    # Not sure this setting takes effect since
-    # MyLightningCLI.configure_optimizers may override this.
-    def configure_optimizers(
-        self,
-    ) -> "lightning.pytorch.utilities.types.OptimizerLRSchedulerConfig":
-        optimizer = self.hparams["optimizer"]
-        if optimizer is None:
-            optimizer = "Adam"
-        return optimizer_factory(
-            optimizer,
-            self.hparams["lr"],
-            self.parameters(),
-            self.hparams["optimizer_hparams"],
-            self.hparams["scheduler"],
-            self.monitor,
-            self.hparams["scheduler_hparams"],
-        )
-
-    # Object detection task does not need to configure losses since FasterRCNN calculates loss in itself.
-    #def configure_losses(self) -> None:
 
     def configure_metrics(self) -> None:
         """Initialize the performance metrics.
@@ -177,13 +142,9 @@ class ObjectDetectionTask(BaseTask):
         #     train/mar_100_per_class: tensor(torch.Size([])) (torch.float32 on cpu)
         #     train/classes: tensor(torch.Size([0])) (torch.int32 on cpu)
         # }
-
         metrics.pop('train/classes', None)
         self.log_dict(metrics, sync_dist=True)
         self.train_metrics.reset()
-
-        ret = super().on_train_epoch_end()
-        return ret
 
     def validation_step(
         self, batch: Any, batch_idx: int, dataloader_idx: int = 0
@@ -263,9 +224,6 @@ class ObjectDetectionTask(BaseTask):
         self.log_dict(metrics, sync_dist=True)
         self.val_metrics.reset()
 
-        ret = super().on_validation_epoch_end()
-        return ret
-
     def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         """Compute the test metrics.
 
@@ -286,9 +244,6 @@ class ObjectDetectionTask(BaseTask):
         metrics.pop('test/classes', None)
 
         self.log_dict(metrics, batch_size=batch_size)
-
-    def on_test_epoch_end(self) -> None:
-        return super().on_test_epoch_end()
 
     def predict_step(
         self, batch: Any, batch_idx: int, dataloader_idx: int = 0
