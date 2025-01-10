@@ -278,7 +278,7 @@ class ClassificationTask(TerraTorchTask):
             Output predicted probabilities.
         """
         x = batch["image"]
-        file_names = batch["filename"]
+        file_names = batch["filename"] if "filename" in batch else None
         other_keys = batch.keys() - {"image", "label", "filename"}
         rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)

@@ -105,7 +105,8 @@ def test_vit_models_different_patch_tubelet_sizes(model_name, patch_size, patch_
     gc.collect()
 @pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
 def test_out_indices(model_name, input_224):
-    out_indices = [2, 4, 8, 10]
+    # out_indices = [2, 4, 8, 10]
+    out_indices = (2, 4, 8, 10)
     backbone = timm.create_model(model_name, pretrained=False, features_only=True, out_indices=out_indices)
     assert backbone.feature_info.out_indices == out_indices
 
@@ -119,7 +120,7 @@ def test_out_indices(model_name, input_224):
 def test_out_indices_non_divisible(model_name, input_non_divisible):
     out_indices = [2, 4, 8, 10]
     backbone = timm.create_model(model_name, pretrained=False, features_only=True, num_frames=NUM_FRAMES, out_indices=out_indices, padding='constant')
-    assert backbone.feature_info.out_indices == out_indices
+    assert backbone.feature_info.out_indices == tuple(out_indices)
 
     output = backbone(input_non_divisible)
     full_output = backbone.forward_features(input_non_divisible)
@@ -129,8 +130,8 @@ def test_out_indices_non_divisible(model_name, input_non_divisible):
     gc.collect()
 @pytest.mark.parametrize("model_name", ["vit_base_patch16", "vit_large_patch16"])
 def test_scale_mae(model_name):
-    out_indices = [2, 4, 8, 10]
-
+    # out_indices = [2, 4, 8, 10]
+    out_indices = (2, 4, 8, 10)
     # default should have 3 channels
     backbone = scalemae.create_model(model_name, out_indices=out_indices)
     input_tensor = torch.ones((1, 3, 224, 224))

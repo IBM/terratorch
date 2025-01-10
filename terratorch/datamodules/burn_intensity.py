@@ -37,6 +37,7 @@ class BurnIntensityNonGeoDataModule(NonGeoDataModule):
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
         val_transform: A.Compose | None | list[A.BasicTransform] = None,
         test_transform: A.Compose | None | list[A.BasicTransform] = None,
+        predict_transform: A.Compose | None | list[A.BasicTransform] = None,
         use_full_data: bool = True,
         no_data_replace: float | None = 0.0001,
         no_label_replace: int | None = -1,
@@ -52,6 +53,7 @@ class BurnIntensityNonGeoDataModule(NonGeoDataModule):
         self.train_transform = wrap_in_compose_is_list(train_transform)
         self.val_transform = wrap_in_compose_is_list(val_transform)
         self.test_transform = wrap_in_compose_is_list(test_transform)
+        self.predict_transform = wrap_in_compose_is_list(predict_transform)
         self.aug = NormalizeWithTimesteps(means, stds)
         self.use_full_data = use_full_data
         self.no_data_replace = no_data_replace
@@ -86,6 +88,17 @@ class BurnIntensityNonGeoDataModule(NonGeoDataModule):
                 split="val",
                 data_root=self.data_root,
                 transform=self.test_transform,
+                bands=self.bands,
+                use_full_data=self.use_full_data,
+                no_data_replace=self.no_data_replace,
+                no_label_replace=self.no_label_replace,
+                use_metadata=self.use_metadata,
+            )
+        if stage in ["predict"]:
+            self.predict_dataset = self.dataset_class(
+                split="val",
+                data_root=self.data_root,
+                transform=self.predict_transform,
                 bands=self.bands,
                 use_full_data=self.use_full_data,
                 no_data_replace=self.no_data_replace,

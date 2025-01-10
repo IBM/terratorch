@@ -226,6 +226,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         x = batch["image"]
         y = batch["mask"]
         other_keys = batch.keys() - {"image", "mask", "filename"}
+
         rest = {k: batch[k] for k in other_keys}
 
         model_output: ModelOutput = self(x, **rest)
@@ -247,7 +248,9 @@ class SemanticSegmentationTask(TerraTorchTask):
         x = batch["image"]
         y = batch["mask"]
         other_keys = batch.keys() - {"image", "mask", "filename"}
+
         rest = {k: batch[k] for k in other_keys}
+
         model_output: ModelOutput = self(x, **rest)
         if dataloader_idx >= len(self.test_loss_handler):
             msg = "You are returning more than one test dataloader but not defining enough test_dataloaders_names."
@@ -322,9 +325,12 @@ class SemanticSegmentationTask(TerraTorchTask):
             Output predicted probabilities.
         """
         x = batch["image"]
-        file_names = batch["filename"]
+        file_names = batch["filename"] if "filename" in batch else None
         other_keys = batch.keys() - {"image", "mask", "filename"}
+
         rest = {k: batch[k] for k in other_keys}
+
+        model_output: ModelOutput = self(x, **rest)
 
         def model_forward(x):
             return self(x).output
