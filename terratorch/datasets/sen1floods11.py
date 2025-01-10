@@ -23,29 +23,26 @@ from terratorch.datasets.utils import clip_image, default_transform, filter_vali
 
 class Sen1Floods11NonGeo(NonGeoDataset):
     """NonGeo dataset implementation for sen1floods11."""
+
     all_band_names = (
-        "COASTAL_AEROSOL",
-        "BLUE",
-        "GREEN",
-        "RED",
-        "RED_EDGE_1",
-        "RED_EDGE_2",
-        "RED_EDGE_3",
-        "NIR_BROAD",
-        "NIR_NARROW",
-        "WATER_VAPOR",
-        "CIRRUS",
-        "SWIR_1",
-        "SWIR_2",
+            "COASTAL_AEROSOL",
+            "BLUE",
+            "GREEN",
+            "RED",
+            "RED_EDGE_1",
+            "RED_EDGE_2",
+            "RED_EDGE_3",
+            "NIR_BROAD",
+            "NIR_NARROW",
+            "WATER_VAPOR",
+            "CIRRUS",
+            "SWIR_1",
+            "SWIR_2",
     )
-
     rgb_bands = ("RED", "GREEN", "BLUE")
-
     BAND_SETS = {"all": all_band_names, "rgb": rgb_bands}
-
     num_classes = 2
     splits = {"train": "train", "val": "valid", "test": "test"}
-
     data_dir = "v1.1/data/flood_events/HandLabeled/S2Hand"
     label_dir = "v1.1/data/flood_events/HandLabeled/LabelHand"
     split_dir = "v1.1/splits/flood_handlabeled"

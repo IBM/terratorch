@@ -1,9 +1,11 @@
 import torch
 import torch.nn.functional as F  # noqa: N812
 from torch import Tensor, nn
+import warnings
 
 from terratorch.registry import TERRATORCH_DECODER_REGISTRY
 from .utils import ConvModule
+
 
 # Adapted from MMSegmentation
 @TERRATORCH_DECODER_REGISTRY.register
@@ -16,7 +18,7 @@ class UperNetDecoder(nn.Module):
         pool_scales: tuple[int] = (1, 2, 3, 6),
         channels: int = 256,
         align_corners: bool = True,  # noqa: FBT001, FBT002
-        scale_modules: bool = False
+        scale_modules: bool = False,
     ):
         """Constructor
 
@@ -30,6 +32,14 @@ class UperNetDecoder(nn.Module):
                 Defaults to False.
         """
         super().__init__()
+        if scale_modules:
+            # TODO: remove scale_modules before v1?
+            warnings.warn(
+                "DeprecationWarning: scale_modules is deprecated and will be removed in future versions. "
+                "Use LearnedInterpolateToPyramidal neck instead.",
+                stacklevel=1,
+            )
+
         self.scale_modules = scale_modules
         if scale_modules:
             self.fpn1 = nn.Sequential(

@@ -353,7 +353,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
             Output predicted probabilities.
         """
         x = batch["image"]
-        file_names = batch["filename"]
+        file_names = batch["filename"] if "filename" in batch else None
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
 

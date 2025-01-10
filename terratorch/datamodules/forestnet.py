@@ -42,6 +42,7 @@ class ForestNetNonGeoDataModule(NonGeoDataModule):
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
         val_transform: A.Compose | None | list[A.BasicTransform] = None,
         test_transform: A.Compose | None | list[A.BasicTransform] = None,
+        predict_transform: A.Compose | None | list[A.BasicTransform] = None,
         fraction: float = 1.0,
         aug: AugmentationSequential = None,
         use_metadata: bool = False,
@@ -57,6 +58,7 @@ class ForestNetNonGeoDataModule(NonGeoDataModule):
         self.train_transform = wrap_in_compose_is_list(train_transform)
         self.val_transform = wrap_in_compose_is_list(val_transform)
         self.test_transform = wrap_in_compose_is_list(test_transform)
+        self.predict_transform = wrap_in_compose_is_list(predict_transform)
         self.aug = Normalize(self.means, self.stds) if aug is None else aug
         self.fraction = fraction
         self.use_metadata = use_metadata
@@ -88,6 +90,16 @@ class ForestNetNonGeoDataModule(NonGeoDataModule):
                 data_root=self.data_root,
                 label_map=self.label_map,
                 transform=self.test_transform,
+                bands=self.bands,
+                fraction=self.fraction,
+                use_metadata=self.use_metadata,
+            )
+        if stage in ["predict"]:
+            self.predict_dataset = self.dataset_class(
+                split="test",
+                data_root=self.data_root,
+                label_map=self.label_map,
+                transform=self.predict_transform,
                 bands=self.bands,
                 fraction=self.fraction,
                 use_metadata=self.use_metadata,
