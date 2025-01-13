@@ -11,6 +11,7 @@ from huggingface_hub import hf_hub_download
 from lightning.pytorch import Trainer
 
 from terratorch.models.wxc_model_factory import WxCModelFactory
+from terratorch.tasks.wxc_task import WxCTask
 
 
 def setup_function():
