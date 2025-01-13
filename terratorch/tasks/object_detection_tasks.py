@@ -110,21 +110,19 @@ class ObjectDetectionTask(TerraTorchTask):
             {'boxes': batch['boxes'][i], 'labels': batch['labels'][i]}
             for i in range(batch_size)
         ] # Extract bounding box and label information for each image
-        loss_dict = self(x, y).output
-        # loss_dict = { # From Faster-RCNN
+        loss = self(x, y).output
+        # loss = { # From Faster-RCNN
         #     loss_classifier: tensor(torch.Size([])) (torch.float32 on cuda:0)
         #     loss_box_reg: tensor(torch.Size([])) (torch.float32 on cuda:0)
         #     loss_objectness: tensor(torch.Size([])) (torch.float32 on cuda:0)
         #     loss_rpn_box_reg: tensor(torch.Size([])) (torch.float32 on cuda:0)
         # }
-        train_loss: Tensor = sum(loss_dict.values())
-        loss_dict['loss'] = train_loss  # self.train_loss_handler.log_loss() below requires item 'loss'
+        loss["loss"] = sum(loss.values())  # log_loss() below requires 'loss' item
+        self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=batch_size)
 
-        # Choose one from followings
-        #self.log_dict(loss_dict, batch_size=batch_size)
-        self.train_loss_handler.log_loss(self.log, loss_dict=loss_dict, batch_size=batch_size)
+        #metrics handling ??
 
-        return train_loss
+        return loss["loss"]
 
     def on_train_epoch_end(self) -> None:
         metrics = self.train_metrics.compute()
@@ -171,10 +169,14 @@ class ObjectDetectionTask(TerraTorchTask):
         y_hat = self(x).output
         metrics = self.val_metrics(y_hat, y)
         metrics.pop('val/classes', None)
+
+        # Currently we don't know how to compute loss value from y_hat
+        #loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         val_loss: Tensor = sum(metrics.values())  # FIXME
-        loss_dict = {'loss': val_loss}
+        loss = {'loss': val_loss}
+        self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=batch_size)
+
         self.log_dict(metrics, batch_size=batch_size)
-        self.val_loss_handler.log_loss(self.log, loss_dict=loss_dict, batch_size=batch_size)  # XXX FIXME
 
         if (
             batch_idx < 10
@@ -249,8 +251,13 @@ class ObjectDetectionTask(TerraTorchTask):
         ]
         y_hat = self(x, y).output
         metrics = self.test_metrics(y_hat, y)
-
         metrics.pop('test/classes', None)
+
+        # Currently we don't know how to compute loss value from y_hat
+        #loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
+        test_loss: Tensor = sum(metrics.values())  # FIXME
+        loss = {'loss': test_loss}
+        self.test_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=batch_size)
 
         self.log_dict(metrics, batch_size=batch_size)
 
@@ -272,5 +279,5 @@ class ObjectDetectionTask(TerraTorchTask):
         # until kornia 0.7.5 or 8.0 is released.
         x = x.to(self.device)
         batch_size = len(x)
-        y_hat = self(x, y).output
+        y_hat = self(x).output
         return y_hat
