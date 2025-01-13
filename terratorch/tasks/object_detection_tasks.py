@@ -103,7 +103,7 @@ class ObjectDetectionTask(TerraTorchTask):
         """
         x = batch['image']
         # Workaround for issue https://github.com/kornia/kornia/issues/3066
-        # until kornia 0.7.4 or 8.5 is released.
+        # until kornia 0.7.5 or 8.0 is released.
         x = x.to(self.device)
         batch_size = len(x)  # Use list length instead of x.shape[0]
         y = [
@@ -161,7 +161,7 @@ class ObjectDetectionTask(TerraTorchTask):
         """
         x = batch['image']
         # Workaround for issue https://github.com/kornia/kornia/issues/3066
-        # until kornia 0.7.4 or 8.5 is released.
+        # until kornia 0.7.5 or 8.0 is released.
         x = x.to(self.device)
         batch_size = len(x)
         y = [
@@ -240,7 +240,7 @@ class ObjectDetectionTask(TerraTorchTask):
         """
         x = batch['image']
         # Workaround for issue https://github.com/kornia/kornia/issues/3066
-        # until kornia 0.7.4 or 8.5 is released.
+        # until kornia 0.7.5 or 8.0 is released.
         x = x.to(self.device)
         batch_size = len(x)
         y = [
@@ -269,7 +269,7 @@ class ObjectDetectionTask(TerraTorchTask):
         """
         x = batch["image"]
         # Workaround for issue https://github.com/kornia/kornia/issues/3066
-        # until kornia 0.7.4 or 8.5 is released.
+        # until kornia 0.7.5 or 8.0 is released.
         x = x.to(self.device)
         batch_size = len(x)
         y_hat = self(x, y).output
