@@ -23,13 +23,15 @@ from torchgeo.datamodules import NonGeoDataModule
 
 import albumentations as A
 from albumentations.pytorch import transforms as T
+import torchvision.transforms as orig_transforms
 
 from torch.utils.data import DataLoader
 
 import torch
-
+from torch import nn
 import numpy as np
 
+import pdb
 # def custom_collate(batch):
 
 #     pdb.set_trace()
@@ -57,21 +59,74 @@ def get_transform(train):
         transforms.append(A.HorizontalFlip(p=0.5))
     else:
         transforms.append(A.CenterCrop(width=224, height=224))
-    transforms.append(A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)))
     transforms.append(A.ToFloat())
     transforms.append(T.ToTensorV2())
     # return A.Compose(transforms, additional_targets={'boxes': 'bboxes', 'masks': 'mask'})
     return A.Compose(transforms, bbox_params=A.BboxParams(format="pascal_voc", label_fields=['labels']), is_check_shapes=False)
 
 def apply_transforms(sample, transforms):
+
+    # pdb.set_trace()
+    sample['image']=torch.stack(tuple(sample["image"]))
+    sample['image'] = sample['image'].permute(1, 2, 0) if len(sample['image'].shape) == 3 else sample['image'].permute(0, 2, 3, 1)
+    sample['image'] = np.array(sample['image'].cpu())
     
-    sample['image']=sample['image'].permute(1, 2, 0)
-    transformed = transforms(image=np.array(sample["image"]), masks=np.array(sample["masks"]), bboxes=np.array(sample["boxes"]), labels=np.array(sample["labels"]))
+    sample["masks"] = [np.array(torch.stack(tuple(x)).cpu()) for x in sample["masks"]]
+    # sample["masks"] = np.array(sample["masks"].cpu())
+    
+    sample["boxes"] = np.array(sample["boxes"].cpu())
+
+    sample["labels"] = np.array(sample["labels"].cpu())
+    
+    # sample["boxes"] = [torch.stack(tuple(x)) for x in sample["masks"]]
+    # sample["labels"] = 
+    
+    transformed = transforms(image=sample['image'],
+                             masks=sample["masks"], 
+                             # bboxes=np.array(torch.stack(tuple(sample["boxes"]), dim=0).cpu()), 
+                             bboxes=sample["boxes"],
+                             labels=sample["labels"])
+    
     transformed['boxes'] = torch.tensor(transformed['bboxes'])
     transformed['labels'] = torch.tensor(transformed['labels'], dtype=torch.int8)
     del transformed['bboxes']
-
+    # print("Done transform")
     return transformed
+
+class Normalize(Callable):
+    def __init__(self, means, stds, max_pixel_value=None):
+        super().__init__()
+        self.means = means
+        self.stds = stds
+        self.max_pixel_value = max_pixel_value
+
+    def __call__(self, batch):
+        # min_value = self.means - 2 * self.stds
+        # max_value = self.means + 2 * self.stds
+        # img = (batch["image"] - min_value) / (max_value - min_value)
+        # img = torch.clip(img, 0, 1)
+        # batch["image"] = img
+        # return batch
+        batch['image']=torch.stack(tuple(batch["image"]))
+        image = batch["image"]/self.max_pixel_value if self.max_pixel_value is not None else batch["image"]
+        if len(image.shape) == 5:
+            means = torch.tensor(self.means, device=image.device).view(1, -1, 1, 1, 1)
+            stds = torch.tensor(self.stds, device=image.device).view(1, -1, 1, 1, 1)
+        elif len(image.shape) == 4:
+            means = torch.tensor(self.means, device=image.device).view(1, -1, 1, 1)
+            stds = torch.tensor(self.stds, device=image.device).view(1, -1, 1, 1)
+        else:
+            msg = f"Expected batch to have 5 or 4 dimensions, but got {len(image.shape)}"
+            raise Exception(msg)
+        batch["image"] = (image - means) / stds
+        # pdb.set_trace()
+        return batch
+
+class IdentityTransform(nn.Module):
+    def __init__(self):
+        super().__init__()
+    def forward(self, x):
+        return x
 
 
 class mVHR10DataModule(NonGeoDataModule):
@@ -79,15 +134,14 @@ class mVHR10DataModule(NonGeoDataModule):
         self,
         root: Path = 'data',
         split: str = 'positive',
-        train_transform: Callable[[dict[str, Any]], dict[str, Any]] | None = partial(apply_transforms,transforms=get_transform(True)),
-        val_transform: Callable[[dict[str, Any]], dict[str, Any]] | None = partial(apply_transforms,transforms=get_transform(False)),
-        test_transform: Callable[[dict[str, Any]], dict[str, Any]] | None = partial(apply_transforms,transforms=get_transform(False)),
         download: bool = False,
         checksum: bool = False,
         second_level_split="train",
         second_level_split_proportions = (0.7, 0.15, 0.15),
         batch_size: int = 4,
         num_workers: int = 0,
+        # means = ,
+        # stds = ,
         collate_fn = None,
         *args,
         **kwargs):
@@ -103,9 +157,12 @@ class mVHR10DataModule(NonGeoDataModule):
                          second_level_split_proportions=second_level_split_proportions,
                          **kwargs)
 
-        self.train_transform = train_transform
-        self.val_transform = val_transform
-        self.test_transform = test_transform
+        self.train_transform = partial(apply_transforms,transforms=get_transform(True))
+        self.val_transform = partial(apply_transforms,transforms=get_transform(False))
+        self.test_transform = partial(apply_transforms,transforms=get_transform(False))
+        ### add normalisation here
+        self.aug = Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225), max_pixel_value=255)
+
         self.root = root
         self.split = split
         self.second_level_split = second_level_split
@@ -115,7 +172,7 @@ class mVHR10DataModule(NonGeoDataModule):
         self.collate_fn = collate_fn_detection if collate_fn is None else collate_fn
         self.download = download
         self.checksum = checksum
-
+        # self.aug = self.val_transform
 
     def setup(self, stage: str) -> None:
 
@@ -172,4 +229,5 @@ class mVHR10DataModule(NonGeoDataModule):
             num_workers=self.num_workers,
             collate_fn=self.collate_fn
         )
+
 

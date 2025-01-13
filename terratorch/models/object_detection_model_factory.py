@@ -100,13 +100,14 @@ class ObjectDetectionModelFactory(ModelFactory):
         neck_module = nn.Sequential(*neck_list)
 
         combined_backbone = BackboneWrapper(backbone, neck_module)
-
+        # pdb.set_trace()
+        
         if framework == 'faster-rcnn':
-
-            # pdb.set_trace()
-            anchor_generator = AnchorGenerator(
-                sizes=((32), (64), (128), (256), (512)), aspect_ratios=((0.5, 1.0, 2.0))
-            )
+            
+            sizes = ((32), (64), (128), (256), (512))
+            sizes = sizes[:len(combined_backbone.channel_list)]
+            anchor_generator = AnchorGenerator(sizes=sizes, 
+                                               aspect_ratios=((0.5, 1.0, 2.0)))
 
             roi_pooler = MultiScaleRoIAlign(
                 featmap_names=['0', '1', '2', '3'], output_size=7, sampling_ratio=2
@@ -119,7 +120,7 @@ class ObjectDetectionModelFactory(ModelFactory):
                 box_roi_pool=roi_pooler,
                 _skip_resize=True,
                 image_mean = np.repeat(0, in_channels),
-                image_std = np.repeat(0, in_channels)
+                image_std = np.repeat(1, in_channels)
             )
         elif framework == 'fcos':
 
@@ -134,7 +135,7 @@ class ObjectDetectionModelFactory(ModelFactory):
                 anchor_generator=anchor_generator, 
                 _skip_resize=True,
                 image_mean = np.repeat(0, in_channels),
-                image_std = np.repeat(0, in_channels)
+                image_std = np.repeat(1, in_channels)
 
             )
         elif framework == 'retinanet':
@@ -164,7 +165,7 @@ class ObjectDetectionModelFactory(ModelFactory):
                 head=head,
                 _skip_resize=True,
                 image_mean = np.repeat(0, in_channels),
-                image_std = np.repeat(0, in_channels)   
+                image_std = np.repeat(1, in_channels)  
             )
         else:
             raise ValueError(f"Model type '{model}' is not valid.")
@@ -181,9 +182,11 @@ class ObjectDetectionModelFactory(ModelFactory):
 class BackboneWrapper(nn.Module):
     def __init__(self, backbone, necks):
         super().__init__()
+        # pdb.set_trace()
         self.backbone = backbone
         self.necks = necks
         self.out_channels = self.backbone.out_channels[-1] if len(self.necks) == 0 else self.necks[-1].channel_list[-1]
+        self.channel_list = self.backbone.out_channels if len(self.necks) == 0 else self.necks[-1].channel_list
 
     def forward(self, x, **kwargs):
         pdb.set_trace()

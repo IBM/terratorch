@@ -22,80 +22,11 @@ trainer:
   enable_checkpointing: true
   default_root_dir: /dccstor/geofm-finetuning/benchmark-geo-bench-paolo/
 data:
-  class_path: terratorch.datamodules.TorchNonGeoDataModule
+  class_path: terratorch.datamodules.mVHR10DataModule
   init_args:
-    transforms:
-      # - class_path: albumentations.augmentations.geometric.resize.Resize
-      #   init_args:
-      #     height: 224
-      #     width: 224
-      # - class_path: ToTensorV2
-    cls: torchgeo.datamodules.VHR10DataModule
-    batch_size: 16
-    num_workers: 8
-    # dataset_bands:
-    #   - RED
-    #   - GREEN
-    #   - BLUE
-    # output_bands:
-    #   - RED
-    #   - GREEN
-    #   - BLUE
-    # rgb_indices:
-    #   - 0
-    #   - 1
-    #   - 2
-    #constant_scale: 0.0001
-    #dataset_bands:
-    #  - BLUE
-    #  - GREEN
-    #  - RED
-    #output_bands:
-    #  - BLUE
-    #  - GREEN
-    #  - RED
-    #  - NIR_NARROW
-    #rgb_indices:
-    #  - 2
-    #  - 1
-    #  - 0
-    #train_data_root: data/VHR10/NWPU VHR-10 dataset/positive image set
-    #train_label_data_root: data/VHR10/NWPU VHR-10 dataset/ground truth
-    #val_data_root: data/VHR10/NWPU VHR-10 dataset/positive image set
-    #val_label_data_root: data/VHR10/NWPU VHR-10 dataset/ground truth
-    #test_data_root: data/VHR10/NWPU VHR-10 dataset/positive image set
-    #test_label_data_root: data/VHR10/NWPU VHR-10 dataset/ground truth
-    #train_split: data/VHR10/NWPU VHR-10 dataset/train_data.txt
-    #test_split: data/VHR10/NWPU VHR-10 dataset/test_data.txt
-    #val_split: data/VHR10/NWPU VHR-10 dataset/valid_data.txt
-    #img_grep: "*_S2Hand.tif"
-    #label_grep: "*_LabelHand.tif"
-    #no_label_replace: -1
-    #no_data_replace: 0
-    # constant_scale: 1  # Default case
-    #means:
-    #  - 0.1412956
-    #  - 0.13795798
-    #  - 0.12353792
-    #  - 0.30902815
-    #  - 0.2044958
-    #  - 0.11912015
-    #stds:
-    #  - 0.07406382
-    #  - 0.07370365
-    #  - 0.08692279
-    #  - 0.11798815
-    #  - 0.09772074
-    #  - 0.07659938
-    #num_classes: 1000
-    #train_transform:
-    #val_transform:
-    #test_transform:
-  dict_kwargs:
     root: /dccstor/geofm-finetuning/datasets/VHR10/
-    split: positive
-    # download: True
-
+    batch_size: 8
+    num_workers: 8
 
 model:
   class_path: terratorch.tasks.ObjectDetectionTask
@@ -120,11 +51,12 @@ model:
         # - name: ReshapeTokensToImage
         - name: SelectIndices
           indices:
-            # - 5
-            # - 11
-            # - 17
+            - 5
+            - 11
+            - 17
             - 23
         - name: ReshapeTokensToImage
+        - name: LearnedInterpolateToPyramidal
 
         # - name: FeaturePyramidNetwork
         
@@ -132,25 +64,23 @@ model:
     freeze_decoder: false
     # loss: ce
     class_names:  # Optional class names (Alphabetic order for generic classification dataset)
-      - Fish pond
-      - Grassland shrubland
-      - Logging
-      - Mining
-      - Oil palm plantation
-      - Other
-      - Other large-scale plantations
-      - Secondary forest
-      - Small-scale agriculture
-      - Small-scale mixed plantation
-      - Small-scale oil palm plantation
-      - Timber plantation
-    
+      - Background
+      - Airplane
+      - Ships
+      - Storage tank
+      - Baseball diamond
+      - Tennis court
+      - Basketball court
+      - Ground track field
+      - Harbor
+      - Bridge
+      - Vehicle
 
 
 optimizer:
   class_path: torch.optim.AdamW
   init_args:
-    lr: 1e-3
+    # lr: 1e-3
     weight_decay: 0.05
 
 lr_scheduler:

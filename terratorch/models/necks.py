@@ -10,6 +10,7 @@ from torchvision.ops import FeaturePyramidNetwork
 from terratorch.registry import NECK_REGISTRY, TERRATORCH_NECK_REGISTRY
 
 from collections import OrderedDict
+import pdb
 
 
 class Neck(ABC, nn.Module):
@@ -90,6 +91,7 @@ class InterpolateToPyramidal(Neck):
         return out
 
     def process_channel_list(self, channel_list: list[int]) -> list[int]:
+        # pdb.set_trace()
         return super().process_channel_list(channel_list)
 
 
@@ -145,6 +147,7 @@ class ReshapeTokensToImage(Neck):
         self.effective_time_dim = effective_time_dim
 
     def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
+        #pdb.set_trace()
         out = []
         for x in features:
             if self.remove_cls_token:
@@ -162,9 +165,11 @@ class ReshapeTokensToImage(Neck):
                 h=h,
             )
             out.append(encoded)
+        # pdb.set_trace()
         return out
 
     def process_channel_list(self, channel_list: list[int]) -> list[int]:
+        # pdb.set_trace()
         return super().process_channel_list(channel_list)
 
 @TERRATORCH_NECK_REGISTRY.register
@@ -215,9 +220,11 @@ class LearnedInterpolateToPyramidal(Neck):
         scaled_inputs.append(self.fpn2(features[1]))
         scaled_inputs.append(self.fpn3(features[2]))
         scaled_inputs.append(self.fpn4(features[3]))
+        # pdb.set_trace()
         return scaled_inputs
 
-    def process_channel_list(self, channel_list: list[int]) -> list[int]:
+    def process_channel_list(self, channel_list: list[int]=None) -> list[int]:
+        # pdb.set_trace()
         return [channel_list[0] // 4, channel_list[1] // 2, channel_list[2], channel_list[3]]
 
 @TERRATORCH_NECK_REGISTRY.register
@@ -292,6 +299,7 @@ def build_neck_list(ops: list[dict], channel_list: list[int]) -> tuple[list[Neck
             cur_op["name"], cur_channel_list, **{k: v for k, v in cur_op.items() if k != "name"}
         )
         cur_channel_list = op.process_channel_list(cur_channel_list)
+        op.channel_list = cur_channel_list
         neck_list.append(op)
 
     return neck_list, cur_channel_list

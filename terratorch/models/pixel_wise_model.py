@@ -8,7 +8,6 @@ from torch import nn
 from terratorch.models.heads import RegressionHead, SegmentationHead
 from terratorch.models.model import AuxiliaryHeadWithDecoderWithoutInstantiatedHead, Model, ModelOutput
 
-
 def freeze_module(module: nn.Module):
     for param in module.parameters():
         param.requires_grad_(False)
@@ -89,6 +88,7 @@ class PixelWiseModel(Model, SegmentationModel):
 
     def forward(self, x: torch.Tensor, **kwargs) -> ModelOutput:
         """Sequentially pass `x` through model`s encoder, decoder and heads"""
+        
         self.check_input_shape(x)
         input_size = x.shape[-2:]
         features = self.encoder(x, **kwargs)
