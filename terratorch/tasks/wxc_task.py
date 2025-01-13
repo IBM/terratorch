@@ -20,8 +20,7 @@ class WxCTask(BaseTask):
     
     def configure_models(self):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        #self.model = self.model_factory.build_model(backbone='prithviwxc', aux_decoders=None, **self.hparams["model_args"])
-        self.model = self.model_factory.build_model(backbone='prithviwxc', aux_decoders=None, **self.model_args)
+        self.model = self.model_factory.build_model(backbone=self.model_args['backbone'], aux_decoders=self.model_args['aux_decoders'], **self.model_args)
         self.model = self.model.to(device)
         layer_devices = []
         for name, module in self.model.named_children():

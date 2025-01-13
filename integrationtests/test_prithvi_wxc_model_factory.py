@@ -11,6 +11,7 @@ from huggingface_hub import hf_hub_download
 from lightning.pytorch import Trainer
 
 from terratorch.models.wxc_model_factory import WxCModelFactory
+from terratorch.tasks.wxc_task import WxCTask
 
 
 def setup_function():
@@ -213,7 +214,9 @@ def test_wxc_unet_pincer_train():
         "static_input_scalers_sigma": torch.tensor([1] * 3),
         "static_input_scalers_epsilon": 0,
         "output_scalers": torch.tensor([0] * 1280),
-        "backbone_weights": "magnet-flux-uvtp122-epoch-99-loss-0.1022.pt"
+        "backbone_weights": "magnet-flux-uvtp122-epoch-99-loss-0.1022.pt",
+        "backbone": "prithviwxc",
+        "aux_decoders": "unetpincer"
     }
     task = WxCTask(WxCModelFactory(), model_args=model_args, mode='train')
 
