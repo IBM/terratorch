@@ -102,6 +102,9 @@ class ObjectDetectionTask(TerraTorchTask):
             dataloader_idx: Index of the current dataloader.
         """
         x = batch['image']
+        # Workaround for issue https://github.com/kornia/kornia/issues/3066
+        # until kornia 0.7.4 or 8.5 is released.
+        x = x.to(self.device)
         batch_size = len(x)  # Use list length instead of x.shape[0]
         y = [
             {'boxes': batch['boxes'][i], 'labels': batch['labels'][i]}
@@ -157,6 +160,9 @@ class ObjectDetectionTask(TerraTorchTask):
             dataloader_idx: Index of the current dataloader.
         """
         x = batch['image']
+        # Workaround for issue https://github.com/kornia/kornia/issues/3066
+        # until kornia 0.7.4 or 8.5 is released.
+        x = x.to(self.device)
         batch_size = len(x)
         y = [
             {'boxes': batch['boxes'][i], 'labels': batch['labels'][i]}
@@ -233,6 +239,9 @@ class ObjectDetectionTask(TerraTorchTask):
             dataloader_idx: Index of the current dataloader.
         """
         x = batch['image']
+        # Workaround for issue https://github.com/kornia/kornia/issues/3066
+        # until kornia 0.7.4 or 8.5 is released.
+        x = x.to(self.device)
         batch_size = len(x)
         y = [
             {'boxes': batch['boxes'][i], 'labels': batch['labels'][i]}
@@ -259,6 +268,9 @@ class ObjectDetectionTask(TerraTorchTask):
             Output predicted probabilities.
         """
         x = batch["image"]
+        # Workaround for issue https://github.com/kornia/kornia/issues/3066
+        # until kornia 0.7.4 or 8.5 is released.
+        x = x.to(self.device)
         batch_size = len(x)
         y_hat = self(x, y).output
         return y_hat
