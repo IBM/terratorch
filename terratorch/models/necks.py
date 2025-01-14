@@ -262,33 +262,33 @@ class Transform(Neck):
         return [channel_list[0] // 4, channel_list[1] // 2, channel_list[2], channel_list[3]]
 
 @TERRATORCH_NECK_REGISTRY.register
-class FeaturePyramidNetwork(Neck):
-    """Use learned convolutions to transform the output of a non-pyramidal encoder into pyramidal ones
-
-    Always requires exactly 4 embeddings
+class FeaturePyramidNetworkNeck(Neck):
+    """Uses feature pyramid network from torchvision
     """
 
-    def __init__(self, channel_list: list[int], out_channel_list: list[int] | None=None, output_ordered_dict: bool= True):
+    def __init__(self, channel_list: list[int], out_channel: int=256, output_ordered_dict: bool= True):
+
         super().__init__(channel_list)
-        self.out_channel_list = out_channel_list if out_channel_list is not None else channel_list
-        self.fpn = FeaturePyramidNetwork(self.channel_list, self.out_channel_list)
+        self.out_channel = out_channel
+        self.fpn = FeaturePyramidNetwork(self.channel_list, self.out_channel)
         self.output_ordered_dict = output_ordered_dict
 
     def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
-
+        
         if type(features) != "OrderedDict":
             keys = [f'feat{str(i)}' for i, x in enumerate(features)]
             features = OrderedDict(zip(keys, features))
                     
         reconstructed_features = self.fpn(features)
 
-        if output_ordered_dict == False:
+        if self.output_ordered_dict == False:
             reconstructed_features = list(reconstructed_features.values())
     
         return reconstructed_features
 
     def process_channel_list(self, channel_list: list[int]) -> list[int]:
-        return super().process_channel_list(channel_list)
+        channel_list = len(channel_list)*[self.out_channel]
+        return channel_list
 
 
 def build_neck_list(ops: list[dict], channel_list: list[int]) -> tuple[list[Neck], list[int]]:
