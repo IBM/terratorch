@@ -1,0 +1,92 @@
+# lightning.pytorch==2.1.1
+seed_everything: 0
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: 16-mixed
+  logger:
+    class_path: TensorBoardLogger
+    init_args:
+      save_dir: /dccstor/geofm-finetuning/benchmark-geo-bench-paolo/
+      name: od
+  callbacks:
+    - class_path: RichProgressBar
+    - class_path: LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+  max_epochs: 100
+  check_val_every_n_epoch: 1
+  log_every_n_steps: 50
+  enable_checkpointing: true
+  default_root_dir: /dccstor/geofm-finetuning/benchmark-geo-bench-paolo/
+data:
+  class_path: terratorch.datamodules.mVHR10DataModule
+  init_args:
+    root: /dccstor/geofm-finetuning/datasets/VHR10/
+    batch_size: 1
+    num_workers: 1
+
+model:
+  class_path: terratorch.tasks.ObjectDetectionTask
+  init_args:
+    model_factory: ObjectDetectionModelFactory
+    model_args:
+      framework: faster-rcnn  # Model name of TorchVision (one of faster-rcnn, fcos, or retinanet)
+      # backbone: prithvi_eo_v2_300_tl  # One of resnet18, resnet34, resnet50, resnet101, resnet152, resnext50_32x4d, resnext101_32x8d, wide_resnet50_2, or wide_resnet101_2
+      backbone: prithvi_vit_100
+      num_classes: 12  # Number of classes including background
+      # trainable_layers: 3  # Number of trainable layers
+      backbone_bands:
+        - RED
+        - GREEN
+        - BLUE
+      necks:
+        - name: SelectIndices
+          indices:
+            - 2
+            - 5
+            - 8
+            - 11
+        # - name: SelectIndices
+        #   indices:
+        #     - 5
+        #     - 11
+        #     - 17
+        #     - 23
+        - name: ReshapeTokensToImage
+        - name: LearnedInterpolateToPyramidal
+        - name: FeaturePyramidNetworkNeck
+
+        # - name: FeaturePyramidNetwork
+        
+    freeze_backbone: false
+    freeze_decoder: false
+    # loss: ce
+    class_names:  # Optional class names (Alphabetic order for generic classification dataset)
+      - Background
+      - Airplane
+      - Ships
+      - Storage tank
+      - Baseball diamond
+      - Tennis court
+      - Basketball court
+      - Ground track field
+      - Harbor
+      - Bridge
+      - Vehicle
+
+
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    # lr: 1e-3
+    weight_decay: 0.05
+
+lr_scheduler:
+  class_path: CosineAnnealingLR
+  init_args:
+    T_max: 20
+
+
