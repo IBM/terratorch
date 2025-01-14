@@ -18,7 +18,7 @@ from functools import partial
 
 from terratorch.datasets import mVHR10
 
-from torchgeo.datamodules.utils import collate_fn_detection
+# from torchgeo.datamodules.utils import collate_fn_detection
 from torchgeo.datamodules import NonGeoDataModule
 
 import albumentations as A
@@ -50,15 +50,26 @@ import pdb
 #     # collated_targets = [{k: default_collate([d[k] for d in transformed_targets]) for k in transformed_targets[0]}]
     
 #     return {'image': collated_images, 'bboxes': collated_bboxes, 'masks': collated_masks, 'labels': collated_labels}
+def collate_fn_detection(batch):
+    new_batch = {
+        "image": [item["image"] for item in batch],
+        "boxes": [item["boxes"] for item in batch],
+        "labels": [item["labels"] for item in batch],
+        "masks": [item["masks"] for item in batch],
+    }
+    print("Collate function")
+    print(new_batch)
+    return new_batch
 
 
-def get_transform(train):
+def get_transform(train, image_size=448):
     transforms = []
+    transforms.append(A.PadIfNeeded(min_height=image_size, min_width=image_size, value=0, border_mode=0))
     if train:
-        transforms.append(A.RandomCrop(width=224, height=224))
+        transforms.append(A.RandomCrop(width=image_size, height=image_size))
         transforms.append(A.HorizontalFlip(p=0.5))
     else:
-        transforms.append(A.CenterCrop(width=224, height=224))
+        transforms.append(A.CenterCrop(width=image_size, height=image_size))
     transforms.append(A.ToFloat())
     transforms.append(T.ToTensorV2())
     # return A.Compose(transforms, additional_targets={'boxes': 'bboxes', 'masks': 'mask'})
@@ -91,6 +102,7 @@ def apply_transforms(sample, transforms):
     transformed['labels'] = torch.tensor(transformed['labels'], dtype=torch.int8)
     del transformed['bboxes']
     # print("Done transform")
+    # print(transformed)
     return transformed
 
 class Normalize(Callable):
