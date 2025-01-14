@@ -150,7 +150,7 @@ class ObjectDetectionTask(BaseTask):
             The loss tensor.
         """
         print("training")
-        pdb.set_trace()
+        #pdb.set_trace()
         x = batch['image']
         batch_size = x.shape[0]
         y = [
@@ -158,6 +158,8 @@ class ObjectDetectionTask(BaseTask):
             for i in range(batch_size)
         ]
         loss_dict = self(x, y)
+        if isinstance(loss_dict, dict) == False:
+            loss_dict = loss_dict.output
         train_loss: Tensor = sum(loss_dict.values())
         self.log_dict(loss_dict, batch_size=batch_size)
         return train_loss

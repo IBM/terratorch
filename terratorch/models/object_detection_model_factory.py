@@ -110,7 +110,7 @@ class ObjectDetectionModelFactory(ModelFactory):
                                                aspect_ratios=((0.5, 1.0, 2.0)))
 
             roi_pooler = MultiScaleRoIAlign(
-                featmap_names=['0', '1', '2', '3'], output_size=7, sampling_ratio=2
+                featmap_names=['feat0', 'feat1', 'feat2', 'feat3'], output_size=7, sampling_ratio=2
             )
 
             model = torchvision.models.detection.FasterRCNN(
