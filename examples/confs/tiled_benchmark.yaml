@@ -1,0 +1,129 @@
+# lightning.pytorch==2.1.1
+seed_everything: 0
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: 16-mixed
+  logger:
+    class_path: TensorBoardLogger
+    init_args:
+      save_dir: <path>
+      name: fire_scars
+  callbacks:
+    - class_path: RichProgressBar
+    - class_path: LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+    - class_path: EarlyStopping
+      init_args:
+        monitor: val/loss
+        patience: 40
+
+  max_epochs: 200
+  check_val_every_n_epoch: 1
+  log_every_n_steps: 50
+  enable_checkpointing: true
+  default_root_dir: <path>
+
+# dataset available: https://huggingface.co/datasets/ibm-nasa-geospatial/hls_burn_scars
+data:
+  class_path: GenericNonGeoSegmentationDataModule
+  init_args:
+    batch_size: 4
+    num_workers: 8
+    dataset_bands:
+      - BLUE
+      - GREEN
+      - RED
+      - NIR_NARROW
+      - SWIR_1
+      - SWIR_2
+    output_bands:
+      - BLUE
+      - GREEN
+      - RED
+      - NIR_NARROW
+      - SWIR_1
+      - SWIR_2
+    rgb_indices:
+      - 2
+      - 1
+      - 0
+    train_transform:
+      - class_path: albumentations.RandomCrop
+        init_args:
+          height: 224
+          width: 224
+      - class_path: albumentations.HorizontalFlip
+        init_args:
+          p: 0.5
+      - class_path: ToTensorV2
+    no_data_replace: 0
+    no_label_replace: -1
+    train_data_root: <data_path>/training
+    train_label_data_root: <data_path>/training
+    val_data_root: <data_path>/validation
+    val_label_data_root: <data_path>/validation
+    test_data_root: <data_path>/validation
+    test_label_data_root: <data_path>/validation
+    img_grep: "*.tif"
+    label_grep: "*.tif"
+    means:
+      - 0.033349706741586264
+      - 0.05701185520536176
+      - 0.05889748132001316
+      - 0.2323245113436119
+      - 0.1972854853760658
+      - 0.11944914225186566
+    stds:
+      - 0.02269135568823774
+      - 0.026807560223070237
+      - 0.04004109844362779
+      - 0.07791732423672691
+      - 0.08708738838140137
+      - 0.07241979477437814
+    num_classes: 2
+
+model:
+  class_path: terratorch.tasks.SemanticSegmentationTask
+  init_args:
+    model_args:
+      decoder: FCNDecoder
+      backbone_pretrained: true
+      backbone: prithvi_vit_100
+      decoder_channels: 256
+      backbone_bands:
+        - BLUE
+        - GREEN
+        - RED
+        - NIR_NARROW
+        - SWIR_1
+        - SWIR_2
+      num_classes: 2
+      head_dropout: 0.1
+      decoder_num_convs: 4
+      head_channel_list:
+        - 256
+    loss: dice
+    plot_on_val: 10
+    ignore_index: -1
+    freeze_backbone: false
+    freeze_decoder: false
+    model_factory: EncoderDecoderFactory
+    tiled_inference_parameters:
+      h_crop: 224
+      h_stride: 220
+      w_crop: 224
+      w_stride: 220
+      average_patches: true
+optimizer:
+  class_path: torch.optim.Adam
+  init_args:
+    lr: 1.5e-5
+    weight_decay: 0.05
+lr_scheduler:
+  class_path: ReduceLROnPlateau
+  init_args:
+    monitor: val/loss
