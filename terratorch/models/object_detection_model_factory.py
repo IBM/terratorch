@@ -99,7 +99,7 @@ class ObjectDetectionModelFactory(ModelFactory):
                                                   
         neck_module = nn.Sequential(*neck_list)
 
-        combined_backbone = BackboneWrapper(backbone, neck_module)
+        combined_backbone = BackboneWrapper(backbone, neck_module, channel_list)
         # pdb.set_trace()
         
         if framework == 'faster-rcnn':
@@ -180,19 +180,19 @@ class ObjectDetectionModelFactory(ModelFactory):
 
 
 class BackboneWrapper(nn.Module):
-    def __init__(self, backbone, necks):
+    def __init__(self, backbone, necks, channel_list):
         super().__init__()
         # pdb.set_trace()
         self.backbone = backbone
         self.necks = necks
-        self.out_channels = self.backbone.out_channels[-1] if len(self.necks) == 0 else self.necks[-1].channel_list[-1]
-        self.channel_list = self.backbone.out_channels if len(self.necks) == 0 else self.necks[-1].channel_list
+        self.out_channels = channel_list[-1]
+        self.channel_list = channel_list
 
     def forward(self, x, **kwargs):
-        pdb.set_trace()
+        # pdb.set_trace()
         x = self.backbone(x, **kwargs)
         x = self.necks(x)
-        x = {i: v for i, v in enumerate(x)}
+        # x = {i: v for i, v in enumerate(x)}
         return x
 
 
