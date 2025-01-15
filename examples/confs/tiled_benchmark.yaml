@@ -1,7 +1,7 @@
 # lightning.pytorch==2.1.1
 seed_everything: 0
 trainer:
-  accelerator: auto
+  accelerator: cpu #auto
   strategy: auto
   devices: auto
   num_nodes: 1
@@ -32,7 +32,7 @@ data:
   class_path: GenericNonGeoSegmentationDataModule
   init_args:
     batch_size: 4
-    num_workers: 8
+    num_workers: 20
     dataset_bands:
       - BLUE
       - GREEN

@@ -9,7 +9,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 import torch
-
+import time
 
 @dataclass
 class TiledInferenceParameters:
@@ -73,7 +73,7 @@ def tiled_inference(
 
     # Stage 1: deal with border patches
     # Deal with patches near the right border
-
+    time_init = time.time()
     coordinates_and_inputs: list[InferenceInput] = []
     for i in range(0, h_img - inference_parameters.h_crop + 1, inference_parameters.h_crop):
         patch = input_batch[..., i : i + inference_parameters.h_crop, w_img - inference_parameters.w_crop : w_img]
@@ -87,6 +87,8 @@ def tiled_inference(
             for b in range(batch_size)
         ]
 
+    print(f"Time elapsed: {time.time() - time_init} s")
+    time_init = time.time()
     # Deal with patches near the bottom of the image
     for i in range(0, w_img - inference_parameters.w_crop + 1, inference_parameters.w_crop):
         patch = input_batch[..., h_img - inference_parameters.h_crop : h_img, i : i + inference_parameters.w_crop]
@@ -100,6 +102,8 @@ def tiled_inference(
             for b in range(batch_size)
         ]
 
+    print(f"Time elapsed: {time.time() - time_init} s")
+    time_init = time.time()
     # Deal with last patches at the right bottom of the image
     patch = input_batch[..., h_img - inference_parameters.h_crop : h_img, w_img - inference_parameters.w_crop : w_img]
     coordinates_and_inputs += [
@@ -111,6 +115,8 @@ def tiled_inference(
         )
         for b in range(batch_size)
     ]
+    print(f"Time elapsed: {time.time() - time_init} s")
+    time_init = time.time()
 
     if inference_parameters.delta:
         delta_x = inference_parameters.delta
@@ -119,6 +125,7 @@ def tiled_inference(
         delta_x = min(16, (inference_parameters.w_crop - inference_parameters.w_stride) // 2)
         delta_y = min(16, (inference_parameters.h_crop - inference_parameters.h_stride) // 2)
 
+    time_init = time.time()
     # Stage 2: process internally with patch overlap {2*delta/inference_parameters.w_crop}
     nr = h_img
     nc = w_img
@@ -151,6 +158,9 @@ def tiled_inference(
                     )
                     for b in range(batch_size)
                 ]
+
+    print(f"Time elapsed: {time.time() - time_init} s")
+    time_init = time.time()
 
     # NOTE: the output may be SLIGHTLY different using batched inputs because of layers such as nn.LayerNorm
     # During inference, these layers compute batch statistics that affect the output.
@@ -189,6 +199,7 @@ def tiled_inference(
                     batch_input.input_coords[1],
                 ] += 1
 
+    print(f"Time elapsed: {time.time() - time_init} s")
     if (preds_count == 0).sum() != 0:
         msg = "Some pixels did not receive a classification!"
         raise RuntimeError(msg)
