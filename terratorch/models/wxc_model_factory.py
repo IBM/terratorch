@@ -60,6 +60,9 @@ class WxCModelFactory(ModelFactory):
                 print(f"Module not found: {e.name}. Please install PrithviWxC using pip install PrithviWxC")
                 raise
 
+            #remove parameters not meant for the backbone but for other parts of the model
+            skip_connection = kwargs.pop('skip_connection')
+
             backbone = prithviwxc.PrithviWxC(**kwargs)
 
             # Freeze PrithviWxC model parameters
@@ -108,7 +111,7 @@ class WxCModelFactory(ModelFactory):
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             backbone.to(device)
             if aux_decoders is not None:
-                model_to_return = UNetPincer(backbone).to(device)
+                model_to_return = UNetPincer(backbone, skip_connection=skip_connection).to(device)
                 return model_to_return
             return WxCModuleWrapper(backbone)
 

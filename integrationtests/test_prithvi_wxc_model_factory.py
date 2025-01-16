@@ -14,6 +14,10 @@ from terratorch.models.wxc_model_factory import WxCModelFactory
 from terratorch.tasks.wxc_task import WxCTask
 import lightning.pytorch as pl
 
+from terratorch.datamodules.era5 import ERA5DataModule
+from terratorch.tasks.wxc_task import WxCTask
+from typing import Any
+
 
 def setup_function():
     print("\nSetup function is called")
@@ -24,6 +28,41 @@ def teardown_function():
     except OSError:
         pass
 
+class StopTrainerCallback(pl.Callback):
+    def __init__(self, stop_after_n_batches):
+        super().__init__()
+        self.stop_after_n_batches = stop_after_n_batches
+        self.current_batch = 0
+
+    def on_predict_batch_end(
+            self,
+            trainer: "pl.Trainer",
+            pl_module: "pl.LightningModule",
+            outputs: Any,
+            batch: Any,
+            batch_idx: int,
+            dataloader_idx: int = 0,
+    ) -> None:
+        self.current_batch += 1
+        if self.current_batch >= self.stop_after_n_batches:
+            print("Stopping training early...")
+            #trainer.should_stop = True
+            raise StopIteration("Stopped prediction after reaching the specified batch limit.")
+
+    def on_train_batch_end(
+            self,
+            trainer: "pl.Trainer",
+            pl_module: "pl.LightningModule",
+            outputs: Any,
+            batch: Any,
+            batch_idx: int,
+            dataloader_idx: int = 0,
+    ) -> None:
+        self.current_batch += 1
+        if self.current_batch >= self.stop_after_n_batches:
+            print("Stopping training early...")
+            #trainer.should_stop = True
+            raise StopIteration("Stopped prediction after reaching the specified batch limit.")
 
 @pytest.mark.parametrize("backbone", ["gravitywave", None, 'prithviwxc'])
 def test_can_create_wxc_models(backbone):
@@ -94,9 +133,6 @@ def test_wxc_unet_pincer_inference():
     )
 
     hf_hub_download(
-        repo_id="Prithvi-WxC/Gravity_wave_Parameterization",
-        filename=f"config.yaml",
-        local_dir=".",
     )
 
     hf_hub_download(
@@ -105,10 +141,6 @@ def test_wxc_unet_pincer_inference():
         filename=f"wxc_input_u_v_t_p_output_theta_uw_vw_era5_training_data_hourly_2015_constant_mu_sigma_scaling05.nc",
         local_dir=".",
     )
-
-    from prithviwxc.gravitywave.datamodule import ERA5DataModule
-    from terratorch.tasks.wxc_task import WxCTask
-    from typing import Any
 
     model_args = {
         "in_channels": 1280,
@@ -145,27 +177,6 @@ def test_wxc_unet_pincer_inference():
         "aux_decoders": "unetpincer",
     }
     task = WxCTask(WxCModelFactory(), model_args=model_args, mode='eval')
-
-    class StopTrainerCallback(pl.Callback):
-        def __init__(self, stop_after_n_batches):
-            super().__init__()
-            self.stop_after_n_batches = stop_after_n_batches
-            self.current_batch = 0
-
-        def on_predict_batch_end(
-                self,
-                trainer: "pl.Trainer",
-                pl_module: "pl.LightningModule",
-                outputs: Any,
-                batch: Any,
-                batch_idx: int,
-                dataloader_idx: int = 0,
-        ) -> None:
-            self.current_batch += 1
-            if self.current_batch >= self.stop_after_n_batches:
-                print("Stopping training early...")
-                #trainer.should_stop = True
-                raise StopIteration("Stopped prediction after reaching the specified batch limit.")
 
     trainer = Trainer(
         max_epochs=1,
@@ -210,7 +221,6 @@ def test_wxc_unet_pincer_train():
         local_dir=".",
     )
 
-    from prithviwxc.gravitywave.datamodule import ERA5DataModule
     model_args = {
         "in_channels": 1280,
         "input_size_time": 1,
@@ -241,11 +251,16 @@ def test_wxc_unet_pincer_train():
         "static_input_scalers_sigma": torch.tensor([1] * 3),
         "static_input_scalers_epsilon": 0,
         "output_scalers": torch.tensor([0] * 1280),
+        "backbone_weights": "magnet-flux-uvtp122-epoch-99-loss-0.1022.pt",
+        "backbone": "prithviwxc",
+        "aux_decoders": "unetpincer",
+        "skip_connection": True,
     }
 
     task = WxCTask(WxCModelFactory(), model_args=model_args, mode='train')
 
     trainer = Trainer(
+        callbacks=[StopTrainerCallback(stop_after_n_batches=3)],
         max_epochs=1,
     )
     dm = ERA5DataModule(train_data_path='.', valid_data_path='.')

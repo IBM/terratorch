@@ -48,7 +48,7 @@ class Encoder(nn.Module):
     
 
 class Decoder(nn.Module):
-    def __init__(self, hidden_channels, out_channels, hidden_channels_multiplier : list = [(16,8),(12,4),(6,2),(3,1)] , num_decoder_blocks=4):
+    def __init__(self, hidden_channels, out_channels, hidden_channels_multiplier : list = [(16,8),(12,4),(6,2),(3,1)] , num_decoder_blocks=4, skip_connection=True):
         if len(hidden_channels_multiplier) != num_decoder_blocks:
             raise ValueError(f'hidden channels multiplier lenght {len(hidden_channels_multiplier)} not matching encoder blocks {num_decoder_blocks}')
         super(Decoder, self).__init__()
@@ -74,13 +74,17 @@ class Decoder(nn.Module):
         # Final output layer
         self.final_conv = nn.Conv2d(hidden_channels, out_channels, kernel_size=1)
 
+        self.skip_connection = skip_connection
+
     def forward(self, encoders_values : tuple, backbone_values : torch.Tensor):
         if len(encoders_values) != len(self.decoders):
             raise ValueError(f'asymetric UNets not (yet) supported, encoders {len(encoders_values)} not matching decoders {len(self.decoders)}')
          
         pass_on = backbone_values
-        for index, encoder in enumerate(reversed(encoders_values)):
-            pass_on = self.decoders[index](torch.cat((pass_on, encoder), dim=1))
+
+        if self.skip_connection:
+            for index, encoder in enumerate(reversed(encoders_values)):
+                pass_on = self.decoders[index](torch.cat((pass_on, encoder), dim=1))
 
         output = self.final_conv(pass_on)
         return output
@@ -98,6 +102,7 @@ class UNetPincer(nn.Module):
         encoder_num_encoder_blocks=4,
         decoder_hidden_channels_multiplier : list = [(16,8),(12,4),(6,2),(3,1)],
         decoder_num_decoder_blocks=4,
+        skip_connection=True,
     ):
         super().__init__()
 
@@ -115,14 +120,13 @@ class UNetPincer(nn.Module):
         self.encoder = self.encoder.to(device)
         self.decoder = self.decoder.to(device)
         self.backbone = backbone.to(device)
+        self.skip_connection = skip_connection
 
     def forward(self, batch: dict[str, torch.Tensor]) -> torch.Tensor:
-        print('Forward called on UNetPincer')
         x = batch["x"]
         lead_time = batch["lead_time"]
         static = batch["static"]
         x = x.squeeze(1)
-        print('Forward called on UNetPincer1')
 
         encoder_values: tuple = self.encoder(x)
 
@@ -130,7 +134,6 @@ class UNetPincer(nn.Module):
         *_, last_encoder_value = encoder_values
         batch_size, c, h, w = last_encoder_value.size()
         last_encoder_value_reshaped = last_encoder_value.unsqueeze(1)
-        print('Forward called on UNetPincer2')
 
         # Prepare input for transformer model
         batch_dict = {
@@ -140,16 +143,13 @@ class UNetPincer(nn.Module):
             "static": static,
             "input_time": torch.zeros_like(lead_time),
         }
-        print('Forward called on UNetPincer3')
 
         # Transformer forward pass
         transformer_output = self.backbone(batch_dict)
         transformer_output_reshaped = transformer_output.view(batch_size, c, h, w)
-        print('Forward called on UNetPincer4')
 
         # Decode the transformer output
         output = self.decoder(encoder_values, transformer_output_reshaped)
-        print('Forward called on UNetPincer5')
 
         return output
 
