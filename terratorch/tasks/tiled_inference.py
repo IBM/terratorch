@@ -40,6 +40,48 @@ class InferenceInput:
     input_data: torch.Tensor
     output_crop: None | tuple[slice, slice]
 
+class VectorInference:
+
+    def __init__(self, process_batch_size=None, coordinates_and_inputs=None, inference_parameters=None):
+
+        self.process_batch_size = process_batch_size
+        self.coordinates_and_inputs = coordinates_and_inputs
+        self.inference_parameters = inference_parameters
+
+    def model_inference(self, start):
+        print(start)
+        start = int(start)
+
+        end = min(len(self.coordinates_and_inputs), start + self.process_batch_size)
+        batch = self.coordinates_and_inputs[start:end]
+        tensor_input = torch.stack([b.input_data for b in batch], dim=0)
+        output = model_forward(tensor_input)
+        output = [output[i] for i in range(len(batch))]
+        for batch_input, predicted in zip(batch, output, strict=True):
+            if batch_input.output_crop is not None:
+                predicted = predicted[..., batch_input.output_crop[0], batch_input.output_crop[1]]
+            if self.inference_parameters.average_patches:
+                preds[
+                    batch_input.batch,
+                    :,
+                    batch_input.input_coords[0],
+                    batch_input.input_coords[1],
+                ] += predicted
+            else:
+                preds[
+                    batch_input.batch,
+                    :,
+                    batch_input.input_coords[0],
+                    batch_input.input_coords[1],
+                ] = predicted
+
+            preds_count[
+                batch_input.batch,
+                batch_input.input_coords[0],
+                batch_input.input_coords[1],
+            ] += 1
+
+        return preds, preds_count
 
 def tiled_inference(
     model_forward: Callable,
@@ -160,7 +202,6 @@ def tiled_inference(
                 ]
 
     print(f"Time elapsed: {time.time() - time_init} s")
-    time_init = time.time()
 
     # NOTE: the output may be SLIGHTLY different using batched inputs because of layers such as nn.LayerNorm
     # During inference, these layers compute batch statistics that affect the output.
@@ -169,37 +210,13 @@ def tiled_inference(
     process_batch_size = 16
     with torch.no_grad():
         preds_count = input_batch.new_zeros(batch_size, preds.shape[-2], preds.shape[-1])
-        for start in range(0, len(coordinates_and_inputs), process_batch_size):
-            end = min(len(coordinates_and_inputs), start + process_batch_size)
-            batch = coordinates_and_inputs[start:end]
-            tensor_input = torch.stack([b.input_data for b in batch], dim=0)
-            output = model_forward(tensor_input)
-            output = [output[i] for i in range(len(batch))]
-            for batch_input, predicted in zip(batch, output, strict=True):
-                if batch_input.output_crop is not None:
-                    predicted = predicted[..., batch_input.output_crop[0], batch_input.output_crop[1]]
-                if inference_parameters.average_patches:
-                    preds[
-                        batch_input.batch,
-                        :,
-                        batch_input.input_coords[0],
-                        batch_input.input_coords[1],
-                    ] += predicted
-                else:
-                    preds[
-                        batch_input.batch,
-                        :,
-                        batch_input.input_coords[0],
-                        batch_input.input_coords[1],
-                    ] = predicted
-
-                preds_count[
-                    batch_input.batch,
-                    batch_input.input_coords[0],
-                    batch_input.input_coords[1],
-                ] += 1
-
-    print(f"Time elapsed: {time.time() - time_init} s")
+        vectorized_instance = VectorInference(process_batch_size=process_batch_size, coordinates_and_inputs=coordinates_and_inputs)
+        vectorized_loop = torch.vmap(vectorized_instance.model_inference)
+        time_init = time.time()
+        starts_list = torch.Tensor(list(range(0, len(coordinates_and_inputs), process_batch_size)))
+        preds = vectorized_loop(starts_list)
+        print(f"Model Time elapsed: {time.time() - time_init} s")
+        print(preds)
     if (preds_count == 0).sum() != 0:
         msg = "Some pixels did not receive a classification!"
         raise RuntimeError(msg)
