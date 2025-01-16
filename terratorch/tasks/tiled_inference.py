@@ -66,11 +66,13 @@ class VectorInference:
             tensor_input = torch.stack([b.input_data for b in batch], dim=0)
             tensor_inputs.append(tensor_input)
 
-            time_init = time.time()
-            output = self.vectorized_loop(tensor_input)
-            print(f"Time elapsed: {time.time() - time_init} s")
+        tensor_inputs = torch.cat(tensor_inputs, dim=0)
+        print(tensor_inputs.shape)
+        time_init = time.time()
+        output = self.vectorized_loop(tensor_input)
+        print(f"Time elapsed: {time.time() - time_init} s")
 
-        #for start in starts_list:
+        for start in starts_list:
 
             end = min(len(self.coordinates_and_inputs), start + self.process_batch_size)
             batch = self.coordinates_and_inputs[start:end]
