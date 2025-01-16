@@ -138,4 +138,4 @@ if importlib.util.find_spec("segmentation_models_pytorch"):
     SMP_DECODER_REGISTRY = SMPRegistry()
     DECODER_REGISTRY.register_source("smp", SMP_DECODER_REGISTRY)
 else:
-    logging.debug("segmentation_models_pytorch not installed, so SMPRegistry not created")
+    logging.getLogger("terratorch").debug("segmentation_models_pytorch not installed, so SMPRegistry not created")

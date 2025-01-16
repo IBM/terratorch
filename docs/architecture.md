@@ -57,4 +57,7 @@ For convenience, we provide a loss handler that can be used to compute the full 
 Refer to the section on [data](data.md)
 
 ## Exporting models
-A future feature would be the possibility to save models in ONNX format, and export them that way. This would bring all the benefits of onnx.
+Models are saved using the PyTorch format, which basically serializes the model weights using pickle
+and store them into a binary file. 
+
+<A future feature would be the possibility to save models in ONNX format, and export them that way. This would bring all the benefits of onnx.>

@@ -1,5 +1,5 @@
 from typing import Any
-
+import logging
 import lightning
 import matplotlib.pyplot as plt
 import torch
@@ -7,7 +7,6 @@ from lightning.pytorch.callbacks import Callback
 from segmentation_models_pytorch.losses import FocalLoss, JaccardLoss
 from torch import Tensor, nn
 from torchgeo.datasets.utils import unbind_samples
-from torchgeo.trainers import BaseTask
 from torchmetrics import ClasswiseWrapper, MetricCollection
 from torchmetrics.classification import MulticlassAccuracy, MulticlassFBetaScore, MulticlassJaccardIndex
 
@@ -15,14 +14,16 @@ from terratorch.models.model import AuxiliaryHead, Model, ModelOutput
 from terratorch.registry.registry import MODEL_FACTORY_REGISTRY
 from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
+from terratorch.tasks.base_task import TerraTorchTask
 
+logger = logging.getLogger('terratorch')
 
 def to_class_prediction(y: ModelOutput) -> Tensor:
     y_hat = y.output
     return y_hat.argmax(dim=1)
 
 
-class ClassificationTask(BaseTask):
+class ClassificationTask(TerraTorchTask):
     """Classification Task that accepts models from a range of sources.
 
     This class is analog in functionality to class:ClassificationTask defined by torchgeo.
@@ -43,7 +44,8 @@ class ClassificationTask(BaseTask):
     def __init__(
         self,
         model_args: dict,
-        model_factory: str,
+        model_factory: str | None = None,
+        model: torch.nn.Module | None = None,
         loss: str = "ce",
         aux_heads: list[AuxiliaryHead] | None = None,
         aux_loss: dict[str, float] | None = None,
@@ -67,7 +69,9 @@ class ClassificationTask(BaseTask):
 
             Defaults to None.
             model_args (Dict): Arguments passed to the model factory.
-            model_factory (str): ModelFactory class to be used to instantiate the model.
+            model_factory (str, optional): ModelFactory class to be used to instantiate the model.
+                Is ignored when model is provided.
+            model (torch.nn.Module, optional): Custom model.
             loss (str, optional): Loss to be used. Currently, supports 'ce', 'jaccard' or 'focal' loss.
                 Defaults to "ce".
             aux_loss (dict[str, float] | None, optional): Auxiliary loss weights.
@@ -96,41 +100,26 @@ class ClassificationTask(BaseTask):
         """
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
-        self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
-        super().__init__()
+
+        if model is not None and model_factory is not None:
+            logger.warning("A model_factory and a model was provided. The model_factory is ignored.")
+        if model is None and model_factory is None:
+            raise ValueError("A model_factory or a model (torch.nn.Module) must be provided.")
+
+        if model_factory and model is None:
+            self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
+
+        super().__init__(task="classification")
+
+        if model:
+            # Custom model
+            self.model = model
+
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
         self.test_loss_handler = LossHandler(self.test_metrics.prefix)
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
         self.monitor = f"{self.val_metrics.prefix}loss"
 
-    # overwrite early stopping
-    def configure_callbacks(self) -> list[Callback]:
-        return []
-
-    def configure_models(self) -> None:
-        self.model: Model = self.model_factory.build_model(
-            "classification", aux_decoders=self.aux_heads, **self.hparams["model_args"]
-        )
-        if self.hparams["freeze_backbone"]:
-            self.model.freeze_encoder()
-        if self.hparams["freeze_decoder"]:
-            self.model.freeze_decoder()
-
-    def configure_optimizers(
-        self,
-    ) -> "lightning.pytorch.utilities.types.OptimizerLRSchedulerConfig":
-        optimizer = self.hparams["optimizer"]
-        if optimizer is None:
-            optimizer = "Adam"
-        return optimizer_factory(
-            optimizer,
-            self.hparams["lr"],
-            self.parameters(),
-            self.hparams["optimizer_hparams"],
-            self.hparams["scheduler"],
-            self.monitor,
-            self.hparams["scheduler_hparams"],
-        )
 
     def configure_losses(self) -> None:
         """Initialize the loss criterion.
@@ -139,8 +128,14 @@ class ClassificationTask(BaseTask):
             ValueError: If *loss* is invalid.
         """
         loss: str = self.hparams["loss"]
+        ignore_index = self.hparams["ignore_index"]
+
+        class_weights = (
+                    torch.Tensor(self.hparams["class_weights"]) if self.hparams["class_weights"] is not None else None
+                )
         if loss == "ce":
-            self.criterion: nn.Module = nn.CrossEntropyLoss(weight=self.hparams["class_weights"])
+            ignore_value = -100 if ignore_index is None else ignore_index
+            self.criterion = nn.CrossEntropyLoss(ignore_index=ignore_value, weight=class_weights)
         elif loss == "bce":
             self.criterion = nn.BCEWithLogitsLoss()
         elif loss == "jaccard":
@@ -215,11 +210,6 @@ class ClassificationTask(BaseTask):
 
         return loss["loss"]
 
-    def on_train_epoch_end(self) -> None:
-        self.log_dict(self.train_metrics.compute(), sync_dist=True)
-        self.train_metrics.reset()
-        return super().on_train_epoch_end()
-
     def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         """Compute the validation loss and additional metrics.
 
@@ -237,11 +227,6 @@ class ClassificationTask(BaseTask):
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat_hard = to_class_prediction(model_output)
         self.val_metrics.update(y_hat_hard, y)
-
-    def on_validation_epoch_end(self) -> None:
-        self.log_dict(self.val_metrics.compute(), sync_dist=True)
-        self.val_metrics.reset()
-        return super().on_validation_epoch_end()
 
     def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         """Compute the test loss and additional metrics.
@@ -261,11 +246,6 @@ class ClassificationTask(BaseTask):
         y_hat_hard = to_class_prediction(model_output)
         self.test_metrics.update(y_hat_hard, y)
 
-    def on_test_epoch_end(self) -> None:
-        self.log_dict(self.test_metrics.compute(), sync_dist=True)
-        self.test_metrics.reset()
-        return super().on_test_epoch_end()
-
     def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         """Compute the predicted class probabilities.
 
@@ -278,7 +258,7 @@ class ClassificationTask(BaseTask):
             Output predicted probabilities.
         """
         x = batch["image"]
-        file_names = batch["filename"]
+        file_names = batch["filename"] if "filename" in batch else None
         other_keys = batch.keys() - {"image", "label", "filename"}
         rest = {k:batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)

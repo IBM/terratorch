@@ -32,14 +32,25 @@ try:
     wxc_present = True
     from terratorch.datamodules.merra2_downscale import Merra2DownscaleNonGeoDataModule 
 except ImportError as e:
-    print('wxc_downscaling not installed')
+    import logging
+    logging.getLogger("terratorch").debug("wxc_downscaling not installed")
     wxc_present = False
 
 # GenericNonGeoRegressionDataModule,
 from terratorch.datamodules.sen1floods11 import Sen1Floods11NonGeoDataModule
 from terratorch.datamodules.sen4agrinet import Sen4AgriNetDataModule
 from terratorch.datamodules.torchgeo_data_module import TorchGeoDataModule, TorchNonGeoDataModule
+from terratorch.datamodules.generic_multimodal_data_module import GenericMultiModalDataModule
 
+
+# miscellaneous datamodules
+from terratorch.datamodules.openearthmap import OpenEarthMapNonGeoDataModule
+
+from terratorch.datamodules.burn_intensity import BurnIntensityNonGeoDataModule
+from terratorch.datamodules.carbonflux import CarbonFluxNonGeoDataModule
+from terratorch.datamodules.landslide4sense import Landslide4SenseNonGeoDataModule
+from terratorch.datamodules.biomassters import BioMasstersNonGeoDataModule
+from terratorch.datamodules.forestnet import ForestNetNonGeoDataModule
 
 # miscellaneous datamodules
 from terratorch.datamodules.openearthmap import OpenEarthMapNonGeoDataModule
@@ -56,6 +67,11 @@ __all__ = (
     "GenericNonGeoSegmentationDataModule",
     "GenericNonGeoClassificationDataModule",
     # "GenericNonGeoRegressionDataModule",
+    "BurnIntensityNonGeoDataModule",
+    "CarbonFluxNonGeoDataModule",
+    "Landslide4SenseNonGeoDataModule",
+    "ForestNetNonGeoDataModule",
+    "BioMasstersNonGeoDataModule"
     "Sen1Floods11NonGeoDataModule",
     "Sen4MapLucasDataModule",
     "FireScarsNonGeoDataModule",
@@ -78,6 +94,7 @@ __all__ = (
     "OpenSentinelMapDataModule",
     "PASTISDataModule",
     "Sen4AgriNetDataModule",
+    "GenericMultiModalDataModule",,
     "mVHR10DataModule"
 )
 

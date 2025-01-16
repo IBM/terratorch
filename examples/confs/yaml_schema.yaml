@@ -1,0 +1,201 @@
+seed_everything: int(required=True)
+trainer: include('trainer', required=False)
+data: include('data', required=True)
+model: include('model', required=True)
+optimizer: include('optimizer', required=False)
+lr_scheduler: include('lr_scheduler', required=False)
+
+---
+# parameters for field 'trainer':
+trainer: 
+  accelerator: enum('auto', 'None', 'gpu', 'tpu', 'cuda', 'cpu', 'hpu', 'mps', 'tpu', 'xla', required=True) #/Users/jaionetirapuazpiroz/anaconda3/envs/terratorch4dev/lib/python3.11/site-packages/lightning/pytorch/trainer/connectors/accelerator_connector.py line 139
+  strategy: enum('auto', 'ddp', 'ddp_spawn', 'deepspeed', 'hpu_parallel', 'hpu_single', 'single_device',  'fsdp', 'xla', 'single_xla', 'strategy', required=False)  # https://lightning.ai/docs/pytorch/stable/extensions/strategy.html  ; from /Users/jaionetirapuazpiroz/anaconda3/envs/terratorch4dev/lib/python3.11/site-packages/lightning/pytorch/strategies 
+  devices: any(enum('auto'), int(min=-1), required=False)
+  num_nodes: int(min=1, required=False)
+  precision: enum(64, '64', '64-true', 32, '32' , '32-true', 16, '16', '16-mixed','bf16', 'bf16-mixed', required=False)
+  logger: any(bool(), include('logger'), required=True)
+  callbacks: list(include('callbackslist'), required=False) #https://lightning.ai/docs/pytorch/stable/extensions/callbacks.html
+  # fast_dev_run: any(bool(), int(min=1), required=False)  #/Users/jaionetirapuazpiroz/anaconda3/envs/terratorch4dev/lib/python3.11/site-packages/lightning/pytorch/trainer/trainer.py
+  max_epochs: any(enum('None'), int(min=-1), required=False)
+  min_epochs: any(enum('None'), int(min=0), required=False)
+  max_steps: int(min=-1, required=False)
+  min_steps: any(enum('None'), int(min=0), required=False)
+  max_time: any(enum('None'), timestamp(), required=False)
+  limit_train_batches: any(num(min=0, max=1), int(min=1), required=False)
+  limit_val_batches: any(num(min=0, max=1), int(min=1), required=False)
+  limit_test_batches: any(num(min=0, max=1), int(min=1), required=False)
+  limit_predict_batches: any(num(min=0, max=1), int(min=1), required=False)
+  overfit_batches: any(num(min=0, max=1), int(min=1), required=False)
+  val_check_interval: any(num(min=0, max=1), int(min=1), required=False)
+  check_val_every_n_epoch: any(enum('None'), int(min=1), required=False)
+  num_sanity_val_steps: int(min=-1, required=False)
+  log_every_n_steps: int(min=50, required=False)
+  enable_checkpointing: bool(required=False)
+  enable_progress_bar: bool(required=False)
+  enable_model_summary: bool(required=False)
+  accumulate_grad_batches: int(min=1, required=False)
+  gradient_clip_val: any(enum('None'), num(), required=False)
+  gradient_clip_algorithm: enum('None', 'Value', required=False)
+  deterministic: enum('True', 'False', 'warn', required=False)
+  benchmark: bool(required=False)
+  inference_mode: any(enum('None'), int(min=0), required=False)
+  # use_distributed_sampler: 
+  # profiler: 
+  detect_anomaly: bool(required=False)
+  # barebones:
+  # plugins: 
+  sync_batchnorm: bool(required=False)
+  reload_dataloaders_every_n_epochs: int(min=0, required=False)
+  default_root_dir: str(required=False)
+
+logger: 
+  class_path: enum('TensorBoardLogger','CSVLogger',required=True)
+  init_args: include('init_args_logger', required=True)
+init_args_logger:
+  save_dir: str(required=True)
+  name: str(required=False)
+callbackslist:
+  class_path: enum('RichProgressBar', 'LearningRateMonitor', 'EarlyStopping', required=True) 
+  init_args: include('init_args_callbacks',required=False)
+init_args_callbacks:
+  logging_interval: str(required=False)
+  monitor: str(required=False)
+  patience: int(required=False)
+
+
+# parameters for field 'data':
+data:
+  class_path: any(enum('GenericNonGeoSegmentationDataModule','Sen4AgriNetDataModule', 'PASTISDataModule','OpenSentinelMapDataModule', 'TorchNonGeoDataModule'), str() ,required=True)
+  init_args: include('init_args_data', required=True)
+  dict_kwargs: include('dict_kwargs', required=False)
+  
+init_args_data:
+  batch_size: int(required=False)
+  num_workers: int(required=False)
+  dataset_bands: list(str(), required=False)
+  output_bands: list(str(), required=False)
+  constant_scale: num(required=False) 
+  rgb_indices: list(int(),required=False)
+  reduce_zero_label: bool(required=False)
+  expand_temporal_dimension: bool(required=False)
+  train_transform: list(include('train_transform'), required=False)
+  transforms: list(include('train_transform'), required=False)
+  cls: str(required=False) 
+  no_data_replace: int(required=False)
+  no_label_replace: int(min=-1, required=False)
+  train_data_root: str(required=False)
+  train_label_data_root: str(required=False)
+  val_data_root: str(required=False)
+  val_label_data_root: str(required=False)
+  train_split: str(required=False)
+  test_split: str(required=False)
+  val_split: str(required=False)
+  test_data_root: str(required=False)
+  test_label_data_root: str(required=False)
+  img_grep: str(required=False)
+  label_grep: str(required=False)
+  means: list(num(),required=False)
+  stds: list(num(),required=False)
+  num_classes: int(required=False)
+
+train_transform:
+  class_path: enum('albumentations.RandomCrop', 'albumentations.HorizontalFlip', 'ToTensorV2', 'FlattenTemporalIntoChannels', 'albumentations.Flip', 'UnflattenTemporalFromChannels', 'albumentations.augmentations.geometric.resize.Resize', required=False)
+  init_args: include('init_args_traintransform', required=False)
+
+
+init_args_traintransform:
+  height: int(required=False)
+  width: int(required=False)
+  p: num(required=False)
+  n_timesteps: int(required=False)
+
+dict_kwargs:
+  root: str(required=False)
+  download: bool(required=False)
+  bands: list(str(), required=False)
+
+
+
+# parameters for field 'model':
+model:
+  class_path: any(enum('terratorch.tasks.SemanticSegmentationTask', 'terratorch.tasks.ClassificationTask'), str() ,required=True)
+  init_args: include('init_args_model', required=True)
+
+init_args_model:
+  model_args: include('model_args',required=False)
+  loss: any(enum('ce', 'jaccard', 'focal'), str(), required=False)
+  aux_loss: any(enum('None'), include('aux_loss'), required=False)
+  class_weights: any(enum('None'), list(num()), required=False)
+  ignore_index: any(enum('None'), int(), required=False)
+  lr: num(required=False) 
+  optimizer: any(enum('None', 'torch.optim.Adam', 'torch.optim.AdamW'), str(), required=False)
+  optimizer_hparams: any(enum('None'), include('optimizer_hparams'), required=False)
+  scheduler: any(enum('None', 'ReduceLROnPlateau', 'LRScheduler', 'LambdaLR'), str(), required=False)  # https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+  scheduler_hparams: any(enum('None'), include('scheduler_hparams'), required=False)
+  freeze_backbone: bool(required=False)
+  freeze_decoder: bool(required=False)
+  plot_on_val: any(bool(), int(), required=False)
+  class_names: any(enum('None'),list(str()),required=False)
+  model_factory: any(enum('PrithviModelFactory', 'TimmModelFactory', 'SMPModelFactory'), str(), required=False)
+  tiled_inference_parameters: any(enum('None'), include('tiled_inference_parameters'), required=False)
+
+
+model_args:
+  decoder: any(enum('FCNDecoder', 'IdentityDecoder'), str(), required=False)
+  pretrained: bool(required=False)
+  in_channels: int(required=False)
+  model: str(required=False)
+  backbone: str(required=False)
+  backbone_pretrained: bool(required=False)
+  backbone_in_channels: int(required=False)
+  rescale: bool(required=False)
+  decoder_channels: int(required=False)
+  bands: list(any(str(),int()),required=False)
+  num_frames: int(required=False)
+  num_classes: int(required=False)
+  head_dropout: num(required=False)
+  decoder_num_convs: int(required=False)
+  head_channel_list: list(int(), required=False)
+  head_dim_list: list(int(), required=False)
+
+aux_loss:
+  aux_head: num(required=False)
+
+
+optimizer_hparams: 
+  lr: num(required=False)
+  weight_decay: num(required=False)
+  
+scheduler_hparams:  #https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau
+  mode: enum('min', 'max', required=False)
+  factor: num(required=False)
+  patience: int(required=False)
+
+tiled_inference_parameters: 
+  h_crop: int(required=False)
+  h_stride: int(required=False)
+  w_crop: int(required=False)
+  w_stride: int(required=False)
+  average_patches: bool(required=False)
+
+
+
+
+
+# parameters for field 'optimizer':
+optimizer:
+  class_path: enum('torch.optim.Adam', 'torch.optim.AdamW', required=False) 
+  init_args: include('init_args_optimizer',required=False)
+
+init_args_optimizer:
+  lr: num(required=False)
+  weight_decay: num(required=False)
+
+# parameters for field 'lr_schedule':
+lr_scheduler:
+  class_path: enum('ReduceLROnPlateau', 'CosineAnnealingLR' , required=False)
+  init_args: include('init_args_scheduler',required=False)
+
+init_args_scheduler: 
+  monitor: str(required=False)
+  T_max: int(required=False)

@@ -56,7 +56,7 @@ from terratorch.tasks import (
     SemanticSegmentationTask,  # noqa: F401
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("terratorch")
 
 def flatten(list_of_lists):
     return list(itertools.chain.from_iterable(list_of_lists))
@@ -101,7 +101,8 @@ def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16"):
     logger.info(f"Saving output to {out_file_name} ...")
     write_tiff(result, os.path.join(out_dir, out_file_name), metadata)
 
-def import_custom_modules(custom_modules_path:None | Path | str =None) -> None:
+
+def import_custom_modules(custom_modules_path: str | Path | None = None) -> None:
 
     if custom_modules_path:
 
@@ -123,7 +124,7 @@ def import_custom_modules(custom_modules_path:None | Path | str =None) -> None:
         else:
             raise ValueError(f"Modules path {custom_modules_path} isn't a directory. Check if you have defined it properly.")
     else:
-        logger.info("No custom module is being used.")
+        logger.debug("No custom module is being used.")
 
 class CustomWriter(BasePredictionWriter):
     """Callback class to write geospatial data to file."""
@@ -385,12 +386,16 @@ class MyLightningCLI(LightningCLI):
             self.trainer.deploy_config = config.deploy_config_file
 
         # Custom modules path
-        if hasattr(self.config.fit, "custom_modules_path"):
-
-            custom_modules_path =  self.config.fit.custom_modules_path
+        if hasattr(self.config, "fit") and hasattr(self.config.fit, "custom_modules_path"):
+            custom_modules_path = self.config.fit.custom_modules_path
+        elif hasattr(self.config, "validate") and hasattr(self.config.validate, "custom_modules_path"):
+            custom_modules_path = self.config.validate.custom_modules_path
+        elif hasattr(self.config, "test") and hasattr(self.config.test, "custom_modules_path"):
+            custom_modules_path = self.config.test.custom_modules_path
+        elif hasattr(self.config, "predict") and hasattr(self.config.predict, "custom_modules_path"):
+            custom_modules_path = self.config.predict.custom_modules_path
         else:
-            default_path = Path(".") / "custom_modules"
-            custom_modules_path = os.environ.get("TERRATORCH_CUSTOM_MODULE_PATH", default_path)
+            custom_modules_path = os.getenv("TERRATORCH_CUSTOM_MODULE_PATH", None)
 
         import_custom_modules(custom_modules_path)
 
