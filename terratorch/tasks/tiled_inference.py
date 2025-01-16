@@ -10,6 +10,7 @@ from dataclasses import dataclass
 
 import torch
 import time
+import copy 
 
 @dataclass
 class TiledInferenceParameters:
@@ -47,48 +48,57 @@ class VectorInference:
         self.process_batch_size = process_batch_size
         self.coordinates_and_inputs = coordinates_and_inputs
         self.inference_parameters = inference_parameters
-        self.model_forward = torch.compile(model_forward)
+        self.model_forward = model_forward #torch.compile(model_forward)
         self.preds = preds
         self.preds_count = preds_count
 
-    def model_inference(self, start):
+        self.vectorized_loop = torch.vmap(self.model_forward)
 
+    def model_inference(self):
 
-        end = min(len(self.coordinates_and_inputs), start + self.process_batch_size)
-        batch = self.coordinates_and_inputs[start:end]
-        tensor_input = torch.stack([b.input_data for b in batch], dim=0)
-        model_forward = self.model_forward
+        starts_list = list(range(0, len(self.coordinates_and_inputs), self.process_batch_size))
 
-        def execute_model(tensor_input):
+        tensor_inputs = []
 
-            return  model_forward(tensor_input)
+        for start in starts_list:
+            end = min(len(self.coordinates_and_inputs), start + self.process_batch_size)
+            batch = self.coordinates_and_inputs[start:end]
+            tensor_input = torch.stack([b.input_data for b in batch], dim=0)
+            tensor_inputs.append(tensor_input)
+
         time_init = time.time()
-        output = execute_model(tensor_input)
+        output = self.vectorized_loop(tensor_inputs)
         print(f"Time elapsed: {time.time() - time_init} s")
-        output = [output[i] for i in range(len(batch))]
-        for batch_input, predicted in zip(batch, output, strict=True):
-            if batch_input.output_crop is not None:
-                predicted = predicted[..., batch_input.output_crop[0], batch_input.output_crop[1]]
-            if self.inference_parameters.average_patches:
-                self.preds[
-                    batch_input.batch,
-                    :,
-                    batch_input.input_coords[0],
-                    batch_input.input_coords[1],
-                ] += predicted
-            else:
-                self.preds[
-                    batch_input.batch,
-                    :,
-                    batch_input.input_coords[0],
-                    batch_input.input_coords[1],
-                ] = predicted
 
-            self.preds_count[
-                batch_input.batch,
-                batch_input.input_coords[0],
-                batch_input.input_coords[1],
-            ] += 1
+        for start in starts_list:
+
+            end = min(len(self.coordinates_and_inputs), start + self.process_batch_size)
+            batch = self.coordinates_and_inputs[start:end]
+
+            output = [output[i] for i in range(len(batch))]
+            for batch_input, predicted in zip(batch, output, strict=True):
+                if batch_input.output_crop is not None:
+                    predicted = predicted[..., batch_input.output_crop[0], batch_input.output_crop[1]]
+                if self.inference_parameters.average_patches:
+                    self.preds[
+                        batch_input.batch,
+                        :,
+                        batch_input.input_coords[0],
+                        batch_input.input_coords[1],
+                    ] += predicted
+                else:
+                    self.preds[
+                        batch_input.batch,
+                        :,
+                        batch_input.input_coords[0],
+                        batch_input.input_coords[1],
+                    ] = predicted
+
+                self.preds_count[
+                    batch_input.batch,
+                    batch_input.input_coords[0],
+                    batch_input.input_coords[1],
+                ] += 1
 
         return self.preds, self.preds_count
 
@@ -218,7 +228,8 @@ def tiled_inference(
     # TODO: make this configurable by user?
     process_batch_size = 16
     with torch.no_grad():
-        torch.set_num_threads(24)
+        torch.set_num_interop_threads(24)
+
         preds_count = input_batch.new_zeros(batch_size, preds.shape[-2], preds.shape[-1])
         vectorized_instance = VectorInference(process_batch_size=process_batch_size,
                                               coordinates_and_inputs=coordinates_and_inputs,
@@ -228,9 +239,7 @@ def tiled_inference(
         time_init = time.time()
         starts_list = list(range(0, len(coordinates_and_inputs), process_batch_size))
 
-        for start in starts_list:
-            pred, pred_count = vectorized_instance.model_inference(start)
-
+        vectorized_instance.model_inference()
         print(f"Model Time elapsed: {time.time() - time_init} s")
         print(preds)
     if (preds_count == 0).sum() != 0:
