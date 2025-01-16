@@ -52,7 +52,11 @@ class VectorInference:
         self.preds = preds
         self.preds_count = preds_count
 
-        self.vectorized_loop = torch.vmap(self.model_forward)
+        self.vectorized_loop = torch.vmap(self.model_eval)
+
+    def model_eval(self, batch):
+        batch = torch.unsqueeze(batch,0)
+        return self.model_forward(batch)
 
     def model_inference(self):
 
@@ -67,9 +71,8 @@ class VectorInference:
             tensor_inputs.append(tensor_input)
 
         tensor_inputs = torch.cat(tensor_inputs, dim=0)
-        print(tensor_inputs.shape)
         time_init = time.time()
-        output = self.vectorized_loop(tensor_input)
+        output = self.vectorized_loop(tensor_inputs)
         print(f"Time elapsed: {time.time() - time_init} s")
 
         for start in starts_list:
