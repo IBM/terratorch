@@ -42,20 +42,25 @@ class InferenceInput:
 
 class VectorInference:
 
-    def __init__(self, process_batch_size=None, coordinates_and_inputs=None, inference_parameters=None):
+    def __init__(self, process_batch_size=None, coordinates_and_inputs=None, inference_parameters=None, model_forward=None):
 
         self.process_batch_size = process_batch_size
         self.coordinates_and_inputs = coordinates_and_inputs
         self.inference_parameters = inference_parameters
+        self.model_forward = model_forward
 
     def model_inference(self, start):
-        print(start)
-        start = int(start)
 
         end = min(len(self.coordinates_and_inputs), start + self.process_batch_size)
         batch = self.coordinates_and_inputs[start:end]
         tensor_input = torch.stack([b.input_data for b in batch], dim=0)
-        output = model_forward(tensor_input)
+        model_forward = self.model_forward
+
+        def execute_model(tensor_input):
+
+            return  model_forward(tensor_input)
+
+        output = execute_model(tensor_input)
         output = [output[i] for i in range(len(batch))]
         for batch_input, predicted in zip(batch, output, strict=True):
             if batch_input.output_crop is not None:
@@ -209,12 +214,19 @@ def tiled_inference(
     # TODO: make this configurable by user?
     process_batch_size = 16
     with torch.no_grad():
+        torch.set_num_threads(24)
         preds_count = input_batch.new_zeros(batch_size, preds.shape[-2], preds.shape[-1])
-        vectorized_instance = VectorInference(process_batch_size=process_batch_size, coordinates_and_inputs=coordinates_and_inputs)
-        vectorized_loop = torch.vmap(vectorized_instance.model_inference)
+        vectorized_instance = VectorInference(process_batch_size=process_batch_size,
+                                              coordinates_and_inputs=coordinates_and_inputs,
+                                              inference_parameters=inference_parameters,
+                                              model_forward=model_forward)
+
         time_init = time.time()
-        starts_list = torch.Tensor(list(range(0, len(coordinates_and_inputs), process_batch_size)))
-        preds = vectorized_loop(starts_list)
+        starts_list = list(range(0, len(coordinates_and_inputs), process_batch_size))
+
+        for start in starts_list:
+            pred, pred_count = vectorized_instance.model_inference(start)
+
         print(f"Model Time elapsed: {time.time() - time_init} s")
         print(preds)
     if (preds_count == 0).sum() != 0:
