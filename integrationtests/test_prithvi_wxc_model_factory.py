@@ -12,6 +12,7 @@ from lightning.pytorch import Trainer
 
 from terratorch.models.wxc_model_factory import WxCModelFactory
 from terratorch.tasks.wxc_task import WxCTask
+import lightning.pytorch as pl
 
 
 def setup_function():
@@ -107,6 +108,7 @@ def test_wxc_unet_pincer_inference():
 
     from prithviwxc.gravitywave.datamodule import ERA5DataModule
     from terratorch.tasks.wxc_task import WxCTask
+    from typing import Any
 
     model_args = {
         "in_channels": 1280,
@@ -138,11 +140,36 @@ def test_wxc_unet_pincer_inference():
         "static_input_scalers_sigma": torch.tensor([1] * 3),
         "static_input_scalers_epsilon": 0,
         "output_scalers": torch.tensor([0] * 1280),
+        "backbone_weights": "magnet-flux-uvtp122-epoch-99-loss-0.1022.pt",
+        "backbone": "prithviwxc",
+        "aux_decoders": "unetpincer",
     }
     task = WxCTask(WxCModelFactory(), model_args=model_args, mode='eval')
 
+    class StopTrainerCallback(pl.Callback):
+        def __init__(self, stop_after_n_batches):
+            super().__init__()
+            self.stop_after_n_batches = stop_after_n_batches
+            self.current_batch = 0
+
+        def on_predict_batch_end(
+                self,
+                trainer: "pl.Trainer",
+                pl_module: "pl.LightningModule",
+                outputs: Any,
+                batch: Any,
+                batch_idx: int,
+                dataloader_idx: int = 0,
+        ) -> None:
+            self.current_batch += 1
+            if self.current_batch >= self.stop_after_n_batches:
+                print("Stopping training early...")
+                #trainer.should_stop = True
+                raise StopIteration("Stopped prediction after reaching the specified batch limit.")
+
     trainer = Trainer(
         max_epochs=1,
+        callbacks=[StopTrainerCallback(stop_after_n_batches=3)],
     )
     dm = ERA5DataModule(train_data_path='.', valid_data_path='.')
     results = trainer.predict(model=task, datamodule=dm, return_predictions=True)
@@ -214,10 +241,8 @@ def test_wxc_unet_pincer_train():
         "static_input_scalers_sigma": torch.tensor([1] * 3),
         "static_input_scalers_epsilon": 0,
         "output_scalers": torch.tensor([0] * 1280),
-        "backbone_weights": "magnet-flux-uvtp122-epoch-99-loss-0.1022.pt",
-        "backbone": "prithviwxc",
-        "aux_decoders": "unetpincer"
     }
+
     task = WxCTask(WxCModelFactory(), model_args=model_args, mode='train')
 
     trainer = Trainer(

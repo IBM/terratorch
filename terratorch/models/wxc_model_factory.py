@@ -70,8 +70,11 @@ class WxCModelFactory(ModelFactory):
             if backbone_weights is not None:
 
                 print(f"Starting to load model from {backbone_weights}")
+                device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
                 state_dict = torch.load(
-                    f=backbone_weights, weights_only=True
+                    f=backbone_weights,
+                    weights_only=True,
+                    map_location=torch.device(device),
                 )
 
                 # Compare the keys in model and saved state_dict
