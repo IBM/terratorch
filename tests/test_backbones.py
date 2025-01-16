@@ -120,7 +120,7 @@ def test_out_indices(model_name, input_224):
 def test_out_indices_non_divisible(model_name, input_non_divisible):
     out_indices = [2, 4, 8, 10]
     backbone = timm.create_model(model_name, pretrained=False, features_only=True, num_frames=NUM_FRAMES, out_indices=out_indices, padding='constant')
-    assert backbone.feature_info.out_indices == out_indices
+    assert backbone.feature_info.out_indices == tuple(out_indices)
 
     output = backbone(input_non_divisible)
     full_output = backbone.forward_features(input_non_divisible)

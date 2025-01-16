@@ -1,6 +1,5 @@
-# TerraTorch
 
-:book: [Documentation](https://IBM.github.io/terratorch/)
+<img src="https://github.com/user-attachments/assets/f8c9586f-6220-4a53-9669-2aee3300b492" alt="TerraTorch"  width="400"/>
 
 ## Overview
 TerraTorch is a library based on [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/) and the [TorchGeo](https://github.com/microsoft/torchgeo) domain library
@@ -21,7 +20,7 @@ TerraTorch’s main purpose is to provide a flexible fine-tuning framework for G
       * Satlas (as implemented in [TorchGeo](https://github.com/microsoft/torchgeo))
       * DOFA (as implemented in [TorchGeo](https://github.com/microsoft/torchgeo))
       * SSL4EO-L and SSL4EO-S12 models (as implemented in [TorchGeo](https://github.com/microsoft/torchgeo))
-      * Clay
+      * [Clay](https://github.com/Clay-foundation/model)
     - Backbones available in the [timm](https://github.com/huggingface/pytorch-image-models) (Pytorch image models)
     - Decoders available in [SMP](https://github.com/qubvel/segmentation_models.pytorch) (Pytorch Segmentation models with pre-training backbones) and [mmsegmentation](https://github.com/open-mmlab/mmsegmentation) packages
     - Fine-tuned models such as [granite-geospatial-biomass](https://huggingface.co/ibm-granite/granite-geospatial-biomass)
@@ -51,15 +50,17 @@ pip install -e .
 
 To install terratorch with partial (work in development) support for Weather Foundation Models, `pip install -e .[wxc]`, which currently works just for `Python >= 3.11`. 
 
-## Quick start
+## Documentation
 
-To get started, check out the [quick start guide](https://ibm.github.io/terratorch/quick_start)
+To get started, check out the [quick start guide](https://ibm.github.io/terratorch/quick_start).
 
-## For developers
+Developers, check out the [architecture overview](https://ibm.github.io/terratorch/architecture).
 
-Check out the [architecture overview](https://ibm.github.io/terratorch/architecture).
+## Contributing
 
-A simple hint for any contributor. If you want to met the GitHub DCO checks, just do your commits as below:
+This project welcomes contributions and suggestions.
+
+A simple hint for any contributor. If you want to meet the GitHub DCO checks, just do your commits as below:
 ```
 git commit -s -m <message>
 ```

@@ -54,19 +54,23 @@ def select_patch_embed_weights(
         if len(patch_embed_proj_weight_key) > 1:
             msg = "Too many matches for key for patch embed weight"
             raise Exception(msg)
-    
+
         # extract the single element from the set
-        (patch_embed_proj_weight_key,) = patch_embed_proj_weight_key
+        if isinstance(patch_embed_proj_weight_key, tuple):
+            (patch_embed_proj_weight_key,) = patch_embed_proj_weight_key
+        elif isinstance(patch_embed_proj_weight_key, set):
+            patch_embed_proj_weight_key = list(patch_embed_proj_weight_key)[0]
+
         patch_embed_weight = state_dict[patch_embed_proj_weight_key]
-    
-        temp_weight = model.state_dict()[patch_embed_proj_weight_key].clone() 
-    
+
+        temp_weight = model.state_dict()[patch_embed_proj_weight_key].clone()
+
         # only do this if the patch size and tubelet size match. If not, start with random weights
         if patch_embed_weights_are_compatible(temp_weight, patch_embed_weight):
             torch.nn.init.xavier_uniform_(temp_weight.view([temp_weight.shape[0], -1]))
             for index, band in enumerate(model_bands):
                 if band in pretrained_bands:
-                    logging.debug(f"Loaded weights for {band} in position {index} of patch embed")
+                    logging.info(f"Loaded weights for {band} in position {index} of patch embed")
                     temp_weight[:, index] = patch_embed_weight[:, pretrained_bands.index(band)]
         else:
             warnings.warn(
@@ -75,29 +79,7 @@ def select_patch_embed_weights(
                 category=UserWarning,
                 stacklevel=1,
             )
-    
+
         state_dict[patch_embed_proj_weight_key] = temp_weight
-        
-    # extract the single element from the set
-    (patch_embed_proj_weight_key,) = patch_embed_proj_weight_key
-    patch_embed_weight = state_dict[patch_embed_proj_weight_key]
 
-    temp_weight = model.state_dict()[patch_embed_proj_weight_key].clone()
-
-    # only do this if the patch size and tubelet size match. If not, start with random weights
-    if patch_embed_weights_are_compatible(temp_weight, patch_embed_weight):
-        torch.nn.init.xavier_uniform_(temp_weight.view([temp_weight.shape[0], -1]))
-        for index, band in enumerate(model_bands):
-            if band in pretrained_bands:
-                logging.info(f"Loaded weights for {band} in position {index} of patch embed")
-                temp_weight[:, index] = patch_embed_weight[:, pretrained_bands.index(band)]
-    else:
-        warnings.warn(
-            f"Incompatible shapes between patch embedding of model {temp_weight.shape} and\
-            of checkpoint {patch_embed_weight.shape}",
-            category=UserWarning,
-            stacklevel=1,
-        )
-
-    state_dict[patch_embed_proj_weight_key] = temp_weight
-    return state_dict
+        return state_dict

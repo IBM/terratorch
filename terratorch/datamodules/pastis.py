@@ -18,6 +18,7 @@ class PASTISDataModule(NonGeoDataModule):
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
         val_transform: A.Compose | None | list[A.BasicTransform] = None,
         test_transform: A.Compose | None | list[A.BasicTransform] = None,
+        predict_transform: A.Compose | None | list[A.BasicTransform] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -31,6 +32,7 @@ class PASTISDataModule(NonGeoDataModule):
         self.train_transform = wrap_in_compose_is_list(train_transform)
         self.val_transform = wrap_in_compose_is_list(val_transform)
         self.test_transform = wrap_in_compose_is_list(test_transform)
+        self.predict_transform = wrap_in_compose_is_list(predict_transform)
         self.data_root = data_root
         self.kwargs = kwargs
 
@@ -58,6 +60,15 @@ class PASTISDataModule(NonGeoDataModule):
                 folds=[5],
                 data_root=self.data_root,
                 transform=self.test_transform,
+                truncate_image=self.truncate_image,
+                pad_image=self.pad_image,
+                **self.kwargs,
+            )
+        if stage in ["predict"]:
+            self.predict_dataset = PASTIS(
+                folds=[5],
+                data_root=self.data_root,
+                transform=self.predict_transform,
                 truncate_image=self.truncate_image,
                 pad_image=self.pad_image,
                 **self.kwargs,
