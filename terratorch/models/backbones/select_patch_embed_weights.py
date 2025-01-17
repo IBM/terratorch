@@ -48,7 +48,6 @@ def select_patch_embed_weights(
             _possible_keys_for_proj_weight = {custom_proj_key}
 
         patch_embed_proj_weight_key = state_dict.keys() & _possible_keys_for_proj_weight if (type(state_dict) in [collections.OrderedDict, dict]) else state_dict().keys() & _possible_keys_for_proj_weight
-
         if len(patch_embed_proj_weight_key) == 0:
             msg = "Could not find key for patch embed weight"
             raise Exception(msg)
@@ -63,9 +62,9 @@ def select_patch_embed_weights(
             patch_embed_proj_weight_key = list(patch_embed_proj_weight_key)[0]
 
         patch_embed_weight = state_dict[patch_embed_proj_weight_key]
-    
-        temp_weight = model.state_dict()[patch_embed_proj_weight_key].clone() 
-    
+
+        temp_weight = model.state_dict()[patch_embed_proj_weight_key].clone()
+
         # only do this if the patch size and tubelet size match. If not, start with random weights
         if patch_embed_weights_are_compatible(temp_weight, patch_embed_weight):
             torch.nn.init.xavier_uniform_(temp_weight.view([temp_weight.shape[0], -1]))
@@ -80,7 +79,7 @@ def select_patch_embed_weights(
                 category=UserWarning,
                 stacklevel=1,
             )
-    
+
         state_dict[patch_embed_proj_weight_key] = temp_weight
-        
+
         return state_dict
