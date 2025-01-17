@@ -16,7 +16,8 @@ from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
 from terratorch.tasks.base_task import TerraTorchTask
 
-logger = logging.getLogger('terratorch')
+logger = logging.getLogger("terratorch")
+
 
 def to_class_prediction(y: ModelOutput) -> Tensor:
     y_hat = y.output
@@ -62,6 +63,7 @@ class ClassificationTask(TerraTorchTask):
         freeze_backbone: bool = False,  # noqa: FBT001, FBT002
         freeze_decoder: bool = False,  # noqa: FBT002, FBT001
         class_names: list[str] | None = None,
+        lr_overrides: dict[str, float] | None = None,
     ) -> None:
         """Constructor
 
@@ -97,6 +99,9 @@ class ClassificationTask(TerraTorchTask):
             freeze_decoder (bool, optional): Whether to freeze the decoder and segmentation head. Defaults to False.
             class_names (list[str] | None, optional): List of class names passed to metrics for better naming.
                 Defaults to numeric ordering.
+            lr_overrides (dict[str, float] | None, optional): Dictionary to override the default lr in specific
+                parameters. The key should be a substring of the parameter names (it will check the substring is
+                contained in the parameter name)and the value should be the new lr. Defaults to None.
         """
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
@@ -120,7 +125,6 @@ class ClassificationTask(TerraTorchTask):
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
         self.monitor = f"{self.val_metrics.prefix}loss"
 
-
     def configure_losses(self) -> None:
         """Initialize the loss criterion.
 
@@ -131,8 +135,8 @@ class ClassificationTask(TerraTorchTask):
         ignore_index = self.hparams["ignore_index"]
 
         class_weights = (
-                    torch.Tensor(self.hparams["class_weights"]) if self.hparams["class_weights"] is not None else None
-                )
+            torch.Tensor(self.hparams["class_weights"]) if self.hparams["class_weights"] is not None else None
+        )
         if loss == "ce":
             ignore_value = -100 if ignore_index is None else ignore_index
             self.criterion = nn.CrossEntropyLoss(ignore_index=ignore_value, weight=class_weights)
@@ -200,7 +204,7 @@ class ClassificationTask(TerraTorchTask):
         x = batch["image"]
         y = batch["label"]
         other_keys = batch.keys() - {"image", "label", "filename"}
-        rest = {k:batch[k] for k in other_keys}
+        rest = {k: batch[k] for k in other_keys}
 
         model_output: ModelOutput = self(x, **rest)
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
@@ -221,7 +225,7 @@ class ClassificationTask(TerraTorchTask):
         x = batch["image"]
         y = batch["label"]
         other_keys = batch.keys() - {"image", "label", "filename"}
-        rest = {k:batch[k] for k in other_keys}
+        rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
@@ -239,7 +243,7 @@ class ClassificationTask(TerraTorchTask):
         x = batch["image"]
         y = batch["label"]
         other_keys = batch.keys() - {"image", "label", "filename"}
-        rest = {k:batch[k] for k in other_keys}
+        rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
         loss = self.test_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.test_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
@@ -260,7 +264,7 @@ class ClassificationTask(TerraTorchTask):
         x = batch["image"]
         file_names = batch["filename"] if "filename" in batch else None
         other_keys = batch.keys() - {"image", "label", "filename"}
-        rest = {k:batch[k] for k in other_keys}
+        rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
 
         y_hat = self(x).output
