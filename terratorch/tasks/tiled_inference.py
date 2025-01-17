@@ -12,6 +12,8 @@ import torch
 import time
 import copy 
 
+from torch.nn.parallel import DistributedDataParallel as DDP
+
 @dataclass
 class TiledInferenceParameters:
     """Parameters to be used for inference.
@@ -48,7 +50,7 @@ class VectorInference:
         self.process_batch_size = process_batch_size
         self.coordinates_and_inputs = coordinates_and_inputs
         self.inference_parameters = inference_parameters
-        self.model_forward = model_forward #torch.compile(model_forward)
+        self.model_forward = DDP(model_forward)
         self.preds = preds
         self.preds_count = preds_count
 
@@ -68,14 +70,12 @@ class VectorInference:
             end = min(len(self.coordinates_and_inputs), start + self.process_batch_size)
             batch = self.coordinates_and_inputs[start:end]
             tensor_input = torch.stack([b.input_data for b in batch], dim=0)
-            tensor_inputs.append(tensor_input)
 
-        tensor_inputs = torch.cat(tensor_inputs, dim=0)
-        time_init = time.time()
-        output = self.vectorized_loop(tensor_inputs)
-        print(f"Time elapsed: {time.time() - time_init} s")
+            time_init = time.time()
+            output = self.vectorized_loop(tensor_inputs)
+            print(f"Time elapsed: {time.time() - time_init} s")
 
-        for start in starts_list:
+        #for start in starts_list:
 
             end = min(len(self.coordinates_and_inputs), start + self.process_batch_size)
             batch = self.coordinates_and_inputs[start:end]
