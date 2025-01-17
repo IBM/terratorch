@@ -129,6 +129,9 @@ class SemanticSegmentationTask(TerraTorchTask):
             # Custom model
             self.model = model
 
+        self.model = torch.ao.quantization.quantize_dynamic(self.model, {torch.nn.Linear, torch.nn.Conv3d, torch.nn.Conv2d, torch.nn.MultiheadAttention},
+                                                            dtype=torch.qint8)
+        print(self.model)
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
         self.test_loss_handler: list[LossHandler] = []
         for metrics in self.test_metrics:
