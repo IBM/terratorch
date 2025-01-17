@@ -87,7 +87,7 @@ data:
     num_classes: 2
 
 model:
-  class_path: terratorch.models.wxc_model_factory.WxCModelFactory
+  class_path: WxCTask
   init_args:
     model_args:
       in_channels: 1280
@@ -122,6 +122,7 @@ model:
       backbone_weights: magnet-flux-uvtp122-epoch-99-loss-0.1022.pt
       backbone: prithviwxc
       aux_decoders: unetpincer
+      skip_connection: True
     model_factory: WxCModelFactory
     mode: eval
 optimizer:
