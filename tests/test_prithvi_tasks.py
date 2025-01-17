@@ -31,7 +31,8 @@ def model_input() -> torch.Tensor:
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "prithvi_eo_v2_300", "prithvi_swin_B"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder"])
 @pytest.mark.parametrize("loss", ["ce", "jaccard", "focal", "dice"])
-def test_create_segmentation_task(backbone, decoder, loss, model_factory: str):
+@pytest.mark.parametrize("lr_overrides", [{"encoder": 0.01}, None])
+def test_create_segmentation_task(backbone, decoder, loss, model_factory: str, lr_overrides):
     model_args = {
         "backbone": backbone,
         "decoder": decoder,
@@ -48,6 +49,7 @@ def test_create_segmentation_task(backbone, decoder, loss, model_factory: str):
         model_args,
         model_factory,
         loss=loss,
+        lr_overrides=lr_overrides,
     )
 
     gc.collect()
@@ -56,7 +58,8 @@ def test_create_segmentation_task(backbone, decoder, loss, model_factory: str):
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "prithvi_eo_v2_300", "prithvi_swin_B"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder"])
 @pytest.mark.parametrize("loss", ["mae", "rmse", "huber"])
-def test_create_regression_task(backbone, decoder, loss, model_factory: str):
+@pytest.mark.parametrize("lr_overrides", [{"encoder": 0.01}, None])
+def test_create_regression_task(backbone, decoder, loss, model_factory: str, lr_overrides):
     model_args = {
         "backbone": backbone,
         "decoder": decoder,
@@ -73,6 +76,7 @@ def test_create_regression_task(backbone, decoder, loss, model_factory: str):
         model_args,
         model_factory,
         loss=loss,
+        lr_overrides=lr_overrides,
     )
 
     gc.collect()
@@ -81,7 +85,8 @@ def test_create_regression_task(backbone, decoder, loss, model_factory: str):
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "prithvi_eo_v2_300", "prithvi_swin_B"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder"])
 @pytest.mark.parametrize("loss", ["ce", "bce", "jaccard", "focal"])
-def test_create_classification_task(backbone, decoder, loss, model_factory: str):
+@pytest.mark.parametrize("lr_overrides", [{"encoder": 0.01}, None])
+def test_create_classification_task(backbone, decoder, loss, model_factory: str, lr_overrides):
     model_args = {
         "backbone": backbone,
         "decoder": decoder,
@@ -99,6 +104,7 @@ def test_create_classification_task(backbone, decoder, loss, model_factory: str)
         model_args,
         model_factory,
         loss=loss,
+        lr_overrides=lr_overrides,
     )
 
     gc.collect()
