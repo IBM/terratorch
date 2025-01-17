@@ -195,7 +195,7 @@ def _create_prithvi(
                                             f"(pretrained models: {default_cfgs.keys()})")
         # Load pre-trained config from hf
         try:
-            model_args, _ = load_model_config_from_hf(default_cfgs[variant].default.hf_hub_id)
+            model_args = load_model_config_from_hf(default_cfgs[variant].default.hf_hub_id)[0]
             model_args.update(kwargs)
         except:
             logger.warning(f"No pretrained configuration was found on HuggingFace for the model {variant}."

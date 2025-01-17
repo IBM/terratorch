@@ -46,6 +46,7 @@ class FireScarsNonGeoDataModule(NonGeoDataModule):
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
         val_transform: A.Compose | None | list[A.BasicTransform] = None,
         test_transform: A.Compose | None | list[A.BasicTransform] = None,
+        predict_transform: A.Compose | None | list[A.BasicTransform] = None,
         drop_last: bool = True,
         no_data_replace: float | None = 0,
         no_label_replace: int | None = -1,
@@ -61,6 +62,7 @@ class FireScarsNonGeoDataModule(NonGeoDataModule):
         self.train_transform = wrap_in_compose_is_list(train_transform)
         self.val_transform = wrap_in_compose_is_list(val_transform)
         self.test_transform = wrap_in_compose_is_list(test_transform)
+        self.predict_transform = wrap_in_compose_is_list(predict_transform)
         self.aug = AugmentationSequential(K.Normalize(means, stds), data_keys=["image"])
         self.drop_last = drop_last
         self.no_data_replace = no_data_replace
@@ -93,6 +95,16 @@ class FireScarsNonGeoDataModule(NonGeoDataModule):
                 split="val",
                 data_root=self.data_root,
                 transform=self.test_transform,
+                bands=self.bands,
+                no_data_replace=self.no_data_replace,
+                no_label_replace=self.no_label_replace,
+                use_metadata=self.use_metadata,
+            )
+        if stage in ["predict"]:
+            self.predict_dataset = self.dataset_class(
+                split="val",
+                data_root=self.data_root,
+                transform=self.predict_transform,
                 bands=self.bands,
                 no_data_replace=self.no_data_replace,
                 no_label_replace=self.no_label_replace,

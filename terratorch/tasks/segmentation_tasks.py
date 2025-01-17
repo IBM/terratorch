@@ -64,6 +64,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         class_names: list[str] | None = None,
         tiled_inference_parameters: TiledInferenceParameters = None,
         test_dataloaders_names: list[str] | None = None,
+        lr_overrides: dict[str, float] | None = None,
     ) -> None:
         """Constructor
 
@@ -106,6 +107,9 @@ class SemanticSegmentationTask(TerraTorchTask):
             test_dataloaders_names (list[str] | None, optional): Names used to differentiate metrics when
                 multiple dataloaders are returned by test_dataloader in the datamodule. Defaults to None,
                 which assumes only one test dataloader is used.
+            lr_overrides (dict[str, float] | None, optional): Dictionary to override the default lr in specific
+                parameters. The key should be a substring of the parameter names (it will check the substring is
+                contained in the parameter name)and the value should be the new lr. Defaults to None.
         """
         self.tiled_inference_parameters = tiled_inference_parameters
         self.aux_loss = aux_loss
@@ -294,7 +298,7 @@ class SemanticSegmentationTask(TerraTorchTask):
                 batch["prediction"] = y_hat_hard
 
                 if isinstance(batch["image"], dict):
-                    if hasattr(datamodule, 'rgb_modality'):
+                    if hasattr(datamodule, "rgb_modality"):
                         # Generic multimodal dataset
                         batch["image"] = batch["image"][datamodule.rgb_modality]
                     else:
@@ -330,7 +334,7 @@ class SemanticSegmentationTask(TerraTorchTask):
             Output predicted probabilities.
         """
         x = batch["image"]
-        file_names = batch["filename"]
+        file_names = batch["filename"] if "filename" in batch else None
         other_keys = batch.keys() - {"image", "mask", "filename"}
 
         rest = {k: batch[k] for k in other_keys}
@@ -343,7 +347,10 @@ class SemanticSegmentationTask(TerraTorchTask):
         if self.tiled_inference_parameters:
             y_hat: Tensor = tiled_inference(
                 # TODO: tiled inference does not work with additional input data (**rest)
-                model_forward, x, self.hparams["model_args"]["num_classes"], self.tiled_inference_parameters
+                model_forward,
+                x,
+                self.hparams["model_args"]["num_classes"],
+                self.tiled_inference_parameters,
             )
         else:
             y_hat: Tensor = self(x, **rest).output
