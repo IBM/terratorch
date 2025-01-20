@@ -10,7 +10,6 @@ from terratorch.datasets import HLSBands
 from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
 from terratorch.datasets.utils import generate_bands_intervals
 from terratorch.models.backbones.prithvi_mae import PrithviViT, PrithviMAE
-from terratorch.models.utils import pad_images
 
 logger = logging.getLogger(__name__)
 
@@ -235,28 +234,6 @@ def _create_prithvi(
         model.forward = forward_filter_indices
         model.model_bands = model_bands
         model.pretrained_bands = pretrained_bands
-
-    padding = kwargs.get("padding", "none")
-    patch_size = kwargs.get("patch_size", 16)
-    if isinstance(patch_size, list):
-        patch_size = patch_size[-1]
-
-    if padding != "none":
-        original_forward = model.forward
-        original_forward_features = model.forward_features
-
-        def pad_and_forward(forward_fn, patch_size, padding, *args, **kwargs):
-            inputs = pad_images(args[0], patch_size, padding)
-            return forward_fn(inputs, **kwargs)
-
-        def forward_pad_images(*args, **kwargs):
-            return pad_and_forward(original_forward, patch_size, padding, *args, **kwargs)
-
-        def forward_features_pad_images(*args, **kwargs):
-            return pad_and_forward(original_forward_features, patch_size, padding, *args, **kwargs)
-
-        model.forward = forward_pad_images
-        model.forward_features = forward_features_pad_images
 
     return model
 
