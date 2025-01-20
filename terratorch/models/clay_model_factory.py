@@ -111,16 +111,6 @@ class ClayModelFactory(ModelFactory):
         self.syspath_kwarg = "model_sys_path"
         backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
 
-        # If patch size is not provided in the config or by the model, it might lead to errors due to irregular images.
-        patch_size = backbone_kwargs.get("patch_size", None)
-        if patch_size is None:
-            # Infer patch size from model by checking all backbone modules
-            for module in backbone.modules():
-                if hasattr(module, "patch_size"):
-                    patch_size = module.patch_size
-                    break
-        padding = backbone_kwargs.get("padding", "reflect")
-
         # TODO: support auxiliary heads
         if not isinstance(backbone, nn.Module):
             if not "clay" in backbone:
@@ -152,6 +142,16 @@ class ClayModelFactory(ModelFactory):
 
             backbone: nn.Module = Embedder(ckpt_path=checkpoint_path, **backbone_kwargs)
             print("Model Clay was successfully restored.")
+
+        # If patch size is not provided in the config or by the model, it might lead to errors due to irregular images.
+        patch_size = backbone_kwargs.get("patch_size", None)
+        if patch_size is None:
+            # Infer patch size from model by checking all backbone modules
+            for module in backbone.modules():
+                if hasattr(module, "patch_size"):
+                    patch_size = module.patch_size
+                    break
+        padding = backbone_kwargs.get("padding", "reflect")
 
         # allow decoder to be a module passed directly
         decoder_cls = _get_decoder(decoder)
