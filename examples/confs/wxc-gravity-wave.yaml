@@ -29,62 +29,7 @@ trainer:
 
 # dataset available: https://huggingface.co/datasets/ibm-nasa-geospatial/hls_burn_scars
 data:
-  class_path: GenericNonGeoSegmentationDataModule
-  init_args:
-    batch_size: 4
-    num_workers: 8
-    dataset_bands:
-      - BLUE
-      - GREEN
-      - RED
-      - NIR_NARROW
-      - SWIR_1
-      - SWIR_2
-    output_bands:
-      - BLUE
-      - GREEN
-      - RED
-      - NIR_NARROW
-      - SWIR_1
-      - SWIR_2
-    rgb_indices:
-      - 2
-      - 1
-      - 0
-    train_transform:
-      - class_path: albumentations.RandomCrop
-        init_args:
-          height: 224
-          width: 224
-      - class_path: albumentations.HorizontalFlip
-        init_args:
-          p: 0.5
-      - class_path: ToTensorV2
-    no_data_replace: 0
-    no_label_replace: -1
-    train_data_root: <data_path>/training
-    train_label_data_root: <data_path>/training
-    val_data_root: <data_path>/validation
-    val_label_data_root: <data_path>/validation
-    test_data_root: <data_path>/validation
-    test_label_data_root: <data_path>/validation
-    img_grep: "*_merged.tif"
-    label_grep: "*.mask.tif"
-    means:
-      - 0.033349706741586264
-      - 0.05701185520536176
-      - 0.05889748132001316
-      - 0.2323245113436119
-      - 0.1972854853760658
-      - 0.11944914225186566
-    stds:
-      - 0.02269135568823774
-      - 0.026807560223070237
-      - 0.04004109844362779
-      - 0.07791732423672691
-      - 0.08708738838140137
-      - 0.07241979477437814
-    num_classes: 2
+  class_path: terratorch.datamodules.era5.ERA5DataModule
 
 model:
   class_path: WxCTask
@@ -94,8 +39,8 @@ model:
       input_size_time: 1
       n_lats_px: 64
       n_lons_px: 128
-      patch_size_px: [2 2]
-      mask_unit_size_px: [8 16]
+      patch_size_px: [2, 2]
+      mask_unit_size_px: [8, 16]
       mask_ratio_inputs: 0.5
       embed_dim: 2560
       n_blocks_encoder: 12
@@ -109,8 +54,8 @@ model:
       masking_mode: both
       decoder_shifting: False
       positional_encoding: absolute
-      checkpoint_encoder: [3 6 9 12 15 18 21 24]
-      checkpoint_decoder: [1 3]
+      checkpoint_encoder: [3, 6, 9, 12, 15, 18, 21, 24]
+      checkpoint_decoder: [1, 3]
       in_channels_static: 3
       input_scalers_mu: torch.tensor([0] * 1280)
       input_scalers_sigma: torch.tensor([1] * 1280)
