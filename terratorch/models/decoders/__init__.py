@@ -7,6 +7,7 @@ from terratorch.models.decoders.upernet_decoder import UperNetDecoder
 from terratorch.models.decoders.aspp_head import ASPPSegmentationHead, ASPPRegressionHead
 from terratorch.models.decoders.mlp_decoder import MLPDecoder
 from terratorch.models.decoders.unet_decoder import UNetDecoder
+from terratorch.models.decoders.segmenter_decoder import SegmenterDecoder
 
 __all__ = [
     "FCNDecoder",
@@ -19,4 +20,5 @@ __all__ = [
     "ASPPRegressionHead",
     "MLPDecoder",
     "UNetDecoder",
+    "SegmenterDecoder",
 ]
