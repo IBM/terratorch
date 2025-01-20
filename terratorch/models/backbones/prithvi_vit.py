@@ -61,8 +61,8 @@ prithvi_cfgs = {
     "prithvi_eo_v2_300": _cfg(embed_dim=1024, depth=24, num_heads=16),
     "prithvi_eo_v2_300_tl": _cfg(embed_dim=1024, depth=24, num_heads=16,
                                  coords_encoding=["time", "location"], coords_scale_learn=True),
-    "prithvi_eo_v2_600": _cfg(embed_dim=1280, depth=32, num_heads=16),
-    "prithvi_eo_v2_600_tl": _cfg(embed_dim=1280, depth=32, num_heads=16,
+    "prithvi_eo_v2_600": _cfg(embed_dim=1280, depth=32, num_heads=16, patch_size=[1, 14, 14]),
+    "prithvi_eo_v2_600_tl": _cfg(embed_dim=1280, depth=32, num_heads=16, patch_size=[1, 14, 14],
                                  coords_encoding=["time", "location"], coords_scale_learn=True),
 }
 

@@ -9,6 +9,7 @@ from terratorch.models.model import AuxiliaryHeadWithDecoderWithoutInstantiatedH
 from terratorch.models.utils import pad_images
 import pdb
 
+
 def freeze_module(module: nn.Module):
     for param in module.parameters():
         param.requires_grad_(False)
@@ -21,16 +22,16 @@ class ScalarOutputModel(Model, SegmentationModel):
     """
 
     def __init__(
-        self,
-        task: str,
-        encoder: nn.Module,
-        decoder: nn.Module,
-        head_kwargs: dict,
-        patch_size:int = None,
-        img_size:tuple = None,
-        decoder_includes_head: bool = False,
-        auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
-        neck: nn.Module | None = None,
+            self,
+            task: str,
+            encoder: nn.Module,
+            decoder: nn.Module,
+            head_kwargs: dict,
+            patch_size: int = None,
+            padding: str = None,
+            decoder_includes_head: bool = False,
+            auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
+            neck: nn.Module | None = None,
     ) -> None:
         """Constructor
 
@@ -67,7 +68,7 @@ class ScalarOutputModel(Model, SegmentationModel):
 
         self.neck = neck
         self.patch_size = patch_size
-        self.img_size = (img_size, img_size)
+        self.padding = padding
 
     def freeze_encoder(self):
         freeze_module(self.encoder)
@@ -76,41 +77,15 @@ class ScalarOutputModel(Model, SegmentationModel):
         freeze_module(self.decoder)
         freeze_module(self.head)
 
-    def check_input_shape(self, x: torch.Tensor) -> torch.Tensor:  # noqa: ARG002
-
-        if self.patch_size:
-            x_shape = x.shape[2:]
-            if all([i//self.patch_size==0 for i in x_shape]):
-               return x
-            else:
-               x = pad_images(x, self.patch_size, "constant") 
-               return x
-        else:
-            # If patch size is not provided, the user should guarantee the
-            # dataset is properly configured to work with the model being used. 
-            return x
-
-    def _crop_image_when_necessary(self, x:torch.Tensor, size:tuple) -> torch.Tensor:
-
-            if self.img_size:
-
-                return transforms.CenterCrop(self.img_size)(x)
-            else:
-                raise NameError("Cropping is necessary to adjust images, so define `img_size` in your config file.")
-                logging.getLogger("terratorch").info("Cropping could be  necessary to adjust images, so define `img_size` in your config file \
-                                                     if you get a shape mismatch.")
-
     def forward(self, x: torch.Tensor, **kwargs) -> ModelOutput:
         """Sequentially pass `x` through model`s encoder, decoder and heads"""
 
-        x = self.check_input_shape(x)
+        if isinstance(x, torch.Tensor) and self.patch_size:
+            # Only works for single image modalities
+            x = pad_images(x, self.patch_size, self.padding)
         features = self.encoder(x, **kwargs)
 
-        # Collecting information about the size of the input tensor in order to 
-        # use it to possibly crop the image when necessary. 
-        input_size = x.shape[-2:]
-
-        ## only for backwards compatibility with pre-neck times.
+        # only for backwards compatibility with pre-neck times.
         if self.neck:
             prepare = self.neck
         else:

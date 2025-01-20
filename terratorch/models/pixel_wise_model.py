@@ -28,7 +28,7 @@ class PixelWiseModel(Model, SegmentationModel):
         decoder: nn.Module,
         head_kwargs: dict,
         patch_size: int = None, 
-        img_size:tuple = None,
+        padding: str = None,
         decoder_includes_head: bool = False,
         auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
         neck: nn.Module | None = None,
@@ -73,7 +73,7 @@ class PixelWiseModel(Model, SegmentationModel):
         self.neck = neck
         self.rescale = rescale
         self.patch_size = patch_size
-        self.img_size = (img_size, img_size)
+        self.padding = padding
 
     def freeze_encoder(self):
         freeze_module(self.encoder)
@@ -81,32 +81,6 @@ class PixelWiseModel(Model, SegmentationModel):
     def freeze_decoder(self):
         freeze_module(self.decoder)
         freeze_module(self.head)
-
-    def check_input_shape(self, x: torch.Tensor) -> torch.Tensor: 
-
-        if self.patch_size:
-            x_shape = x.shape[2:]
-            if all([i//self.patch_size==0 for i in x_shape]):
-               return x
-            else:
-               x = pad_images(x, self.patch_size, "constant") 
-
-               return x
-        else:
-            # If patch size is not provided, the user should guarantee the
-            # dataset is properly configured to work with the model being used. 
-            return x
-
-    def _crop_image_when_necessary(self, x:torch.Tensor, size:tuple) -> torch.Tensor:
-
-            if all(self.img_size):
-
-                x_cropped = transforms.CenterCrop(self.img_size)(x)
-                return x_cropped
-            else:
-                logging.getLogger("terratorch").info("Cropping could be  necessary to adjust images, so define `img_size` in your config file \
-                                                     if you get a shape mismatch.")
-                return x
 
     @staticmethod
     def _check_for_single_channel_and_squeeze(x):
@@ -117,21 +91,26 @@ class PixelWiseModel(Model, SegmentationModel):
     def forward(self, x: torch.Tensor, **kwargs) -> ModelOutput:
         """Sequentially pass `x` through model`s encoder, decoder and heads"""
 
-        if isinstance(x, torch.Tensor):
-            input_size = x.shape[-2:]
-        elif hasattr(kwargs, 'image_size'):
-            input_size = kwargs['image_size']
-        elif isinstance(x, dict):
-            # Multimodal input in passed as dict
-            input_size = list(x.values())[0].shape[-2:]
-        else:
-            ValueError('Could not infer input shape.')
+        def _get_size(x):
+            if isinstance(x, torch.Tensor):
+                return x.shape[-2:]
+            elif isinstance(x, dict):
+                # Multimodal input in passed as dict (Assuming first modality to be an image)
+                return list(x.values())[0].shape[-2:]
+            elif hasattr(kwargs, 'image_size'):
+                return kwargs['image_size']
+            else:
+                ValueError('Could not infer image shape.')
 
-        # TODO make this verification optional to avoid unnecessary repetition
-        x = self.check_input_shape(x)
+        image_size = _get_size(x)
+        if isinstance(x, torch.Tensor) and self.patch_size:
+            # Only works for single image modalities
+            x = pad_images(x, self.patch_size, self.padding)
+        input_size = _get_size(x)
+
         features = self.encoder(x, **kwargs)
 
-        ## only for backwards compatibility with pre-neck times.
+        # only for backwards compatibility with pre-neck times.
         if self.neck:
             prepare = self.neck
         else:
@@ -144,6 +123,7 @@ class PixelWiseModel(Model, SegmentationModel):
         if self.rescale and mask.shape[-2:] != input_size:
             mask = F.interpolate(mask, size=input_size, mode="bilinear")
         mask = self._check_for_single_channel_and_squeeze(mask)
+        mask = mask[..., :image_size[0], :image_size[1]]
 
         aux_outputs = {}
         for name, decoder in self.aux_heads.items():
@@ -151,9 +131,9 @@ class PixelWiseModel(Model, SegmentationModel):
             if self.rescale and aux_output.shape[-2:] != input_size:
                 aux_output = F.interpolate(aux_output, size=input_size, mode="bilinear")
             aux_output = self._check_for_single_channel_and_squeeze(aux_output)
+            aux_output = aux_output[..., :image_size[0], :image_size[1]]
             aux_outputs[name] = aux_output
 
-        mask = self._crop_image_when_necessary(mask, input_size)
         return ModelOutput(output=mask, auxiliary_heads=aux_outputs)
 
     def _get_head(self, task: str, input_embed_dim: int, head_kwargs):
