@@ -109,6 +109,17 @@ class ClayModelFactory(ModelFactory):
 
         # Path for accessing the model source code.
         self.syspath_kwarg = "model_sys_path"
+        backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
+
+        # If patch size is not provided in the config or by the model, it might lead to errors due to irregular images.
+        patch_size = backbone_kwargs.get("patch_size", None)
+        if patch_size is None:
+            # Infer patch size from model by checking all backbone modules
+            for module in backbone.modules():
+                if hasattr(module, "patch_size"):
+                    patch_size = module.patch_size
+                    break
+        padding = backbone_kwargs.get("padding", "reflect")
 
         # TODO: support auxiliary heads
         if not isinstance(backbone, nn.Module):
@@ -120,28 +131,6 @@ class ClayModelFactory(ModelFactory):
             if task not in SUPPORTED_TASKS:
                 msg = f"Task {task} not supported. Please choose one of {SUPPORTED_TASKS}"
                 raise NotImplementedError(msg)
-
-            backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
-
-            # Getting some necessary parameters
-            # Patch size
-            if "patch_size" in backbone_kwargs:
-                patch_size = backbone_kwargs["patch_size"]
-            else:
-                # If the configs for the model are right and images have the proper
-                # sizes, it can still work, but there is no way to fix possible
-                # errors during execution if information about patch size is not
-                # explicitly provided. 
-                patch_size = None 
-
-            if "img_size" in backbone_kwargs:
-                img_size = backbone_kwargs["img_size"]
-            else:
-                # If the configs for the model are right and images have the proper
-                # sizes, it can still work, but there is no way to fix possible
-                # errors during execution if information about img_size is not
-                # provided in order to perform cropping when necessary.
-                img_size = None 
 
             # Trying to find the model on HuggingFace.
             try:
@@ -178,7 +167,7 @@ class ClayModelFactory(ModelFactory):
             head_kwargs["num_classes"] = num_classes
         if aux_decoders is None:
             return _build_appropriate_model(
-                task, backbone, decoder, head_kwargs, prepare_features_for_image_model, patch_size=patch_size, img_size=img_size, rescale=rescale
+                task, backbone, decoder, head_kwargs, prepare_features_for_image_model, patch_size=patch_size, padding=padding, rescale=rescale
             )
 
         to_be_aux_decoders: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] = []
@@ -208,7 +197,7 @@ class ClayModelFactory(ModelFactory):
             head_kwargs,
             prepare_features_for_image_model,
             patch_size=patch_size,
-            img_size=img_size,
+            padding=padding,
             rescale=rescale,
             auxiliary_heads=to_be_aux_decoders,
         )
@@ -220,8 +209,8 @@ def _build_appropriate_model(
     decoder: nn.Module,
     head_kwargs: dict,
     prepare_features_for_image_model: Callable,
-    patch_size:int=None, 
-    img_size:int=None,
+    patch_size: int | list | None,
+    padding: str,
     rescale: bool = True,  # noqa: FBT001, FBT002
     auxiliary_heads: dict | None = None,
 ):
@@ -232,7 +221,7 @@ def _build_appropriate_model(
             decoder,
             head_kwargs,
             patch_size=patch_size,
-            img_size=img_size,
+            padding=padding,
             rescale=rescale,
             auxiliary_heads=auxiliary_heads,
         )
@@ -243,7 +232,7 @@ def _build_appropriate_model(
             decoder,
             head_kwargs,
             patch_size=patch_size,
-            img_size=img_size,
+            padding=padding,
             auxiliary_heads=auxiliary_heads,
         )
 

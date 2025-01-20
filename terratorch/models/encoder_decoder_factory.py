@@ -219,7 +219,7 @@ def _build_appropriate_model(
     backbone: nn.Module,
     decoder: nn.Module,
     head_kwargs: dict,
-    patch_size: int,
+    patch_size: int | list | None,
     padding: str,
     decoder_includes_head: bool = False,
     necks: list[Neck] | None = None,
