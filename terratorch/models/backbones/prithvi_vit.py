@@ -1,4 +1,5 @@
 # Copyright contributors to the Terratorch project
+import warnings
 
 import torch
 import logging
@@ -190,12 +191,12 @@ def _create_prithvi(
 
     # Backwards compatibility from timm (pretrained_cfg_overlay={"file": "<path to weights>"}) TODO: Remove before v1.0
     if "pretrained_cfg_overlay" in kwargs:
-        logger.warning(f"pretrained_cfg_overlay is deprecated and will be removed in a future version, "
-                       f"use ckpt_path=<file path> instead.")
+        warnings.warn(f"pretrained_cfg_overlay is deprecated and will be removed in a future version, "
+                      f"use ckpt_path=<file path> instead.", DeprecationWarning, stacklevel=2)
         if ckpt_path is not None:
-            logger.warning(f"pretrained_cfg_overlay and ckpt_path are provided, ignoring pretrained_cfg_overlay.")
+            warnings.warn(f"pretrained_cfg_overlay and ckpt_path are provided, ignoring pretrained_cfg_overlay.")
         elif "file" not in kwargs["pretrained_cfg_overlay"]:
-            logger.warning("pretrained_cfg_overlay does not include 'file path', ignoring pretrained_cfg_overlay.")
+            warnings.warn("pretrained_cfg_overlay does not include 'file path', ignoring pretrained_cfg_overlay.")
         else:
             ckpt_path = kwargs.pop("pretrained_cfg_overlay")["file"]
 
@@ -217,12 +218,12 @@ def _create_prithvi(
                                                f"(pretrained models: {pretrained_weights.keys()})")
         # Load pre-trained config from hf
         try:
-            # TODO: Rename model suffix to .ckpt and remove config.json.
+            # TODO: Switch from timm to hf hub download and remove config.json download.
             model_args = load_model_config_from_hf(pretrained_weights[variant]["hf_hub_id"])[0]
             model_args.update(kwargs)
         except:
-            logger.warning(f"No pretrained configuration was found on HuggingFace for the model {variant}."
-                           f"Using random initialization.")
+            warnings.warn(f"No pretrained configuration was found on HuggingFace for the model {variant}."
+                           f"Using random initialization.", stacklevel=2)
             model_args = prithvi_cfgs[variant].copy()
             model_args.update(kwargs)
     else:
@@ -268,19 +269,6 @@ def _create_prithvi(
         model.pretrained_bands = pretrained_bands
 
     return model
-
-
-@ TERRATORCH_BACKBONE_REGISTRY.register
-def prithvi_vit_tiny(
-    pretrained: bool = False,  # noqa: FBT001, FBT002
-    bands: list[HLSBands] | None = None,
-    **kwargs,
-) -> PrithviViT:
-
-    logger.warning(f"The model prithvi_vit_tiny was renamed to prithvi_eo_tiny. "
-                    f"prithvi_vit_tiny will be removed in a future version.")
-
-    return prithvi_eo_tiny(pretrained=pretrained, bands=bands, **kwargs)
 
 
 @ TERRATORCH_BACKBONE_REGISTRY.register
@@ -343,16 +331,33 @@ def prithvi_eo_v2_600_tl(
     return _create_prithvi("prithvi_eo_v2_600_tl", pretrained, bands, **kwargs)
 
 
-# TODO: Remove timm_ errors in before version v1.0.
+# TODO: Remove prithvi_vit_tiny and prithvi_vit_100 before version 1.0.
+@ TERRATORCH_BACKBONE_REGISTRY.register
+def prithvi_vit_tiny(
+    pretrained: bool = False,  # noqa: FBT001, FBT002
+    bands: list[HLSBands] | None = None,
+    **kwargs,
+) -> PrithviViT:
+
+    warnings.warn(f"The model prithvi_vit_tiny was renamed to prithvi_eo_tiny. "
+                  f"prithvi_vit_tiny will be removed in a future version.", DeprecationWarning)
+
+    return prithvi_eo_tiny(pretrained=pretrained, bands=bands, **kwargs)
+
+
 @ TERRATORCH_BACKBONE_REGISTRY.register
 def prithvi_vit_100(
     pretrained: bool = False,  # noqa: FBT001, FBT002
     bands: list[HLSBands] | None = None,
     **kwargs,
-) -> None:
-    raise ValueError("The model prithvi_vit_100 was renamed to prithvi_eo_v1_100.")
+) -> PrithviViT:
+    warnings.warn(f"The model prithvi_vit_100 was renamed to prithvi_eo_v1_100. "
+                  f"prithvi_vit_100 will be removed in a future version.", DeprecationWarning)
+
+    return prithvi_eo_v1_100(pretrained=pretrained, bands=bands, **kwargs)
 
 
+# TODO: Remove timm_ errors before version v1.0.
 @ TERRATORCH_BACKBONE_REGISTRY.register
 def timm_prithvi_eo_v1_100(
     pretrained: bool = False,  # noqa: FBT001, FBT002
