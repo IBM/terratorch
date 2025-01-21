@@ -62,6 +62,7 @@ class ClassificationTask(TerraTorchTask):
         #
         freeze_backbone: bool = False,  # noqa: FBT001, FBT002
         freeze_decoder: bool = False,  # noqa: FBT002, FBT001
+        freeze_head: bool = False,  # noqa: FBT002, FBT001
         class_names: list[str] | None = None,
         lr_overrides: dict[str, float] | None = None,
     ) -> None:
@@ -96,7 +97,8 @@ class ClassificationTask(TerraTorchTask):
             scheduler_hparams (dict | None): Parameters to be passed for instantiation of the scheduler.
                 Overriden by config / cli specification through LightningCLI.
             freeze_backbone (bool, optional): Whether to freeze the backbone. Defaults to False.
-            freeze_decoder (bool, optional): Whether to freeze the decoder and segmentation head. Defaults to False.
+            freeze_decoder (bool, optional): Whether to freeze the decoder. Defaults to False.
+            freeze_head (bool, optional): Whether to freeze the segmentation_head. Defaults to False.
             class_names (list[str] | None, optional): List of class names passed to metrics for better naming.
                 Defaults to numeric ordering.
             lr_overrides (dict[str, float] | None, optional): Dictionary to override the default lr in specific
