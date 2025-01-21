@@ -248,16 +248,14 @@ class PrithviViT(nn.Module):
                  norm_layer: nn.Module = nn.LayerNorm,
                  coords_encoding: List[str] | None = None,
                  coords_scale_learn: bool = False,
-                 encoder_only: bool = True,  # needed for timm
                  ** kwargs,
                 ):
         super().__init__()
 
-        self.feature_info = []
-        self.encoder_only = encoder_only
         self.in_chans = in_chans
         self.num_frames = num_frames
         self.embed_dim = embed_dim
+        self.out_channels = [embed_dim] * depth
         self.img_size = to_2tuple(img_size)
         if isinstance(patch_size, int):
             patch_size = (1, patch_size, patch_size)
@@ -287,9 +285,6 @@ class PrithviViT(nn.Module):
         self.blocks = []
         for i in range(depth):
             self.blocks.append(Block(embed_dim, num_heads, mlp_ratio, qkv_bias=True, norm_layer=norm_layer))
-            self.feature_info.append(
-                {"num_chs": embed_dim * self.patch_embed.grid_size[0], "reduction": 1, "module": f"blocks.{i}"}
-            )
         self.blocks = nn.ModuleList(self.blocks)
 
         self.norm = norm_layer(embed_dim)
@@ -607,7 +602,6 @@ class PrithviMAE(nn.Module):
                  norm_pix_loss: bool = False,
                  coords_encoding: List[str] | None = None,
                  coords_scale_learn: bool = False,
-                 encoder_only: bool = False,
                  **kwargs,
                  ):
         super().__init__()
@@ -626,24 +620,19 @@ class PrithviMAE(nn.Module):
             coords_scale_learn=coords_scale_learn,
         )
 
-        self.encoder_only = encoder_only
-
-        if not encoder_only:
-            self.decoder = MAEDecoder(
-                patch_size=patch_size,
-                grid_size=self.encoder.patch_embed.grid_size,
-                in_chans=in_chans,
-                encoder_embed_dim=embed_dim,
-                decoder_embed_dim=decoder_embed_dim,
-                depth=decoder_depth,
-                num_heads=decoder_num_heads,
-                mlp_ratio=mlp_ratio,
-                norm_layer=norm_layer,
-                coords_encoding=coords_encoding,
-                coords_scale_learn=coords_scale_learn,
-            )
-        else:
-            self.decoder = nn.Identity()
+        self.decoder = MAEDecoder(
+            patch_size=patch_size,
+            grid_size=self.encoder.patch_embed.grid_size,
+            in_chans=in_chans,
+            encoder_embed_dim=embed_dim,
+            decoder_embed_dim=decoder_embed_dim,
+            depth=decoder_depth,
+            num_heads=decoder_num_heads,
+            mlp_ratio=mlp_ratio,
+            norm_layer=norm_layer,
+            coords_encoding=coords_encoding,
+            coords_scale_learn=coords_scale_learn,
+        )
 
         self.norm_pix_loss = norm_pix_loss
 
@@ -730,8 +719,10 @@ class PrithviMAE(nn.Module):
         latent, mask, ids_restore = self.encoder(pixel_values, temporal_coords, location_coords, mask_ratio)
         pred = self.decoder(latent, ids_restore, temporal_coords, location_coords, input_size=pixel_values.shape)
         loss = self.forward_loss(pixel_values, pred, mask)
+        # TODO: return loss?
         return loss, pred, mask
 
+    # TODO: forward_features still needed?
     def forward_features(
         self,
         x: torch.Tensor,
