@@ -174,7 +174,7 @@ def _create_prithvi(
 ) -> PrithviViT:
     if pretrained_bands is None:
         pretrained_bands = PRETRAINED_BANDS
-
+    kwargs["num_frames"] = kwargs.pop("num_frames", 1)  # Set num frames to 1 if not present
 
     if model_bands is None:
         model_bands: list[HLSBands | int] = pretrained_bands
@@ -253,40 +253,20 @@ def _create_prithvi(
             logger.error(f"Failed to initialize the model {variant}.")
         raise e
 
+    assert encoder_only or "out_indices" not in kwargs, "out_indices provided for a MAE model."
     if encoder_only:
         default_out_indices = list(range(len(model.blocks)))
         out_indices = kwargs.pop("out_indices", default_out_indices)
-        # TODO: Needed?
-        # model.encode_decode_forward = model.forward
 
         def forward_filter_indices(*args, **kwargs):
             features = model.forward_features(*args, **kwargs)
             return [features[i] for i in out_indices]
 
         model.forward = forward_filter_indices
+        model.out_indices = out_indices
         model.model_bands = model_bands
         model.pretrained_bands = pretrained_bands
 
-    return model
-
-
-def create_prithvi_from_config(
-    model_name: str,
-    pretrained: bool = False,  # noqa: FBT001, FBT002
-    bands: list[HLSBands] | None = None,
-    **kwargs,
-) -> PrithviViT:
-    pretrained_bands = PRETRAINED_BANDS
-    kwargs["num_frames"] = kwargs.pop("num_frames", 1)  # Set num frames to 1 if not present
-
-    model = _create_prithvi(
-        model_name,
-        pretrained=pretrained,
-        model_bands=bands,
-        pretrained_bands=pretrained_bands,
-        **kwargs,
-    )
-    
     return model
 
 
@@ -310,20 +290,7 @@ def prithvi_eo_tiny(
     **kwargs,
 ) -> PrithviViT:
 
-    return create_prithvi_from_config("prithvi_eo_tiny", pretrained, bands, **kwargs)
-
-
-@ TERRATORCH_BACKBONE_REGISTRY.register
-def prithvi_vit_100(
-    pretrained: bool = False,  # noqa: FBT001, FBT002
-    bands: list[HLSBands] | None = None,
-    **kwargs,
-) -> PrithviViT:
-
-    logger.warning(f"The model prithvi_vit_100 was renamed to prithvi_eo_v1_100. "
-                    f"prithvi_vit_100 will be removed in a future version.")
-
-    return prithvi_eo_v1_100(pretrained=pretrained, bands=bands, **kwargs)
+    return _create_prithvi("prithvi_eo_tiny", pretrained, bands, **kwargs)
 
 
 @ TERRATORCH_BACKBONE_REGISTRY.register
@@ -333,7 +300,7 @@ def prithvi_eo_v1_100(
     **kwargs,
 ) -> PrithviViT:
 
-    return create_prithvi_from_config("prithvi_eo_v1_100", pretrained, bands, **kwargs)
+    return _create_prithvi("prithvi_eo_v1_100", pretrained, bands, **kwargs)
 
 
 @ TERRATORCH_BACKBONE_REGISTRY.register
@@ -343,7 +310,7 @@ def prithvi_eo_v2_300(
     **kwargs,
 ) -> PrithviViT:
 
-    return create_prithvi_from_config("prithvi_eo_v2_300", pretrained, bands, **kwargs)
+    return _create_prithvi("prithvi_eo_v2_300", pretrained, bands, **kwargs)
 
 
 @ TERRATORCH_BACKBONE_REGISTRY.register
@@ -353,8 +320,7 @@ def prithvi_eo_v2_600(
     **kwargs,
 ) -> PrithviViT:
 
-
-    return create_prithvi_from_config("prithvi_eo_v2_600", pretrained, bands, **kwargs)
+    return _create_prithvi("prithvi_eo_v2_600", pretrained, bands, **kwargs)
 
 
 @ TERRATORCH_BACKBONE_REGISTRY.register
@@ -364,7 +330,7 @@ def prithvi_eo_v2_300_tl(
     **kwargs,
 ) -> PrithviViT:
 
-    return create_prithvi_from_config("prithvi_eo_v2_300_tl", pretrained, bands, **kwargs)
+    return _create_prithvi("prithvi_eo_v2_300_tl", pretrained, bands, **kwargs)
 
 
 @ TERRATORCH_BACKBONE_REGISTRY.register
@@ -374,4 +340,63 @@ def prithvi_eo_v2_600_tl(
     **kwargs,
 ) -> PrithviViT:
 
-    return create_prithvi_from_config("prithvi_eo_v2_600_tl", pretrained, bands, **kwargs)
+    return _create_prithvi("prithvi_eo_v2_600_tl", pretrained, bands, **kwargs)
+
+
+# TODO: Remove timm_ errors in before version v1.0.
+@ TERRATORCH_BACKBONE_REGISTRY.register
+def prithvi_vit_100(
+    pretrained: bool = False,  # noqa: FBT001, FBT002
+    bands: list[HLSBands] | None = None,
+    **kwargs,
+) -> None:
+    raise ValueError("The model prithvi_vit_100 was renamed to prithvi_eo_v1_100.")
+
+
+@ TERRATORCH_BACKBONE_REGISTRY.register
+def timm_prithvi_eo_v1_100(
+    pretrained: bool = False,  # noqa: FBT001, FBT002
+    bands: list[HLSBands] | None = None,
+    **kwargs,
+) -> None:
+    raise ValueError("The Prithvi models were moved to the terratorch registry. "
+                     "Please remove the timm_ prefix from the model name.")
+
+
+@ TERRATORCH_BACKBONE_REGISTRY.register
+def timm_prithvi_eo_v2_300(
+    pretrained: bool = False,  # noqa: FBT001, FBT002
+    bands: list[HLSBands] | None = None,
+    **kwargs,
+) -> None:
+    raise ValueError("The Prithvi models were moved to the terratorch registry. "
+                     "Please remove the timm_ prefix from the model name.")
+
+
+@ TERRATORCH_BACKBONE_REGISTRY.register
+def timm_prithvi_eo_v2_600(
+    pretrained: bool = False,  # noqa: FBT001, FBT002
+    bands: list[HLSBands] | None = None,
+    **kwargs,
+) -> None:
+    raise ValueError("The Prithvi models were moved to the terratorch registry. "
+                     "Please remove the timm_ prefix from the model name.")
+
+@ TERRATORCH_BACKBONE_REGISTRY.register
+def timm_prithvi_eo_v2_300_tl(
+    pretrained: bool = False,  # noqa: FBT001, FBT002
+    bands: list[HLSBands] | None = None,
+    **kwargs,
+) -> None:
+    raise ValueError("The Prithvi models were moved to the terratorch registry. "
+                     "Please remove the timm_ prefix from the model name.")
+
+
+@ TERRATORCH_BACKBONE_REGISTRY.register
+def timm_prithvi_eo_v2_600_tl(
+    pretrained: bool = False,  # noqa: FBT001, FBT002
+    bands: list[HLSBands] | None = None,
+    **kwargs,
+) -> None:
+    raise ValueError("The Prithvi models were moved to the terratorch registry. "
+                     "Please remove the timm_ prefix from the model name.")
