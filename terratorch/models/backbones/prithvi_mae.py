@@ -17,9 +17,7 @@
 # transformers: https://github.com/huggingface/transformers
 # --------------------------------------------------------
 
-from functools import partial
-from typing import List, Tuple
-
+import warnings
 import logging
 import numpy as np
 import torch
@@ -135,8 +133,8 @@ class PatchEmbed(nn.Module):
     """3D version of timm.models.vision_transformer.PatchEmbed"""
     def __init__(
             self,
-            input_size: Tuple[int, int, int] = (1, 224, 224),
-            patch_size: Tuple[int, int, int] = (1, 16, 16),
+            input_size: tuple[int, int, int] = (1, 224, 224),
+            patch_size: tuple[int, int, int] = (1, 16, 16),
             in_chans: int = 3,
             embed_dim: int = 768,
             norm_layer: nn.Module | None = None,
@@ -153,16 +151,13 @@ class PatchEmbed(nn.Module):
 
         self.proj = nn.Conv3d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size, bias=bias)
         self.norm = norm_layer(embed_dim) if norm_layer else nn.Identity()
-        self.log_warning = True
 
     def forward(self, x):
         B, C, T, H, W = x.shape
 
-        if (self.log_warning and
-                (T / self.patch_size[0] % 1 or H / self.patch_size[1] % 1 or W / self.patch_size[2] % 1)):
-            logger.warning(f"Input {x.shape[-3:]} is not divisible by patch size {self.patch_size}."
-                           f"The border will be ignored, add backbone_padding for pixel-wise tasks.")
-            self.log_warning = False
+        if T / self.patch_size[0] % 1 or H / self.patch_size[1] % 1 or W / self.patch_size[2] % 1:
+            warnings.warn(f"Input {x.shape[-3:]} is not divisible by patch size {self.patch_size}."
+                          f"The border will be ignored, add backbone_padding for pixel-wise tasks.")
 
         x = self.proj(x)
         if self.flatten:
@@ -237,8 +232,8 @@ class LocationEncoder(nn.Module):
 class PrithviViT(nn.Module):
     """ Prithvi ViT Encoder"""
     def __init__(self,
-                 img_size: int | Tuple[int, int] = 224,
-                 patch_size: int | Tuple[int, int, int] = (1, 16, 16),
+                 img_size: int | tuple[int, int] = 224,
+                 patch_size: int | tuple[int, int, int] = (1, 16, 16),
                  num_frames: int = 1,
                  in_chans: int = 3,
                  embed_dim: int = 1024,
@@ -246,7 +241,7 @@ class PrithviViT(nn.Module):
                  num_heads: int = 16,
                  mlp_ratio: float = 4.,
                  norm_layer: nn.Module = nn.LayerNorm,
-                 coords_encoding: List[str] | None = None,
+                 coords_encoding: list[str] | None = None,
                  coords_scale_learn: bool = False,
                  ** kwargs,
                 ):
@@ -339,21 +334,32 @@ class PrithviViT(nn.Module):
 
         return sequence_unmasked, mask, ids_restore
 
-    def _get_pos_embed(self, x):
-        t, h, w = x.shape[-3:]
+    def interpolate_pos_encoding(self, x, t, w, h):
+        """
+        Adapted from:
+        - transformers.models.vit.modeling_vit.ViTEmbeddings.interpolate_pos_encoding,
+        - https://github.com/facebookresearch/dino/blob/de9ee3df6cf39fac952ab558447af1fa1365362a/vision_transformer.py#L174-L194
+        """
+        if x.shape[1] == self.pos_embed.shape[1] and w == h:
+            # No interpolation needed
+            return self.pos_embed
 
-        pos_embed = torch.from_numpy(get_3d_sincos_pos_embed(
-            self.embed_dim,
-            (
-                t // self.patch_embed.patch_size[0],
-                h // self.patch_embed.patch_size[1],
-                w // self.patch_embed.patch_size[2],
-            ),
-            add_cls_token=True,
-        )).float().unsqueeze(0).to(x)
+        class_pos_embed = self.pos_embed[:, :1]
+        patch_pos_embed = self.pos_embed[:, 1:]
+        w_patches = w // self.patch_embed.patch_size[1]
+        h_patches = h // self.patch_embed.patch_size[2]
 
-        return pos_embed
+        n_sqrt = int((patch_pos_embed.shape[1] / t) ** 0.5)
+        patch_pos_embed = patch_pos_embed.reshape(t, n_sqrt, n_sqrt, self.embed_dim).permute(0, 3, 1, 2)
 
+        patch_pos_embed = nn.functional.interpolate(
+            patch_pos_embed,
+            size=(h_patches, w_patches),
+            mode='bicubic',
+            align_corners=True,
+        )
+        patch_pos_embed = patch_pos_embed.permute(0, 2, 3, 1).view(1, -1, self.embed_dim)
+        return torch.cat((class_pos_embed, patch_pos_embed), dim=1)
 
     def forward(
         self, x: torch.Tensor,
@@ -361,15 +367,15 @@ class PrithviViT(nn.Module):
         location_coords: None | torch.Tensor = None,
         mask_ratio=0.75
     ):
-        if x.shape[-3:] != self.patch_embed.input_size:
-            # changed input size
-            pos_embed = self._get_pos_embed(x)
-        else:
-            pos_embed = self.pos_embed
+        if len(x.shape) == 4 and self.patch_embed.input_size[0] == 1:
+            # add time dim
+            x = x.unsqueeze(2)
+        t, h, w = x.shape[-3:]
 
         # embed patches
         x = self.patch_embed(x)
 
+        pos_embed = self.interpolate_pos_encoding(x, t, h, w)
         # add pos embed w/o cls token
         x = x + pos_embed[:, 1:, :]
 
@@ -405,15 +411,12 @@ class PrithviViT(nn.Module):
         if len(x.shape) == 4 and self.patch_embed.input_size[0] == 1:
             # add time dim
             x = x.unsqueeze(2)
-
-        if x.shape[-3:] != self.patch_embed.input_size:
-            pos_embed = self._get_pos_embed(x)
-        else:
-            pos_embed = self.pos_embed
+        t, h, w = x.shape[-3:]
 
         # embed patches
         x = self.patch_embed(x)
 
+        pos_embed = self.interpolate_pos_encoding(x, t, h, w)
         # add pos embed w/o cls token
         x = x + pos_embed[:, 1:, :]
 
@@ -462,8 +465,8 @@ class PrithviViT(nn.Module):
 class MAEDecoder(nn.Module):
     """ Transformer Decoder used in the Prithvi MAE"""
     def __init__(self,
-                 patch_size: int | Tuple[int, int, int] = (1, 16, 16),
-                 grid_size: List[int] | Tuple[int, int, int] = (3, 14, 14),
+                 patch_size: int | tuple[int, int, int] = (1, 16, 16),
+                 grid_size: list[int] | tuple[int, int, int] = (3, 14, 14),
                  in_chans: int = 3,
                  encoder_embed_dim: int = 1024,
                  decoder_embed_dim: int = 512,
@@ -471,7 +474,7 @@ class MAEDecoder(nn.Module):
                  num_heads: int = 16,
                  mlp_ratio: float = 4.,
                  norm_layer: nn.Module = nn.LayerNorm,
-                 coords_encoding: List[str] | None = None,
+                 coords_encoding: list[str] | None = None,
                  coords_scale_learn: bool = False,
                  ):
         super().__init__()
@@ -520,6 +523,33 @@ class MAEDecoder(nn.Module):
         torch.nn.init.normal_(self.mask_token, std=0.02)
         self.apply(_init_weights)
 
+    def interpolate_pos_encoding(self, x, t, w, h):
+        """
+        Adapted from:
+        - transformers.models.vit.modeling_vit.ViTEmbeddings.interpolate_pos_encoding,
+        - https://github.com/facebookresearch/dino/blob/de9ee3df6cf39fac952ab558447af1fa1365362a/vision_transformer.py#L174-L194
+        """
+        if x.shape[1] == self.decoder_pos_embed.shape[1] and w == h:
+            # No interpolation needed
+            return self.decoder_pos_embed
+
+        class_pos_embed = self.decoder_pos_embed[:, :1]
+        patch_pos_embed = self.decoder_pos_embed[:, 1:]
+        w_patches = w // self.patch_size[1]
+        h_patches = h // self.patch_size[2]
+
+        n_sqrt = int((patch_pos_embed.shape[1] / t) ** 0.5)
+        patch_pos_embed = patch_pos_embed.reshape(t, n_sqrt, n_sqrt, self.decoder_embed_dim).permute(0, 3, 1, 2)
+
+        patch_pos_embed = nn.functional.interpolate(
+            patch_pos_embed,
+            size=(h_patches, w_patches),
+            mode='bicubic',
+            align_corners=True,
+        )
+        patch_pos_embed = patch_pos_embed.permute(0, 2, 3, 1).view(1, -1, self.decoder_embed_dim)
+        return torch.cat((class_pos_embed, patch_pos_embed), dim=1)
+
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -530,44 +560,32 @@ class MAEDecoder(nn.Module):
     ):
         # embed tokens
         x = self.decoder_embed(hidden_states)
-
-        t, h, w = input_size[-3:]
-        decoder_pos_embed = torch.from_numpy(
-            get_3d_sincos_pos_embed(
-                self.decoder_embed_dim,
-                (
-                    t // self.patch_size[0],
-                    h // self.patch_size[1],
-                    w // self.patch_size[2],
-                ),
-                add_cls_token=True,
-            )
-        ).to(x)
+        cls_token = x[:, :1, :]
 
         # append mask tokens to sequence
         mask_tokens = self.mask_token.repeat(x.shape[0], ids_restore.shape[1] + 1 - x.shape[1], 1)
-        x_ = torch.cat([x[:, 1:, :], mask_tokens], dim=1)  # no cls token
+        x = torch.cat([x[:, 1:, :], mask_tokens], dim=1)  # no cls token
         # unshuffle
-        x_ = torch.gather(x_, dim=1, index=ids_restore.unsqueeze(-1).repeat(1, 1, x.shape[2]).to(x_.device))
-        x = torch.cat([x[:, :1, :], x_], dim=1)  # append cls token
-        # add pos embed
-        x = x + decoder_pos_embed
+        x = torch.gather(x, dim=1, index=ids_restore.unsqueeze(-1).repeat(1, 1, x.shape[2]).to(x.device))
 
-        # remove cls token
-        x_ = x[:, 1:, :]
+        # add pos embed
+        t, h, w = input_size[-3:]
+        decoder_pos_embed = self.interpolate_pos_encoding(x, t, w, h)
+        cls_token = cls_token + decoder_pos_embed[:, :1, :]
+        x = x + decoder_pos_embed[:, 1:, :]
 
         if self.temporal_encoding and temporal_coords is not None:
-            num_tokens_per_frame = x_.shape[1] // self.num_frames
+            num_tokens_per_frame = x.shape[1] // self.num_frames
             temporal_encoding = self.temporal_embed_dec(temporal_coords, num_tokens_per_frame)
             # Add temporal encoding w/o cls token
-            x_ = x_ + temporal_encoding
+            x = x + temporal_encoding
         if self.location_encoding and location_coords is not None:
             location_encoding = self.location_embed_dec(location_coords)
             # Add location encoding w/o cls token
-            x_ = x_ + location_encoding
+            x = x + location_encoding
 
         # append cls token
-        x = torch.cat([x[:, :1, :], x_], dim=1)
+        x = torch.cat([cls_token, x], dim=1)
 
         # apply Transformer layers (blocks)
         for block in self.decoder_blocks:
@@ -587,8 +605,8 @@ class PrithviMAE(nn.Module):
     """ Prithvi Masked Autoencoder"""
 
     def __init__(self,
-                 img_size: int | Tuple[int, int] = 224,
-                 patch_size: int | Tuple[int, int, int] = (1, 16, 16),
+                 img_size: int | tuple[int, int] = 224,
+                 patch_size: int | tuple[int, int, int] = (1, 16, 16),
                  num_frames: int = 4,
                  in_chans: int = 6,
                  embed_dim: int = 768,
@@ -600,7 +618,7 @@ class PrithviMAE(nn.Module):
                  mlp_ratio: float = 4.,
                  norm_layer: nn.Module = nn.LayerNorm,
                  norm_pix_loss: bool = False,
-                 coords_encoding: List[str] | None = None,
+                 coords_encoding: list[str] | None = None,
                  coords_scale_learn: bool = False,
                  **kwargs,
                  ):
@@ -635,6 +653,7 @@ class PrithviMAE(nn.Module):
         )
 
         self.norm_pix_loss = norm_pix_loss
+        self.out_channels = self.encoder.out_channels
 
     def patchify(self, pixel_values):
         """
@@ -656,13 +675,13 @@ class PrithviMAE(nn.Module):
 
         return patchified_pixel_values
 
-    def unpatchify(self, patchified_pixel_values, image_size: Tuple[int, int] | None = None):
+    def unpatchify(self, patchified_pixel_values, image_size: tuple[int, int] | None = None):
         """
         Args:
             patchified_pixel_values (`torch.FloatTensor` of shape
                 `(batch_size, num_patches, patch_size[0]*patch_size[1]*patch_size[2] * num_channels)`:
                 Patchified pixel values.
-            image_size (`Tuple[int, int]`, *optional*):
+            image_size (`tuple[int, int]`, *optional*):
                 Original image size.
 
         Returns:
@@ -719,14 +738,12 @@ class PrithviMAE(nn.Module):
         latent, mask, ids_restore = self.encoder(pixel_values, temporal_coords, location_coords, mask_ratio)
         pred = self.decoder(latent, ids_restore, temporal_coords, location_coords, input_size=pixel_values.shape)
         loss = self.forward_loss(pixel_values, pred, mask)
-        # TODO: return loss?
         return loss, pred, mask
 
-    # TODO: forward_features still needed?
     def forward_features(
         self,
         x: torch.Tensor,
         temporal_coords: None | torch.Tensor = None,
         location_coords: None | torch.Tensor = None,
-    ) -> List[torch.Tensor]:
+    ) -> list[torch.Tensor]:
         return self.encoder.forward_features(x, temporal_coords, location_coords)
