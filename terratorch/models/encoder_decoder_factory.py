@@ -1,6 +1,6 @@
 # Copyright contributors to the Terratorch project
 
-
+from typing import List
 import warnings
 import logging 
 from torch import nn
@@ -130,8 +130,12 @@ class EncoderDecoderFactory(ModelFactory):
         backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
         backbone = _get_backbone(backbone, **backbone_kwargs)
 
+        # The image can be optionally cropped to a final format when necessary
+        output_size = backbone_kwargs.get("output_size", None)
+
         # If patch size is not provided in the config or by the model, it might lead to errors due to irregular images.
         patch_size = backbone_kwargs.get("patch_size", None)
+
         if patch_size is None:
             # Infer patch size from model by checking all backbone modules
             for module in backbone.modules():
@@ -180,6 +184,7 @@ class EncoderDecoderFactory(ModelFactory):
                 head_kwargs,
                 patch_size=patch_size,
                 padding=padding,
+                output_size=output_size,
                 necks=neck_list,
                 decoder_includes_head=decoder_includes_head,
                 rescale=rescale,
@@ -207,6 +212,7 @@ class EncoderDecoderFactory(ModelFactory):
             head_kwargs,
             patch_size=patch_size,
             padding=padding,
+            output_size=output_size,
             necks=neck_list,
             decoder_includes_head=decoder_includes_head,
             rescale=rescale,
@@ -221,6 +227,7 @@ def _build_appropriate_model(
     head_kwargs: dict,
     patch_size: int | list | None,
     padding: str,
+    output_size: List[int] | None = None, 
     decoder_includes_head: bool = False,
     necks: list[Neck] | None = None,
     rescale: bool = True,  # noqa: FBT001, FBT002
@@ -238,6 +245,7 @@ def _build_appropriate_model(
             head_kwargs,
             patch_size=patch_size,
             padding=padding,
+            output_size=output_size,
             decoder_includes_head=decoder_includes_head,
             neck=neck_module,
             rescale=rescale,

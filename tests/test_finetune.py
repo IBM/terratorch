@@ -56,7 +56,7 @@ def test_finetune_pad(case):
 
 @pytest.mark.parametrize("model_name", ["prithvi_eo_v2_300"])
 @pytest.mark.parametrize("case", ["fit", "test", "validate"])
-def test_finetune_pad(case):
+def test_finetune_pad_nondivisible(case):
     command_list = [case, "-c", f"tests/resources/configs/manufactured-finetune_prithvi_pixelwise_nondivisible.yaml"]
     _ = build_lightning_cli(command_list)
 

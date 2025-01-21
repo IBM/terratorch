@@ -1,4 +1,5 @@
 # Copyright contributors to the Terratorch project
+from typing import List
 import logging 
 import torch
 import torch.nn.functional as F  # noqa: N812
@@ -30,6 +31,7 @@ class PixelWiseModel(Model, SegmentationModel):
         patch_size: int = None, 
         padding: str = None,
         decoder_includes_head: bool = False,
+        output_size: List[int] | None = None,
         auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
         neck: nn.Module | None = None,
         rescale: bool = True,  # noqa: FBT002, FBT001
@@ -42,6 +44,7 @@ class PixelWiseModel(Model, SegmentationModel):
             decoder (nn.Module): Decoder to be used
             head_kwargs (dict): Arguments to be passed at instantiation of the head.
             decoder_includes_head (bool): Whether the decoder already incldes a head. If true, a head will not be added. Defaults to False.
+            output_size (List[int]): The size of the epxected output/target tensor. It is used to crop the output before returning it.  
             auxiliary_heads (list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None, optional): List of
                 AuxiliaryHeads with heads to be instantiated. Defaults to None.
             neck (nn.Module | None): Module applied between backbone and decoder.
@@ -74,6 +77,9 @@ class PixelWiseModel(Model, SegmentationModel):
         self.rescale = rescale
         self.patch_size = patch_size
         self.padding = padding
+        self.output_size = output_size
+        self.reference_top = 0
+        self.reference_left = 0
 
     def freeze_encoder(self):
         freeze_module(self.encoder)
@@ -133,6 +139,10 @@ class PixelWiseModel(Model, SegmentationModel):
             aux_output = self._check_for_single_channel_and_squeeze(aux_output)
             aux_output = aux_output[..., :image_size[0], :image_size[1]]
             aux_outputs[name] = aux_output
+
+        # Cropping when necessary
+        if self.output_size:
+            mask = transforms.functional.crop(mask, self.reference_left, self.reference_left, *image_size)
 
         return ModelOutput(output=mask, auxiliary_heads=aux_outputs)
 
