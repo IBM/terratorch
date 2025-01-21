@@ -340,7 +340,7 @@ def prithvi_vit_tiny(
 ) -> PrithviViT:
 
     warnings.warn(f"The model prithvi_vit_tiny was renamed to prithvi_eo_tiny. "
-                  f"prithvi_vit_tiny will be removed in a future version.", DeprecationWarning)
+                  f"prithvi_vit_tiny will be removed in a future version.", FutureWarning)
 
     return prithvi_eo_tiny(pretrained=pretrained, bands=bands, **kwargs)
 
@@ -351,8 +351,8 @@ def prithvi_vit_100(
     bands: list[HLSBands] | None = None,
     **kwargs,
 ) -> PrithviViT:
-    warnings.warn(f"The model prithvi_vit_100 was renamed to prithvi_eo_v1_100. "
-                  f"prithvi_vit_100 will be removed in a future version.", DeprecationWarning)
+    warnings.warn("The model prithvi_vit_100 was renamed to prithvi_eo_v1_100. "
+                  "prithvi_vit_100 will be removed in a future version.", FutureWarning)
 
     return prithvi_eo_v1_100(pretrained=pretrained, bands=bands, **kwargs)
 
