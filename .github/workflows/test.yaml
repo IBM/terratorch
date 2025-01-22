@@ -28,7 +28,9 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements/required.txt -r requirements/test.txt -r requirements/optional.txt
+          #pip install -r requirements/required.txt -r requirements/test.txt -r requirements/optional.txt
+          pip install -r requirements/test.txt -r requirements/optional.txt
+          pip install -e .[torchgeo]
           pip install git+https://github.com/NASA-IMPACT/Prithvi-WxC.git
           pip install git+https://github.com/IBM/granite-wxc.git
       - name: List pip dependencies
