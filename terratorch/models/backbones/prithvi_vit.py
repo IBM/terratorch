@@ -9,7 +9,7 @@ from terratorch.models.backbones.select_patch_embed_weights import select_patch_
 from terratorch.datasets.utils import generate_bands_intervals
 from terratorch.models.backbones.prithvi_mae import PrithviViT, PrithviMAE
 from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
-from timm.models import load_model_config_from_hf, load_state_dict_from_hf
+from huggingface_hub import hf_hub_download
 
 logger = logging.getLogger(__name__)
 
@@ -60,8 +60,8 @@ prithvi_cfgs = {
     "prithvi_eo_v2_300": _cfg(embed_dim=1024, depth=24, num_heads=16),
     "prithvi_eo_v2_300_tl": _cfg(embed_dim=1024, depth=24, num_heads=16,
                                  coords_encoding=["time", "location"], coords_scale_learn=True),
-    "prithvi_eo_v2_600": _cfg(embed_dim=1280, depth=32, num_heads=16),
-    "prithvi_eo_v2_600_tl": _cfg(embed_dim=1280, depth=32, num_heads=16,
+    "prithvi_eo_v2_600": _cfg(embed_dim=1280, depth=32, num_heads=16, patch_size=[1, 14, 14]),
+    "prithvi_eo_v2_600_tl": _cfg(embed_dim=1280, depth=32, num_heads=16, patch_size=[1, 14, 14],
                                  coords_encoding=["time", "location"], coords_scale_learn=True),
 }
 
@@ -167,27 +167,21 @@ def pad_images(imgs: Tensor,patch_size: int, padding:str) -> Tensor:
 
 def _create_prithvi(
     variant: str,
-    pretrained: bool = False,  # noqa: FBT001, FBT002
-    pretrained_bands: list[HLSBands] | None = None,
+    pretrained: bool = False,  # noqa: FBT001, FBT002    
     model_bands: list[HLSBands | int] | None = None,
-    ckpt_path: str | None = None,
+    ckpt_path: str = None,
+    pretrained_bands: list[HLSBands | str | int] | None = None,
+    num_frames: int = 1,
+    encoder_only: bool = True,
     **kwargs,
-) -> PrithviViT:
-    if pretrained_bands is None:
-        pretrained_bands = PRETRAINED_BANDS
-    kwargs["num_frames"] = kwargs.pop("num_frames", 1)  # Set num frames to 1 if not present
+) -> PrithviViT | PrithviMAE:
+    """
+    Build PrithviViT and PrithviMAE models.
+    By default, encoder_only is set to True and a ViT is returned.
+    """
 
-    if model_bands is None:
-        model_bands: list[HLSBands | int] = pretrained_bands
-        logger.info(
-            f"Model bands not passed. Assuming bands are ordered in the same way as {PRETRAINED_BANDS}.\
-            Pretrained patch_embed layer may be misaligned with current bands"
-        )
-    else:
-        model_bands = [HLSBands.try_convert_to_hls_bands_enum(b) for b in model_bands]
-
-    # Little hack because VIT does not support timm's features_only
-    encoder_only = kwargs.pop("features_only", True)
+    # Load default config
+    model_args = prithvi_cfgs[variant].copy()
 
     # Backwards compatibility from timm (pretrained_cfg_overlay={"file": "<path to weights>"}) TODO: Remove before v1.0
     if "pretrained_cfg_overlay" in kwargs:
@@ -200,59 +194,51 @@ def _create_prithvi(
         else:
             ckpt_path = kwargs.pop("pretrained_cfg_overlay")["file"]
 
-    model_bands = generate_bands_intervals(model_bands)
+    pretrained_bands = pretrained_bands or model_args.get("bands", PRETRAINED_BANDS)
+
+    if model_bands is None:
+        model_bands: list[HLSBands | int] = pretrained_bands
+        logger.info(f"Model bands not passed. Assuming bands are ordered in the same way as {pretrained_bands}."
+                    f"Pretrained patch_embed layer may be misaligned with current bands")
+    else:
+        model_bands = [HLSBands.try_convert_to_hls_bands_enum(b) for b in model_bands]
+        model_bands = generate_bands_intervals(model_bands)
 
     kwargs["in_chans"] = len(model_bands)
+    kwargs["num_frames"] = num_frames
+    model_args.update(kwargs)
 
     if encoder_only:
         prithvi_model_class = PrithviViT
-        def checkpoint_filter_wrapper_fn(state_dict, model):
-            return checkpoint_filter_fn_vit(state_dict, model, pretrained_bands, model_bands)
+        checkpoint_filter_wrapper_fn = checkpoint_filter_fn_vit
     else:
         prithvi_model_class = PrithviMAE
-        def checkpoint_filter_wrapper_fn(state_dict, model):
-            return checkpoint_filter_fn_mae(state_dict, model, pretrained_bands, model_bands)
+        checkpoint_filter_wrapper_fn = checkpoint_filter_fn_mae
 
     if pretrained:
         assert variant in pretrained_weights, (f"No pre-trained model found for variant {variant} "
                                                f"(pretrained models: {pretrained_weights.keys()})")
-        # Load pre-trained config from hf
+
+    model = prithvi_model_class(**model_args)
+
+    if ckpt_path is not None:
+        # Load model from checkpoint
+        state_dict = torch.load(ckpt_path, map_location="cpu")
+        state_dict = checkpoint_filter_wrapper_fn(state_dict, model, pretrained_bands, model_bands)
+        model.load_state_dict(state_dict, strict=False)
+    elif pretrained:
         try:
-            # TODO: Switch from timm to hf hub download and remove config.json download.
-            model_args = load_model_config_from_hf(pretrained_weights[variant]["hf_hub_id"])[0]
-            model_args.update(kwargs)
-        except:
-            warnings.warn(f"No pretrained configuration was found on HuggingFace for the model {variant}."
-                           f"Using random initialization.", stacklevel=2)
-            model_args = prithvi_cfgs[variant].copy()
-            model_args.update(kwargs)
-    else:
-        # Load default config
-        model_args = prithvi_cfgs[variant].copy()
-        model_args.update(kwargs)
-
-    try:
-        model = prithvi_model_class(**model_args)
-
-        if ckpt_path is not None:
-            # Load model from checkpoint
-            state_dict = torch.load(ckpt_path, map_location="cpu")
-            state_dict = checkpoint_filter_wrapper_fn(state_dict, model)
-            model.load_state_dict(state_dict, strict=False)
-        elif pretrained:
+            # Download config.json to count model downloads
+            _ = hf_hub_download(repo_id=pretrained_weights[variant]["hf_hub_id"], filename="config.json")
             # Load model from Hugging Face
-            state_dict = load_state_dict_from_hf(model_id=pretrained_weights[variant]["hf_hub_id"],
-                                                 filename=pretrained_weights[variant]["hf_hub_filename"])
-            state_dict = checkpoint_filter_wrapper_fn(state_dict, model)
+            pretrained_path = hf_hub_download(repo_id=pretrained_weights[variant]["hf_hub_id"],
+                                              filename=pretrained_weights[variant]["hf_hub_filename"])
+            state_dict = torch.load(pretrained_path, map_location="cpu")
+            state_dict = checkpoint_filter_wrapper_fn(state_dict, model, pretrained_bands, model_bands)
             model.load_state_dict(state_dict, strict=True)
-
-    except RuntimeError as e:
-        if pretrained:
-            logger.error(f"Failed to initialize the pre-trained model {variant}, "
-                         f"consider testing the code with pretrained=False.")
-        else:
-            logger.error(f"Failed to initialize the model {variant}.")
-        raise e
+        except RuntimeError as e:
+            logger.error(f"Failed to load the pre-trained weights for {variant}.")
+            raise e
 
     assert encoder_only or "out_indices" not in kwargs, "out_indices provided for a MAE model."
     if encoder_only:
@@ -278,7 +264,7 @@ def prithvi_eo_tiny(
     **kwargs,
 ) -> PrithviViT:
 
-    return _create_prithvi("prithvi_eo_tiny", pretrained, bands, **kwargs)
+    return _create_prithvi("prithvi_eo_tiny", pretrained=pretrained, model_bands=bands, **kwargs)
 
 
 @ TERRATORCH_BACKBONE_REGISTRY.register
@@ -288,7 +274,7 @@ def prithvi_eo_v1_100(
     **kwargs,
 ) -> PrithviViT:
 
-    return _create_prithvi("prithvi_eo_v1_100", pretrained, bands, **kwargs)
+    return _create_prithvi("prithvi_eo_v1_100", pretrained=pretrained, model_bands=bands, **kwargs)
 
 
 @ TERRATORCH_BACKBONE_REGISTRY.register
@@ -298,7 +284,7 @@ def prithvi_eo_v2_300(
     **kwargs,
 ) -> PrithviViT:
 
-    return _create_prithvi("prithvi_eo_v2_300", pretrained, bands, **kwargs)
+    return _create_prithvi("prithvi_eo_v2_300", pretrained=pretrained, model_bands=bands, **kwargs)
 
 
 @ TERRATORCH_BACKBONE_REGISTRY.register
@@ -308,7 +294,7 @@ def prithvi_eo_v2_600(
     **kwargs,
 ) -> PrithviViT:
 
-    return _create_prithvi("prithvi_eo_v2_600", pretrained, bands, **kwargs)
+    return _create_prithvi("prithvi_eo_v2_600", pretrained=pretrained, model_bands=bands, **kwargs)
 
 
 @ TERRATORCH_BACKBONE_REGISTRY.register
@@ -318,7 +304,7 @@ def prithvi_eo_v2_300_tl(
     **kwargs,
 ) -> PrithviViT:
 
-    return _create_prithvi("prithvi_eo_v2_300_tl", pretrained, bands, **kwargs)
+    return _create_prithvi("prithvi_eo_v2_300_tl", pretrained=pretrained, model_bands=bands, **kwargs)
 
 
 @ TERRATORCH_BACKBONE_REGISTRY.register
@@ -328,7 +314,7 @@ def prithvi_eo_v2_600_tl(
     **kwargs,
 ) -> PrithviViT:
 
-    return _create_prithvi("prithvi_eo_v2_600_tl", pretrained, bands, **kwargs)
+    return _create_prithvi("prithvi_eo_v2_600_tl", pretrained=pretrained, model_bands=bands, **kwargs)
 
 
 # TODO: Remove prithvi_vit_tiny and prithvi_vit_100 before version 1.0.
@@ -342,7 +328,7 @@ def prithvi_vit_tiny(
     warnings.warn(f"The model prithvi_vit_tiny was renamed to prithvi_eo_tiny. "
                   f"prithvi_vit_tiny will be removed in a future version.", FutureWarning)
 
-    return prithvi_eo_tiny(pretrained=pretrained, bands=bands, **kwargs)
+    return prithvi_eo_tiny(pretrained=pretrained, model_bands=bands, **kwargs)
 
 
 @ TERRATORCH_BACKBONE_REGISTRY.register
@@ -354,7 +340,7 @@ def prithvi_vit_100(
     warnings.warn("The model prithvi_vit_100 was renamed to prithvi_eo_v1_100. "
                   "prithvi_vit_100 will be removed in a future version.", FutureWarning)
 
-    return prithvi_eo_v1_100(pretrained=pretrained, bands=bands, **kwargs)
+    return prithvi_eo_v1_100(pretrained=pretrained, model_bands=bands, **kwargs)
 
 
 # TODO: Remove timm_ errors before version v1.0.
