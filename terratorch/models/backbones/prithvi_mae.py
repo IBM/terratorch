@@ -348,11 +348,12 @@ class PrithviViT(nn.Module):
 
         class_pos_embed = self.pos_embed[:, :1]
         patch_pos_embed = self.pos_embed[:, 1:]
+        t_patches = t // self.patch_embed.patch_size[0]
         w_patches = w // self.patch_embed.patch_size[1]
         h_patches = h // self.patch_embed.patch_size[2]
 
-        n_sqrt = int((patch_pos_embed.shape[1] / t) ** 0.5)
-        patch_pos_embed = patch_pos_embed.reshape(t, n_sqrt, n_sqrt, self.embed_dim).permute(0, 3, 1, 2)
+        n_sqrt = int((patch_pos_embed.shape[1] / t_patches) ** 0.5)
+        patch_pos_embed = patch_pos_embed.reshape(t_patches, n_sqrt, n_sqrt, self.embed_dim).permute(0, 3, 1, 2)
 
         patch_pos_embed = nn.functional.interpolate(
             patch_pos_embed,
@@ -537,11 +538,12 @@ class MAEDecoder(nn.Module):
 
         class_pos_embed = self.decoder_pos_embed[:, :1]
         patch_pos_embed = self.decoder_pos_embed[:, 1:]
+        t_patches = t // self.patch_size[0]
         w_patches = w // self.patch_size[1]
         h_patches = h // self.patch_size[2]
 
-        n_sqrt = int((patch_pos_embed.shape[1] / t) ** 0.5)
-        patch_pos_embed = patch_pos_embed.reshape(t, n_sqrt, n_sqrt, self.decoder_embed_dim).permute(0, 3, 1, 2)
+        n_sqrt = int((patch_pos_embed.shape[1] / t_patches) ** 0.5)
+        patch_pos_embed = patch_pos_embed.reshape(t_patches, n_sqrt, n_sqrt, self.decoder_embed_dim).permute(0, 3, 1, 2)
 
         patch_pos_embed = nn.functional.interpolate(
             patch_pos_embed,
