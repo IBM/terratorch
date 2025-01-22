@@ -153,6 +153,8 @@ class CustomWriter(BasePredictionWriter):
         if not os.path.exists(output_dir):
             os.makedirs(output_dir, exist_ok=True)
 
+        print(type(prediction))
+        print(prediction)
         pred_batch, filename_batch = prediction
 
         for prediction, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
