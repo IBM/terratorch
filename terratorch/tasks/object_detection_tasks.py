@@ -102,45 +102,56 @@ class ObjectDetectionTask(TerraTorchTask):
             dataloader_idx: Index of the current dataloader.
         """
         x = batch['image']
-        batch_size = len(x)  # Use list length instead of x.shape[0]
+        batch_size = len(x)
         y = [
             {'boxes': batch['boxes'][i], 'labels': batch['labels'][i]}
             for i in range(batch_size)
-        ] # Extract bounding box and label information for each image
-        loss = self(x, y).output
-        # loss = { # From Faster-RCNN
+        ]
+        loss, y_hat = self(x, y).output
+        # From Faster-RCNN
+        # loss = {
         #     loss_classifier
         #     loss_box_reg
         #     loss_objectness
         #     loss_rpn_box_reg
         # }
-        loss["loss"] = sum(loss.values())  # log_loss() below requires 'loss' item
+        # y_hat = list of {
+        #     boxes: tensor(N, 4)
+        #     labels: tensor(N)
+        #     scores: tensor(N)
+        # }
+        loss["loss"] = sum(loss.values())
+        # loss={
+        #     loss_classifier
+        #     loss_box_reg
+        #     loss_objectness
+        #     loss_rpn_box_reg
+        #     loss
+        # }
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=batch_size)
-
-        #metrics handling ??
+        self.train_metrics.update(y_hat, y)
 
         return loss["loss"]
 
     def on_train_epoch_end(self) -> None:
         metrics = self.train_metrics.compute()
-        # metrics = {
-        #      train/map
-        #      train/map_50
-        #      train/map_75
-        #      train/map_small
-        #      train/map_medium
-        #      train/map_large
-        #      train/mar_1
-        #      train/mar_10
-        #      train/mar_100
-        #      train/mar_small (missing from summary)
-        #      train/mar_medium (missing from summary)
-        #      train/mar_large (missing from summary)
-        #      train/map_per_class (missing from summary)
-        #      train/mar_100_per_class
-        #      train/classes
-        # }
         metrics.pop('train/classes', None)
+        # metrics={
+        #     train/map
+        #     train/map_50
+        #     train/map_75
+        #     train/map_small
+        #     train/map_medium
+        #     train/map_large
+        #     train/mar_1
+        #     train/mar_10
+        #     train/mar_100
+        #     train/mar_small
+        #     train/mar_medium
+        #     train/mar_large
+        #     train/map_per_class
+        #     train/mar_100_per_class
+        # }
         self.log_dict(metrics, sync_dist=True)
         self.train_metrics.reset()
 
@@ -160,40 +171,10 @@ class ObjectDetectionTask(TerraTorchTask):
             {'boxes': batch['boxes'][i], 'labels': batch['labels'][i]}
             for i in range(batch_size)
         ]
-        y_hat = self(x).output
-        # y_hat = list of { # From Faster-RCNN
-        #     boxes: tensor(N, 4)
-        #     labels: tensor(N)
-        #     scores: tensor(N)
-        # }
-
-        metrics = self.val_metrics(y_hat, y)
-        # metrics = {
-        #     val/map
-        #     val/map_50
-        #     val/map_75
-        #     val/map_small
-        #     val/map_medium
-        #     val/map_large
-        #     val/mar_1
-        #     val/mar_10
-        #     val/mar_100
-        #     val/mar_small
-        #     val/mar_medium
-        #     val/mar_large
-        #     val/map_per_class
-        #     val/mar_100_per_class
-        #     val/classes
-        # }
-        metrics.pop('val/classes', None)
-
-        # Currently we don't know how to compute loss value from y_hat
-        #loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
-        val_loss: Tensor = sum(metrics.values())  # FIXME
-        loss = {'loss': val_loss}
+        loss, y_hat = self(x, y).output
+        loss["loss"] = sum(loss.values())
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=batch_size)
-
-        self.log_dict(metrics, batch_size=batch_size)
+        self.val_metrics.update(y_hat, y)
 
         if (
             batch_idx < 10
@@ -228,23 +209,6 @@ class ObjectDetectionTask(TerraTorchTask):
 
     def on_validation_epoch_end(self) -> None:
         metrics = self.val_metrics.compute()
-        # metrics = {
-        #      val/map
-        #      val/map_50
-        #      val/map_75
-        #      val/map_small
-        #      val/map_medium
-        #      val/map_large
-        #      val/mar_1
-        #      val/mar_10
-        #      val/mar_100
-        #      val/mar_small
-        #      val/mar_medium
-        #      val/mar_large
-        #      val/map_per_class
-        #      val/mar_100_per_class
-        #      val/classes
-        # }
         metrics.pop('val/classes', None)
         self.log_dict(metrics, sync_dist=True)
         self.val_metrics.reset()
@@ -263,17 +227,16 @@ class ObjectDetectionTask(TerraTorchTask):
             {'boxes': batch['boxes'][i], 'labels': batch['labels'][i]}
             for i in range(batch_size)
         ]
-        y_hat = self(x, y).output
-        metrics = self.test_metrics(y_hat, y)
-        metrics.pop('test/classes', None)
-
-        # Currently we don't know how to compute loss value from y_hat
-        #loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
-        test_loss: Tensor = sum(metrics.values())  # FIXME
-        loss = {'loss': test_loss}
+        loss, y_hat = self(x, y).output
+        loss["loss"] = sum(loss.values())  # log_loss() below requires 'loss' item
         self.test_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=batch_size)
+        self.test_metrics.update(y_hat, y)
 
-        self.log_dict(metrics, batch_size=batch_size)
+    def on_test_epoch_end(self) -> None:
+        metrics = self.test_metrics.compute()
+        metrics.pop('test/classes', None)
+        self.log_dict(metrics, sync_dist=True)
+        self.test_metrics.reset()
 
     def predict_step(
         self, batch: Any, batch_idx: int, dataloader_idx: int = 0
@@ -290,5 +253,5 @@ class ObjectDetectionTask(TerraTorchTask):
         """
         x = batch["image"]
         batch_size = len(x)
-        y_hat = self(x).output
+        y_hat, _ = self(x).output
         return y_hat
