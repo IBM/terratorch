@@ -243,6 +243,7 @@ class PrithviViT(nn.Module):
                  norm_layer: nn.Module = nn.LayerNorm,
                  coords_encoding: list[str] | None = None,
                  coords_scale_learn: bool = False,
+                 drop_path: float = 0.,
                  ** kwargs,
                 ):
         super().__init__()
@@ -279,7 +280,8 @@ class PrithviViT(nn.Module):
         # Transformer layers
         self.blocks = []
         for i in range(depth):
-            self.blocks.append(Block(embed_dim, num_heads, mlp_ratio, qkv_bias=True, norm_layer=norm_layer))
+            self.blocks.append(Block(embed_dim, num_heads, mlp_ratio, qkv_bias=True, norm_layer=norm_layer,
+                                     drop_path=drop_path,))
         self.blocks = nn.ModuleList(self.blocks)
 
         self.norm = norm_layer(embed_dim)
@@ -620,6 +622,8 @@ class PrithviMAE(nn.Module):
                  norm_pix_loss: bool = False,
                  coords_encoding: list[str] | None = None,
                  coords_scale_learn: bool = False,
+                 drop_path: float = 0.,
+                 mask_ratio: float = 0.75,
                  **kwargs,
                  ):
         super().__init__()
@@ -636,6 +640,7 @@ class PrithviMAE(nn.Module):
             norm_layer=norm_layer,
             coords_encoding=coords_encoding,
             coords_scale_learn=coords_scale_learn,
+            drop_path=drop_path,
         )
 
         self.decoder = MAEDecoder(
@@ -652,6 +657,7 @@ class PrithviMAE(nn.Module):
             coords_scale_learn=coords_scale_learn,
         )
 
+        self.mask_ratio = mask_ratio
         self.norm_pix_loss = norm_pix_loss
         self.out_channels = self.encoder.out_channels
 
@@ -729,12 +735,13 @@ class PrithviMAE(nn.Module):
         pixel_values: torch.Tensor,
         temporal_coords: None | torch.Tensor = None,
         location_coords: None | torch.Tensor = None,
-        mask_ratio: float = 0.75
+        mask_ratio: float = None,
     ):
         if len(pixel_values.shape) == 4 and self.encoder.patch_embed.input_size[0] == 1:
             # add time dim
             pixel_values = pixel_values.unsqueeze(2)
 
+        mask_ratio = mask_ratio or self.mask_ratio
         latent, mask, ids_restore = self.encoder(pixel_values, temporal_coords, location_coords, mask_ratio)
         pred = self.decoder(latent, ids_restore, temporal_coords, location_coords, input_size=pixel_values.shape)
         loss = self.forward_loss(pixel_values, pred, mask)
