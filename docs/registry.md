@@ -1,6 +1,6 @@
 # Registries
 
-Terratorch keeps a set of registries which map strings to instances of those strings. They can be imported from `terratorch.registry`.
+TerraTorch keeps a set of registries which map strings to instances of those strings. They can be imported from `terratorch.registry`.
 
 !!! info
     If you are using tasks with existing models, you may never have to interact with registries directly. The [model factory](models.md#model-factories) will handle interactions with registries.

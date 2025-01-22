@@ -74,6 +74,7 @@ class BioMasstersNonGeoDataModule(NonGeoDataModule):
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
         val_transform: A.Compose | None | list[A.BasicTransform] = None,
         test_transform: A.Compose | None | list[A.BasicTransform] = None,
+        predict_transform: A.Compose | None | list[A.BasicTransform] = None,
         aug: AugmentationSequential = None,
         drop_last: bool = True,
         sensors: Sequence[str] = ["S1", "S2"],
@@ -107,6 +108,7 @@ class BioMasstersNonGeoDataModule(NonGeoDataModule):
         self.train_transform = wrap_in_compose_is_list(train_transform)
         self.val_transform = wrap_in_compose_is_list(val_transform)
         self.test_transform = wrap_in_compose_is_list(test_transform)
+        self.predict_transform = wrap_in_compose_is_list(predict_transform)
         if len(sensors) == 1:
             self.aug = Normalize(self.means[sensors[0]], self.stds[sensors[0]]) if aug is None else aug
         else:
@@ -163,6 +165,24 @@ class BioMasstersNonGeoDataModule(NonGeoDataModule):
                 split="test",
                 root=self.data_root,
                 transform=self.test_transform,
+                bands=self.bands,
+                mask_mean=self.mask_mean,
+                mask_std=self.mask_std,
+                sensors=self.sensors,
+                as_time_series=self.as_time_series,
+                metadata_filename=self.metadata_filename,
+                max_cloud_percentage=self.max_cloud_percentage,
+                max_red_mean=self.max_red_mean,
+                include_corrupt=self.include_corrupt,
+                subset=self.subset,
+                seed=self.seed,
+                use_four_frames=self.use_four_frames,
+            )
+        if stage in ["predict"]:
+            self.predict_dataset = self.dataset_class(
+                split="test",
+                root=self.data_root,
+                transform=self.predict_transform,
                 bands=self.bands,
                 mask_mean=self.mask_mean,
                 mask_std=self.mask_std,

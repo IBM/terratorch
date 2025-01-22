@@ -29,8 +29,10 @@ from terratorch.datasets import (
     MSACropTypeNonGeo,
     MSo2SatNonGeo,
     MultiTemporalCropClassification,
-    Sen1Floods11NonGeo,
+    #Sen1Floods11NonGeo,
 )
+from terratorch.datasets.sen1floods11 import Sen1Floods11NonGeo
+
 from terratorch.datasets.transforms import FlattenTemporalIntoChannels, UnflattenTemporalFromChannels
 
 

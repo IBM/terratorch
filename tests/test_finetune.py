@@ -22,7 +22,7 @@ def setup_and_cleanup(model_name):
     if os.path.isdir(os.path.join("tests", "all_ecos_random")):
         shutil.rmtree(os.path.join("tests", "all_ecos_random"))
 
-@pytest.mark.parametrize("model_name", ["prithvi_swin_B", "prithvi_vit_100"])
+@pytest.mark.parametrize("model_name", ["prithvi_swin_B", "prithvi_swin_L", "prithvi_vit_100", "prithvi_eo_v2_300", "prithvi_eo_v2_600"])
 @pytest.mark.parametrize("case", ["fit", "test", "validate"])
 def test_finetune_multiple_backbones(model_name, case):
     command_list = [case, "-c", f"tests/resources/configs/manufactured-finetune_{model_name}.yaml"]

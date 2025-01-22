@@ -50,6 +50,7 @@ class CarbonFluxNonGeoDataModule(NonGeoDataModule):
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
         val_transform: A.Compose | None | list[A.BasicTransform] = None,
         test_transform: A.Compose | None | list[A.BasicTransform] = None,
+        predict_transform: A.Compose | None | list[A.BasicTransform] = None,
         aug: AugmentationSequential = None,
         no_data_replace: float | None = 0.0001,
         use_metadata: bool = False,
@@ -72,6 +73,7 @@ class CarbonFluxNonGeoDataModule(NonGeoDataModule):
         self.train_transform = wrap_in_compose_is_list(train_transform)
         self.val_transform = wrap_in_compose_is_list(val_transform)
         self.test_transform = wrap_in_compose_is_list(test_transform)
+        self.predict_transform = wrap_in_compose_is_list(predict_transform)
         self.aug = MultimodalNormalize(means, stds) if aug is None else aug
         self.no_data_replace = no_data_replace
         self.use_metadata = use_metadata
@@ -104,6 +106,17 @@ class CarbonFluxNonGeoDataModule(NonGeoDataModule):
                 split="test",
                 data_root=self.data_root,
                 transform=self.test_transform,
+                bands=self.bands,
+                gpp_mean=self.mask_means,
+                gpp_std=self.mask_std,
+                no_data_replace=self.no_data_replace,
+                use_metadata=self.use_metadata,
+            )
+        if stage in ["predict"]:
+            self.predict_dataset = self.dataset_class(
+                split="test",
+                data_root=self.data_root,
+                transform=self.predict_transform,
                 bands=self.bands,
                 gpp_mean=self.mask_means,
                 gpp_std=self.mask_std,
