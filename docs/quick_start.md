@@ -19,28 +19,27 @@ In the simplest case, we might only want access a backbone and code all the rest
 from terratorch import BACKBONE_REGISTRY
 
 # find available prithvi models
-print([model_name for model_name in BACKBONE_REGISTRY if "prithvi" in model_name])
->>> ['timm_prithvi_eo_tiny', 'timm_prithvi_eo_v1_100', 'timm_prithvi_eo_v2_300', 'timm_prithvi_eo_v2_300_tl', 'timm_prithvi_eo_v2_600',
-     'timm_prithvi_eo_v2_600_tl', 'timm_prithvi_swin_B', 'timm_prithvi_swin_L', 'timm_prithvi_vit_100', 'timm_prithvi_vit_tiny']
+print([model_name for model_name in BACKBONE_REGISTRY if "terratorch_prithvi" in model_name])
+>>> ['terratorch_prithvi_eo_tiny', 'terratorch_prithvi_eo_v1_100', 'terratorch_prithvi_eo_v2_300', 'terratorch_prithvi_eo_v2_600', 'terratorch_prithvi_eo_v2_300_tl', 'terratorch_prithvi_eo_v2_600_tl']
 
 # show all models with list(BACKBONE_REGISTRY)
 
 # check a model is in the registry
-"timm_prithvi_swin_B" in BACKBONE_REGISTRY
+"terratorch_prithvi_eo_v2_300" in BACKBONE_REGISTRY
 >>> True
 
 # without the prefix, all internal registries will be searched until the first match is found
-"prithvi_swin_B" in BACKBONE_REGISTRY
+"prithvi_eo_v1_100" in BACKBONE_REGISTRY
 >>> True
 
 # instantiate your desired model
-# the backbone registry prefix (in this case 'timm') is optional
-# in this case, the underlying registry is timm, so we can pass timm arguments to it
-model = BACKBONE_REGISTRY.build("prithvi_eo_v1_100", num_frames=1, pretrained=True)
+# the backbone registry prefix (e.g. `terratorch` or `timm`) is optional
+# in this case, the underlying registry is terratorch.
+model = BACKBONE_REGISTRY.build("prithvi_eo_v1_100", pretrained=True)
 
-# instantiate your model with more options, for instance, passing weights of your own through timm
+# instantiate your model with more options, for instance, passing weights from your own file
 model = BACKBONE_REGISTRY.build(
-    "prithvi_vit_100", num_frames=1, pretrained=True, pretrained_cfg_overlay={"file": "<path to weights>"}
+    "prithvi_eo_v2_300", num_frames=1, ckpt_path='path/to/model.pt'
 )
 # Rest of your PyTorch / PyTorchLightning code
 
@@ -68,25 +67,25 @@ model_factory = EncoderDecoderFactory()
 # Parameters prefixed with decoder_ get passed to the decoder
 # Parameters prefixed with head_ get passed to the head
 
-model = model_factory.build_model(task="segmentation",
-        backbone="prithvi_vit_100",
-        decoder="FCNDecoder",
-        backbone_bands=[
-            HLSBands.BLUE,
-            HLSBands.GREEN,
-            HLSBands.RED,
-            HLSBands.NIR_NARROW,
-            HLSBands.SWIR_1,
-            HLSBands.SWIR_2,
-        ],
-        necks=[{"name": "SelectIndices", "indices": [-1]},
-               {"name": "ReshapeTokensToImage"}],
-        num_classes=4,
-        backbone_pretrained=True,
-        backbone_num_frames=1,
-        decoder_channels=128,
-        head_dropout=0.2
-    )
+model = model_factory.build_model(
+    task="segmentation",
+    backbone="prithvi_eo_v2_300",
+    backbone_pretrained=True,
+    backbone_bands=[
+        HLSBands.BLUE,
+        HLSBands.GREEN,
+        HLSBands.RED,
+        HLSBands.NIR_NARROW,
+        HLSBands.SWIR_1,
+        HLSBands.SWIR_2,
+    ],
+    necks=[{"name": "SelectIndices", "indices": [-1]},
+           {"name": "ReshapeTokensToImage"}],
+    decoder="FCNDecoder",
+    decoder_channels=128,
+    head_dropout=0.1,
+    num_classes=4,
+)
 
 # Rest of your PyTorch / PyTorchLightning code
 .
@@ -102,8 +101,9 @@ At the highest level of abstraction, you can directly obtain a LightningModule r
 ```python title="Building a full Pixel-Wise Regression task"
 
 model_args = dict(
-  backbone="prithvi_vit_100",
-  decoder="FCNDecoder",
+  backbone="prithvi_eo_v2_300",
+  backbone_pretrained=True,
+  backbone_num_frames=1,
   backbone_bands=[
       HLSBands.BLUE,
       HLSBands.GREEN,
@@ -114,10 +114,9 @@ model_args = dict(
   ],
   necks=[{"name": "SelectIndices", "indices": [-1]},
                {"name": "ReshapeTokensToImage"}],
-  backbone_pretrained=True,
-  backbone_num_frames=1,
+  decoder="FCNDecoder",
   decoder_channels=128,
-  head_dropout=0.2
+  head_dropout=0.1
 )
 
 task = PixelwiseRegressionTask(
@@ -175,14 +174,11 @@ data:
 model:
   class_path: terratorch.tasks.SemanticSegmentationTask
   init_args:
+    model_factory: EncoderDecoderFactory
     model_args:
-      decoder: UperNetDecoder
+      backbone: prithvi_eo_v2_300
+      backbone_img_size: 512
       backbone_pretrained: True
-      backbone: prithvi_vit_100
-      backbone_pretrain_img_size: 512
-      decoder_scale_modules: True
-      decoder_channels: 256
-      backbone_in_channels: 6
       backbone_bands:
         - BLUE
         - GREEN
@@ -190,38 +186,29 @@ model:
         - NIR_NARROW
         - SWIR_1
         - SWIR_2
-      num_frames: 1
-      num_classes: 2
-      head_dropout: 0.1
-      head_channel_list:
-        - 256
-      post_backbone_ops:
+      necks:
         - name: SelectIndices
-          indices:
-            - 5
-            - 11
-            - 17
-            - 23
+          indices: [5, 11, 17, 23]
         - name: ReshapeTokensToImage
-    loss: ce
-    
+        - name: LearnedInterpolateToPyramidal
+      decoder: UperNetDecoder
+      decoder_channels: 256
+      head_channel_list: [256]
+      head_dropout: 0.1
+      num_classes: 2
+    loss: dice
     ignore_index: -1
-    class_weights:
-      - 0.3
-      - 0.7
     freeze_backbone: false
-    freeze_decoder: false
-    model_factory: EncoderDecoderFactory
+    freeze_decoder: false    
 optimizer:
   class_path: torch.optim.AdamW
   init_args:
-    lr: 6.e-5
-    weight_decay: 0.05
+    lr: 1.e-4
+    weight_decay: 0.1
 lr_scheduler:
   class_path: ReduceLROnPlateau
   init_args:
     monitor: val/loss
-
 
 ```
 
