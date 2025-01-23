@@ -124,8 +124,10 @@ class ObjectDetectionModelFactory(ModelFactory):
             )
         elif framework == 'fcos':
 
+            sizes = ((8,), (16,), (32,), (64,), (128,), (256,))
+            sizes=sizes[:len(combined_backbone.channel_list)]
             anchor_generator = AnchorGenerator(
-                sizes=((8,), (16,), (32,), (64,), (128,), (256,)),
+                sizes=sizes,
                 aspect_ratios=((1.0,), (1.0,), (1.0,), (1.0,), (1.0,), (1.0,)),
             )
 
@@ -140,7 +142,7 @@ class ObjectDetectionModelFactory(ModelFactory):
             )
         elif framework == 'retinanet':
 
-            anchor_sizes = (
+            sizes = (
                 (16, 20, 25),
                 (32, 40, 50),
                 (64, 80, 101),
@@ -148,6 +150,7 @@ class ObjectDetectionModelFactory(ModelFactory):
                 (256, 322, 406),
                 (512, 645, 812),
             )
+            sizes=sizes[:len(combined_backbone.channel_list)]
             aspect_ratios = ((0.5, 1.0, 2.0),) * len(anchor_sizes)
             anchor_generator = AnchorGenerator(anchor_sizes, aspect_ratios)
 
