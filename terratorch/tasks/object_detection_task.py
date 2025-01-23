@@ -29,6 +29,20 @@ from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
 import pdb
 
+from torchvision.ops import nms
+
+def apply_nms(boxes, scores, labels, iou_threshold=0.5, score_threshold=0.5):
+    
+    # Filter based on score threshold
+    keep_score = scores > score_threshold
+    boxes, scores, labels = boxes[keep_score], scores[keep_score], labels[keep_score]
+    
+    # Apply NMS
+    keep_nms = nms(boxes, scores, iou_threshold)
+    
+    return boxes[keep_nms], scores[keep_nms], labels[keep_nms]
+    
+
 class ObjectDetectionTask(BaseTask):
 
     ignore = None
@@ -50,6 +64,9 @@ class ObjectDetectionTask(BaseTask):
         freeze_backbone: bool = False,
         freeze_decoder: bool = False,
         class_names: list[str] | None = None,
+        
+        iou_threshold: float = 0.5,
+        score_threshold: float = 0.5
                 
     ) -> None:
         """Initialize a new ObjectDetectionTask instance.
@@ -89,7 +106,8 @@ class ObjectDetectionTask(BaseTask):
         self.test_loss_handler = LossHandler(self.test_metrics.prefix)
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
         self.monitor = f"{self.val_metrics.prefix}loss"
-
+        self.iou_threshold = iou_threshold
+        self.score_threshold = score_threshold
 
     def configure_models(self) -> None:
         self.model: Model = self.model_factory.build_model(
@@ -149,7 +167,7 @@ class ObjectDetectionTask(BaseTask):
         Returns:
             The loss tensor.
         """
-        print("training")
+        #print("training")
         #pdb.set_trace()
         x = batch['image']
         batch_size = x.shape[0]
@@ -162,6 +180,7 @@ class ObjectDetectionTask(BaseTask):
             loss_dict = loss_dict.output
         train_loss: Tensor = sum(loss_dict.values())
         self.log_dict(loss_dict, batch_size=batch_size)
+        self.log("train_loss", train_loss)
         return train_loss
 
 
@@ -175,8 +194,8 @@ class ObjectDetectionTask(BaseTask):
             batch_idx: Integer displaying index of this batch.
             dataloader_idx: Index of the current dataloader.
         """
-        print("validation")
-        pdb.set_trace()
+        #print("validation")
+        #pdb.set_trace()
         x = batch['image']
         batch_size = x.shape[0]
         y = [
@@ -184,6 +203,13 @@ class ObjectDetectionTask(BaseTask):
             for i in range(batch_size)
         ]
         y_hat = self(x)
+        if isinstance(y_hat, dict) == False:
+            y_hat = y_hat.output
+
+        for i in range(batch_size):
+            y_hat[i]["boxes"], y_hat[i]["scores"], y_hat[i]["labels"] = apply_nms(y_hat[i]["boxes"], y_hat[i]["scores"],y_hat[i]["labels"], iou_threshold=self.iou_threshold, score_threshold=self.score_threshold)
+        
+        
         metrics = self.val_metrics(y_hat, y)
 
         # https://github.com/Lightning-AI/torchmetrics/pull/1832#issuecomment-1623890714
@@ -232,7 +258,7 @@ class ObjectDetectionTask(BaseTask):
             batch_idx: Integer displaying index of this batch.
             dataloader_idx: Index of the current dataloader.
         """
-        pdb.set_trace()
+        # pdb.set_trace()
         x = batch['image']
         batch_size = x.shape[0]
         y = [
@@ -240,6 +266,12 @@ class ObjectDetectionTask(BaseTask):
             for i in range(batch_size)
         ]
         y_hat = self(x)
+        if isinstance(y_hat, dict) == False:
+            y_hat = y_hat.output
+
+        for i in range(batch_size):
+            y_hat[i]["boxes"], y_hat[i]["scores"], y_hat[i]["labels"] = apply_nms(y_hat[i]["boxes"], y_hat[i]["scores"],y_hat[i]["labels"], iou_threshold=self.iou_threshold, score_threshold=self.score_threshold)
+        
         metrics = self.test_metrics(y_hat, y)
 
         # https://github.com/Lightning-AI/torchmetrics/pull/1832#issuecomment-1623890714
@@ -263,4 +295,11 @@ class ObjectDetectionTask(BaseTask):
         """
         x = batch['image']
         y_hat: list[dict[str, Tensor]] = self(x)
+        if isinstance(y_hat, dict) == False:
+            y_hat = y_hat.output
+
+        for i in range(batch_size):
+            y_hat[i]["boxes"], y_hat[i]["scores"], y_hat[i]["labels"] = apply_nms(y_hat[i]["boxes"], y_hat[i]["scores"],y_hat[i]["labels"], iou_threshold=self.iou_threshold, score_threshold=self.score_threshold)
+        
+        
         return y_hat
