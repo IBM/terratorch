@@ -19,7 +19,7 @@ trainer:
   enable_checkpointing: true
   default_root_dir: <your_path_here>
 data:
-  class_path: GenericNonGeoSegmentationDataModule
+  class_path: terratorch.datamodules.GenericNonGeoSegmentationDataModule
   init_args:
     batch_size: 16
     num_workers: 8
@@ -83,7 +83,7 @@ model:
   init_args:
     model_args:
       backbone_pretrained: True
-      backbone: prithvi_vit_100
+      backbone: prithvi_eo_v1_100
       backbone_pretrain_img_size: 512
       backbone_bands:
         - BLUE
