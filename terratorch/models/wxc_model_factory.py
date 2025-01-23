@@ -61,7 +61,7 @@ class WxCModelFactory(ModelFactory):
                 raise
 
             #remove parameters not meant for the backbone but for other parts of the model
-            print(kwargs)
+            logger.trace(kwargs)
             skip_connection = kwargs.pop('skip_connection')
 
             backbone = prithviwxc.PrithviWxC(**kwargs)
