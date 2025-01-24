@@ -97,6 +97,9 @@ def checkpoint_filter_fn_vit(
 
     clean_dict = {}
     for k, v in state_dict.items():
+        if "_timm_module." in k:  # Backwards compatibility for old model checkpoints
+            k = k.replace("_timm_module.", "")
+
         if "pos_embed" in k:
             v = model.pos_embed  # pos_embed depends on num_frames and is fixed.
         if "decoder" in k or "_dec" in k or k == "mask_token":
@@ -126,6 +129,9 @@ def checkpoint_filter_fn_mae(
 
     clean_dict = {}
     for k, v in state_dict.items():
+        if "_timm_module." in k:  # Backwards compatibility for old model checkpoints
+            k = k.replace("_timm_module.", "")
+
         # pos_embed depends on num_frames and is fixed.
         if "decoder_pos_embed" in k:
             v = model.decoder.decoder_pos_embed
