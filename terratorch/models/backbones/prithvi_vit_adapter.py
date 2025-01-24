@@ -7,15 +7,8 @@ import torch.nn.functional as F  # noqa: N812
 from torch import nn
 from torch.nn.init import normal_, trunc_normal_
 
-from terratorch.datasets.utils import HLSBands, generate_bands_intervals
 from terratorch.models.backbones.detr_ops.modules.ms_deform_attn import MSDeformAttn
 from terratorch.models.backbones.prithvi_mae import PrithviViT
-from terratorch.models.backbones.prithvi_vit import (
-    PRETRAINED_BANDS,
-    checkpoint_filter_fn_vit,
-    pretrained_weights,
-    prithvi_cfgs,
-)
 from terratorch.models.backbones.vit_adapter_modules import (
     InteractionBlock,
     SpatialPriorModule,
@@ -26,6 +19,8 @@ logger = logging.getLogger(__name__)
 
 
 class PrithviViTAdapter(PrithviViT):  # type: ignore
+    extra_layers = ("level_embed", "spm", "interactions", "up", "norm1", "norm2", "norm3", "norm4")
+
     def __init__(
         self,
         # Adapter params
@@ -77,10 +72,14 @@ class PrithviViTAdapter(PrithviViT):  # type: ignore
             **kwargs,
         )
 
-        self.cls_token = None  # type: ignore
+        # We don't use the original cls_token and norm layer
+        del self.cls_token
+        del self.norm
+
         self.num_block = len(self.blocks)
         self.interaction_indexes = interaction_indexes
         self.add_vit_feature = add_vit_feature
+        self.out_channels = [self.embed_dim] * 4
 
         embed_dim = self.embed_dim
         self.level_embed = nn.Parameter(torch.zeros(3, embed_dim))
@@ -229,52 +228,11 @@ class PrithviViTAdapter(PrithviViT):  # type: ignore
         f4 = self.norm4(c4)
         return [f1, f2, f3, f4]
 
+    def prepare_features_for_image_model(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
+        return features
 
-def checkpoint_filter_fn_vit_adapter(
-    state_dict: dict,
-    model: PrithviViTAdapter,
-    pretrained_bands: list[HLSBands | str | int],
-    model_bands: list[HLSBands | int],
-) -> dict:
-    return checkpoint_filter_fn_vit(state_dict, model, pretrained_bands, model_bands)
-
-
-def _create_prithvi_adapter(
-    variant: str,
-    pretrained: bool = False,  # noqa: FBT001, FBT002
-    model_bands: list[HLSBands | int] | None = None,
-    ckpt_path: str = None,
-    pretrained_bands: list[HLSBands | str | int] | None = None,
-    num_frames: int = 1,
-    encoder_only: bool = True,
-    **kwargs,
-) -> PrithviViTAdapter:
-    # Load default config
-    model_args = prithvi_cfgs[variant].copy()
-
-    pretrained_bands = pretrained_bands or model_args.get("bands", PRETRAINED_BANDS)
-
-    if model_bands is None:
-        model_bands: list[HLSBands | int] = pretrained_bands
-        logger.info(
-            f"Model bands not passed. Assuming bands are ordered in the same way as {pretrained_bands}."
-            f"Pretrained patch_embed layer may be misaligned with current bands"
-        )
-    else:
-        model_bands = [HLSBands.try_convert_to_hls_bands_enum(b) for b in model_bands]
-        model_bands = generate_bands_intervals(model_bands)
-
-    kwargs["in_chans"] = len(model_bands)
-    kwargs["num_frames"] = num_frames
-    model_args.update(kwargs)
-
-    assert encoder_only, "PrithviViTAdapter only supports encoder_only=True"
-    model = PrithviViTAdapter(**model_args)
-
-    checkpoint_filter_wrapper_fn = checkpoint_filter_fn_vit_adapter
-
-    if pretrained:
-        if variant not in pretrained_weights:
-            raise ValueError(
-                f"No pre-trained model found for variant {variant} (pretrained models: {pretrained_weights.keys()})"
-            )
+    def freeze(self):
+        """Freeze the ViT, not the adapter."""
+        for n, param in super().named_parameters():
+            if not n.startswith(PrithviViTAdapter.extra_layers):
+                param.requires_grad_(False)

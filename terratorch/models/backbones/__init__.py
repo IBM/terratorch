@@ -10,3 +10,4 @@ import terratorch.models.backbones.torchgeo_swin_satlas
 import terratorch.models.backbones.torchgeo_resnet
 import terratorch.models.backbones.multimae_register
 from terratorch.models.backbones.unet import UNet
+import terratorch.models.backbones.prithvi_vit_adapter

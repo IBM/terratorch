@@ -1,6 +1,6 @@
 import torch
 import torch.utils.checkpoint as cp
-from timm.models.layers import DropPath
+from timm.layers import DropPath
 from timm.models.vision_transformer import Block
 from torch import nn
 
