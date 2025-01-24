@@ -57,7 +57,7 @@ model:
     model_args:
       decoder: IdentityDecoder
       backbone_pretrained: true
-      backbone: prithvi_vit_100
+      backbone: prithvi_eo_v1_300
       head_dim_list:
         - 384
         - 128
