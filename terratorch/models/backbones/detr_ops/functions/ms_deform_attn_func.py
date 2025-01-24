@@ -16,13 +16,15 @@ from torch.autograd.function import once_differentiable
 
 try:
     import MultiScaleDeformableAttention as MSDA  # noqa: N817
-except ImportError:
-    print("Failed to import MultiScaleDeformableAttention")
-    print("Please make sure that the MultiScaleDeformableAttention is installed")
-    print("You can install it with:")
-    print("...")
-    print("This only works with CUDA.")
-    raise ImportError
+except ImportError as err:
+    msg = (
+        "Failed to import MultiScaleDeformableAttention. "
+        "Please make sure that the MultiScaleDeformableAttention is installed. "
+        "You can install it with:\n"
+        'pip install "MultiScaleDeformableAttention @ git+https://github.com/fundamentalvision/Deformable-DETR.git#subdirectory=models/ops"\n'
+        "This only works with CUDA."
+    )
+    raise ImportError(msg) from err
 
 
 class MSDeformAttnFunction(Function):
