@@ -22,16 +22,16 @@ class ScalarOutputModel(Model, SegmentationModel):
     """
 
     def __init__(
-            self,
-            task: str,
-            encoder: nn.Module,
-            decoder: nn.Module,
-            head_kwargs: dict,
-            patch_size: int = None,
-            padding: str = None,
-            decoder_includes_head: bool = False,
-            auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
-            neck: nn.Module | None = None,
+        self,
+        task: str,
+        encoder: nn.Module,
+        decoder: nn.Module,
+        head_kwargs: dict,
+        patch_size: int = None,
+        padding: str = None,
+        decoder_includes_head: bool = False,
+        auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
+        neck: nn.Module | None = None,
     ) -> None:
         """Constructor
 
