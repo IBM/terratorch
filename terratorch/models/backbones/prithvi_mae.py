@@ -136,8 +136,9 @@ class PatchEmbed(nn.Module):
             input_size: tuple[int, int, int] = (1, 224, 224),
             patch_size: tuple[int, int, int] = (1, 16, 16),
             in_chans: int = 3,
+            tub_size: int = 1,
             embed_dim: int = 768,
-            band_patch_size: int = None,
+            band_patch_size: int = 2,
             norm_layer: nn.Module | None = None,
             flatten: bool = True,
             bias: bool = True,
@@ -145,6 +146,7 @@ class PatchEmbed(nn.Module):
         super().__init__()
         self.input_size = input_size
         self.patch_size = patch_size
+        self.tub_size = tub_size
         self.band_patch_size = band_patch_size
         self.grid_size = [s // p for s, p in zip(self.input_size, self.patch_size)]
         assert self.grid_size >= [1,1,1], "Patch size is bigger than input size."
@@ -156,7 +158,7 @@ class PatchEmbed(nn.Module):
         else:
             kernel_size = self.patch_size
 
-        self.proj = nn.Conv3d(in_chans, embed_dim, kernel_size=kernel_size, stride=kernel_size, bias=bias)
+        self.proj = nn.Conv3d(tub_size, embed_dim, kernel_size=kernel_size, stride=kernel_size, bias=bias)
         self.norm = norm_layer(embed_dim) if norm_layer else nn.Identity()
 
     def forward(self, x):
@@ -165,6 +167,7 @@ class PatchEmbed(nn.Module):
         if T / self.patch_size[0] % 1 or H / self.patch_size[1] % 1 or W / self.patch_size[2] % 1:
             warnings.warn(f"Input {x.shape[-3:]} is not divisible by patch size {self.patch_size}."
                           f"The border will be ignored, add backbone_padding for pixel-wise tasks.")
+        x = x.transpose(2, 1)
         print(x.shape)
         x = self.proj(x)
         print(x.shape)
@@ -344,7 +347,7 @@ class PrithviViT(nn.Module):
 
         return sequence_unmasked, mask, ids_restore
 
-    def interpolate_pos_encoding(self, x, t, w, h):
+    def interpolate_pos_encoding(self, x, t, c, w, h):
         """
         Adapted from:
         - transformers.models.vit.modeling_vit.ViTEmbeddings.interpolate_pos_encoding,
@@ -356,16 +359,18 @@ class PrithviViT(nn.Module):
 
         class_pos_embed = self.pos_embed[:, :1]
         patch_pos_embed = self.pos_embed[:, 1:]
+        c_patches = c // self.patch_embed.band_patch_size
         t_patches = t // self.patch_embed.patch_size[0]
         w_patches = w // self.patch_embed.patch_size[1]
         h_patches = h // self.patch_embed.patch_size[2]
 
         n_sqrt = int((patch_pos_embed.shape[1] / t_patches) ** 0.5)
+        print(n_sqrt, c_patches, t_patches)
         patch_pos_embed = patch_pos_embed.reshape(t_patches, n_sqrt, n_sqrt, self.embed_dim).permute(0, 3, 1, 2)
-
+        print(patch_pos_embed.shape)
         patch_pos_embed = nn.functional.interpolate(
             patch_pos_embed,
-            size=(h_patches, w_patches),
+            size=(c_patches, h_patches, w_patches),
             mode='bicubic',
             align_corners=True,
         )
@@ -381,12 +386,12 @@ class PrithviViT(nn.Module):
         if len(x.shape) == 4 and self.patch_embed.input_size[0] == 1:
             # add time dim
             x = x.unsqueeze(2)
-        t, h, w = x.shape[-3:]
+        t, c, h, w = x.shape[-4:]
 
         # embed patches
         x = self.patch_embed(x)
 
-        pos_embed = self.interpolate_pos_encoding(x, t, h, w)
+        pos_embed = self.interpolate_pos_encoding(x, t, c, h, w)
         # add pos embed w/o cls token
         x = x + pos_embed[:, 1:, :]
 
@@ -422,14 +427,14 @@ class PrithviViT(nn.Module):
         if len(x.shape) == 4 and self.patch_embed.input_size[0] == 1:
             # add time dim
             x = x.unsqueeze(2)
-        t, h, w = x.shape[-3:]
+        t, c, h, w = x.shape[-4:]
 
         # embed patches
         print(x.shape)
         x = self.patch_embed(x)
         print(x.shape)
 
-        pos_embed = self.interpolate_pos_encoding(x, t, h, w)
+        pos_embed = self.interpolate_pos_encoding(x, t, c, h, w)
         # add pos embed w/o cls token
         x = x + pos_embed[:, 1:, :]
 
