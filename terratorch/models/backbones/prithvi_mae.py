@@ -137,6 +137,7 @@ class PatchEmbed(nn.Module):
             patch_size: tuple[int, int, int] = (1, 16, 16),
             in_chans: int = 3,
             embed_dim: int = 768,
+            band_patch_size: int = None,
             norm_layer: nn.Module | None = None,
             flatten: bool = True,
             bias: bool = True,
@@ -144,12 +145,18 @@ class PatchEmbed(nn.Module):
         super().__init__()
         self.input_size = input_size
         self.patch_size = patch_size
+        self.band_patch_size = band_patch_size
         self.grid_size = [s // p for s, p in zip(self.input_size, self.patch_size)]
         assert self.grid_size >= [1,1,1], "Patch size is bigger than input size."
         self.num_patches = self.grid_size[0] * self.grid_size[1] * self.grid_size[2]
         self.flatten = flatten
 
-        self.proj = nn.Conv3d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size, bias=bias)
+        if self.band_patch_size:
+            kernel_size = (self.band_patch_size, self.patch_size[1], self.patch_size[2])
+        else:
+            kernel_size = self.patch_size
+
+        self.proj = nn.Conv3d(in_chans, embed_dim, kernel_size=kernel_size, stride=kernel_size, bias=bias)
         self.norm = norm_layer(embed_dim) if norm_layer else nn.Identity()
 
     def forward(self, x):
@@ -158,8 +165,9 @@ class PatchEmbed(nn.Module):
         if T / self.patch_size[0] % 1 or H / self.patch_size[1] % 1 or W / self.patch_size[2] % 1:
             warnings.warn(f"Input {x.shape[-3:]} is not divisible by patch size {self.patch_size}."
                           f"The border will be ignored, add backbone_padding for pixel-wise tasks.")
-
+        print(x.shape)
         x = self.proj(x)
+        print(x.shape)
         if self.flatten:
             x = x.flatten(2).transpose(1, 2)  # B,C,T,H,W -> B,C,L -> B,L,C
         x = self.norm(x)
@@ -417,7 +425,9 @@ class PrithviViT(nn.Module):
         t, h, w = x.shape[-3:]
 
         # embed patches
+        print(x.shape)
         x = self.patch_embed(x)
+        print(x.shape)
 
         pos_embed = self.interpolate_pos_encoding(x, t, h, w)
         # add pos embed w/o cls token
