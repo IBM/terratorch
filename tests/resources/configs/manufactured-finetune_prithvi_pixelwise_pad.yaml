@@ -102,9 +102,6 @@ model:
       backbone_drop_path_rate: 0.3
       # backbone_window_size: 8
       backbone_patch_size: 13
-      backbone_output_size:
-        - 224
-        - 224
       decoder_channels: 64
       num_frames: 1
       in_channels: 6
