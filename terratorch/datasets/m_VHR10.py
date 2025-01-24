@@ -70,7 +70,8 @@ class mVHR10(VHR10):
         Returns:
             data and label at that index
         """
-        id_ = index + 1
+        
+        id_ = self.ids[index] + 1
 
         sample: dict[str, Any] = {
             'image': self._load_image(id_),
