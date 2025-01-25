@@ -365,12 +365,12 @@ class PrithviViT(nn.Module):
         h_patches = h // self.patch_embed.patch_size[2]
 
         n_sqrt = int((patch_pos_embed.shape[1] / t_patches) ** 0.5)
-        print(n_sqrt, c_patches, t_patches)
+        print(c_patches)
         patch_pos_embed = patch_pos_embed.reshape(t_patches, n_sqrt, n_sqrt, self.embed_dim).permute(0, 3, 1, 2)
         print(patch_pos_embed.shape)
         patch_pos_embed = nn.functional.interpolate(
             patch_pos_embed,
-            size=(c_patches, h_patches, w_patches),
+            size=(c_patches * h_patches, w_patches),
             mode='bicubic',
             align_corners=True,
         )
@@ -387,7 +387,7 @@ class PrithviViT(nn.Module):
             # add time dim
             x = x.unsqueeze(2)
         t, c, h, w = x.shape[-4:]
-
+        print(t, c, h, w)
         # embed patches
         x = self.patch_embed(x)
 
@@ -427,7 +427,7 @@ class PrithviViT(nn.Module):
         if len(x.shape) == 4 and self.patch_embed.input_size[0] == 1:
             # add time dim
             x = x.unsqueeze(2)
-        t, c, h, w = x.shape[-4:]
+        c, t, h, w = x.shape[-4:]
 
         # embed patches
         print(x.shape)
@@ -469,6 +469,7 @@ class PrithviViT(nn.Module):
             number_of_tokens = x_no_token.shape[1]
             tokens_per_timestep = number_of_tokens // effective_time_dim
             h = int(np.sqrt(tokens_per_timestep))
+            print(f"Shape:{x_no_token.shape}")
             encoded = rearrange(
                 x_no_token,
                 "batch (t h w) e -> batch (t e) h w",
