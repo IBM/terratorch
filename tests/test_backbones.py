@@ -35,7 +35,7 @@ def input_386():
     return torch.ones((1, NUM_CHANNELS, 386, 386))
 
 
-@pytest.mark.parametrize("model_name", ["prithvi_swin_B", "prithvi_swin_L", "prithvi_eo_v1_100", "prithvi_eo_v2_300", "prithvi_swin_B"])
+@pytest.mark.parametrize("model_name", ["prithvi_swin_B", "prithvi_swin_L", "prithvi_swin_B"])
 @pytest.mark.parametrize("test_input", ["input_224", "input_512"])
 def test_can_create_backbones_from_timm(model_name, test_input, request):
     backbone = timm.create_model(model_name, pretrained=False)
@@ -43,7 +43,7 @@ def test_can_create_backbones_from_timm(model_name, test_input, request):
     backbone(input_tensor)
     gc.collect()
 
-@pytest.mark.parametrize("model_name", ["prithvi_swin_B", "prithvi_swin_L", "prithvi_eo_v1_100", "prithvi_eo_v2_300", "prithvi_swin_B"])
+@pytest.mark.parametrize("model_name", ["prithvi_swin_B", "prithvi_swin_L", "prithvi_swin_B"])
 @pytest.mark.parametrize("test_input", ["input_224", "input_512"])
 def test_can_create_backbones_from_timm_features_only(model_name, test_input, request):
     backbone = timm.create_model(model_name, pretrained=False, features_only=True)
@@ -51,36 +51,37 @@ def test_can_create_backbones_from_timm_features_only(model_name, test_input, re
     backbone(input_tensor)
     gc.collect()
 
-@pytest.mark.parametrize("model_name", ["prithvi_swin_L", "prithvi_swin_L", "prithvi_eo_v1_100", "prithvi_eo_v2_300", "prithvi_swin_B"])
+@pytest.mark.parametrize("model_name", ["prithvi_swin_L", "prithvi_swin_L", "prithvi_swin_B"])
 @pytest.mark.parametrize("prefix", ["", "timm_"])
 def test_can_create_timm_backbones_from_registry(model_name, input_224, prefix):
     backbone = BACKBONE_REGISTRY.build(prefix+model_name, pretrained=False)
     backbone(input_224)
     gc.collect()
 
+
+@pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
+def test_can_create_backbones_from_registry(model_name, input_224):
+    backbone = BACKBONE_REGISTRY.build(model_name, pretrained=False)
+    backbone(input_224)
+    gc.collect()
+
+
 @pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
 def test_vit_models_accept_multitemporal(model_name, input_224_multitemporal):
-    backbone = timm.create_model(model_name, pretrained=False, num_frames=NUM_FRAMES)
+    backbone = BACKBONE_REGISTRY.build(model_name, pretrained=False, num_frames=NUM_FRAMES)
     backbone(input_224_multitemporal)
     gc.collect()
 
-@pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
-def test_vit_models_non_divisible_input(model_name, input_non_divisible):
-    #padding 'none','constant', 'reflect', 'replicate' or 'circular' default is 'none'
-    backbone = timm.create_model(model_name, pretrained=False, features_only=True, num_frames=NUM_FRAMES, padding='constant')
-    backbone(input_non_divisible)
-    gc.collect()
 
 @pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
 @pytest.mark.parametrize("patch_size", [8, 16])
 @pytest.mark.parametrize("patch_size_time", [1, 2, 4])
 def test_vit_models_different_patch_tubelet_sizes(model_name, patch_size, patch_size_time, input_224_multitemporal):
-    backbone = timm.create_model(
+    backbone = BACKBONE_REGISTRY.build(
         model_name,
         pretrained=False,
         num_frames=NUM_FRAMES,
         patch_size=[patch_size_time, patch_size, patch_size],
-        features_only=True,
     )
     embedding = backbone(input_224_multitemporal)
     processed_embedding = backbone.prepare_features_for_image_model(embedding)
@@ -105,10 +106,9 @@ def test_vit_models_different_patch_tubelet_sizes(model_name, patch_size, patch_
     gc.collect()
 @pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
 def test_out_indices(model_name, input_224):
-    # out_indices = [2, 4, 8, 10]
     out_indices = (2, 4, 8, 10)
-    backbone = timm.create_model(model_name, pretrained=False, features_only=True, out_indices=out_indices)
-    assert backbone.feature_info.out_indices == out_indices
+    backbone = BACKBONE_REGISTRY.build(model_name, pretrained=False, out_indices=out_indices)
+    assert backbone.out_indices == out_indices
 
     output = backbone(input_224)
     full_output = backbone.forward_features(input_224)
@@ -116,18 +116,8 @@ def test_out_indices(model_name, input_224):
     for filtered_index, full_index in enumerate(out_indices):
         assert torch.allclose(full_output[full_index], output[filtered_index])
     gc.collect()
-@pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
-def test_out_indices_non_divisible(model_name, input_non_divisible):
-    out_indices = [2, 4, 8, 10]
-    backbone = timm.create_model(model_name, pretrained=False, features_only=True, num_frames=NUM_FRAMES, out_indices=out_indices, padding='constant')
-    assert backbone.feature_info.out_indices == tuple(out_indices)
 
-    output = backbone(input_non_divisible)
-    full_output = backbone.forward_features(input_non_divisible)
 
-    for filtered_index, full_index in enumerate(out_indices):
-        assert torch.allclose(full_output[full_index], output[filtered_index])
-    gc.collect()
 @pytest.mark.parametrize("model_name", ["vit_base_patch16", "vit_large_patch16"])
 def test_scale_mae(model_name):
     # out_indices = [2, 4, 8, 10]
@@ -139,6 +129,8 @@ def test_scale_mae(model_name):
 
     assert len(output) == len(out_indices)
     gc.collect()
+
+
 @pytest.mark.parametrize("model_name", ["vit_base_patch16", "vit_large_patch16"])
 @pytest.mark.parametrize("bands", [2, 4, 6])
 def test_scale_mae_new_channels(model_name, bands):

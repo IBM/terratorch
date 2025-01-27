@@ -19,7 +19,7 @@ trainer:
   enable_checkpointing: true
   default_root_dir: <your_path_here>
 data:
-  class_path: GenericNonGeoSegmentationDataModule
+  class_path: terratorch.datamodules.GenericNonGeoSegmentationDataModule
   init_args:
     batch_size: 16
     num_workers: 8
@@ -82,11 +82,11 @@ data:
 model:
   class_path: terratorch.tasks.SemanticSegmentationTask 
   init_args:
+    model_factory: EncoderDecoderFactory
     model_args:
-      decoder: FCNDecoder
+      backbone: prithvi_eo_v2_300
       backbone_pretrained: true
-      backbone: prithvi_vit_100
-      decoder_channels: 256
+      backbone_drop_path: 0.1
       backbone_bands:
         - BLUE
         - GREEN
@@ -94,17 +94,19 @@ model:
         - NIR_NARROW
         - SWIR_1
         - SWIR_2
-      num_classes: 2
-      head_dropout: 0.1
-      decoder_num_convs: 4
-      head_channel_list:
-        - 256
       necks:
         - name: SelectIndices
-          indices:
-            - -1
+#          indices: [2, 5, 8, 11] # 100M models
+          indices: [5, 11, 17, 23] # 300M models
+#          indices: [7, 15, 23, 31] # 600M models
         - name: ReshapeTokensToImage
-    loss: ce
+        - name: LearnedInterpolateToPyramidal
+      decoder: UNetDecoder
+      decoder_channels: [512, 256, 128, 64]
+      head_channel_list: [256]
+      head_dropout: 0.1
+      num_classes: 2
+    loss: dice
     aux_heads:
       - name: aux_head
         decoder: FCNDecoder
@@ -113,25 +115,20 @@ model:
           decoder_in_index: -1
           decoder_num_convs: 2
           head_dropout: 0.1
-          # head_channel_list:
-          #   - 64
     aux_loss:
       aux_head: 1.0
     ignore_index: -1
-    class_weights:
-      - 0.3
-      - 0.7
     freeze_backbone: false
     freeze_decoder: false
-    model_factory: EncoderDecoderFactory
+
 optimizer:
   class_path: torch.optim.AdamW
   init_args:
-    lr: 6.e-5
-    weight_decay: 0.05
+    lr: 1.e-4
+    weight_decay: 0.1
 lr_scheduler:
   class_path: ReduceLROnPlateau
   init_args:
     monitor: val/loss
-
-
+    patience: 5
+    factor: 0.5

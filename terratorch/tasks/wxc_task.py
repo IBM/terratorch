@@ -1,17 +1,19 @@
-
-
 from torchgeo.trainers import BaseTask
 import torch.nn as nn
 import torch
 import logging
 logger = logging.getLogger(__name__)
 
+from terratorch.registry import MODEL_FACTORY_REGISTRY
+
 class WxCTask(BaseTask):
-    def __init__(self, model_factory, model_args: dict, mode, learning_rate=0.1):
+    def __init__(self, model_factory, model_args: dict, mode:str='train', learning_rate=0.1):
         if mode not in ['train', 'eval']:
             raise ValueError(f'mode {mode} is not supported. (train, eval)')
         self.model_args = model_args
-        self.model_factory = model_factory
+
+        self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
+
         self.learning_rate = learning_rate
         super().__init__()
 

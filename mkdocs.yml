@@ -15,9 +15,9 @@ plugins:
           paths: [src] # search packages in the src folde
           options:
             show_root_heading: true
-extra:
-  version:
-    provider: mike
+              #extra:
+              #  version:
+              #    provider: mike
 
 site_url: https://ibm.github.io/terratorch/
 repo_url: https://github.com/IBM/terratorch
