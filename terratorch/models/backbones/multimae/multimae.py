@@ -65,7 +65,7 @@ class MultiMAE(nn.Module):
         attn_drop_rate: float = 0.0,
         drop_path_rate: float = 0.0,
         norm_layer: nn.Module = default_norm_layer,
-        merging_method: str = None,
+        merge_method: str = None,
         **kwargs,
     ):
         super().__init__()
@@ -86,21 +86,19 @@ class MultiMAE(nn.Module):
         self.global_tokens = nn.Parameter(torch.zeros(1, num_global_tokens, dim_tokens))
         trunc_normal_(self.global_tokens, std=0.02)
 
-        # Transformer encoder
-        dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]  # stochastic depth decay rule
-
-        # Encoder init is adapted for timm registry
-        self.feature_info = []
-        self.layers = []
-        scale = 1
-        self.out_channels = []
-        if merging_method == 'concat':  # TODO: Move prepare/concat to this model forward?
+        if merge_method == 'concat':  # TODO: Move prepare/concat to this model forward?
             embed_factor = len(input_adapters)
         else:
             embed_factor = 1
+        self.merge_method = merge_method
+        assert merge_method in ['mean', 'max', 'concat', None], "merge_method must be one of mean, max, concat, None."
+        self.out_channels = [int(dim_tokens) * embed_factor] * depth
 
-        for i in range(depth):
-            layer = Block(
+        # Transformer encoder
+        dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]  # stochastic depth decay rule
+
+        self.layers: nn.ModuleList = nn.ModuleList(
+            Block(
                 dim=dim_tokens,
                 num_heads=num_heads,
                 mlp_ratio=mlp_ratio,
@@ -110,19 +108,8 @@ class MultiMAE(nn.Module):
                 drop_path=dpr[i],
                 norm_layer=norm_layer,
             )
-            self.layers.append(layer)
-            #  TODO: Scale needed? Check what reduction means
-            if i > 0:
-                scale *= 2
-            self.feature_info += [
-                {
-                    "num_chs": int(dim_tokens) * embed_factor,
-                    "reduction": scale,
-                    "module": f"layers.{i}",
-                }
-            ]
-
-        self.layers: nn.ModuleList = nn.ModuleList(self.layers)  # added for compatibility with timm features_only
+            for i in range(depth)
+        )
 
         self.apply(self._init_weights)
         for name, m in self.named_modules():
@@ -466,6 +453,40 @@ class MultiViT(MultiMAE):
         input_tokens = torch.cat([input_tokens, global_tokens], dim=1)
         return input_tokens, input_info
 
+    def process_output(self, x, input_info, method):
+        # TODO: Make it generalizable
+        num_tokens = list(input_info['tasks'].values())[0]['num_tokens']
+        assert any(info['num_tokens'] == num_tokens for info in list(input_info['tasks'].values())), \
+            "Current code only supports modalities with the same number of tokens"
+        def _unstack_image_modalities(x):
+            x = torch.split(x, num_tokens, dim=1)  # Split tokens by modality
+            x = torch.stack(x, dim=1)  # (B, M, N, D)
+            return x
+
+        # Merge tokens from different modalities
+        if self.merge_method == 'mean':
+            x = _unstack_image_modalities(x)
+            x = x.mean(dim=1)
+
+        elif self.merge_method == 'max':
+            x = _unstack_image_modalities(x)
+            x = x.max(dim=1)[0]
+
+        elif self.merge_method == 'concat':
+            # TODO: Handle missing modalities with a learnable self.missing_token. Currently expects all modalities.
+            assert len(input_info['tasks']) == len(self.input_adapters), "Method concat expects all modalities as input"
+            x = _unstack_image_modalities(x)
+            x = torch.cat(x.unbind(dim=1), dim=-1)
+
+        elif self.merge_method is None:
+            pass  # Do nothing
+        else:
+            raise NotImplementedError(f'Merging method {self.merge_method} is not implemented. '
+                                      f'Select one of mean, max or concat.')
+
+        return x
+
+
     def forward(
         self,
         x: dict[str, torch.Tensor] | torch.Tensor,
@@ -477,12 +498,17 @@ class MultiViT(MultiMAE):
         :param return_all_layers: Set to True to return all transformer layers
         """
 
-        num_modalities = len(x)
-        input_tokens, _ = self.process_input(x)
+        x, input_info = self.process_input(x)
 
-        encoder_tokens = []
-        tokens = input_tokens
+        out = []
         for block in self.layers:
-            tokens = block(tokens)
-            encoder_tokens.append(tokens)
-        return encoder_tokens
+            x = block(x)
+            out.append(x)
+
+        # Drop global token
+        global_token = [tokens[:, :input_info['num_global_tokens']] for tokens in out]
+        out = [tokens[:, input_info['num_global_tokens']:] for tokens in out]
+
+        out = [self.process_output(x, input_info, self.merge_method) for x in out]
+
+        return out

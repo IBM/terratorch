@@ -4,52 +4,30 @@ This module handles registering multimae models into timm.
 import logging
 import torch
 import numpy as np
-from pathlib import Path
 from functools import partial
-from timm.models import FeatureInfo
-from timm.models._builder import build_model_with_cfg
-from timm.models._registry import generate_default_cfgs, register_model
 
-from terratorch.datasets.utils import HLSBands, Modalities, S1Bands, DEMBands, LULCclasses
+from terratorch.datasets.utils import Modalities
 from terratorch.models.backbones.multimae.multimae import MultiMAE, MultiViT
 from terratorch.models.backbones.multimae.criterion import MaskedMSELoss, MaskedCrossEntropyLoss
 from terratorch.models.backbones.multimae.input_adapters import PatchedInputAdapter, SemSegInputAdapter
 from terratorch.models.backbones.multimae.output_adapters import SpatialOutputAdapter, ConvNeXtAdapter
+from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
 
 logger = logging.getLogger(__name__)
-
-def _cfg(file: Path = "", **kwargs) -> dict:
-    return {
-        "file": file,
-        "source": "file",
-        "license": "mit",
-        **kwargs,
-    }
-
-
-# TODO: Add pretrained models
-# PRETRAINED_BANDS: list[HLSBands | int] = [
-#     HLSBands.BLUE,
-#     HLSBands.GREEN,
-#     HLSBands.RED,
-# ]
-
-# default_cfgs = generate_default_cfgs(
-#     {
-#         "multimae_base": _cfg(
-#             file=""
-#         ),
-#         "multimae_large": _cfg(
-#             file=""
-#         )
-#
-#     }
-# )
 
 
 # TODO: make these user definable
 DOMAIN_CONF = {
-    Modalities.S1: {
+    Modalities.S1RTC: {
+        "channels": 2,
+        "stride_level": 1,
+        "input_adapter": partial(PatchedInputAdapter, num_channels=2),
+        "output_adapter": partial(SpatialOutputAdapter, num_channels=2),
+        "loss": MaskedMSELoss,
+        "image_size": 224,
+        "patch_size": 16,
+    },
+    Modalities.S1GRD: {
         "channels": 2,
         "stride_level": 1,
         "input_adapter": partial(PatchedInputAdapter, num_channels=2),
@@ -94,20 +72,29 @@ DOMAIN_CONF = {
         "image_size": 224,
         "patch_size": 16,
     },
-    Modalities.LULC: {
-        "classes": 9,
+    Modalities.NDVI: {
+        "channels": 1,
         "stride_level": 1,
-        "input_adapter": partial(SemSegInputAdapter, num_classes=9),
-        "output_adapter": partial(SpatialOutputAdapter, num_channels=9),  # Used in pretraining
+        "input_adapter": partial(PatchedInputAdapter, num_channels=1),
+        "output_adapter": partial(SpatialOutputAdapter, num_channels=1),
+        "loss": MaskedMSELoss,
+        "image_size": 224,
+        "patch_size": 16,
+    },
+    Modalities.LULC: {
+        "classes": 10,
+        "stride_level": 1,
+        "input_adapter": partial(SemSegInputAdapter, num_classes=10),
+        "output_adapter": partial(SpatialOutputAdapter, num_channels=10),
         "loss": partial(MaskedCrossEntropyLoss, label_smoothing=0.0),
         "image_size": 224,
         "patch_size": 16,
     },
     'segmentation': {  # TODO: Test generalized semseg head from MultiMAE!
-        "classes": 9,
+        "classes": 10,
         "stride_level": 1,
-        "input_adapter": partial(SemSegInputAdapter, num_classes=9),
-        "output_adapter": partial(SpatialOutputAdapter, num_channels=9),  # Used in pretraining
+        "input_adapter": partial(SemSegInputAdapter, num_classes=10),
+        "output_adapter": partial(SpatialOutputAdapter, num_channels=10),
         "loss": partial(MaskedCrossEntropyLoss, label_smoothing=0.0),
         "image_size": 224,
         "patch_size": 16,
@@ -277,36 +264,20 @@ def _create_multimae(
     variant: str,
     modalities: list[str],
     pretrained: bool = False,
-    features_only: bool = True,
+    encoder_only: bool = True,
     merging_method: str = None,
     **kwargs,
 ):
-    model: torch.nn.Module = build_model_with_cfg(
-        MultiViT if features_only else MultiMAE,  # MultiViT is an encoder-only model
-        variant,
-        pretrained,
-        # if you need to adapt the checkpoint file
-        pretrained_filter_fn=partial(checkpoint_filter_fn, modalities),
-        pretrained_strict=False,
-        feature_cfg={
-            "flatten_sequential": True,
-        },
-        features_only=False,
-        merging_method=merging_method,
-        **kwargs,
-    )
-    default_out_indices = list(range(len(model.layers)))
-    out_indices = kwargs.get("out_indices", default_out_indices)
-    model.feature_info = FeatureInfo(model.feature_info, out_indices)
+    model_class = MultiViT if encoder_only else MultiMAE
 
-    model.prepare_features_for_image_model = PrepareMultimodalFeaturesForDecoder(
-        modalities,
-        merging_method=merging_method
-    )
+    model = model_class(**kwargs)
+
+    # TODO: load pre-trained
+
     return model
 
 
-@register_model
+@TERRATORCH_BACKBONE_REGISTRY.register
 def multimae_base(
     input_adapters: dict[str, str | dict[str, int | str]] | None = None,
     output_adapters: dict[str, str | dict[str, int | str]] | None = None,
@@ -317,7 +288,7 @@ def multimae_base(
     """MultiMAE base model."""
 
     if input_adapters is None:
-        input_adapters = ['S1', 'S2L1C', 'S2L2A', 'DEM', 'LULC']
+        input_adapters = ['S1GRD', 'S1RTC', 'S2L1C', 'S2L2A', 'S2RGB', 'NDVI', 'DEM', 'LULC']
         logger.warning(f'Using default adapters.')
     input_adapters = _parse_input_adapters(input_adapters)
 
@@ -342,14 +313,14 @@ def multimae_base(
         "multimae_base",
         list(input_adapters.keys()),
         pretrained=pretrained,
-        features_only=output_adapters is None,
+        encoder_only=output_adapters is None,
         merging_method=merging_method,
         **dict(model_args, **kwargs),
     )
     return transformer
 
 
-@register_model
+@TERRATORCH_BACKBONE_REGISTRY.register
 def multimae_large(
     input_adapters: dict[str, str | dict[str, int | str]] | None = None,
     output_adapters: dict[str, str | dict[str, int | str]] | None = None,
@@ -359,7 +330,7 @@ def multimae_large(
     """MultiMAE large model."""
 
     if input_adapters is None:
-        input_adapters = ['S1', 'S2L1C', 'S2L2A', 'DEM', 'LULC']
+        input_adapters = ['S1GRD', 'S1RTC', 'S2L1C', 'S2L2A', 'S2RGB', 'NDVI', 'DEM', 'LULC']
     input_adapters = _parse_input_adapters(input_adapters)
 
     if output_adapters is not None:
@@ -383,7 +354,7 @@ def multimae_large(
         "multimae_large",
         list(input_adapters.keys()),
         pretrained=pretrained,
-        features_only=output_adapters is None,
+        encoder_only=output_adapters is None,
         merging_method=merging_method,
         **dict(model_args, **kwargs),
     )
