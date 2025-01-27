@@ -176,7 +176,7 @@ class PatchEmbed(nn.Module):
 
         # When spectral patching is used the tensor must be transposed in order
         # to operate over the proper dimension. 
-        x = slef.dim_transposer(x)
+        x = self.dim_transposer(x)
         x = self.proj(x)
         if self.flatten:
             x = x.flatten(2).transpose(1, 2)  # B,C,T,H,W -> B,C,L -> B,L,C
@@ -482,12 +482,12 @@ class PrithviViT(nn.Module):
     def prepare_features_for_image_model(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
         out = []
         effective_time_dim = self.patch_embed.input_size[0] // self.patch_embed.patch_size[0]
-        c = self.patch_embed.in_chans // self.patch_embed.band_patch_size
+        c = self.eval_c_patches(self.patch_embed.in_chans)
 
         for x in features:
             x_no_token = x[:, 1:, :]
             number_of_tokens = x_no_token.shape[1]
-            tokens_per_timestep = number_of_tokens // effective_time_dim // 3
+            tokens_per_timestep = number_of_tokens // effective_time_dim // c
             h = int(np.sqrt(tokens_per_timestep))
 
             encoded = rearrange(
