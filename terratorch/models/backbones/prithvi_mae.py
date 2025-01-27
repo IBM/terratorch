@@ -157,9 +157,11 @@ class PatchEmbed(nn.Module):
         if self.band_patch_size:
             kernel_size = (self.band_patch_size, self.patch_size[1], self.patch_size[2])
             first_conv_dim = tub_size
+            self.dim_transposer = lambda x: x.transpose(2, 1)
         else:
             kernel_size = self.patch_size
             first_conv_dim = in_chans
+            self.dim_transposer = lambda x: x
 
         self.proj = nn.Conv3d(first_conv_dim, embed_dim, kernel_size=kernel_size, stride=kernel_size, bias=bias)
         self.norm = norm_layer(embed_dim) if norm_layer else nn.Identity()
@@ -170,7 +172,8 @@ class PatchEmbed(nn.Module):
         if T / self.patch_size[0] % 1 or H / self.patch_size[1] % 1 or W / self.patch_size[2] % 1:
             warnings.warn(f"Input {x.shape[-3:]} is not divisible by patch size {self.patch_size}."
                           f"The border will be ignored, add backbone_padding for pixel-wise tasks.")
-        x = x.transpose(2, 1)
+
+        x = slef.dim_transposer(x)
         x = self.proj(x)
         if self.flatten:
             x = x.flatten(2).transpose(1, 2)  # B,C,T,H,W -> B,C,L -> B,L,C
