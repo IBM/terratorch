@@ -157,6 +157,51 @@ class TorchNonGeoDataModule(NonGeoDataModule):
         if hasattr(self, '_proxy'):
             self._proxy.predict_aug = value
 
+    @property
+    def dataset(self):
+        return self._proxy.dataset
+
+    @dataset.setter
+    def dataset(self, value):
+        if hasattr(self, '_proxy'):
+            self._proxy.dataset = value
+
+    @property
+    def train_dataset(self):
+        return self._proxy.train_dataset
+
+    @train_dataset.setter
+    def train_dataset(self, value):
+        if hasattr(self, '_proxy'):
+            self._proxy.train_dataset = value
+
+    @property
+    def val_dataset(self):
+        return self._proxy.val_dataset
+
+    @val_dataset.setter
+    def val_dataset(self, value):
+        if hasattr(self, '_proxy'):
+            self._proxy.val_dataset = value
+
+    @property
+    def test_dataset(self):
+        return self._proxy.test_dataset
+
+    @test_dataset.setter
+    def test_dataset(self, value):
+        if hasattr(self, '_proxy'):
+            self._proxy.test_dataset = value
+
+    @property
+    def predict_dataset(self):
+        return self._proxy.predict_dataset
+
+    @predict_dataset.setter
+    def predict_dataset(self, value):
+        if hasattr(self, '_proxy'):
+            self._proxy.predict_dataset = value
+
 
 class TorchGeoDataModule(GeoDataModule):
     """Proxy object for using Geo data modules defined by TorchGeo.
@@ -273,3 +318,48 @@ class TorchGeoDataModule(GeoDataModule):
     def predict_aug(self, value):
         if hasattr(self, '_proxy'):
             self._proxy.predict_aug = value
+
+    @property
+    def dataset(self):
+        return self._proxy.dataset
+
+    @dataset.setter
+    def dataset(self, value):
+        if hasattr(self, '_proxy'):
+            self._proxy.dataset = value
+
+    @property
+    def train_dataset(self):
+        return self._proxy.train_dataset
+
+    @train_dataset.setter
+    def train_dataset(self, value):
+        if hasattr(self, '_proxy'):
+            self._proxy.train_dataset = value
+
+    @property
+    def val_dataset(self):
+        return self._proxy.val_dataset
+
+    @val_dataset.setter
+    def val_dataset(self, value):
+        if hasattr(self, '_proxy'):
+            self._proxy.val_dataset = value
+
+    @property
+    def test_dataset(self):
+        return self._proxy.test_dataset
+
+    @test_dataset.setter
+    def test_dataset(self, value):
+        if hasattr(self, '_proxy'):
+            self._proxy.test_dataset = value
+
+    @property
+    def predict_dataset(self):
+        return self._proxy.predict_dataset
+
+    @predict_dataset.setter
+    def predict_dataset(self, value):
+        if hasattr(self, '_proxy'):
+            self._proxy.predict_dataset = value
