@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Iterable
 
 import lightning
 from lightning.pytorch.callbacks import Callback
@@ -52,10 +53,26 @@ class TerraTorchTask(BaseTask):
         optimizer = self.hparams["optimizer"]
         if optimizer is None:
             optimizer = "Adam"
+
+        parameters: Iterable
+        if self.hparams.get("lr_overrides", None) is not None and len(self.hparams["lr_overrides"]) > 0:
+            parameters = []
+            for param_name, custom_lr in self.hparams["lr_overrides"].items():
+                p = [p for n, p in self.named_parameters() if param_name in n]
+                parameters.append({"params": p, "lr": custom_lr})
+            rest_p = [
+                p
+                for n, p in self.named_parameters()
+                if all(param_name not in n for param_name in self.hparams["lr_overrides"])
+            ]
+            parameters.append({"params": rest_p})
+        else:
+            parameters = self.parameters()
+
         return optimizer_factory(
             optimizer,
             self.hparams["lr"],
-            self.parameters(),
+            parameters,
             self.hparams["optimizer_hparams"],
             self.hparams["scheduler"],
             self.monitor,
@@ -71,8 +88,9 @@ class TerraTorchTask(BaseTask):
         self.val_metrics.reset()
 
     def on_test_epoch_end(self) -> None:
-        self.log_dict(self.test_metrics.compute(), sync_dist=True)
-        self.test_metrics.reset()
+        for metrics in self.test_metrics:
+            self.log_dict(metrics.compute(), sync_dist=True)
+            metrics.reset()
 
     def _do_plot_samples(self, batch_index):
         if not self.plot_on_val:  # dont plot if self.plot_on_val is 0

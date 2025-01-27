@@ -28,7 +28,7 @@ trainer:
   default_root_dir: output/multimae_sen1floods11/
 
 data:
-  class_path: GenericMultiModalDataModule
+  class_path: terratorch.datamodules.GenericMultiModalDataModule
   init_args:
     task: 'segmentation'
     batch_size: 4

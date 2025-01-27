@@ -20,6 +20,9 @@ import numpy as np
 import rasterio
 import torch
 
+import random
+import string
+
 # Allows classes to be referenced using only the class name
 import torchgeo.datamodules
 import yaml
@@ -156,10 +159,15 @@ class CustomWriter(BasePredictionWriter):
         if not os.path.exists(output_dir):
             os.makedirs(output_dir, exist_ok=True)
 
-        pred_batch, filename_batch = prediction
-
-        for prediction, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
-            save_prediction(prediction, file_name, output_dir, dtype=trainer.out_dtype)
+        if isinstance(prediction, torch.Tensor):
+            filename_batch = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+            torch.save(prediction, os.path.join(output_dir, f"{filename_batch}.pt"))
+        elif isinstance(prediction, tuple):
+            pred_batch, filename_batch = prediction
+            for prediction, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
+                save_prediction(prediction, file_name, output_dir, dtype=trainer.out_dtype)
+        else:
+            raise TypeError(f"Unknown type for prediction{type(prediction)}")
 
     def write_on_epoch_end(self, trainer, pl_module, predictions, batch_indices):  # noqa: ARG002
         # this will create N (num processes) files in `output_dir` each containing
