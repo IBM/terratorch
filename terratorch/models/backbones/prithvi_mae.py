@@ -365,15 +365,16 @@ class PrithviViT(nn.Module):
         h_patches = h // self.patch_embed.patch_size[2]
 
         n_sqrt = int((patch_pos_embed.shape[1] / t_patches) ** 0.5)
-        print(c_patches)
         patch_pos_embed = patch_pos_embed.reshape(t_patches, n_sqrt, n_sqrt, self.embed_dim).permute(0, 3, 1, 2)
-        print(patch_pos_embed.shape)
+
+        print(f"patch_pos_embed: {patch_pos_embed.shape}")
         patch_pos_embed = nn.functional.interpolate(
             patch_pos_embed,
-            size=(c_patches * h_patches, w_patches),
+            size=(c_patches*h_patches, w_patches),
             mode='bicubic',
             align_corners=True,
         )
+        print(f"patch_pos_embed: {patch_pos_embed.shape}")
         patch_pos_embed = patch_pos_embed.permute(0, 2, 3, 1).view(1, -1, self.embed_dim)
         return torch.cat((class_pos_embed, patch_pos_embed), dim=1)
 
@@ -430,12 +431,14 @@ class PrithviViT(nn.Module):
         c, t, h, w = x.shape[-4:]
 
         # embed patches
-        print(x.shape)
+        print(f"Before: {x.shape}")
         x = self.patch_embed(x)
-        print(x.shape)
+        print(f"After: {x.shape}")
 
         pos_embed = self.interpolate_pos_encoding(x, t, c, h, w)
         # add pos embed w/o cls token
+        print(f"x: {x.shape}")
+        print(f"pos_embed: {pos_embed.shape}")
         x = x + pos_embed[:, 1:, :]
 
         if self.temporal_encoding and temporal_coords is not None:
