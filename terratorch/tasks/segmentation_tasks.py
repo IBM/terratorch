@@ -273,11 +273,6 @@ class SemanticSegmentationTask(TerraTorchTask):
         y_hat_hard = to_segmentation_prediction(model_output)
         self.test_metrics[dataloader_idx].update(y_hat_hard, y)
 
-    def on_test_epoch_end(self) -> None:
-        for metrics in self.test_metrics:
-            self.log_dict(metrics.compute(), sync_dist=True)
-            metrics.reset()
-
     def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         """Compute the validation loss and additional metrics.
         Args:
