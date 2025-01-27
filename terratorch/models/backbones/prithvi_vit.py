@@ -1,17 +1,30 @@
 # Copyright contributors to the Terratorch project
-from collections.abc import Callable
+import logging
 import warnings
+from collections.abc import Callable
 
 import torch
-import logging
-from torch import nn, Tensor
-from terratorch.datasets import HLSBands
-from terratorch.models.backbones.prithvi_vit_adapter import PrithviViTAdapter
-from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
-from terratorch.datasets.utils import generate_bands_intervals
-from terratorch.models.backbones.prithvi_mae import PrithviViT, PrithviMAE
-from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
 from huggingface_hub import hf_hub_download
+from torch import Tensor, nn
+
+from terratorch.datasets import HLSBands
+from terratorch.datasets.utils import generate_bands_intervals
+from terratorch.models.backbones.prithvi_mae import PrithviMAE, PrithviViT
+from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
+from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
+
+try:
+    from terratorch.models.backbones.prithvi_vit_adapter import PrithviViTAdapter
+
+    _has_vit_adapter = True
+except ImportError as e:
+    # Define a dummy class to avoid import errors
+    class PrithviViTAdapter:
+        pass
+
+    _has_vit_adapter = False
+    _adapter_import_error = e
+
 
 logger = logging.getLogger(__name__)
 
@@ -263,6 +276,11 @@ def _create_prithvi(
     model_args = prithvi_cfgs[variant].copy()
 
     if vit_adapter:
+        if not _has_vit_adapter:
+            raise ImportError(
+                "PrithviViTAdapter is not available. The following error occurred while importing the module: "
+                f"{_adapter_import_error}"
+            )
         if variant not in prithvi_adapter_cfgs:
             raise ValueError(
                 f"ViT Adapter not available for variant {variant}. "
