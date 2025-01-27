@@ -138,7 +138,7 @@ class PatchEmbed(nn.Module):
             in_chans: int = 3,
             tub_size: int = 1,
             embed_dim: int = 768,
-            band_patch_size: int = 2,
+            band_patch_size: int = None,
             norm_layer: nn.Module | None = None,
             flatten: bool = True,
             bias: bool = True,
@@ -154,6 +154,7 @@ class PatchEmbed(nn.Module):
         self.num_patches = self.grid_size[0] * self.grid_size[1] * self.grid_size[2]
         self.flatten = flatten
 
+        # When spectral patching is used, some adaptations are required
         if self.band_patch_size:
             kernel_size = (self.band_patch_size, self.patch_size[1], self.patch_size[2])
             first_conv_dim = tub_size
@@ -173,6 +174,8 @@ class PatchEmbed(nn.Module):
             warnings.warn(f"Input {x.shape[-3:]} is not divisible by patch size {self.patch_size}."
                           f"The border will be ignored, add backbone_padding for pixel-wise tasks.")
 
+        # When spectral patching is used the tensor must be transposed in order
+        # to operate over the proper dimension. 
         x = slef.dim_transposer(x)
         x = self.proj(x)
         if self.flatten:
@@ -249,6 +252,7 @@ class PrithviViT(nn.Module):
     def __init__(self,
                  img_size: int | tuple[int, int] = 224,
                  patch_size: int | tuple[int, int, int] = (1, 16, 16),
+                 band_patch_size: int = None, 
                  num_frames: int = 1,
                  in_chans: int = 3,
                  embed_dim: int = 1024,
@@ -271,10 +275,20 @@ class PrithviViT(nn.Module):
         if isinstance(patch_size, int):
             patch_size = (1, patch_size, patch_size)
 
+        self.band_patch_size = band_patch_size
+
+        # If spectral patching is being used, we need a way to evaluate the
+        # extra number of patches.
+        if self.band_patch_size:
+            self.eval_c_patches = lambda c: c // self.patch_embed.band_patch_size
+        else:
+            self.eval_c_patches = lambda c: 1
+
         # 3D patch embedding
         self.patch_embed = PatchEmbed(
             input_size=(num_frames,) + self.img_size,
             patch_size=patch_size,
+            band_patch_size=band_patch_size,
             in_chans=in_chans,
             embed_dim=embed_dim,
         )
@@ -363,7 +377,7 @@ class PrithviViT(nn.Module):
 
         class_pos_embed = self.pos_embed[:, :1]
         patch_pos_embed = self.pos_embed[:, 1:]
-        c_patches = c // self.patch_embed.band_patch_size
+        c_patches = self.eval_c_patches(c)
         t_patches = t // self.patch_embed.patch_size[0]
         w_patches = w // self.patch_embed.patch_size[1]
         h_patches = h // self.patch_embed.patch_size[2]
@@ -373,7 +387,7 @@ class PrithviViT(nn.Module):
 
         patch_pos_embed = nn.functional.interpolate(
             patch_pos_embed,
-            size=(c_patches*h_patches, w_patches),
+            size=(c_patches*h_patches, w_patches), # Accounting the extra patches produced by the spectral patching
             mode='bicubic',
             align_corners=True,
         )
