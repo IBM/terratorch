@@ -147,6 +147,7 @@ class PatchEmbed(nn.Module):
         self.input_size = input_size
         self.patch_size = patch_size
         self.tub_size = tub_size
+        self.in_chans = in_chans
         self.band_patch_size = band_patch_size
         self.grid_size = [s // p for s, p in zip(self.input_size, self.patch_size)]
         assert self.grid_size >= [1,1,1], "Patch size is bigger than input size."
@@ -155,10 +156,12 @@ class PatchEmbed(nn.Module):
 
         if self.band_patch_size:
             kernel_size = (self.band_patch_size, self.patch_size[1], self.patch_size[2])
+            first_conv_dim = tub_size
         else:
             kernel_size = self.patch_size
+            first_conv_dim = in_chans
 
-        self.proj = nn.Conv3d(tub_size, embed_dim, kernel_size=kernel_size, stride=kernel_size, bias=bias)
+        self.proj = nn.Conv3d(first_conv_dim, embed_dim, kernel_size=kernel_size, stride=kernel_size, bias=bias)
         self.norm = norm_layer(embed_dim) if norm_layer else nn.Identity()
 
     def forward(self, x):
@@ -168,9 +171,7 @@ class PatchEmbed(nn.Module):
             warnings.warn(f"Input {x.shape[-3:]} is not divisible by patch size {self.patch_size}."
                           f"The border will be ignored, add backbone_padding for pixel-wise tasks.")
         x = x.transpose(2, 1)
-        print(x.shape)
         x = self.proj(x)
-        print(x.shape)
         if self.flatten:
             x = x.flatten(2).transpose(1, 2)  # B,C,T,H,W -> B,C,L -> B,L,C
         x = self.norm(x)
@@ -367,14 +368,13 @@ class PrithviViT(nn.Module):
         n_sqrt = int((patch_pos_embed.shape[1] / t_patches) ** 0.5)
         patch_pos_embed = patch_pos_embed.reshape(t_patches, n_sqrt, n_sqrt, self.embed_dim).permute(0, 3, 1, 2)
 
-        print(f"patch_pos_embed: {patch_pos_embed.shape}")
         patch_pos_embed = nn.functional.interpolate(
             patch_pos_embed,
             size=(c_patches*h_patches, w_patches),
             mode='bicubic',
             align_corners=True,
         )
-        print(f"patch_pos_embed: {patch_pos_embed.shape}")
+
         patch_pos_embed = patch_pos_embed.permute(0, 2, 3, 1).view(1, -1, self.embed_dim)
         return torch.cat((class_pos_embed, patch_pos_embed), dim=1)
 
@@ -388,7 +388,7 @@ class PrithviViT(nn.Module):
             # add time dim
             x = x.unsqueeze(2)
         t, c, h, w = x.shape[-4:]
-        print(t, c, h, w)
+
         # embed patches
         x = self.patch_embed(x)
 
@@ -431,14 +431,11 @@ class PrithviViT(nn.Module):
         c, t, h, w = x.shape[-4:]
 
         # embed patches
-        print(f"Before: {x.shape}")
+
         x = self.patch_embed(x)
-        print(f"After: {x.shape}")
 
         pos_embed = self.interpolate_pos_encoding(x, t, c, h, w)
         # add pos embed w/o cls token
-        print(f"x: {x.shape}")
-        print(f"pos_embed: {pos_embed.shape}")
         x = x + pos_embed[:, 1:, :]
 
         if self.temporal_encoding and temporal_coords is not None:
@@ -462,23 +459,27 @@ class PrithviViT(nn.Module):
 
         x = self.norm(x)
         out[-1] = x
+
         return out
 
     def prepare_features_for_image_model(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
         out = []
         effective_time_dim = self.patch_embed.input_size[0] // self.patch_embed.patch_size[0]
+        c = self.patch_embed.in_chans // self.patch_embed.band_patch_size
+
         for x in features:
             x_no_token = x[:, 1:, :]
             number_of_tokens = x_no_token.shape[1]
-            tokens_per_timestep = number_of_tokens // effective_time_dim
+            tokens_per_timestep = number_of_tokens // effective_time_dim // 3
             h = int(np.sqrt(tokens_per_timestep))
-            print(f"Shape:{x_no_token.shape}")
+
             encoded = rearrange(
                 x_no_token,
-                "batch (t h w) e -> batch (t e) h w",
+                "batch (t h w c) e -> batch (t e) (c h) w",
                 e=self.embed_dim,
                 t=effective_time_dim,
                 h=h,
+                c=c,
             )
             out.append(encoded)
         return out
