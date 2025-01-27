@@ -43,6 +43,7 @@ class ObjectDetectionTask(TerraTorchTask):
         scheduler_hparams: dict | None = None,
         freeze_backbone: bool = False,
         freeze_decoder: bool = False,
+        plot_on_val: bool | int = 10,
         class_names: list[str] | None = None,
     ) -> None:
         """Constructor
@@ -62,6 +63,7 @@ class ObjectDetectionTask(TerraTorchTask):
                 Overriden by config / cli specification through LightningCLI.
             freeze_backbone (bool, optional): Whether to freeze the backbone. Defaults to False.
             freeze_decoder (bool, optional): Whether to freeze the decoder and segmentation head. Defaults to False.
+            plot_on_val (bool | int, optional): Whether to plot visualizations on validation.
             class_names (list[str] | None, optional): List of class names passed to metrics for better naming.
                 Defaults to numeric ordering.
         """
@@ -70,6 +72,7 @@ class ObjectDetectionTask(TerraTorchTask):
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
         self.test_loss_handler = LossHandler(self.test_metrics.prefix)
+        self.plot_on_val = int(plot_on_val)
 
     def configure_metrics(self) -> None:
         """Initialize the performance metrics.
@@ -176,35 +179,31 @@ class ObjectDetectionTask(TerraTorchTask):
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=batch_size)
         self.val_metrics.update(y_hat, y)
 
-        if (
-            batch_idx < 10
-            and hasattr(self.trainer, 'datamodule')
-            and hasattr(self.trainer.datamodule, 'plot')
-            and self.logger
-            and hasattr(self.logger, 'experiment')
-            and hasattr(self.logger.experiment, 'add_figure')
-        ):
-            datamodule = self.trainer.datamodule
-            batch['prediction_boxes'] = [b['boxes'].cpu() for b in y_hat]
-            batch['prediction_labels'] = [b['labels'].cpu() for b in y_hat]
-            batch['prediction_scores'] = [b['scores'].cpu() for b in y_hat]
-            sample = unbind_samples(batch)[0]
-            # Convert image to uint8 for plotting
-            if torch.is_floating_point(sample['image']):
-                sample['image'] *= 255
-                sample['image'] = sample['image'].to(torch.uint8)
-
-            fig: Figure | None = None
+        if self._do_plot_samples(batch_idx) and self.trainer.datamodule.val_dataset:
             try:
-                fig = datamodule.plot(sample)
-            except RGBBandsMissingError:
+                datamodule = self.trainer.datamodule
+                batch['prediction_boxes'] = [b['boxes'].cpu() for b in y_hat]
+                batch['prediction_labels'] = [b['labels'].cpu() for b in y_hat]
+                batch['prediction_scores'] = [b['scores'].cpu() for b in y_hat]
+                sample = unbind_samples(batch)[0]
+                # Convert image to uint8 for plotting
+                if torch.is_floating_point(sample['image']):
+                    sample['image'] *= 255
+                    sample['image'] = sample['image'].to(torch.uint8)
+                sample['image'] = sample['image'].cpu()
+                fig: Figure | None = None
+                fig = datamodule.dataset.plot(sample)
+                if fig:
+                    summary_writer = self.logger.experiment
+                    if hasattr(summary_writer, "add_figure"):
+                        summary_writer.add_figure(f"image/{batch_idx}", fig, global_step=self.global_step)
+                    elif hasattr(summary_writer, "log_figure"):
+                        summary_writer.log_figure(
+                            self.logger.run_id, fig, f"epoch_{self.current_epoch}_{batch_idx}.png"
+                        )
+            except ValueError:
                 pass
-
-            if fig:
-                summary_writer = self.logger.experiment
-                summary_writer.add_figure(
-                    f'image/{batch_idx}', fig, global_step=self.global_step
-                )
+            finally:
                 plt.close()
 
     def on_validation_epoch_end(self) -> None:
