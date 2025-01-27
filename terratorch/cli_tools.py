@@ -162,7 +162,6 @@ class CustomWriter(BasePredictionWriter):
         elif isinstance(prediction, tuple):
             pred_batch, filename_batch = prediction
             for prediction, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
-                print(prediction, file_name, output_dir, trainer.out_dtype)
                 save_prediction(prediction, file_name, output_dir, dtype=trainer.out_dtype)
         else:
             raise TypeError(f"Unknown type for prediction{type(prediction)}")
