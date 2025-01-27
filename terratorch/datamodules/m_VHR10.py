@@ -57,41 +57,38 @@ def collate_fn_detection(batch):
         "labels": [item["labels"] for item in batch],
         "masks": [item["masks"] for item in batch],
     }
-    print("Collate function")
-    print(new_batch)
+    # print("Collate function")
+    # print(new_batch)
     return new_batch
 
 
-def get_transform(train, image_size=448):
+def get_transform(train, image_size=896):
     transforms = []
     transforms.append(A.PadIfNeeded(min_height=image_size, min_width=image_size, value=0, border_mode=0))
     if train:
-        transforms.append(A.RandomCrop(width=image_size, height=image_size))
+        transforms.append(A.CenterCrop(width=image_size, height=image_size))
         transforms.append(A.HorizontalFlip(p=0.5))
     else:
         transforms.append(A.CenterCrop(width=image_size, height=image_size))
-    transforms.append(A.ToFloat())
+    # transforms.append(A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), max_pixel_value=255))
+    # transforms.append(A.ToFloat())
     transforms.append(T.ToTensorV2())
     # return A.Compose(transforms, additional_targets={'boxes': 'bboxes', 'masks': 'mask'})
     return A.Compose(transforms, bbox_params=A.BboxParams(format="pascal_voc", label_fields=['labels']), is_check_shapes=False)
-
+    
 def apply_transforms(sample, transforms):
+
 
     # pdb.set_trace()
     sample['image']=torch.stack(tuple(sample["image"]))
     sample['image'] = sample['image'].permute(1, 2, 0) if len(sample['image'].shape) == 3 else sample['image'].permute(0, 2, 3, 1)
     sample['image'] = np.array(sample['image'].cpu())
-    
     sample["masks"] = [np.array(torch.stack(tuple(x)).cpu()) for x in sample["masks"]]
     # sample["masks"] = np.array(sample["masks"].cpu())
-    
     sample["boxes"] = np.array(sample["boxes"].cpu())
-
     sample["labels"] = np.array(sample["labels"].cpu())
-    
     # sample["boxes"] = [torch.stack(tuple(x)) for x in sample["masks"]]
-    # sample["labels"] = 
-    
+    # sample["labels"] =  
     transformed = transforms(image=sample['image'],
                              masks=sample["masks"], 
                              # bboxes=np.array(torch.stack(tuple(sample["boxes"]), dim=0).cpu()), 
@@ -99,11 +96,11 @@ def apply_transforms(sample, transforms):
                              labels=sample["labels"])
     
     transformed['boxes'] = torch.tensor(transformed['bboxes'])
-    transformed['labels'] = torch.tensor(transformed['labels'], dtype=torch.int8)
+    transformed['labels'] = torch.tensor(transformed['labels'], dtype=torch.int64)
     del transformed['bboxes']
     # print("Done transform")
-    # print(transformed)
     return transformed
+
 
 class Normalize(Callable):
     def __init__(self, means, stds, max_pixel_value=None):

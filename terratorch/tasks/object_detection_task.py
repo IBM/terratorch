@@ -105,7 +105,7 @@ class ObjectDetectionTask(BaseTask):
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
         self.test_loss_handler = LossHandler(self.test_metrics.prefix)
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
-        self.monitor = f"{self.val_metrics.prefix}loss"
+        self.monitor = f"{self.val_metrics.prefix}map"
         self.iou_threshold = iou_threshold
         self.score_threshold = score_threshold
 
@@ -209,7 +209,6 @@ class ObjectDetectionTask(BaseTask):
         for i in range(batch_size):
             y_hat[i]["boxes"], y_hat[i]["scores"], y_hat[i]["labels"] = apply_nms(y_hat[i]["boxes"], y_hat[i]["scores"],y_hat[i]["labels"], iou_threshold=self.iou_threshold, score_threshold=self.score_threshold)
         
-        
         metrics = self.val_metrics(y_hat, y)
 
         # https://github.com/Lightning-AI/torchmetrics/pull/1832#issuecomment-1623890714
@@ -225,20 +224,20 @@ class ObjectDetectionTask(BaseTask):
             and hasattr(self.logger, 'experiment')
             and hasattr(self.logger.experiment, 'add_figure')
         ):
-            datamodule = self.trainer.datamodule
+            dataset = self.trainer.datamodule.val_dataset
             batch['prediction_boxes'] = [b['boxes'].cpu() for b in y_hat]
             batch['prediction_labels'] = [b['labels'].cpu() for b in y_hat]
             batch['prediction_scores'] = [b['scores'].cpu() for b in y_hat]
             batch['image'] = batch['image'].cpu()
             sample = unbind_samples(batch)[0]
             # Convert image to uint8 for plotting
-            if torch.is_floating_point(sample['image']):
-                sample['image'] *= 255
-                sample['image'] = sample['image'].to(torch.uint8)
+            # if torch.is_floating_point(sample['image']):
+            #     sample['image'] *= 255
+            #     sample['image'] = sample['image'].to(torch.uint8)
 
             fig: Figure | None = None
             try:
-                fig = datamodule.plot(sample)
+                fig = dataset.plot(sample)
             except RGBBandsMissingError:
                 pass
 

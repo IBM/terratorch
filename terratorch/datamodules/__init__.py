@@ -94,7 +94,7 @@ __all__ = (
     "OpenSentinelMapDataModule",
     "PASTISDataModule",
     "Sen4AgriNetDataModule",
-    "GenericMultiModalDataModule",,
+    "GenericMultiModalDataModule",
     "mVHR10DataModule"
 )
 
