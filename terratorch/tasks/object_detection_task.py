@@ -5,21 +5,13 @@
 
 """Trainers for object detection."""
 
-from functools import partial
 from typing import Any
 
 import matplotlib.pyplot as plt
-import torch
-import torchvision.models.detection
 from matplotlib.figure import Figure
 from torch import Tensor
 from torchmetrics import MetricCollection
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
-from torchvision.models import resnet as R
-from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
-from torchvision.models.detection.retinanet import RetinaNetHead
-from torchvision.models.detection.rpn import AnchorGenerator
-from torchvision.ops import MultiScaleRoIAlign, feature_pyramid_network, misc
 
 from torchgeo.datasets import RGBBandsMissingError, unbind_samples
 from torchgeo.trainers import BaseTask
@@ -31,17 +23,6 @@ import pdb
 
 from torchvision.ops import nms
 
-def apply_nms(boxes, scores, labels, iou_threshold=0.5, score_threshold=0.5):
-    
-    # Filter based on score threshold
-    keep_score = scores > score_threshold
-    boxes, scores, labels = boxes[keep_score], scores[keep_score], labels[keep_score]
-    
-    # Apply NMS
-    keep_nms = nms(boxes, scores, iou_threshold)
-    
-    return boxes[keep_nms], scores[keep_nms], labels[keep_nms]
-    
 
 class ObjectDetectionTask(BaseTask):
 
@@ -53,7 +34,7 @@ class ObjectDetectionTask(BaseTask):
         self,
         model_factory: str,
         model_args: dict,
-        
+
         lr: float = 0.001,
 
         optimizer: str | None = None,
@@ -64,10 +45,10 @@ class ObjectDetectionTask(BaseTask):
         freeze_backbone: bool = False,
         freeze_decoder: bool = False,
         class_names: list[str] | None = None,
-        
+
         iou_threshold: float = 0.5,
         score_threshold: float = 0.5
-                
+
     ) -> None:
         """Initialize a new ObjectDetectionTask instance.
 
@@ -153,7 +134,57 @@ class ObjectDetectionTask(BaseTask):
             self.monitor,
             self.hparams["scheduler_hparams"],
         )
-    
+
+    def reformat_batch(self, batch: Any, batch_size: int):
+        """Reformat batch to calculate loss and metrics.
+
+        Args:
+            batch: The output of your DataLoader.
+            batch_size: Size of your batch
+        Returns:
+            Reformated batch
+        """
+        if 'masks' in batch.keys():
+            y = [
+                {'boxes': batch['boxes'][i], 'labels': batch['labels'][i]}
+                for i in range(batch_size)
+            ]
+        else:
+            y = [
+                {'boxes': batch['boxes'][i], 'labels': batch['labels'][i], 'masks': batch['masks'][i]}
+                for i in range(batch_size)
+            ]
+
+        return y
+
+    def apply_nms_sample(self, y_hat, iou_threshold=0.5, score_threshold=0.5):
+
+        boxes, scores, labels = y_hat['boxes'], y_hat['scores'], y_hat['labels']
+        masks = y_hat['masks'] if "masks" in y_hat.keys() else None
+
+        # Filter based on score threshold
+        keep_score = scores > score_threshold
+        boxes, scores, labels = boxes[keep_score], scores[keep_score], labels[keep_score]
+        if masks is not None:
+            masks = masks[keep_score]
+
+        # Apply NMS
+        keep_nms = nms(boxes, scores, iou_threshold)
+
+        y_hat['boxes'], y_hat['scores'], y_hat['labels'] = boxes[keep_nms], scores[keep_nms], labels[keep_nms]
+
+        if masks is not None:
+            y_hat['masks'] = masks[keep_nms]
+
+        return y_hat
+
+    def apply_nms_batch(self, y_hat: Any, batch_size: int):
+
+        for i in range(batch_size):
+            y_hat[i] = self.apply_nms_sample(y_hat[i], iou_threshold=self.iou_threshold, score_threshold=self.score_threshold)
+
+        return y_hat
+
     def training_step(
         self, batch: Any, batch_idx: int, dataloader_idx: int = 0
     ) -> Tensor:
@@ -168,21 +199,17 @@ class ObjectDetectionTask(BaseTask):
             The loss tensor.
         """
         #print("training")
-        #pdb.set_trace()
+        
         x = batch['image']
         batch_size = x.shape[0]
-        y = [
-            {'boxes': batch['boxes'][i], 'labels': batch['labels'][i]}
-            for i in range(batch_size)
-        ]
+        y = self.reformat_batch(batch, batch_size)
         loss_dict = self(x, y)
-        if isinstance(loss_dict, dict) == False:
+        if isinstance(y_hat, dict) is False:
             loss_dict = loss_dict.output
         train_loss: Tensor = sum(loss_dict.values())
         self.log_dict(loss_dict, batch_size=batch_size)
         self.log("train_loss", train_loss)
         return train_loss
-
 
     def validation_step(
         self, batch: Any, batch_idx: int, dataloader_idx: int = 0
@@ -194,21 +221,16 @@ class ObjectDetectionTask(BaseTask):
             batch_idx: Integer displaying index of this batch.
             dataloader_idx: Index of the current dataloader.
         """
-        #print("validation")
-        #pdb.set_trace()
+
         x = batch['image']
         batch_size = x.shape[0]
-        y = [
-            {'boxes': batch['boxes'][i], 'labels': batch['labels'][i]}
-            for i in range(batch_size)
-        ]
+        y = self.reformat_batch(batch, batch_size)
         y_hat = self(x)
-        if isinstance(y_hat, dict) == False:
+        if isinstance(y_hat, dict) is False:
             y_hat = y_hat.output
 
-        for i in range(batch_size):
-            y_hat[i]["boxes"], y_hat[i]["scores"], y_hat[i]["labels"] = apply_nms(y_hat[i]["boxes"], y_hat[i]["scores"],y_hat[i]["labels"], iou_threshold=self.iou_threshold, score_threshold=self.score_threshold)
-        
+        y_hat = self.apply_nms_batch(y_hat, batch_size)
+
         metrics = self.val_metrics(y_hat, y)
 
         # https://github.com/Lightning-AI/torchmetrics/pull/1832#issuecomment-1623890714
@@ -248,7 +270,6 @@ class ObjectDetectionTask(BaseTask):
                 )
                 plt.close()
 
-
     def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         """Compute the test metrics.
 
@@ -257,27 +278,22 @@ class ObjectDetectionTask(BaseTask):
             batch_idx: Integer displaying index of this batch.
             dataloader_idx: Index of the current dataloader.
         """
-        # pdb.set_trace()
+        
         x = batch['image']
         batch_size = x.shape[0]
-        y = [
-            {'boxes': batch['boxes'][i], 'labels': batch['labels'][i]}
-            for i in range(batch_size)
-        ]
+        y = self.reformat_batch(batch, batch_size)
         y_hat = self(x)
-        if isinstance(y_hat, dict) == False:
+        if isinstance(y_hat, dict) is False:
             y_hat = y_hat.output
 
-        for i in range(batch_size):
-            y_hat[i]["boxes"], y_hat[i]["scores"], y_hat[i]["labels"] = apply_nms(y_hat[i]["boxes"], y_hat[i]["scores"],y_hat[i]["labels"], iou_threshold=self.iou_threshold, score_threshold=self.score_threshold)
-        
+        y_hat = self.apply_nms_batch(y_hat, batch_size)
+
         metrics = self.test_metrics(y_hat, y)
 
         # https://github.com/Lightning-AI/torchmetrics/pull/1832#issuecomment-1623890714
         metrics.pop('test_classes', None)
 
         self.log_dict(metrics, batch_size=batch_size)
-
 
     def predict_step(
         self, batch: Any, batch_idx: int, dataloader_idx: int = 0
@@ -293,12 +309,11 @@ class ObjectDetectionTask(BaseTask):
             Output predicted probabilities.
         """
         x = batch['image']
+        batch_size = x.shape[0]
         y_hat: list[dict[str, Tensor]] = self(x)
-        if isinstance(y_hat, dict) == False:
+        if isinstance(y_hat, dict) is False:
             y_hat = y_hat.output
 
-        for i in range(batch_size):
-            y_hat[i]["boxes"], y_hat[i]["scores"], y_hat[i]["labels"] = apply_nms(y_hat[i]["boxes"], y_hat[i]["scores"],y_hat[i]["labels"], iou_threshold=self.iou_threshold, score_threshold=self.score_threshold)
-        
-        
+        y_hat = self.apply_nms_batch(y_hat, batch_size)
+
         return y_hat
