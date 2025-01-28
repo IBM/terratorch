@@ -1,5 +1,4 @@
-#torchgeo==0.7.0.dev0
-git+https://github.com/microsoft/torchgeo.git@fedf99375535f801565856cd774bfa9e5a251d55
+torchgeo==0.6.2
 rioxarray==0.15.0
 albumentations==1.3.1
 albucore<=0.0.16
