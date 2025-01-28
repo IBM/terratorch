@@ -36,7 +36,7 @@ data:
       # Resize is not required since Faster-RCNN performs it
       - class_path: albumentations.augmentations.transforms.ToFloat
         init_args:
-          max_value: 255
+          max_value: 1 # 1/255 scaling will be done by BaseDataModule.on_after_batch_transfer()
       - class_path: ToTensorV2
   dict_kwargs:
     root: data/VHR10
@@ -55,6 +55,7 @@ model:
       weights: true  # Use pretrained weights. True for ImageNet weight, false for random
     freeze_backbone: false
     freeze_decoder: false
+    plot_on_val: 1  # Default 10
 
 optimizer:
   class_path: torch.optim.AdamW
