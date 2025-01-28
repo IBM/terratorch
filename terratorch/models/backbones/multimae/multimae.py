@@ -47,6 +47,8 @@ class MultiMAE(nn.Module):
     :param attn_drop_rate: Attention matrix drop rate
     :param drop_path_rate: DropPath drop rate
     :param norm_layer: Type of normalization layer
+    :param fp32_output_adapters: List of task identifiers to force output adapters to
+    run with mixed precision turned off for stability reasons.
     """
 
     default_norm_layer = partial(nn.LayerNorm, eps=1e-6)
@@ -55,6 +57,7 @@ class MultiMAE(nn.Module):
         self,
         input_adapters: dict[str, nn.Module],
         output_adapters: dict[str, nn.Module] | None,
+        loss_functions: dict[str, nn.Module] | None,
         num_global_tokens: int = 1,
         dim_tokens: int = 768,
         depth: int = 12,
@@ -65,6 +68,7 @@ class MultiMAE(nn.Module):
         attn_drop_rate: float = 0.0,
         drop_path_rate: float = 0.0,
         norm_layer: nn.Module = default_norm_layer,
+        fp32_output_adapters: list[str] | None = None,
         merge_method: str = None,
         **kwargs,
     ):
@@ -80,6 +84,8 @@ class MultiMAE(nn.Module):
             self.output_adapters = nn.ModuleDict(output_adapters)
         else:
             self.output_adapters = None
+        self.fp32_output_adapters = fp32_output_adapters or []
+        self.loss_functions = loss_functions
 
         # Additional learnable tokens that can be used by encoder to process/store global information
         self.num_global_tokens = num_global_tokens
@@ -294,7 +300,6 @@ class MultiMAE(nn.Module):
         num_encoded_tokens: int = 128,
         alphas: float | list[float] = 1.0,
         sample_tasks_uniformly: bool = False,
-        fp32_output_adapters: list[str] | None = None,
     ):
         """
         Forward pass through input adapters, transformer encoder and output adapters.
@@ -309,28 +314,17 @@ class MultiMAE(nn.Module):
             Higher alpha = harder, less uniform sampling. Can be float or list of floats.
         :param sample_tasks_uniformly: Set to True if tasks should be uniformly presampled,
             before Dirichlet sampling decides share of masked tokens between them.
-        :param fp32_output_adapters: List of task identifiers to force output adapters to
-            run with mixed precision turned off for stability reasons.
         """
 
-        if fp32_output_adapters is None:
-            fp32_output_adapters = []
         ## Processing input modalities
         # If input x is a Tensor, assume it's RGB
         x = {"rgb": x} if isinstance(x, torch.Tensor) else x
 
         # Need image size for tokens->image reconstruction
-        # We assume that at least one of rgb or semseg is given as input before masking
-        if "rgb" in x:
-            B, C, H, W = x["rgb"].shape
-        elif "semseg" in x:
-            B, H, W = x["semseg"].shape
-            H *= self.input_adapters["semseg"].stride_level
-            W *= self.input_adapters["semseg"].stride_level
-        else:
-            shape = list(x.values())[0].shape
-            B = shape[0]
-            H, W = shape[2:]
+        # Assuming same image size for all modalities
+        shape = list(x.values())[0].shape
+        B = shape[0]
+        H, W = shape[-2:]
 
         # Encode selected inputs to tokens
         input_task_tokens = {
@@ -347,7 +341,7 @@ class MultiMAE(nn.Module):
         else:
             num_encoded_tokens = sum([tensor.shape[1] for tensor in input_task_tokens.values()])
 
-        ## Generating masks
+        # Generating masks
         if task_masks is None:
             task_masks, ids_keep, ids_restore = self.generate_random_masks(
                 input_task_tokens, num_encoded_tokens, alphas=alphas, sample_tasks_uniformly=sample_tasks_uniformly
@@ -368,14 +362,14 @@ class MultiMAE(nn.Module):
         global_tokens = repeat(self.global_tokens, "() n d -> b n d", b=B)
         input_tokens = torch.cat([input_tokens, global_tokens], dim=1)
 
-        ## Transformer forward pass
+        # Transformer forward pass
         outputs = []
         encoder_tokens = input_tokens
         for layer in self.layers:
             encoder_tokens = layer(encoder_tokens)
             outputs.append(encoder_tokens)
 
-        ## Output decoders
+        # Output decoders
         if self.output_adapters is None:
             return outputs, task_masks
 
@@ -388,11 +382,11 @@ class MultiMAE(nn.Module):
                 ids_restore=ids_restore,
             )
             for domain in self.output_adapters
-            if domain not in fp32_output_adapters
+            if domain not in self.fp32_output_adapters
         }
         # Force running selected output adapters in fp32 mode
         with torch.cuda.amp.autocast(enabled=False):
-            for domain in fp32_output_adapters:
+            for domain in self.fp32_output_adapters:
                 if domain not in self.output_adapters:
                     continue
                 preds[domain] = self.output_adapters[domain](
@@ -402,7 +396,14 @@ class MultiMAE(nn.Module):
                     ids_restore=ids_restore,
                 )
 
-        return preds, task_masks
+        loss = 0
+
+        domain_loss = {domain: self.loss_functions[domain](pred, x[domain])
+                       for domain, pred in preds.items()}
+
+        loss = torch.stack(list(domain_loss.values())).sum()
+
+        return loss, preds, task_masks, domain_loss
 
 
 class MultiViT(MultiMAE):

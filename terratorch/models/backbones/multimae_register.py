@@ -157,6 +157,13 @@ def _instantiate_output_adapter_from_dict(spec: dict, task: str, context_tasks: 
     )
 
 
+def _instantiate_loss_from_dict(spec: dict) -> MaskedMSELoss | MaskedCrossEntropyLoss:
+    return spec["loss"](
+        patch_size=spec["patch_size"],
+        stride=spec["stride_level"],
+    )
+
+
 def _parse_output_adapters(
     adapter_spec: list | dict[str, str | dict[str, int | str]],
 ) -> dict[str, SpatialOutputAdapter | SpatialOutputAdapter]:
@@ -168,6 +175,7 @@ def _parse_output_adapters(
         msg = "Duplicate keys in output adapters"
         raise Exception(msg)
     output_adapters = {}
+    loss_functions = {}
 
     for adapter_name, spec in adapter_spec.items():
         match spec:
@@ -183,22 +191,30 @@ def _parse_output_adapters(
                         task=adapter_name,
                         context_tasks=list(adapter_spec.keys()),
                     )
+                    loss_functions[adapter_name] = _instantiate_loss_from_dict(DOMAIN_CONF[spec])
                 else:
                     msg = f"output Domain {adapter_name} does not exist. Choose one of {list(DOMAIN_CONF.keys())}"
                     raise ValueError(msg)
-            case {"type": "SpatialOutputAdapter", "num_channels": num_channels, **kwargs}:  # Used for pre-training
+            case {"type": "SpatialOutputAdapter", "num_channels": num_channels, "patch_size": patch_size, **kwargs}:
                 output_adapters[adapter_name] = SpatialOutputAdapter(
                     task=adapter_name,
                     context_tasks=list(adapter_spec.keys()),
+                    patch_size_full=patch_size,
                     num_channels=num_channels,
                     **kwargs
                 )
-            case {"type": "ConvNeXtAdapter", "num_classes": num_classes,  **kwargs}:
-                output_adapters[adapter_name] = ConvNeXtAdapter(num_classes=num_classes, **kwargs)
+                loss_functions[adapter_name] = MaskedMSELoss(patch_size=patch_size)
+            case {"type": "ConvNeXtAdapter", "num_classes": num_classes,  "patch_size": patch_size, **kwargs}:
+                output_adapters[adapter_name] = ConvNeXtAdapter(
+                    num_classes=num_classes,
+                    patch_size=patch_size,
+                    **kwargs
+                )
+                loss_functions[adapter_name] = MaskedCrossEntropyLoss(patch_size=patch_size)
             case _:
                 msg = f"Invalid output adapter config for adapter {adapter_name}"
                 raise ValueError(msg)
-    return output_adapters
+    return output_adapters, loss_functions
 
 
 # If you need to adapt the checkpoint file, do it here
@@ -235,29 +251,29 @@ def checkpoint_filter_fn(
     return new_state_dict
 
 
-class PrepareMultimodalFeaturesForDecoder:
-    def __init__(self, modalities: list[str], merging_method: str = 'concat'):
-        self.modalities = modalities
-        self.merging_method = merging_method
-
-    def __call__(self, x: list[torch.Tensor]) -> list[torch.Tensor]:
-        if len(x) == 2:
-            # MultiMAE decoder was used. Return predictions of first modality.
-            preds = list(x[0].values())
-            assert len(preds) != 1, "Terratorch can only handle one output modality."
-            return preds[0]
-
-        for output_index in range(len(x)):
-            x[output_index] = x[output_index].permute(0, 2, 1)
-            x[output_index] = x[output_index][:, :, :-1]  # remove global token
-            img_shape = int(np.sqrt(x[output_index].shape[-1] / len(self.modalities)))
-            if self.merging_method == 'concat':
-                x[output_index] = x[output_index].reshape(x[output_index].shape[0], -1, img_shape, img_shape)
-            else:
-                raise ValueError(f"Unsupported merging method {self.merging_method}")
-                # TODO: Implement other methods, move to forward?
-
-        return x
+# class PrepareMultimodalFeaturesForDecoder:
+#     def __init__(self, modalities: list[str], merging_method: str = 'concat'):
+#         self.modalities = modalities
+#         self.merging_method = merging_method
+#
+#     def __call__(self, x: list[torch.Tensor]) -> list[torch.Tensor]:
+#         if len(x) == 2:
+#             # MultiMAE decoder was used. Return predictions of first modality.
+#             preds = list(x[0].values())
+#             assert len(preds) != 1, "Terratorch can only handle one output modality."
+#             return preds[0]
+#
+#         for output_index in range(len(x)):
+#             x[output_index] = x[output_index].permute(0, 2, 1)
+#             x[output_index] = x[output_index][:, :, :-1]  # remove global token
+#             img_shape = int(np.sqrt(x[output_index].shape[-1] / len(self.modalities)))
+#             if self.merging_method == 'concat':
+#                 x[output_index] = x[output_index].reshape(x[output_index].shape[0], -1, img_shape, img_shape)
+#             else:
+#                 raise ValueError(f"Unsupported merging method {self.merging_method}")
+#                 # TODO: Implement other methods, move to forward?
+#
+#         return x
 
 
 def _create_multimae(
@@ -293,11 +309,12 @@ def multimae_base(
     input_adapters = _parse_input_adapters(input_adapters)
 
     if output_adapters is not None:
-        output_adapters = _parse_output_adapters(output_adapters)
+        output_adapters, loss_functions = _parse_output_adapters(output_adapters)
 
     model_args = {
         "input_adapters": input_adapters,
         "output_adapters": output_adapters,
+        "loss_functions": loss_functions,
         "dim_tokens": 768,
         "depth": 12,
         "num_heads": 12,
@@ -334,11 +351,12 @@ def multimae_large(
     input_adapters = _parse_input_adapters(input_adapters)
 
     if output_adapters is not None:
-        output_adapters = _parse_output_adapters(output_adapters)
+        output_adapters, loss_functions = _parse_output_adapters(output_adapters)
 
     model_args = {
         "input_adapters": input_adapters,
         "output_adapters": output_adapters,
+        "loss_functions": loss_functions,
         "dim_tokens": 1024,
         "depth": 24,
         "num_heads": 16,

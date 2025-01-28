@@ -120,6 +120,9 @@ model:
       backbone_input_adapters:
         - S1GRD
         - S2L2A
+      backbone_output_adapters:
+        - S1GRD
+        - S2L2A
       backbone_merge_method: mean
       necks:
         - name: ReshapeTokensToImage
