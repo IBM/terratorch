@@ -104,6 +104,7 @@ def test_vit_models_different_patch_tubelet_sizes(model_name, patch_size, patch_
         {backbone.embed_dim} = {expected_t * backbone.embed_dim} but was {e.shape[1]}"
 
     gc.collect()
+
 @pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
 def test_out_indices(model_name, input_224):
     out_indices = (2, 4, 8, 10)
@@ -117,6 +118,28 @@ def test_out_indices(model_name, input_224):
         assert torch.allclose(full_output[full_index], output[filtered_index])
     gc.collect()
 
+@pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
+@pytest.mark.parametrize("band_patch_size", [2, 3, None])
+def test_band_patch_size(model_name, band_patch_size, input_224):
+    backbone = BACKBONE_REGISTRY.build(model_name, pretrained=False, band_patch_size=band_patch_size)
+
+    n_channels = input_224.shape[1]
+    img_size = input_224.shape[-1]
+
+    full_output = backbone.forward_features(input_224)
+    patch_size = backbone.patch_embed.patch_size[-1]
+    band_patch_size = backbone.patch_embed.band_patch_size
+
+    if band_patch_size:
+       c_patches = n_channels // band_patch_size
+    else:
+       c_patches = 1
+
+    n_patches = c_patches * (img_size // patch_size)**2
+
+    assert full_output[-1].shape[1] - 1 == n_patches, "The number of patches does not correspond to the expected one."
+
+    gc.collect()
 
 @pytest.mark.parametrize("model_name", ["vit_base_patch16", "vit_large_patch16"])
 def test_scale_mae(model_name):

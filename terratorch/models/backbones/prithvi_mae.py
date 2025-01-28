@@ -136,7 +136,9 @@ class PatchEmbed(nn.Module):
             input_size: tuple[int, int, int] = (1, 224, 224),
             patch_size: tuple[int, int, int] = (1, 16, 16),
             in_chans: int = 3,
+            tub_size: int = 1,
             embed_dim: int = 768,
+            band_patch_size: int = None,
             norm_layer: nn.Module | None = None,
             flatten: bool = True,
             bias: bool = True,
@@ -144,12 +146,25 @@ class PatchEmbed(nn.Module):
         super().__init__()
         self.input_size = input_size
         self.patch_size = patch_size
+        self.tub_size = tub_size
+        self.in_chans = in_chans
+        self.band_patch_size = band_patch_size
         self.grid_size = [s // p for s, p in zip(self.input_size, self.patch_size)]
         assert self.grid_size >= [1,1,1], "Patch size is bigger than input size."
         self.num_patches = self.grid_size[0] * self.grid_size[1] * self.grid_size[2]
         self.flatten = flatten
 
-        self.proj = nn.Conv3d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size, bias=bias)
+        # When spectral patching is used, some adaptations are required
+        if self.band_patch_size:
+            kernel_size = (self.band_patch_size, self.patch_size[1], self.patch_size[2])
+            first_conv_dim = tub_size
+            self.dim_transposer = lambda x: x.transpose(2, 1)
+        else:
+            kernel_size = self.patch_size
+            first_conv_dim = in_chans
+            self.dim_transposer = lambda x: x
+
+        self.proj = nn.Conv3d(first_conv_dim, embed_dim, kernel_size=kernel_size, stride=kernel_size, bias=bias)
         self.norm = norm_layer(embed_dim) if norm_layer else nn.Identity()
 
     def forward(self, x):
@@ -159,6 +174,9 @@ class PatchEmbed(nn.Module):
             warnings.warn(f"Input {x.shape[-3:]} is not divisible by patch size {self.patch_size}."
                           f"The border will be ignored, add backbone_padding for pixel-wise tasks.")
 
+        # When spectral patching is used the tensor must be transposed in order
+        # to operate over the proper dimension. 
+        x = self.dim_transposer(x)
         x = self.proj(x)
         if self.flatten:
             x = x.flatten(2).transpose(1, 2)  # B,C,T,H,W -> B,C,L -> B,L,C
@@ -234,6 +252,7 @@ class PrithviViT(nn.Module):
     def __init__(self,
                  img_size: int | tuple[int, int] = 224,
                  patch_size: int | tuple[int, int, int] = (1, 16, 16),
+                 band_patch_size: int = None, 
                  num_frames: int = 1,
                  in_chans: int = 3,
                  embed_dim: int = 1024,
@@ -256,10 +275,20 @@ class PrithviViT(nn.Module):
         if isinstance(patch_size, int):
             patch_size = (1, patch_size, patch_size)
 
+        self.band_patch_size = band_patch_size
+
+        # If spectral patching is being used, we need a way to evaluate the
+        # extra number of patches.
+        if self.band_patch_size:
+            self.eval_c_patches = lambda c: c // self.patch_embed.band_patch_size
+        else:
+            self.eval_c_patches = lambda c: 1
+
         # 3D patch embedding
         self.patch_embed = PatchEmbed(
             input_size=(num_frames,) + self.img_size,
             patch_size=patch_size,
+            band_patch_size=band_patch_size,
             in_chans=in_chans,
             embed_dim=embed_dim,
         )
@@ -336,7 +365,7 @@ class PrithviViT(nn.Module):
 
         return sequence_unmasked, mask, ids_restore
 
-    def interpolate_pos_encoding(self, x, t, w, h):
+    def interpolate_pos_encoding(self, x, t, c, w, h):
         """
         Adapted from:
         - transformers.models.vit.modeling_vit.ViTEmbeddings.interpolate_pos_encoding,
@@ -348,6 +377,7 @@ class PrithviViT(nn.Module):
 
         class_pos_embed = self.pos_embed[:, :1]
         patch_pos_embed = self.pos_embed[:, 1:]
+        c_patches = self.eval_c_patches(c)
         t_patches = t // self.patch_embed.patch_size[0]
         w_patches = w // self.patch_embed.patch_size[1]
         h_patches = h // self.patch_embed.patch_size[2]
@@ -357,10 +387,11 @@ class PrithviViT(nn.Module):
 
         patch_pos_embed = nn.functional.interpolate(
             patch_pos_embed,
-            size=(h_patches, w_patches),
+            size=(c_patches*h_patches, w_patches), # Accounting the extra patches produced by the spectral patching
             mode='bicubic',
             align_corners=True,
         )
+
         patch_pos_embed = patch_pos_embed.permute(0, 2, 3, 1).view(1, -1, self.embed_dim)
         return torch.cat((class_pos_embed, patch_pos_embed), dim=1)
 
@@ -373,12 +404,12 @@ class PrithviViT(nn.Module):
         if len(x.shape) == 4 and self.patch_embed.input_size[0] == 1:
             # add time dim
             x = x.unsqueeze(2)
-        t, h, w = x.shape[-3:]
+        t, c, h, w = x.shape[-4:]
 
         # embed patches
         x = self.patch_embed(x)
 
-        pos_embed = self.interpolate_pos_encoding(x, t, h, w)
+        pos_embed = self.interpolate_pos_encoding(x, t, c, h, w)
         # add pos embed w/o cls token
         x = x + pos_embed[:, 1:, :]
 
@@ -414,12 +445,13 @@ class PrithviViT(nn.Module):
         if len(x.shape) == 4 and self.patch_embed.input_size[0] == 1:
             # add time dim
             x = x.unsqueeze(2)
-        t, h, w = x.shape[-3:]
+        c, t, h, w = x.shape[-4:]
 
         # embed patches
+
         x = self.patch_embed(x)
 
-        pos_embed = self.interpolate_pos_encoding(x, t, h, w)
+        pos_embed = self.interpolate_pos_encoding(x, t, c, h, w)
         # add pos embed w/o cls token
         x = x + pos_embed[:, 1:, :]
 
@@ -444,22 +476,27 @@ class PrithviViT(nn.Module):
 
         x = self.norm(x)
         out[-1] = x
+
         return out
 
     def prepare_features_for_image_model(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
         out = []
         effective_time_dim = self.patch_embed.input_size[0] // self.patch_embed.patch_size[0]
+        c = self.eval_c_patches(self.patch_embed.in_chans)
+
         for x in features:
             x_no_token = x[:, 1:, :]
             number_of_tokens = x_no_token.shape[1]
-            tokens_per_timestep = number_of_tokens // effective_time_dim
+            tokens_per_timestep = number_of_tokens // effective_time_dim // c
             h = int(np.sqrt(tokens_per_timestep))
+
             encoded = rearrange(
                 x_no_token,
-                "batch (t h w) e -> batch (t e) h w",
+                "batch (t h w c) e -> batch (t e) (c h) w",
                 e=self.embed_dim,
                 t=effective_time_dim,
                 h=h,
+                c=c,
             )
             out.append(encoded)
         return out
