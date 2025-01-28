@@ -70,35 +70,29 @@ def get_transform(train, image_size=896):
         transforms.append(A.HorizontalFlip(p=0.5))
     else:
         transforms.append(A.CenterCrop(width=image_size, height=image_size))
-    # transforms.append(A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), max_pixel_value=255))
-    # transforms.append(A.ToFloat())
     transforms.append(T.ToTensorV2())
-    # return A.Compose(transforms, additional_targets={'boxes': 'bboxes', 'masks': 'mask'})
     return A.Compose(transforms, bbox_params=A.BboxParams(format="pascal_voc", label_fields=['labels']), is_check_shapes=False)
-    
+
+
 def apply_transforms(sample, transforms):
 
 
     # pdb.set_trace()
-    sample['image']=torch.stack(tuple(sample["image"]))
+    sample['image'] = torch.stack(tuple(sample["image"]))
     sample['image'] = sample['image'].permute(1, 2, 0) if len(sample['image'].shape) == 3 else sample['image'].permute(0, 2, 3, 1)
     sample['image'] = np.array(sample['image'].cpu())
     sample["masks"] = [np.array(torch.stack(tuple(x)).cpu()) for x in sample["masks"]]
-    # sample["masks"] = np.array(sample["masks"].cpu())
     sample["boxes"] = np.array(sample["boxes"].cpu())
     sample["labels"] = np.array(sample["labels"].cpu())
-    # sample["boxes"] = [torch.stack(tuple(x)) for x in sample["masks"]]
-    # sample["labels"] =  
     transformed = transforms(image=sample['image'],
                              masks=sample["masks"], 
-                             # bboxes=np.array(torch.stack(tuple(sample["boxes"]), dim=0).cpu()), 
                              bboxes=sample["boxes"],
                              labels=sample["labels"])
-    
-    transformed['boxes'] = torch.tensor(transformed['bboxes'])
+
+    transformed['boxes'] = torch.tensor(transformed['bboxes'], dtype=torch.float32)
     transformed['labels'] = torch.tensor(transformed['labels'], dtype=torch.int64)
     del transformed['bboxes']
-    # print("Done transform")
+
     return transformed
 
 
@@ -131,9 +125,11 @@ class Normalize(Callable):
         # pdb.set_trace()
         return batch
 
+
 class IdentityTransform(nn.Module):
     def __init__(self):
         super().__init__()
+
     def forward(self, x):
         return x
 
@@ -169,7 +165,7 @@ class mVHR10DataModule(NonGeoDataModule):
         self.train_transform = partial(apply_transforms,transforms=get_transform(True))
         self.val_transform = partial(apply_transforms,transforms=get_transform(False))
         self.test_transform = partial(apply_transforms,transforms=get_transform(False))
-        ### add normalisation here
+
         self.aug = Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225), max_pixel_value=255)
 
         self.root = root
