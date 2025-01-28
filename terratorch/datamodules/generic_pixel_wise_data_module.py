@@ -96,8 +96,6 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
         ignore_split_file_extensions: bool = True,
         allow_substring_split_file: bool = True,
         dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
-        predict_dataset_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
-        predict_output_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
         output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         predict_dataset_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
         predict_output_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
