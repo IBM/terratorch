@@ -1,7 +1,5 @@
 # Copyright contributors to the Terratorch project
 
-from collections.abc import Callable
-
 import torch
 import torch.nn.functional as F  # noqa: N812
 from segmentation_models_pytorch.base import SegmentationModel
@@ -28,8 +26,9 @@ class PixelWiseModel(Model, SegmentationModel):
         encoder: nn.Module,
         decoder: nn.Module,
         head_kwargs: dict,
+        decoder_includes_head: bool = False,
         auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
-        prepare_features_for_image_model: Callable | None = None,
+        neck: nn.Module | None = None,
         rescale: bool = True,  # noqa: FBT002, FBT001
     ) -> None:
         """Constructor
@@ -39,62 +38,44 @@ class PixelWiseModel(Model, SegmentationModel):
             encoder (nn.Module): Encoder to be used
             decoder (nn.Module): Decoder to be used
             head_kwargs (dict): Arguments to be passed at instantiation of the head.
+            decoder_includes_head (bool): Whether the decoder already incldes a head. If true, a head will not be added. Defaults to False.
             auxiliary_heads (list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None, optional): List of
                 AuxiliaryHeads with heads to be instantiated. Defaults to None.
-            prepare_features_for_image_model (Callable | None, optional): Function applied to encoder outputs.
-                Defaults to None.
+            neck (nn.Module | None): Module applied between backbone and decoder.
+                Defaults to None, which applies the identity.
             rescale (bool, optional): Rescale the output of the model if it has a different size than the ground truth.
                 Uses bilinear interpolation. Defaults to True.
         """
         super().__init__()
 
-        if "multiple_embed" in head_kwargs:
-            self.multiple_embed = head_kwargs.pop("multiple_embed")
-        else:
-            self.multiple_embed = False
-
         self.task = task
         self.encoder = encoder
         self.decoder = decoder
-        self.head = self._get_head(task, decoder.output_embed_dim, head_kwargs)
+        self.head = (
+            self._get_head(task, decoder.out_channels, head_kwargs) if not decoder_includes_head else nn.Identity()
+        )
 
         if auxiliary_heads is not None:
             aux_heads = {}
             for aux_head_to_be_instantiated in auxiliary_heads:
                 aux_head: nn.Module = self._get_head(
-                    task, aux_head_to_be_instantiated.decoder.output_embed_dim, head_kwargs
-                )
+                    task, aux_head_to_be_instantiated.decoder.out_channels, head_kwargs
+                ) if not aux_head_to_be_instantiated.decoder_includes_head else nn.Identity()
                 aux_head = nn.Sequential(aux_head_to_be_instantiated.decoder, aux_head)
                 aux_heads[aux_head_to_be_instantiated.name] = aux_head
         else:
             aux_heads = {}
         self.aux_heads = nn.ModuleDict(aux_heads)
 
-        self.prepare_features_for_image_model = prepare_features_for_image_model
+        self.neck = neck
         self.rescale = rescale
-
-        # Defining the method for dealing withe the encoder embedding
-        if self.multiple_embed:
-            self.embed_handler = self._multiple_embedding_outputs
-        else:
-            self.embed_handler = self._single_embedding_output
 
     def freeze_encoder(self):
         freeze_module(self.encoder)
 
     def freeze_decoder(self):
-        freeze_module(self.encoder)
+        freeze_module(self.decoder)
         freeze_module(self.head)
-
-    def _single_embedding_output(self, features: torch.Tensor) -> torch.Tensor:
-        decoder_output = self.decoder([f.clone() for f in features])
-
-        return decoder_output
-
-    def _multiple_embedding_outputs(self, features: tuple[torch.Tensor]) -> torch.Tensor:
-        decoder_output = self.decoder(*features)
-
-        return decoder_output
 
     # TODO: do this properly
     def check_input_shape(self, x: torch.Tensor) -> bool:  # noqa: ARG002
@@ -106,24 +87,29 @@ class PixelWiseModel(Model, SegmentationModel):
             x = x.squeeze(1)
         return x
 
-    def forward(self, x: torch.Tensor) -> ModelOutput:
+    def forward(self, x: torch.Tensor, **kwargs) -> ModelOutput:
         """Sequentially pass `x` through model`s encoder, decoder and heads"""
         self.check_input_shape(x)
-        input_size = x.shape[-2:]
-        features = self.encoder(x)
-
-        # some models need their features reshaped
-
-        if self.prepare_features_for_image_model:
-            prepare = self.prepare_features_for_image_model
+        if isinstance(x, torch.Tensor):
+            input_size = x.shape[-2:]
+        elif hasattr(kwargs, 'image_size'):
+            input_size = kwargs['image_size']
+        elif isinstance(x, dict):
+            # Multimodal input in passed as dict
+            input_size = list(x.values())[0].shape[-2:]
         else:
+            ValueError('Could not infer input shape.')
+        features = self.encoder(x, **kwargs)
+
+        ## only for backwards compatibility with pre-neck times.
+        if self.neck:
+            prepare = self.neck
+        else:
+            # for backwards compatibility, if this is defined in the encoder, use it
             prepare = getattr(self.encoder, "prepare_features_for_image_model", lambda x: x)
 
-        # Dealing with cases in which the encoder returns more than one
-        # output
         features = prepare(features)
-
-        decoder_output = self.embed_handler(features=features)
+        decoder_output = self.decoder([f.clone() for f in features])
         mask = self.head(decoder_output)
         if self.rescale and mask.shape[-2:] != input_size:
             mask = F.interpolate(mask, size=input_size, mode="bilinear")

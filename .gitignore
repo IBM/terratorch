@@ -9,3 +9,14 @@ dist/*
 **/*pth
 .venv/*
 venv/*
+examples/notebooks/config.yaml
+examples/notebooks/wxc_input_u_v_t_p_output_theta_uw_vw_era5_training_data_hourly_2015_constant_mu_sigma_scaling05.nc
+tests/all_ecos_random/*
+examples/**/*tif*
+**/climatology/*
+**/lightning_logs/*
+**/merra-2/*
+**/*.bin
+*.stdout
+*.log
+**/*.un~

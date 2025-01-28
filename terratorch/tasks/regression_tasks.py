@@ -1,9 +1,11 @@
 """This module contains the regression task and its auxiliary classes."""
 
 from collections.abc import Sequence
+from functools import partial
 from typing import Any
 import gc
 
+import logging
 import lightning
 import matplotlib.pyplot as plt
 import torch
@@ -11,17 +13,20 @@ import torch.nn.functional as F
 from lightning.pytorch.callbacks import Callback
 from torch import Tensor, nn
 from torchgeo.datasets.utils import unbind_samples
-from torchgeo.trainers import BaseTask
 from torchmetrics import MeanAbsoluteError, MeanSquaredError, MetricCollection
 from torchmetrics.metric import Metric
 from torchmetrics.wrappers.abstract import WrapperMetric
 
-from terratorch.models.model import AuxiliaryHead, Model, ModelOutput, get_factory
+from terratorch.models.model import AuxiliaryHead, Model, ModelOutput
+from terratorch.registry.registry import MODEL_FACTORY_REGISTRY
 from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
 from terratorch.tasks.tiled_inference import TiledInferenceParameters, tiled_inference
+from terratorch.tasks.base_task import TerraTorchTask
 
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
+
+logger = logging.getLogger("terratorch")
 
 
 class RootLossWrapper(nn.Module):
@@ -116,7 +121,7 @@ class IgnoreIndexMetricWrapper(WrapperMetric):
         self.metric.reset()
 
 
-class PixelwiseRegressionTask(BaseTask):
+class PixelwiseRegressionTask(TerraTorchTask):
     """Pixelwise Regression Task that accepts models from a range of sources.
 
     This class is analog in functionality to
@@ -127,12 +132,14 @@ class PixelwiseRegressionTask(BaseTask):
         - Accepts the specification of a model factory
         - Logs metrics per class
         - Does not have any callbacks by default (TorchGeo tasks do early stopping by default)
-        - Allows the setting of optimizers in the constructor"""
+        - Allows the setting of optimizers in the constructor
+        - Allows to evaluate on multiple test dataloaders"""
 
     def __init__(
         self,
         model_args: dict,
-        model_factory: str,
+        model_factory: str | None = None,
+        model: torch.nn.Module | None = None,
         loss: str = "mse",
         aux_heads: list[AuxiliaryHead] | None = None,
         aux_loss: dict[str, float] | None = None,
@@ -149,12 +156,16 @@ class PixelwiseRegressionTask(BaseTask):
         freeze_decoder: bool = False,  # noqa: FBT001, FBT002
         plot_on_val: bool | int = 10,
         tiled_inference_parameters: TiledInferenceParameters | None = None,
+        test_dataloaders_names: list[str] | None = None,
+        lr_overrides: dict[str, float] | None = None,
     ) -> None:
         """Constructor
 
         Args:
             model_args (Dict): Arguments passed to the model factory.
-            model_factory (str): Name of ModelFactory class to be used to instantiate the model.
+            model_factory (str, optional): Name of ModelFactory class to be used to instantiate the model.
+                Is ignored when model is provided.
+            model (torch.nn.Module, optional): Custom model.
             loss (str, optional): Loss to be used. Currently, supports 'mse', 'rmse', 'mae' or 'huber' loss.
                 Defaults to "mse".
             aux_loss (dict[str, float] | None, optional): Auxiliary loss weights.
@@ -181,46 +192,38 @@ class PixelwiseRegressionTask(BaseTask):
                 If true, log every epoch. Defaults to 10. If int, will plot every plot_on_val epochs.
             tiled_inference_parameters (TiledInferenceParameters | None, optional): Inference parameters
                 used to determine if inference is done on the whole image or through tiling.
+            test_dataloaders_names (list[str] | None, optional): Names used to differentiate metrics when
+                multiple dataloaders are returned by test_dataloader in the datamodule. Defaults to None,
+                which assumes only one test dataloader is used.
+            lr_overrides (dict[str, float] | None, optional): Dictionary to override the default lr in specific
+                parameters. The key should be a substring of the parameter names (it will check the substring is
+                contained in the parameter name)and the value should be the new lr. Defaults to None.
         """
         self.tiled_inference_parameters = tiled_inference_parameters
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
-        self.model_factory = get_factory(model_factory)
-        super().__init__()
+
+        if model is not None and model_factory is not None:
+            logger.warning("A model_factory and a model was provided. The model_factory is ignored.")
+        if model is None and model_factory is None:
+            raise ValueError("A model_factory or a model (torch.nn.Module) must be provided.")
+
+        if model_factory and model is None:
+            self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
+
+        super().__init__(task="regression")
+
+        if model:
+            # Custom_model
+            self.model = model
+
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
-        self.test_loss_handler = LossHandler(self.test_metrics.prefix)
+        self.test_loss_handler: list[LossHandler] = []
+        for metrics in self.test_metrics:
+            self.test_loss_handler.append(LossHandler(metrics.prefix))
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
         self.monitor = f"{self.val_metrics.prefix}loss"
         self.plot_on_val = int(plot_on_val)
-
-    # overwrite early stopping
-    def configure_callbacks(self) -> list[Callback]:
-        return []
-
-    def configure_models(self) -> None:
-        self.model: Model = self.model_factory.build_model(
-            "regression", aux_decoders=self.aux_heads, **self.hparams["model_args"]
-        )
-        if self.hparams["freeze_backbone"]:
-            self.model.freeze_encoder()
-        if self.hparams["freeze_decoder"]:
-            self.model.freeze_decoder()
-
-    def configure_optimizers(
-        self,
-    ) -> "lightning.pytorch.utilities.types.OptimizerLRSchedulerConfig":
-        optimizer = self.hparams["optimizer"]
-        if optimizer is None:
-            optimizer = "Adam"
-        return optimizer_factory(
-            self.hparams["optimizer"],
-            self.hparams["lr"],
-            self.parameters(),
-            self.hparams["optimizer_hparams"],
-            self.hparams["scheduler"],
-            self.monitor,
-            self.hparams["scheduler_hparams"],
-        )
 
     def configure_losses(self) -> None:
         """Initialize the loss criterion.
@@ -264,7 +267,17 @@ class PixelwiseRegressionTask(BaseTask):
 
         self.train_metrics = MetricCollection(wrap_metrics_with_ignore_index(instantiate_metrics()), prefix="train/")
         self.val_metrics = MetricCollection(wrap_metrics_with_ignore_index(instantiate_metrics()), prefix="val/")
-        self.test_metrics = MetricCollection(wrap_metrics_with_ignore_index(instantiate_metrics()), prefix="test/")
+        if self.hparams["test_dataloaders_names"] is not None:
+            self.test_metrics = nn.ModuleList(
+                [
+                    MetricCollection(wrap_metrics_with_ignore_index(instantiate_metrics()), prefix=f"test/{dl_name}/")
+                    for dl_name in self.hparams["test_dataloaders_names"]
+                ]
+            )
+        else:
+            self.test_metrics = nn.ModuleList(
+                [MetricCollection(wrap_metrics_with_ignore_index(instantiate_metrics()), prefix="test/")]
+            )
 
     def training_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         """Compute the train loss and additional metrics.
@@ -276,27 +289,16 @@ class PixelwiseRegressionTask(BaseTask):
         """
         x = batch["image"]
         y = batch["mask"]
-        model_output: ModelOutput = self(x)
+        other_keys = batch.keys() - {"image", "mask", "filename"}
+        rest = {k: batch[k] for k in other_keys}
+
+        model_output: ModelOutput = self(x, **rest)
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
         y_hat = model_output.output
-        self.train_metrics(y_hat, y)
-        self.log_dict(self.train_metrics, on_epoch=True)
+        self.train_metrics.update(y_hat, y)
 
         return loss["loss"]
-
-    def _do_plot_samples(self, batch_index):
-        if not self.plot_on_val:  # dont plot if self.plot_on_val is 0
-            return False
-
-        return (
-            batch_index < BATCH_IDX_FOR_VALIDATION_PLOTTING
-            and hasattr(self.trainer, "datamodule")
-            and self.logger
-            and not self.current_epoch % self.plot_on_val  # will be True every self.plot_on_val epochs
-            and hasattr(self.logger, "experiment")
-            and (hasattr(self.logger.experiment, "add_figure") or hasattr(self.logger.experiment, "log_figure"))
-        )
 
     def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         """Compute the validation loss and additional metrics.
@@ -308,19 +310,21 @@ class PixelwiseRegressionTask(BaseTask):
         """
         x = batch["image"]
         y = batch["mask"]
-        model_output: ModelOutput = self(x)
+        other_keys = batch.keys() - {"image", "mask", "filename"}
+        rest = {k: batch[k] for k in other_keys}
+        model_output: ModelOutput = self(x, **rest)
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
-        self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
+        self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat = model_output.output
-        out = y_hat[y != -1]
-        mask = y[y != -1]
-        self.val_metrics(out, mask)
-        self.log_dict(self.val_metrics, on_epoch=True)
+        self.val_metrics.update(y_hat, y)
 
         if self._do_plot_samples(batch_idx):
             try:
                 datamodule = self.trainer.datamodule
                 batch["prediction"] = y_hat
+                if isinstance(batch["image"], dict):
+                    # Multimodal input
+                    batch["image"] = batch["image"][self.trainer.datamodule.rgb_modality]
                 for key in ["image", "mask", "prediction"]:
                     batch[key] = batch[key].cpu()
                 sample = unbind_samples(batch)[0]
@@ -348,12 +352,20 @@ class PixelwiseRegressionTask(BaseTask):
         """
         x = batch["image"]
         y = batch["mask"]
-        model_output: ModelOutput = self(x)
-        loss = self.test_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
-        self.test_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
+        other_keys = batch.keys() - {"image", "mask", "filename"}
+        rest = {k: batch[k] for k in other_keys}
+        model_output: ModelOutput = self(x, **rest)
+        if dataloader_idx >= len(self.test_loss_handler):
+            msg = "You are returning more than one test dataloader but not defining enough test_dataloaders_names."
+            raise ValueError(msg)
+        loss = self.test_loss_handler[dataloader_idx].compute_loss(model_output, y, self.criterion, self.aux_loss)
+        self.test_loss_handler[dataloader_idx].log_loss(
+            partial(self.log, add_dataloader_idx=False),  # We don't need the dataloader idx as prefixes are different
+            loss_dict=loss,
+            batch_size=x.shape[0],
+        )
         y_hat = model_output.output
-        self.test_metrics(y_hat, y)
-        self.log_dict(self.test_metrics, on_epoch=True)
+        self.test_metrics[dataloader_idx].update(y_hat, y)
 
     def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         """Compute the predicted class probabilities.
@@ -367,14 +379,18 @@ class PixelwiseRegressionTask(BaseTask):
             Output predicted probabilities.
         """
         x = batch["image"]
-        file_names = batch["filename"]
+        file_names = batch["filename"] if "filename" in batch else None
+        other_keys = batch.keys() - {"image", "mask", "filename"}
+        rest = {k: batch[k] for k in other_keys}
 
         def model_forward(x):
             return self(x).output
         
         if self.tiled_inference_parameters:
+            # TODO: tiled inference does not work with additional input data (**rest)
             y_hat: Tensor = tiled_inference(model_forward, x, 1, self.tiled_inference_parameters)
         else:
-            y_hat: Tensor = self(x).output
+
+            y_hat: Tensor = self(x, **rest).output
 
         return y_hat, file_names

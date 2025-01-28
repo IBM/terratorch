@@ -1,4 +1,4 @@
 mkdocs-material==9.4.14
 mkdocstrings[python]
-h5py==3.10.0
-geobench==1.0.0
+h5py==3.12.1
+jupyterlab

@@ -12,10 +12,12 @@ from torchgeo.models import get_weight
 from torchgeo.trainers import utils
 from torchvision.models._api import WeightsEnum
 
-from terratorch.models.model import Model, ModelFactory, ModelOutput, register_factory
+from terratorch.models.model import Model, ModelFactory, ModelOutput
+from terratorch.models.utils import extract_prefix_keys
+from terratorch.registry import MODEL_FACTORY_REGISTRY
 
 
-@register_factory
+@MODEL_FACTORY_REGISTRY.register
 class TimmModelFactory(ModelFactory):
     def build_model(
         self,
@@ -40,7 +42,7 @@ class TimmModelFactory(ModelFactory):
         if task != "classification":
             msg = f"timm models can only perform classification, but got task {task}"
             raise Exception(msg)
-        backbone_kwargs = _extract_prefix_keys(kwargs, "backbone_")
+        backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
         if isinstance(pretrained, bool):
             model = create_model(
                 backbone, pretrained=pretrained, num_classes=num_classes, in_chans=in_channels, **backbone_kwargs
@@ -81,17 +83,3 @@ class TimmModelWrapper(Model, nn.Module):
     def freeze_decoder(self):
         for param in self.timm_model.get_classifier().parameters():
             param.requires_grad = False
-
-
-def _extract_prefix_keys(d: dict, prefix: str) -> dict:
-    extracted_dict = {}
-    keys_to_del = []
-    for k, v in d.items():
-        if k.startswith(prefix):
-            extracted_dict[k.split(prefix)[1]] = v
-            keys_to_del.append(k)
-
-    for k in keys_to_del:
-        del d[k]
-
-    return extracted_dict

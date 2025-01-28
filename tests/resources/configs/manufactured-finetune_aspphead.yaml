@@ -21,7 +21,7 @@ trainer:
       init_args:
         monitor: val/loss
         patience: 100
-  max_epochs: 5
+  max_epochs: 2
   check_val_every_n_epoch: 1
   log_every_n_steps: 20
   enable_checkpointing: true
@@ -94,7 +94,7 @@ model:
   class_path: terratorch.tasks.SemanticSegmentationTask
   init_args:
     model_args:
-      decoder: "ASPPHead"
+      decoder: "ASPPSegmentationHead"
       decoder_dilations: [1, 6, 12, 18]
       decoder_channels: 256
       decoder_in_channels: 6

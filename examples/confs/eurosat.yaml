@@ -47,7 +47,7 @@ data:
       - B02
       - B03
       - B04
-      - B08A
+      - B8A
       - B11
       - B12
 
@@ -56,25 +56,23 @@ model:
   init_args:
     model_args:
       decoder: IdentityDecoder
-      pretrained: true
-      backbone: prithvi_vit_100
+      backbone_pretrained: true
+      backbone: prithvi_eo_v1_300
       head_dim_list:
         - 384
         - 128
-      in_channels: 6
-      bands:
+      backbone_bands:
         - BLUE
         - GREEN
         - RED
         - NIR_NARROW
         - SWIR_1
         - SWIR_2
-      num_frames: 1
       num_classes: 10
       head_dropout: 0.1
     loss: ce
     freeze_backbone: false
-    model_factory: PrithviModelFactory
+    model_factory: EncoderDecoderFactory
 optimizer:
   class_path: torch.optim.AdamW
   init_args:

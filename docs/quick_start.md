@@ -1,126 +1,137 @@
 # Quick start
-We suggest using Python==3.10.
-To get started, make sure to have [PyTorch](https://pytorch.org/get-started/locally/) >= 2.0.0 and [GDAL](https://gdal.org/index.html) installed. 
+We suggest using `3.10 <= Python <= 3.12`.
+To get started, make sure to have `[PyTorch](https://pytorch.org/get-started/locally/) >= 2.0.0` and [GDAL](https://gdal.org/index.html) installed.
 
 Installing GDAL can be quite a complex process. If you don't have GDAL set up on your system, we reccomend using a conda environment and installing it with `conda install -c conda-forge gdal`.
 
-For a stable point-release, use `pip install terratorch`. 
+For a stable point-release, use `pip install terratorch`.
 If you prefer to get the most recent version of the main branch, install the library with `pip install git+https://github.com/IBM/terratorch.git`.
 
 To install as a developer (e.g. to extend the library) clone this repo, and run `pip install -e .`.
 
 You can interact with the library at several levels of abstraction. Each deeper level of abstraction trades off some amount of flexibility for ease of use and configuration.
 
-## Creating Prithvi Backbones
-In the simplest case, we might only want access to one of the prithvi backbones and code all the rest ourselves. In this case, we can simply use the library as a backbone factory:
+## Creating Backbones
 
-```python title="Instantiating a prithvi backbone from timm"
-import timm
-import terratorch # even though we don't use the import directly, we need it so that the models are available in the timm registry
+In the simplest case, we might only want access a backbone and code all the rest ourselves. In this case, we can simply use the library as a backbone factory:
 
-# find available prithvi models by name
-print(timm.list_models("prithvi*"))
-# and those with pretrained weights
-print(timm.list_pretrained("prithvi*"))
+```python title="Instantiating a prithvi backbone"
+from terratorch import BACKBONE_REGISTRY
 
-# instantiate your desired model with features_only=True to obtain a backbone
-model = timm.create_model(
-    "prithvi_vit_100", num_frames=1, pretrained=True, features_only=True
-)
+# find available prithvi models
+print([model_name for model_name in BACKBONE_REGISTRY if "terratorch_prithvi" in model_name])
+>>> ['terratorch_prithvi_eo_tiny', 'terratorch_prithvi_eo_v1_100', 'terratorch_prithvi_eo_v2_300', 'terratorch_prithvi_eo_v2_600', 'terratorch_prithvi_eo_v2_300_tl', 'terratorch_prithvi_eo_v2_600_tl']
 
-# instantiate your model with weights of your own
-model = timm.create_model(
-    "prithvi_vit_100", num_frames=1, pretrained=True, pretrained_cfg_overlay={"file": "<path to weights>"}, features_only=True
+# show all models with list(BACKBONE_REGISTRY)
+
+# check a model is in the registry
+"terratorch_prithvi_eo_v2_300" in BACKBONE_REGISTRY
+>>> True
+
+# without the prefix, all internal registries will be searched until the first match is found
+"prithvi_eo_v1_100" in BACKBONE_REGISTRY
+>>> True
+
+# instantiate your desired model
+# the backbone registry prefix (e.g. `terratorch` or `timm`) is optional
+# in this case, the underlying registry is terratorch.
+model = BACKBONE_REGISTRY.build("prithvi_eo_v1_100", pretrained=True)
+
+# instantiate your model with more options, for instance, passing weights from your own file
+model = BACKBONE_REGISTRY.build(
+    "prithvi_eo_v2_300", num_frames=1, ckpt_path='path/to/model.pt'
 )
 # Rest of your PyTorch / PyTorchLightning code
 
 ```
 
+Internally, terratorch maintains several registries for components such as backbones or decoders. The top-level `BACKBONE_REGISTRY` collects all of them.
+
+The name passed to `build` is used to find the appropriate model constructor, which will be the first model from the first registry found with that name.
+
+To explicitly determine the registry that will build the model, you may prepend a prefix such as `timm_` to the model name. In this case, the `timm` model registry will be exclusively searched for the model.
+
 ## Directly creating a full model
-We also provide a model factory for a task specific model built on one of the Prithvi backbones:
+
+We also provide a model factory for a task specific model built on one a backbones:
 
 ```python title="Building a full model, with task specific decoder"
 import terratorch # even though we don't use the import directly, we need it so that the models are available in the timm registry
-from terratorch.models import PrithviModelFactory
+from terratorch.models import EncoderDecoderFactory
 from terratorch.datasets import HLSBands
 
-model_factory = PrithviModelFactory()
+model_factory = EncoderDecoderFactory()
 
 # Let's build a segmentation model
 # Parameters prefixed with backbone_ get passed to the backbone
 # Parameters prefixed with decoder_ get passed to the decoder
 # Parameters prefixed with head_ get passed to the head
 
-model = model_factory.build_model(task="segmentation",
-        backbone="prithvi_vit_100",
-        decoder="FCNDecoder",
-        in_channels=6,
-        bands=[
-            HLSBands.BLUE,
-            HLSBands.GREEN,
-            HLSBands.RED,
-            HLSBands.NIR_NARROW,
-            HLSBands.SWIR_1,
-            HLSBands.SWIR_2,
-        ],
-        num_classes=4,
-        pretrained=True,
-        num_frames=1,
-        decoder_channels=128,
-        head_dropout=0.2
-    )
+model = model_factory.build_model(
+    task="segmentation",
+    backbone="prithvi_eo_v2_300",
+    backbone_pretrained=True,
+    backbone_bands=[
+        HLSBands.BLUE,
+        HLSBands.GREEN,
+        HLSBands.RED,
+        HLSBands.NIR_NARROW,
+        HLSBands.SWIR_1,
+        HLSBands.SWIR_2,
+    ],
+    necks=[{"name": "SelectIndices", "indices": [-1]},
+           {"name": "ReshapeTokensToImage"}],
+    decoder="FCNDecoder",
+    decoder_channels=128,
+    head_dropout=0.1,
+    num_classes=4,
+)
 
 # Rest of your PyTorch / PyTorchLightning code
+.
+.
+.
+
 ```
 
 ## Training with Lightning Tasks
 
-At the highest level of abstraction, you can directly obtain a LightningModule ready to be trained. 
-We currently provide a semantic segmentation task and a pixel-wise regression task.
+At the highest level of abstraction, you can directly obtain a LightningModule ready to be trained.
 
 ```python title="Building a full Pixel-Wise Regression task"
+
+model_args = dict(
+  backbone="prithvi_eo_v2_300",
+  backbone_pretrained=True,
+  backbone_num_frames=1,
+  backbone_bands=[
+      HLSBands.BLUE,
+      HLSBands.GREEN,
+      HLSBands.RED,
+      HLSBands.NIR_NARROW,
+      HLSBands.SWIR_1,
+      HLSBands.SWIR_2,
+  ],
+  necks=[{"name": "SelectIndices", "indices": [-1]},
+               {"name": "ReshapeTokensToImage"}],
+  decoder="FCNDecoder",
+  decoder_channels=128,
+  head_dropout=0.1
+)
+
 task = PixelwiseRegressionTask(
     model_args,
-    prithvi_model_factory.PrithviModelFactory(),
+    "EncoderDecoderFactory",
     loss="rmse",
-    aux_loss={"fcn_aux_head": 0.4},
     lr=lr,
     ignore_index=-1,
-    optimizer=torch.optim.AdamW,
+    optimizer="AdamW",
     optimizer_hparams={"weight_decay": 0.05},
-    scheduler=OneCycleLR,
-    scheduler_hparams={
-        "max_lr": lr,
-        "epochs": max_epochs,
-        "steps_per_epoch": math.ceil(len(datamodule.train_dataset) / batch_size),
-        "pct_start": 0.05,
-        "interval": "step",
-    },
-    aux_heads=[
-        AuxiliaryHead(
-            "fcn_aux_head",
-            "FCNDecoder",
-            {"decoder_channels": 512, "decoder_in_index": 2, "decoder_num_convs": 2, "head_channel_list": [64]},
-        )
-    ],
 )
 
 # Pass this LightningModule to a Lightning Trainer, together with some LightningDataModule
 ```
-
-At this level of abstraction, you can also provide a configuration file (see [LightningCLI](https://lightning.ai/docs/pytorch/stable/cli/lightning_cli.html#lightning-cli)) with all the details of the training. See an example for semantic segmentation below:
-
-!!! info
-
-    To pass your own path from where to load the weights with the PrithviModelFactory, you can make use of timm's `pretrained_cfg_overlay`.
-    E.g. to pass a local path, you can add, under model_args:
-    
-    ```yaml
-    backbone_pretrained_cfg_overlay:
-        file: <local_path>
-    ```
-    Besides `file`, you can also pass `url`, `hf_hub_id`, amongst others. Check timm's documentation for full details.
-
+Alternatively, all the process can be summarized in configuration files written in YAML format, as seen below.
 ```yaml title="Configuration file for a Semantic Segmentation Task"
 # lightning.pytorch==2.1.1
 seed_everything: 0
@@ -129,8 +140,12 @@ trainer:
   strategy: auto
   devices: auto
   num_nodes: 1
-  precision: 16-mixed
-  logger: True # will use tensorboardlogger
+  precision: bf16
+  logger:
+    class_path: TensorBoardLogger
+    init_args:
+      save_dir: <path_to_experiment_dir>
+      name: <experiment_name>
   callbacks:
     - class_path: RichProgressBar
     - class_path: LearningRateMonitor
@@ -141,90 +156,55 @@ trainer:
   check_val_every_n_epoch: 1
   log_every_n_steps: 50
   enable_checkpointing: true
-  default_root_dir: <path to root dir>
+  default_root_dir: <path_to_experiment_dir>
 data:
-  class_path: GenericNonGeoSegmentationDataModule
+  class_path: terratorch.datamodules.sen1floods11.Sen1Floods11NonGeoDataModule
   init_args:
-    batch_size: 4
+    batch_size: 16
     num_workers: 8
-    constant_scale: 0.0001
-    rgb_indices:
-      - 2
+  dict_kwargs:
+    data_root: <path_to_data_root>
+    bands:
       - 1
-      - 0
-    filter_indices:
       - 2
-      - 1
-      - 0
       - 3
-      - 4
-      - 5
-    train_data_root: <path to train data root>
-    val_data_root: <path to val data root>
-    test_data_root: <path to test data root>
-    img_grep: "*_S2GeodnHand.tif"
-    label_grep: "*_LabelHand.tif"
-    means:
-      - 0.107582
-      - 0.13471393
-      - 0.12520133
-      - 0.3236181
-      - 0.2341743
-      - 0.15878009
-    stds:
-      - 0.07145836
-      - 0.06783548
-      - 0.07323416
-      - 0.09489725
-      - 0.07938496
-      - 0.07089546
-    num_classes: 2
-
+      - 8
+      - 11
+      - 12
 model:
-  class_path: SemanticSegmentationTask
+  class_path: terratorch.tasks.SemanticSegmentationTask
   init_args:
+    model_factory: EncoderDecoderFactory
     model_args:
-      decoder: FCNDecoder
-      pretrained: true
-      backbone: prithvi_vit_100
-      img_size: 512
-      in_channels: 6
-      bands:
-        - RED
-        - GREEN
+      backbone: prithvi_eo_v2_300
+      backbone_img_size: 512
+      backbone_pretrained: True
+      backbone_bands:
         - BLUE
+        - GREEN
+        - RED
         - NIR_NARROW
         - SWIR_1
         - SWIR_2
-      num_frames: 1
-      num_classes: 2
+      necks:
+        - name: SelectIndices
+          indices: [5, 11, 17, 23]
+        - name: ReshapeTokensToImage
+        - name: LearnedInterpolateToPyramidal
+      decoder: UperNetDecoder
+      decoder_channels: 256
+      head_channel_list: [256]
       head_dropout: 0.1
-      head_channel_list:
-        - 256
-    loss: ce
-    aux_heads:
-      - name: aux_head
-        decoder: FCNDecoder
-        decoder_args:
-          decoder_channels: 256
-          decoder_in_index: 2
-          decoder_num_convs: 1
-          head_channel_list:
-            - 64
-    aux_loss:
-      aux_head: 1.0
+      num_classes: 2
+    loss: dice
     ignore_index: -1
-    class_weights:
-      - 0.3
-      - 0.7
     freeze_backbone: false
-    freeze_decoder: false
-    model_factory: PrithviModelFactory
+    freeze_decoder: false    
 optimizer:
   class_path: torch.optim.AdamW
   init_args:
-    lr: 6.e-5
-    weight_decay: 0.05
+    lr: 1.e-4
+    weight_decay: 0.1
 lr_scheduler:
   class_path: ReduceLROnPlateau
   init_args:
@@ -232,8 +212,17 @@ lr_scheduler:
 
 ```
 
-To run this training task, simply execute `terratorch fit --config <path_to_config_file>`
+To run this training task using the YAML, simply execute:
+```sh
+terratorch fit --config <path_to_config_file>
+```
 
-To test your model on the test set, execute `terratorch test --config  <path_to_config_file> --ckpt_path <path_to_checkpoint_file>`
+To test your model on the test set, execute:
+```sh
+terratorch test --config  <path_to_config_file> --ckpt_path <path_to_checkpoint_file>
+```
 
-For inference, execute `terratorch predict -c <path_to_config_file> --ckpt_path<path_to_checkpoint> --predict_output_dir <path_to_output_dir> --data.init_args.predict_data_root <path_to_input_dir> --data.init_args.predict_dataset_bands <all bands in the predicted dataset, e.g. [BLUE,GREEN,RED,NIR_NARROW,SWIR_1,SWIR_2,0]>`
+For inference, execute:
+```sh
+terratorch predict -c <path_to_config_file> --ckpt_path<path_to_checkpoint> --predict_output_dir <path_to_output_dir> --data.init_args.predict_data_root <path_to_input_dir> --data.init_args.predict_dataset_bands <all bands in the predicted dataset, e.g. [BLUE,GREEN,RED,NIR_NARROW,SWIR_1,SWIR_2,0]>
+```

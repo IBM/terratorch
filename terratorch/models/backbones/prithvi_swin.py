@@ -4,21 +4,20 @@
 """
 
 import logging
-import math
 import warnings
 from collections import OrderedDict
-from pathlib import Path
 
 import torch
 from timm.models import SwinTransformer
 from timm.models._builder import build_model_with_cfg
 from timm.models._registry import generate_default_cfgs, register_model
-from timm.models.swin_transformer import checkpoint_filter_fn as timm_swin_checkpoint_filter_fn
 
 from terratorch.datasets.utils import HLSBands
-from terratorch.models.backbones.prithvi_select_patch_embed_weights import prithvi_select_patch_embed_weights
+from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
 from terratorch.models.backbones.swin_encoder_decoder import MMSegSwinTransformer
-from terratorch.models.backbones.utils import _estimate_in_chans
+from terratorch.datasets.utils import generate_bands_intervals
+
+logger = logging.getLogger(__name__)
 
 PRETRAINED_BANDS = [
     HLSBands.BLUE,
@@ -30,14 +29,12 @@ PRETRAINED_BANDS = [
 ]
 
 
-def _cfg(file: Path = "", **kwargs) -> dict:
-    return {
-        "file": file,
-        "source": "file",
-        "license": "mit",
-        # "first_conv": "patch_embed.proj",
-        **kwargs,
+default_cfgs = generate_default_cfgs(
+    {
+        "prithvi_swin_B": {},
+        "prithvi_swin_L": {},
     }
+)
 
 def convert_weights_swin2mmseg(ckpt):
     # from https://github.com/open-mmlab/mmsegmentation/blob/main/tools/model_converters/swin2mmseg.py
@@ -158,17 +155,28 @@ def checkpoint_filter_fn(state_dict: dict[str, torch.Tensor], model: torch.nn.Mo
         state_dict["head.fc.weight"] = model.head.fc.weight.detach().clone()
         state_dict["head.fc.bias"] = model.head.fc.bias.detach().clone()
 
-    state_dict = prithvi_select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands)
+    state_dict = select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands)
     return state_dict
 
 
 def _create_swin_mmseg_transformer(
     variant: str,
-    pretrained_bands: list[HLSBands],
-    model_bands: list[HLSBands],
+    pretrained_bands: list[HLSBands] | None = None,
+    model_bands: list[HLSBands | int] | None = None,
     pretrained: bool = False,  # noqa: FBT002, FBT001
     **kwargs,
 ):
+    if pretrained_bands is None:
+        pretrained_bands = PRETRAINED_BANDS
+
+    if model_bands is None:
+        model_bands: list[HLSBands | int] = pretrained_bands
+        logger.info(
+            f"Model bands not passed. Assuming bands are ordered in the same way as {PRETRAINED_BANDS}.\
+            Pretrained patch_embed layer may be misaligned with current bands"
+        )
+    else:
+        model_bands = [HLSBands.try_convert_to_hls_bands_enum(b) for b in model_bands]
     default_out_indices = tuple(i for i, _ in enumerate(kwargs.get("depths", (1, 1, 3, 1))))
     out_indices = kwargs.pop("out_indices", default_out_indices)
 
@@ -176,31 +184,41 @@ def _create_swin_mmseg_transformer(
     if "num_frames" in kwargs:
         kwargs = {k: v for k, v in kwargs.items() if k != "num_frames"}
 
-    kwargs["in_chans"] = _estimate_in_chans(model_bands=model_bands)
+    model_bands = generate_bands_intervals(model_bands)
+    kwargs["in_chans"] = len(model_bands)
 
     def checkpoint_filter_wrapper_fn(state_dict, model):
         return checkpoint_filter_fn(state_dict, model, pretrained_bands, model_bands)
 
-    model: MMSegSwinTransformer = build_model_with_cfg(
-        MMSegSwinTransformer,
-        variant,
-        pretrained,
-        pretrained_filter_fn=checkpoint_filter_wrapper_fn,
-        pretrained_strict=False,
-        feature_cfg={"flatten_sequential": True, "out_indices": out_indices},
-        **kwargs,
-    )
+    # When the pretrained configuration is not available in HF, we shift to 
+    # pretrained=False
+    try:
+        model: MMSegSwinTransformer = build_model_with_cfg(
+            MMSegSwinTransformer,
+            variant,
+            pretrained,
+            pretrained_filter_fn=checkpoint_filter_wrapper_fn,
+            pretrained_strict=False,
+            feature_cfg={"flatten_sequential": True, "out_indices": out_indices},
+            **kwargs,
+        )
+    except RuntimeError:
+        print(f"No pretrained configuration was found for the model {variant}.")
+        model: MMSegSwinTransformer = build_model_with_cfg(
+            MMSegSwinTransformer,
+            variant,
+            False,
+            pretrained_filter_fn=checkpoint_filter_wrapper_fn,
+            pretrained_strict=False,
+            feature_cfg={"flatten_sequential": True, "out_indices": out_indices},
+            **kwargs,
+        )
+
     model.pretrained_bands = pretrained_bands
     model.model_bands = model_bands
 
     def prepare_features_for_image_model(x):
         return [
-            # layer_output.reshape(
-            #     -1,
-            #     int(math.sqrt(layer_output.shape[1])),
-            #     int(math.sqrt(layer_output.shape[1])),
-            #     layer_output.shape[2],
-            # )
             layer_output.permute(0, 3, 1, 2).contiguous()
             for layer_output in x
         ]
@@ -214,7 +232,7 @@ def _create_swin_mmseg_transformer(
 def prithvi_swin_B(
     pretrained: bool = False,  # noqa: FBT002, FBT001
     pretrained_bands: list[HLSBands] | None = None,
-    bands: list[int] | None = None,
+    bands: list[HLSBands | int] | None = None,
     **kwargs,
 ) -> SwinTransformer:
     """Prithvi Swin B"""
@@ -222,7 +240,7 @@ def prithvi_swin_B(
         pretrained_bands = PRETRAINED_BANDS
     if bands is None:
         bands = pretrained_bands
-        logging.info(
+        logger.info(
             f"Model bands not passed. Assuming bands are ordered in the same way as {PRETRAINED_BANDS}.\
             Pretrained patch_embed layer may be misaligned with current bands"
         )
@@ -245,7 +263,7 @@ def prithvi_swin_B(
 def prithvi_swin_L(
     pretrained: bool = False,  # noqa: FBT002, FBT001
     pretrained_bands: list[HLSBands] | None = None,
-    bands: list[int] | None = None,
+    bands: list[HLSBands | int] | None = None,
     **kwargs,
 ) -> SwinTransformer:
     """Prithvi Swin L"""
@@ -253,7 +271,7 @@ def prithvi_swin_L(
         pretrained_bands = PRETRAINED_BANDS
     if bands is None:
         bands = pretrained_bands
-        logging.info(
+        logger.info(
             f"Model bands not passed. Assuming bands are ordered in the same way as {PRETRAINED_BANDS}.\
             Pretrained patch_embed layer may be misaligned with current bands"
         )

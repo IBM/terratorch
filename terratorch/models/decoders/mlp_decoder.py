@@ -5,10 +5,12 @@
 
 from torch import Tensor, nn
 import torch
-#from terratorch.registry import TERRATORCH_DECODER_REGISTRY
+
+from terratorch.registry import TERRATORCH_DECODER_REGISTRY
 
 
-#@TERRATORCH_DECODER_REGISTRY.register
+@TERRATORCH_DECODER_REGISTRY.register
+
 class MLPDecoder(nn.Module):
     """Identity decoder. Useful to pass the feature straight to the head."""
 

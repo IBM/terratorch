@@ -1,0 +1,142 @@
+# lightning.pytorch==2.1.1
+seed_everything: 0
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: 1 # Number of GPUs
+  num_nodes: 1
+  precision: 16-mixed
+  logger:
+    class_path: TensorBoardLogger
+    init_args:
+      save_dir: output/BurnScars
+      name: smp_resnet50
+#    class_path: WandbLogger
+#    init_args:
+#      project: TerraTorch_BurnScars
+#      name: smp_resnet50
+  callbacks:
+    - class_path: RichProgressBar
+    - class_path: LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+    - class_path: EarlyStopping
+      init_args:
+        monitor: val/loss
+        patience: 40
+
+  max_epochs: 200
+  check_val_every_n_epoch: 1
+  log_every_n_steps: 50
+  enable_checkpointing: true
+  default_root_dir: output/BurnScars
+
+data:
+  class_path: terratorch.datamodules.GenericNonGeoSegmentationDataModule
+  init_args:
+    batch_size: 4
+    num_workers: 8
+    constant_scale: 10000  # Scale 0-1 to 0-10000 (HLS pre-training data)
+    dataset_bands:  # Dataset bands
+      - BLUE
+      - GREEN
+      - RED
+      - NIR_NARROW
+      - SWIR_1
+      - SWIR_2
+    output_bands: # Model input bands
+      - BLUE
+      - GREEN
+      - RED
+      - NIR_NARROW
+      - SWIR_1
+      - SWIR_2
+    rgb_indices:
+      - 2
+      - 1
+      - 0
+    train_data_root: data/HLSBurnScars/training
+    val_data_root: data/HLSBurnScars/validation
+    test_data_root: data/HLSBurnScars/validation
+    img_grep: "*_merged.tif"
+    label_grep: "*.mask.tif"
+    means:  # pre-training stats (constant_scale: 10000)
+      - 775.229
+      - 1080.992
+      - 1228.585
+      - 2497.202
+      - 2204.213
+      - 1610.832
+    stds:
+      - 1281.526
+      - 1270.029
+      - 1399.480
+      - 1368.344
+      - 1291.676
+      - 1154.505
+#    means:  # dataset stats (Important: Set constant_scale: 1)
+#      -  0.033349706741586264
+#      -  0.05701185520536176
+#      -  0.05889748132001316
+#      -  0.2323245113436119
+#      -  0.1972854853760658
+#      -  0.11944914225186566
+#    stds:
+#      -  0.02269135568823774
+#      -  0.026807560223070237
+#      -  0.04004109844362779
+#      -  0.07791732423672691
+#      -  0.08708738838140137
+#      -  0.07241979477437814
+    num_classes: 2
+    train_transform:
+      - class_path: albumentations.RandomCrop
+        init_args:
+          height: 224
+          width: 224
+      - class_path: albumentations.HorizontalFlip
+        init_args:
+          p: 0.5
+      - class_path: ToTensorV2
+    no_data_replace: 0
+    no_label_replace: -1
+
+model:
+  class_path: terratorch.tasks.SemanticSegmentationTask
+  init_args:
+    model_factory: SMPModelFactory
+    model_args:
+      model: Unet # 'DeepLabV3', 'DeepLabV3Plus', 'FPN', 'Linknet', 'MAnet', 'PAN', 'PSPNet', 'Unet'
+      backbone: resnet50 # see segmentation_models_pytorch.encoders
+      pretrained: true
+      in_channels: 6 # Some backbones only support 3 channels, e.g., mit_b1
+      bands:
+        - BLUE
+        - GREEN
+        - RED
+        - NIR_NARROW
+        - SWIR_1
+        - SWIR_2
+      num_classes: 2
+    loss: dice # 'ce', 'jaccard', 'focal', 'dice'
+    freeze_backbone: false
+    freeze_decoder: false
+    plot_on_val: 10
+    ignore_index: -1
+    class_weights:  # Optional class weights for unbalanced datasets
+      - 0.1 # 88% not burned
+      - 0.9 # 11% burn scars
+    class_names:
+      - Not burned
+      - Burned
+
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 5.e-5
+    weight_decay: 0.05
+
+lr_scheduler:
+  class_path: ReduceLROnPlateau
+  init_args:
+    monitor: val/loss

@@ -1,0 +1,161 @@
+# lightning.pytorch==2.1.1
+seed_everything: 0
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: 16-mixed
+  logger:
+    class_path: TensorBoardLogger
+    init_args:
+      save_dir: output
+      name: multimae_sen1floods11
+  callbacks:
+    - class_path: RichProgressBar
+    - class_path: LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+    - class_path: EarlyStopping
+      init_args:
+        monitor: val/loss
+        patience: 40
+
+  max_epochs: 2
+  check_val_every_n_epoch: 1
+  log_every_n_steps: 50
+  enable_checkpointing: true
+  default_root_dir: output/multimae_sen1floods11/
+
+data:
+  class_path: terratorch.datamodules.GenericMultiModalDataModule
+  init_args:
+    task: 'segmentation'
+    batch_size: 4
+    num_workers: 0
+    modalities:
+      - S2L2A
+      - S1
+      - LULC
+    rgb_modality: S2L2A # If not provided, uses first modality
+    rgb_indices:
+      - 3
+      - 2
+      - 1
+
+    train_data_root:
+      S2L2A: data/sen1floods11/data/data/flood_events/HandLabeled/S2L2AHand
+      S1: data/sen1floods11/data/data/flood_events/HandLabeled/S1Hand
+      LULC: data/sen1floods11/data/data/flood_events/HandLabeled/LULCHand
+    train_label_data_root: data/sen1floods11/data/data/flood_events/HandLabeled/LabelHand
+    val_data_root:
+      S2L2A: data/sen1floods11/data/data/flood_events/HandLabeled/S2L2AHand
+      S1: data/sen1floods11/data/data/flood_events/HandLabeled/S1Hand
+      LULC: data/sen1floods11/data/data/flood_events/HandLabeled/LULCHand
+    val_label_data_root: data/sen1floods11/data/data/flood_events/HandLabeled/LabelHand
+    test_data_root:
+      S2L2A: data/sen1floods11/data/data/flood_events/HandLabeled/S2L2AHand
+      S1: data/sen1floods11/data/data/flood_events/HandLabeled/S1Hand
+      LULC: data/sen1floods11/data/data/flood_events/HandLabeled/LULCHand
+    test_label_data_root: data/sen1floods11/data/data/flood_events/HandLabeled/LabelHand
+
+    train_split: data/sen1floods11/splits/splits/flood_handlabeled/dev_train.txt
+    val_split: data/sen1floods11/splits/splits/flood_handlabeled/dev_valid.txt
+    test_split: data/sen1floods11/splits/splits/flood_handlabeled/dev_test.txt
+
+    allow_substring_file_names: True
+    image_grep:
+      S2L2A: "*_S2L2AHand.tif"
+      S1: "*_S1Hand.tif"
+      LULC: "*_LULCHand.npy"
+    label_grep: "*_LabelHand.tif"
+    no_label_replace: -1
+    no_data_replace: 0
+
+    means:
+      S2L2A:
+        - 1793.243
+        - 1924.863
+        - 2184.553
+        - 2340.936
+        - 2671.402
+        - 3240.082
+        - 3468.412
+        - 3563.244
+        - 3627.704
+        - 3711.071
+        - 3416.714
+        - 2849.625
+      S1:
+        - -12.577
+        - -20.265
+
+    stds:
+      S2L2A:
+        - 1160.144
+        - 1201.092
+        - 1219.943
+        - 1397.225
+        - 1400.035
+        - 1373.136
+        - 1429.17
+        - 1485.025
+        - 1447.836
+        - 1652.703
+        - 1471.002
+        - 1365.30
+      S1:
+        - 5.179
+        - 5.872
+
+    num_classes: 2
+
+    train_transform:
+      - class_path: albumentations.RandomCrop
+        init_args:
+          height: 224
+          width: 224
+      - class_path: albumentations.D4
+      - class_path: ToTensorV2
+
+
+model:
+  class_path: terratorch.tasks.SemanticSegmentationTask
+  init_args:
+    model_factory: EncoderDecoderFactory
+    model_args:
+      backbone_pretrained: false
+      backbone: multimae_base
+      backbone_input_adapters:
+        - S1
+        - S2L2A
+        - LULC
+      decoder: FCNDecoder  # UperNetDecoder
+      decoder_num_convs: 4  # only for FCNDecoder
+      # decoder_scale_modules: True  # only for UperNetDecoder
+      decoder_channels: 256
+      num_classes: 2
+      head_dropout: 0.1
+      head_channel_list:
+        - 256
+    loss: ce
+    ignore_index: -1
+    class_weights:
+      - 0.3
+      - 0.7
+    class_names:
+      - Others
+      - Flood
+    freeze_backbone: false
+    freeze_decoder: false
+
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 6.e-5
+    weight_decay: 0.05
+lr_scheduler:
+  class_path: ReduceLROnPlateau
+  init_args:
+    monitor: val/loss
+

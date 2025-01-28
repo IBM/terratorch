@@ -1,0 +1,114 @@
+seed_everything: 0
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: 16-mixed
+  logger: True # will use tensorboardlogger
+  callbacks:
+    - class_path: RichProgressBar
+    - class_path: LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+    - class_path: ModelCheckpoint
+      init_args:
+        filename: "{epoch}"
+        monitor: val/loss
+        save_last: True
+        enable_version_counter: False
+        save_top_k: 2
+  max_epochs: 20
+  check_val_every_n_epoch: 1
+  log_every_n_steps: 1
+  enable_checkpointing: true
+  default_root_dir: <PATH/TO/TRAINING/DIRECTORY>
+
+data:
+  class_path: terratorch.datamodules.Sen4MapLucasDataModule
+  init_args:
+    batch_size: 10
+    num_workers: 8
+    prefetch_factor: 3
+    # constant_scale: 0.0001
+    train_hdf5_path: <PATH/TO/train.h5>
+    train_hdf5_keys_path: <PATH/TO/train_keys.pkl>  # Optional, otherwise created during training at the cost of a few minutes.
+    test_hdf5_path: <PATH/TO/test.h5>
+    test_hdf5_keys_path: <PATH/TO/test_keys.pkl>  # Optional as above
+    val_hdf5_path: <PATH/TO/val.h5>
+    val_hdf5_keys_path: <PATH/TO/val_keys.pkl>  # Optional as above
+    dataset_bands:
+      - BLUE
+      - GREEN
+      - RED
+      - RED_EDGE_1
+      - RED_EDGE_2
+      - RED_EDGE_3
+      - NIR_BROAD
+      - NIR_NARROW
+      - SWIR_1
+      - SWIR_2
+    input_bands:
+      - BLUE
+      - GREEN
+      - RED
+      - RED_EDGE_1
+      - RED_EDGE_2
+      - RED_EDGE_3
+      - NIR_BROAD
+      - NIR_NARROW
+      - SWIR_1
+      - SWIR_2
+    crop_size: 15
+    train_shuffle: True
+    resize: True
+    resize_to:
+      - 224
+      - 224
+    resize_interpolation: bilinear
+    
+model:
+  # class_path: Sen4MapDataset.CustomClassificationTask
+  class_path: terratorch.tasks.ClassificationTask
+  init_args:
+    model_args:
+      decoder: IdentityDecoder
+      pretrained: true
+      backbone: prithvi_eo_v2_300
+      backbone_pretrained_cfg_overlay:
+        file: <PATH/TO/PRETRAINED/PRITHVI_VIT_300M_MODEL_CHECKPOINT>
+      backbone_patch_size: 16
+      backbone_pretrain_img_size: 224
+      # backbone_tubelet_size: 3
+      head_dim_list:
+        - 384
+        - 128
+      in_channels: 10
+      bands:
+        - BLUE
+        - GREEN
+        - RED
+        - RED_EDGE_1
+        - RED_EDGE_2
+        - RED_EDGE_3
+        - NIR_BROAD
+        - NIR_NARROW
+        - SWIR_1
+        - SWIR_2
+      num_frames: 12
+      num_classes: 10
+      head_dropout: 0.1
+    loss: ce
+    freeze_backbone: false
+    # freeze_decoder: false
+    model_factory: EncoderDecoderFactory
+
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 6.e-5
+    weight_decay: 0.05
+lr_scheduler:
+  class_path: ReduceLROnPlateau
+  init_args:
+    monitor: val/loss

@@ -5,20 +5,22 @@ from pathlib import Path
 
 import albumentations as A
 import h5py
-import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
 from albumentations.pytorch import ToTensorV2
-from matplotlib import colormaps
-from matplotlib.colors import Normalize
 from torchgeo.datasets import NonGeoDataset
 
-from terratorch.datasets.utils import to_tensor
+from terratorch.datasets.utils import (
+    clip_image,
+    default_transform,
+    validate_bands,
+)
 
 
 class MBeninSmallHolderCashewsNonGeo(NonGeoDataset):
+    """NonGeo dataset implementation for M-BeninSmallHolderCashews."""
     all_band_names = (
         "COASTAL_AEROSOL",
         "BLUE",
@@ -39,36 +41,79 @@ class MBeninSmallHolderCashewsNonGeo(NonGeoDataset):
 
     BAND_SETS = {"all": all_band_names, "rgb": rgb_bands}
 
+    splits = {"train": "train", "val": "valid", "test": "test"}
+
+    data_dir = "m-cashew-plant"
+    partition_file_template = "{partition}_partition.json"
+
     def __init__(
         self,
         data_root: str,
+        split: str = "train",
         bands: Sequence[str] = BAND_SETS["all"],
         transform: A.Compose | None = None,
-        split="train",
-        partition="default",
+        partition: str = "default",
+        use_metadata: bool = False,
     ) -> None:
+        """Initialize the dataset.
+
+        Args:
+            data_root (str): Path to the data root directory.
+            split (str): One of 'train', 'val', or 'test'.
+            bands (Sequence[str]): Bands to be used. Defaults to all bands.
+            transform (A.Compose | None): Albumentations transform to be applied.
+                Defaults to None, which applies default_transform().
+            partition (str): Partition name for the dataset splits. Defaults to 'default'.
+            use_metadata (bool): Whether to return metadata info (time).
+        """
         super().__init__()
-        if split not in ["train", "test", "val"]:
-            raise ValueError("Split must be one of 'train', 'test', 'val'.")
-        if split == "val":
-            split = "valid"
 
-        self.transform = transform if transform else lambda **batch: to_tensor(batch)
-        self._validate_bands(bands)
-        self.bands = bands
-        self.band_indices = np.array([self.all_band_names.index(b) for b in bands if b in self.all_band_names])
+        if split not in self.splits:
+            msg = f"Incorrect split '{split}', please choose one of {list(self.splits.keys())}."
+            raise ValueError(msg)
+        split_name = self.splits[split]
         self.split = split
-        data_root = Path(data_root)
-        self.data_directory = data_root / "m-cashew-plant"
 
-        partition_file = self.data_directory / f"{partition}_partition.json"
-        with open(partition_file, "r") as file:
+        validate_bands(bands, self.all_band_names)
+        self.bands = bands
+        self.band_indices = np.array([self.all_band_names.index(b) for b in bands])
+
+        self.use_metadata = use_metadata
+
+        self.data_root = Path(data_root)
+        self.data_directory = self.data_root / self.data_dir
+
+        partition_file = self.data_directory / self.partition_file_template.format(partition=partition)
+        with open(partition_file) as file:
             partitions = json.load(file)
 
-        if split not in partitions:
-            raise ValueError(f"Split '{split}' not found in partition file.")
+        if split_name not in partitions:
+            msg = f"Split '{split_name}' not found in partition file."
+            raise ValueError(msg)
 
-        self.image_files = [self.data_directory / (filename + ".hdf5") for filename in partitions[split]]
+        self.image_files = [self.data_directory / f"{filename}.hdf5" for filename in partitions[split_name]]
+
+        self.transform = transform if transform else default_transform
+
+    def _get_date(self, keys) -> torch.Tensor:
+        date_pattern = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+        date_str = None
+        for key in keys:
+            match = date_pattern.search(key)
+            if match:
+                date_str = match.group()
+                break
+
+        date = torch.zeros((1, 2), dtype=torch.float32)
+        if date_str:
+            date = pd.to_datetime(date_str, format="%Y-%m-%d")
+            date = torch.tensor([[date.year, date.dayofyear - 1]], dtype=torch.float32)
+
+        return date
+
+    def __len__(self) -> int:
+        return len(self.image_files)
 
     def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
         file_path = self.image_files[index]
@@ -79,78 +124,51 @@ class MBeninSmallHolderCashewsNonGeo(NonGeoDataset):
             bands = [np.array(h5file[key]) for key in keys]
 
             image = np.stack(bands, axis=-1)
-            date = self._get_date(h5file)
+            temporal_coords = self._get_date(h5file)
             mask = np.array(h5file["label"])
 
-        output = {"image": image.astype(np.float32), "date": date, "mask": mask}
+        output = {"image": image.astype(np.float32), "mask": mask}
 
-        output = self.transform(**output)
+        if self.transform:
+            output = self.transform(**output)
         output["mask"] = output["mask"].long()
+        if self.use_metadata:
+            output["temporal_coords"] = temporal_coords
 
         return output
 
-    def _get_date(self, file) -> np.ndarray:
-        date = None
-        date_pattern = re.compile(r"\d{4}-\d{2}-\d{2}")
+    def plot(self, sample: dict[str, torch.Tensor], suptitle: str | None = None) -> plt.Figure:
+        """Plot a sample from the dataset.
 
-        for key in file.keys():
-            match = date_pattern.search(key)
-            if match:
-                date = match.group()
-                break
+        Args:
+            sample (dict[str, torch.Tensor]): A sample returned by :meth:`__getitem__`.
+            suptitle (str | None): Optional string to use as a suptitle.
 
-        date = pd.to_datetime(date)
-        date_np = np.zeros((1, 3))
-        date_np[0, 0] = date.year
-        date_np[0, 1] = date.dayofyear - 1
-        date_np[0, 2] = date.hour
-        return date_np
+        Returns:
+            matplotlib.figure.Figure: A matplotlib Figure with the rendered sample.
+        """
+        rgb_indices = [self.bands.index(band) for band in self.rgb_bands if band in self.bands]
+        if len(rgb_indices) != 3:
+            msg = "Dataset doesn't contain some of the RGB bands"
+            raise ValueError(msg)
 
-    def _validate_bands(self, bands: Sequence[str]) -> None:
-        assert isinstance(bands, Sequence), "'bands' must be a sequence"
-        for band in bands:
-            if band not in self.all_band_names:
-                raise ValueError(f"'{band}' is an invalid band name.")
-
-    def __len__(self):
-        return len(self.image_files)
-
-    def plot(self, arg, suptitle: str | None = None) -> None:
-        if isinstance(arg, int):
-            sample = self.__getitem__(arg)
-        elif isinstance(arg, dict):
-            sample = arg
-        else:
-            raise TypeError("Argument must be an integer index or a sample dictionary.")
-
-        showing_predictions = sample["prediction"] if "prediction" in sample else None
-
-        self.plot_sample(sample, showing_predictions, suptitle)
-
-    def plot_sample(self, sample, prediction=None, suptitle: str | None = None, class_names=None):
-        rgb_indices = []
-        for band in self.rgb_bands:
-            if band in self.bands:
-                rgb_indices.append(self.bands.index(band))
-            else:
-                raise ValueError("Dataset doesn't contain some of the RGB bands")
-
-        image = sample["image"].numpy()
-        image = image[rgb_indices, :, :]
-        image = np.transpose(image, (1, 2, 0))
-        image = (image - image.min(axis=(0, 1))) * (1 / image.max(axis=(0, 1)))
-        image = np.clip(image, 0, 1)
-
+        image = sample["image"]
         mask = sample["mask"].numpy()
-        num_classes = len(np.unique(mask))
 
-        num_images = 4 if prediction is not None else 3
+        if torch.is_tensor(image):
+            image = image.permute(1, 2, 0).numpy()  # (H, W, C)
+
+        rgb_image = image[:, :, rgb_indices]
+        rgb_image = clip_image(rgb_image)
+
+        num_classes = len(np.unique(mask))
+        cmap = plt.get_cmap("jet")
+        norm = plt.Normalize(vmin=0, vmax=num_classes - 1)
+
+        num_images = 4 if "prediction" in sample else 3
         fig, ax = plt.subplots(1, num_images, figsize=(num_images * 4, 4), tight_layout=True)
 
-        cmap = colormaps["jet"]
-        norm = Normalize(vmin=0, vmax=num_classes - 1)
-
-        ax[0].imshow(image)
+        ax[0].imshow(rgb_image)
         ax[0].set_title("Image")
         ax[0].axis("off")
 
@@ -158,20 +176,16 @@ class MBeninSmallHolderCashewsNonGeo(NonGeoDataset):
         ax[1].set_title("Ground Truth Mask")
         ax[1].axis("off")
 
-        ax[2].imshow(image)
+        ax[2].imshow(rgb_image)
         ax[2].imshow(mask, cmap=cmap, alpha=0.3, norm=norm)
         ax[2].set_title("GT Mask on Image")
         ax[2].axis("off")
 
-        if prediction is not None:
-            prediction = prediction.numpy()
+        if "prediction" in sample:
+            prediction = sample["prediction"].numpy()
             ax[3].imshow(prediction, cmap=cmap, norm=norm)
             ax[3].set_title("Predicted Mask")
             ax[3].axis("off")
-
-        if class_names:
-            legend_handles = [mpatches.Patch(color=cmap(i), label=class_names[i]) for i in range(num_classes)]
-            ax[0].legend(handles=legend_handles, bbox_to_anchor=(1.05, 1), loc="upper left")
 
         if suptitle:
             plt.suptitle(suptitle)

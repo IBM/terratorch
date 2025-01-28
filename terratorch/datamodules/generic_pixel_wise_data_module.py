@@ -7,17 +7,21 @@ import os
 from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
-import numpy as np
+
 import albumentations as A
 import kornia.augmentation as K
+import numpy as np
 import torch
 from torch import Tensor
 from torch.utils.data import DataLoader
 from torchgeo.datamodules import NonGeoDataModule
 from torchgeo.transforms import AugmentationSequential
 
+from terratorch.datamodules.utils import wrap_in_compose_is_list
 from terratorch.datasets import GenericNonGeoPixelwiseRegressionDataset, GenericNonGeoSegmentationDataset, HLSBands
 from terratorch.io.file import load_from_file_or_attribute
+
+from .utils import check_dataset_stackability
 
 def wrap_in_compose_is_list(transform_list):
     # set check shapes to false because of the multitemporal case
@@ -95,6 +99,8 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
         predict_dataset_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
         predict_output_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
         output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        predict_dataset_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
+        predict_output_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
         constant_scale: float = 1,
         rgb_indices: list[int] | None = None,
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
@@ -105,6 +111,7 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
         no_data_replace: float | None = None,
         no_label_replace: int | None = None,
         drop_last: bool = True,
+        pin_memory: bool = False,
         **kwargs: Any,
     ) -> None:
         """Constructor
@@ -134,9 +141,14 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
             allow_substring_split_file (bool, optional): Whether the split files contain substrings
                 that must be present in file names to be included (as in mmsegmentation), or exact
                 matches (e.g. eurosat). Defaults to True.
-            dataset_bands (list[HLSBands | int] | None, optional): _description_. Defaults to None.
-            predict_dataset_bands (list[HLSBands | int] | None, optional): _description_. Defaults to None.
-            output_bands (list[HLSBands | int] | None, optional): _description_. Defaults to None.
+            dataset_bands (list[HLSBands | int] | None): Bands present in the dataset. Defaults to None.
+            output_bands (list[HLSBands | int] | None): Bands that should be output by the dataset.
+                Naming must match that of dataset_bands. Defaults to None.
+            predict_dataset_bands (list[HLSBands | int] | None): Overwrites dataset_bands
+                with this value at predict time.
+                Defaults to None, which does not overwrite.
+            predict_output_bands (list[HLSBands | int] | None): Overwrites output_bands
+                with this value at predict time. Defaults to None, which does not overwrite.
             constant_scale (float, optional): _description_. Defaults to 1.
             rgb_indices (list[int] | None, optional): _description_. Defaults to None.
             train_transform (Albumentations.Compose | None): Albumentations transform
@@ -161,6 +173,8 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
             reduce_zero_label (bool): Subtract 1 from all labels. Useful when labels start from 1 instead of the
                 expected 0. Defaults to False.
             drop_last (bool): Drop the last batch if it is not complete. Defaults to True.
+            pin_memory (bool): If ``True``, the data loader will copy Tensors
+            into device/CUDA pinned memory before returning them. Defaults to False.
         """
         super().__init__(GenericNonGeoSegmentationDataset, batch_size, num_workers, **kwargs)
         self.num_classes = num_classes
@@ -179,6 +193,7 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
         self.no_data_replace = no_data_replace
         self.no_label_replace = no_label_replace
         self.drop_last = drop_last
+        self.pin_memory = pin_memory
 
         self.train_label_data_root = train_label_data_root
         self.val_label_data_root = val_label_data_root
@@ -299,6 +314,9 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
         """
         dataset = self._valid_attribute(f"{split}_dataset", "dataset")
         batch_size = self._valid_attribute(f"{split}_batch_size", "batch_size")
+
+        batch_size = check_dataset_stackability(dataset, batch_size)
+
         return DataLoader(
             dataset=dataset,
             batch_size=batch_size,
@@ -306,6 +324,7 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
             num_workers=self.num_workers,
             collate_fn=self.collate_fn,
             drop_last=split == "train" and self.drop_last,
+            pin_memory=self.pin_memory,
         )
 
 
@@ -336,9 +355,9 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         ignore_split_file_extensions: bool = True,
         allow_substring_split_file: bool = True,
         dataset_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
+        output_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
         predict_dataset_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
         predict_output_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
-        output_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
         constant_scale: float = 1,
         rgb_indices: list[int] | None = None,
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
@@ -349,6 +368,7 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         no_data_replace: float | None = None,
         no_label_replace: int | None = None,
         drop_last: bool = True,
+        pin_memory: bool = False,
         **kwargs: Any,
     ) -> None:
         """Constructor
@@ -377,9 +397,14 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
             allow_substring_split_file (bool, optional): Whether the split files contain substrings
                 that must be present in file names to be included (as in mmsegmentation), or exact
                 matches (e.g. eurosat). Defaults to True.
-            dataset_bands (list[HLSBands | int] | None, optional): _description_. Defaults to None.
-            predict_dataset_bands (list[HLSBands | int] | None, optional): _description_. Defaults to None.
-            output_bands (list[HLSBands | int] | None, optional): _description_. Defaults to None.
+            dataset_bands (list[HLSBands | int] | None): Bands present in the dataset. Defaults to None.
+            output_bands (list[HLSBands | int] | None): Bands that should be output by the dataset.
+                Naming must match that of dataset_bands. Defaults to None.
+            predict_dataset_bands (list[HLSBands | int] | None): Overwrites dataset_bands
+                with this value at predict time.
+                Defaults to None, which does not overwrite.
+            predict_output_bands (list[HLSBands | int] | None): Overwrites output_bands
+                with this value at predict time. Defaults to None, which does not overwrite.
             constant_scale (float, optional): _description_. Defaults to 1.
             rgb_indices (list[int] | None, optional): _description_. Defaults to None.
             train_transform (Albumentations.Compose | None): Albumentations transform
@@ -404,6 +429,9 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
             reduce_zero_label (bool): Subtract 1 from all labels. Useful when labels start from 1 instead of the
                 expected 0. Defaults to False.
             drop_last (bool): Drop the last batch if it is not complete. Defaults to True.
+            pin_memory (bool): If ``True``, the data loader will copy Tensors
+            into device/CUDA pinned memory before returning them. Defaults to False.
+
         """
         super().__init__(GenericNonGeoPixelwiseRegressionDataset, batch_size, num_workers, **kwargs)
         self.img_grep = img_grep
@@ -418,6 +446,7 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         self.ignore_split_file_extensions = ignore_split_file_extensions
         self.allow_substring_split_file = allow_substring_split_file
         self.drop_last = drop_last
+        self.pin_memory = pin_memory
         self.expand_temporal_dimension = expand_temporal_dimension
         self.reduce_zero_label = reduce_zero_label
 
@@ -510,6 +539,7 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         if stage in ["predict"] and self.predict_root:
             self.predict_dataset = self.dataset_class(
                 self.predict_root,
+                image_grep=self.img_grep,
                 dataset_bands=self.predict_dataset_bands,
                 output_bands=self.predict_output_bands,
                 constant_scale=self.constant_scale,
@@ -520,7 +550,7 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
             )
-
+       
     def _dataloader_factory(self, split: str) -> DataLoader[dict[str, Tensor]]:
         """Implement one or more PyTorch DataLoaders.
 
@@ -536,6 +566,9 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         """
         dataset = self._valid_attribute(f"{split}_dataset", "dataset")
         batch_size = self._valid_attribute(f"{split}_batch_size", "batch_size")
+
+        batch_size = check_dataset_stackability(dataset, batch_size)
+
         return DataLoader(
             dataset=dataset,
             batch_size=batch_size,
@@ -543,4 +576,5 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
             num_workers=self.num_workers,
             collate_fn=self.collate_fn,
             drop_last=split == "train" and self.drop_last,
+            pin_memory=self.pin_memory,
         )
