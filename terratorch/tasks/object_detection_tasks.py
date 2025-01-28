@@ -179,19 +179,20 @@ class ObjectDetectionTask(TerraTorchTask):
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=batch_size)
         self.val_metrics.update(y_hat, y)
 
-        if self._do_plot_samples(batch_idx) and self.trainer.datamodule.val_dataset:
+        if self._do_plot_samples(batch_idx):
             try:
                 datamodule = self.trainer.datamodule
-                batch['prediction_boxes'] = [b['boxes'].cpu() for b in y_hat]
-                batch['prediction_labels'] = [b['labels'].cpu() for b in y_hat]
-                batch['prediction_scores'] = [b['scores'].cpu() for b in y_hat]
+                batch["prediction_boxes"] = [b["boxes"].cpu() for b in y_hat]
+                batch["prediction_labels"] = [b["labels"].cpu() for b in y_hat]
+                batch["prediction_scores"] = [b["scores"].cpu() for b in y_hat]
+                batch["image"] = torch.unbind(batch["image"])
+                for key in ["image", "boxes", "labels", "masks"]:
+                    batch[key] = [b.cpu() for b in batch[key]]
                 sample = unbind_samples(batch)[0]
                 # Convert image to uint8 for plotting
-                if torch.is_floating_point(sample['image']):
-                    sample['image'] *= 255
-                    sample['image'] = sample['image'].to(torch.uint8)
-                sample['image'] = sample['image'].cpu()
-                fig: Figure | None = None
+                if torch.is_floating_point(sample["image"]):
+                    sample["image"] *= 255
+                    sample["image"] = sample["image"].to(torch.uint8)
                 fig = datamodule.dataset.plot(sample)
                 if fig:
                     summary_writer = self.logger.experiment
