@@ -388,6 +388,76 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             data = np.nan_to_num(data, nan=nan_replace)
         return data
 
+    def plot(self, sample: dict[str, torch.Tensor], suptitle: str | None = None) -> Figure:
+        """Plot a sample from the dataset.
+
+        Args:
+            sample: a sample returned by :meth:`__getitem__`
+            suptitle: optional string to use as a suptitle
+
+        Returns:
+            a matplotlib Figure with the rendered sample
+
+        .. versionadded:: 0.2
+        """
+        image = sample["image"]
+        if isinstance(image, torch.Tensor):
+            image = image.numpy()
+        image = image.take(self.rgb_indices, axis=0)
+        image = np.transpose(image, (1, 2, 0))
+        image = (image - image.min(axis=(0, 1))) * (1 / image.max(axis=(0, 1)))
+        image = np.clip(image, 0, 1)
+
+        if "mask" in sample:
+            mask = sample["mask"]
+            if isinstance(mask, torch.Tensor):
+                mask = mask.numpy()
+            if mask.ndim == 2:
+                mask = np.expand_dims(mask, axis=-1)
+            # Convert masked regions to 0.
+            mask = mask * -1 + 1
+        else:
+            mask = None
+
+        if "prediction" in sample:
+            prediction = sample["prediction"]
+            if isinstance(prediction, torch.Tensor):
+                prediction = prediction.numpy()
+            # Assuming reconstructed image
+            prediction = prediction.take(self.rgb_indices, axis=0)
+            prediction = np.transpose(prediction, (1, 2, 0))
+            prediction = (prediction - image.min(axis=(0, 1))) * (1 / image.max(axis=(0, 1)))
+            prediction = np.clip(prediction, 0, 1)
+        else:
+            prediction = None
+
+        return self._plot_sample(
+            image,
+            mask=mask,
+            prediction=prediction,
+            suptitle=suptitle,
+        )
+
+    @staticmethod
+    def _plot_sample(image, mask=None, prediction=None, suptitle=None):
+        num_images = 1 + int(mask is not None) + int(prediction is not None)
+        fig, ax = plt.subplots(1, num_images, figsize=(5*num_images, 5), layout="compressed")
+
+        ax[0].axis("off")
+        ax[0].imshow(image)
+
+        if mask is not None:
+            ax[1].axis("off")
+            ax[1].imshow(image * mask)
+
+        if prediction is not None:
+            ax[num_images-1].axis("off")
+            ax[num_images-1].imshow(prediction)
+
+        if suptitle is not None:
+            plt.suptitle(suptitle)
+        return fig
+
 
 class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
     """GenericNonGeoSegmentationDataset"""

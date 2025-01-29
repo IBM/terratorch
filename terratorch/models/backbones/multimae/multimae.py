@@ -23,7 +23,7 @@ import torch
 from einops import repeat
 from torch import nn
 from torch.distributions.dirichlet import Dirichlet
-
+import torch.nn.functional as F
 from .multimae_utils import Block, trunc_normal_
 
 
@@ -388,7 +388,7 @@ class MultiMAE(nn.Module):
             if domain not in self.fp32_output_adapters
         }
         # Force running selected output adapters in fp32 mode
-        with torch.cuda.amp.autocast(enabled=False):
+        with torch.amp.autocast('cuda', enabled=False):
             for domain in self.fp32_output_adapters:
                 if domain not in self.output_adapters:
                     continue
@@ -403,6 +403,12 @@ class MultiMAE(nn.Module):
                 for domain, pred in preds.items()}
 
         loss['loss'] = torch.stack(list(loss.values())).sum()
+
+        # Convert token masks to pixel masks
+        for key, mask in task_masks.items():
+            N_sqrt = int(mask.shape[1] ** 0.5)
+            mask = mask.view(B, N_sqrt, N_sqrt)
+            task_masks[key] = F.interpolate(mask.unsqueeze(1), size=(H, W), mode='nearest').squeeze(1)
 
         return loss, preds, task_masks
 
