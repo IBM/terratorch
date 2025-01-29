@@ -43,23 +43,24 @@ data:
       #    p: 0.5
       - class_path: ToTensorV2
     dataset_bands:
-      - "band_1"
-      - "band_2"
-      - "band_3"
-      - "band_4"
-      - "band_5"
-      - "band_6"
-      - "band_7"
-      - "band_8"
-      - "band_9"
-      - "band_10"
+      - 0
+      - BLUE
+      - GREEN
+      - RED
+      - NIR_NARROW
+      - SWIR_1
+      - SWIR_2
+      - 1
+      - 2
+      - 3
+      - 4
     output_bands:
-      - "band_2"
-      - "band_3"
-      - "band_4"
-      - "band_5"
-      - "band_6"
-      - "band_7"
+      - BLUE
+      - GREEN
+      - RED
+      - NIR_NARROW
+      - SWIR_1
+      - SWIR_2
     rgb_indices:
       - 2
       - 1
@@ -95,12 +96,13 @@ model:
     model_args:
       decoder: UperNetDecoder
       pretrained: false
-      backbone: prithvi_swin_B
+      backbone: prithvi_eo_v2_300
       # backbone_pretrained_cfg_overlay:
-      #   file: tests/prithvi_swin_B.pt
+      #   file: tests/prithvi_vit_300.pt
       backbone_drop_path_rate: 0.3
       # backbone_window_size: 8
-      decoder_channels: 256
+      decoder_channels: 64
+      num_frames: 1
       in_channels: 6
       bands:
         - BLUE
@@ -109,7 +111,6 @@ model:
         - NIR_NARROW
         - SWIR_1
         - SWIR_2
-      num_frames: 1
       head_dropout: 0.5708022831486758
       head_final_act: torch.nn.ReLU
       head_learned_upscale_layers: 2
