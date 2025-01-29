@@ -14,6 +14,8 @@ $ pip install -e .
 ```
 
 Apply a fix provided by Soltius at https://stackoverflow.com/a/72321898/7175848.
+This allows Faster-RCNN to return validation loss as well as model output in validation step.
+Also model output is returned in training step.
 
 ## Execution
 ```
