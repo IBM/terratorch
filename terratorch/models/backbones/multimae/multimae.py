@@ -69,6 +69,7 @@ class MultiMAE(nn.Module):
         drop_path_rate: float = 0.0,
         norm_layer: nn.Module = default_norm_layer,
         fp32_output_adapters: list[str] | None = None,
+        num_input_tokens: int = 128,
         merge_method: str = None,
         **kwargs,
     ):
@@ -86,6 +87,7 @@ class MultiMAE(nn.Module):
             self.output_adapters = None
         self.fp32_output_adapters = fp32_output_adapters or []
         self.loss_functions = loss_functions
+        self.num_input_tokens = num_input_tokens
 
         # Additional learnable tokens that can be used by encoder to process/store global information
         self.num_global_tokens = num_global_tokens
@@ -184,15 +186,15 @@ class MultiMAE(nn.Module):
     def generate_random_masks(
         self,
         input_tokens: dict[str, torch.Tensor],
-        num_encoded_tokens: int,
+        num_input_tokens: int,
         alphas: float | list[float] = 1.0,
         sample_tasks_uniformly: bool = False,
     ):
         """
-        Sample a total of num_encoded_tokens from different tasks using Dirichlet sampling.
+        Sample a total of num_input_tokens from different tasks using Dirichlet sampling.
 
-        :param input_tokens: Dictionary of tensors to sample num_encoded_tokens from
-        :param num_encoded_tokens: Number of tokens to select
+        :param input_tokens: Dictionary of tensors to sample num_input_tokens from
+        :param num_input_tokens: Number of tokens to select
         :param alphas: Dirichlet distribution parameter alpha. Lower alpha = harder,
             less uniform sampling. Can be float or list of floats.
         :param sample_tasks_uniformly: Set to True to first sample 1-n_tasks uniformly at random
@@ -208,7 +210,7 @@ class MultiMAE(nn.Module):
         else:
             task_sampling_dist = Dirichlet(torch.Tensor(alphas)).sample((B,)).to(device)
 
-        samples_per_task = (task_sampling_dist * num_encoded_tokens).round().long()
+        samples_per_task = (task_sampling_dist * num_input_tokens).round().long()
 
         task_masks = []
         num_tokens_per_task = [task_tokens.shape[1] for task_tokens in input_tokens.values()]
@@ -225,11 +227,11 @@ class MultiMAE(nn.Module):
         mask_all = torch.cat(task_masks, dim=1)
         ids_shuffle = torch.argsort(mask_all + torch.rand_like(mask_all.float()), dim=1)
         ids_restore = torch.argsort(ids_shuffle, dim=1)
-        ids_keep = ids_shuffle[:, :num_encoded_tokens]
+        ids_keep = ids_shuffle[:, :num_input_tokens]
 
         # Update binary mask to adjust for task rounding
         mask_all = torch.ones_like(mask_all)
-        mask_all[:, :num_encoded_tokens] = 0
+        mask_all[:, :num_input_tokens] = 0
         # Unshuffle to get the binary mask
         mask_all = torch.gather(mask_all, dim=1, index=ids_restore)
         # Split to get task masks
@@ -295,10 +297,10 @@ class MultiMAE(nn.Module):
     def forward(
         self,
         x: dict[str, torch.Tensor] | torch.Tensor,
-        mask_inputs: bool = False,
+        mask_inputs: bool = True,
         task_masks: dict[str, torch.Tensor] = None,
-        num_encoded_tokens: int = 128,
-        alphas: float | list[float] = 1.0,
+        num_input_tokens: int | None = None,
+        alphas: float | list[float] = 0.5,
         sample_tasks_uniformly: bool = False,
     ):
         """
@@ -308,7 +310,7 @@ class MultiMAE(nn.Module):
         :param x: Input tensor or dictionary of tensors
         :param mask_inputs: Set to True to enable random masking of input patches
         :param task_masks: Optional dictionary of task->mask pairs.
-        :param num_encoded_tokens: Number of tokens to randomly select for encoder.
+        :param num_input_tokens: Number of tokens to randomly select for encoder.
             Only used if mask_inputs is True.
         :param alphas: Dirichlet distribution parameter alpha for task sampling.
             Higher alpha = harder, less uniform sampling. Can be float or list of floats.
@@ -337,14 +339,14 @@ class MultiMAE(nn.Module):
 
         # Select random subset of tokens from the chosen input tasks and concatenate them
         if mask_inputs:
-            num_encoded_tokens = num_encoded_tokens if num_encoded_tokens is not None else self.num_encoded_tokens
+            num_input_tokens = num_input_tokens or self.num_input_tokens
         else:
-            num_encoded_tokens = sum([tensor.shape[1] for tensor in input_task_tokens.values()])
+            num_input_tokens = sum([tensor.shape[1] for tensor in input_task_tokens.values()])
 
         # Generating masks
         if task_masks is None:
             task_masks, ids_keep, ids_restore = self.generate_random_masks(
-                input_task_tokens, num_encoded_tokens, alphas=alphas, sample_tasks_uniformly=sample_tasks_uniformly
+                input_task_tokens, num_input_tokens, alphas=alphas, sample_tasks_uniformly=sample_tasks_uniformly
             )
         else:
             mask_all = torch.cat([task_masks[task] for task in input_task_tokens.keys()], dim=1)
@@ -373,6 +375,7 @@ class MultiMAE(nn.Module):
         if self.output_adapters is None:
             return outputs, task_masks
 
+        # TODO: Add target masking
         # Decode tokens for each task using task-specific output adapters
         preds = {
             domain: self.output_adapters[domain](
@@ -396,14 +399,12 @@ class MultiMAE(nn.Module):
                     ids_restore=ids_restore,
                 )
 
-        loss = 0
+        loss = {f'{domain}_loss': self.loss_functions[domain](pred, x[domain])
+                for domain, pred in preds.items()}
 
-        domain_loss = {domain: self.loss_functions[domain](pred, x[domain])
-                       for domain, pred in preds.items()}
+        loss['loss'] = torch.stack(list(loss.values())).sum()
 
-        loss = torch.stack(list(domain_loss.values())).sum()
-
-        return loss, preds, task_masks, domain_loss
+        return loss, preds, task_masks
 
 
 class MultiViT(MultiMAE):
