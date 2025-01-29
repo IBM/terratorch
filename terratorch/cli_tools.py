@@ -62,7 +62,9 @@ from terratorch.tasks import (
     SemanticSegmentationTask,  # noqa: F401
 )
 
-logger = logging.getLogger("terratorch")
+from terratorch.utils import get_logger
+
+logger = get_logger()
 
 def flatten(list_of_lists):
     return list(itertools.chain.from_iterable(list_of_lists))
@@ -408,6 +410,7 @@ class MyLightningCLI(LightningCLI):
         else:
             custom_modules_path = os.getenv("TERRATORCH_CUSTOM_MODULE_PATH", None)
 
+        logger.debug(f"Import custom modules from {custom_modules_path}")
         import_custom_modules(custom_modules_path)
 
     @staticmethod
@@ -443,7 +446,7 @@ def build_lightning_cli(
                 UserWarning,
                 stacklevel=1,
             )
-
+    print(args)
     return MyLightningCLI(
         model_class=BaseTask,
         subclass_mode_model=True,
