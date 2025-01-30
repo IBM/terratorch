@@ -29,11 +29,11 @@ classifiers = [
 ]
 
 dependencies = [
-  "torch<=2.5.0",
+  "torch",
   "torchvision",
   "rioxarray",
   "albumentations==1.4.10",
-  "albucore",
+  "albucore==0.0.16",
   "rasterio",
   "torchmetrics",
   "geopandas",
