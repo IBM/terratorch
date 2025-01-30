@@ -227,6 +227,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
         self.plot_on_val = int(plot_on_val)
 
         logger.info(f"Instantiating a class {self.__class__}")
+        logger.debug(f"Using hparams: {self.hparams}")
 
     def configure_losses(self) -> None:
         """Initialize the loss criterion.
@@ -235,6 +236,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
             ValueError: If *loss* is invalid.
         """
         loss: str = self.hparams["loss"].lower()
+
         if loss == "mse":
             self.criterion: nn.Module = IgnoreIndexLossWrapper(
                 nn.MSELoss(reduction="none"), self.hparams["ignore_index"]
