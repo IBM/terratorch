@@ -75,6 +75,8 @@ class ScalarOutputModel(Model, SegmentationModel):
 
     def freeze_decoder(self):
         freeze_module(self.decoder)
+
+    def freeze_head(self):
         freeze_module(self.head)
 
     def forward(self, x: torch.Tensor, **kwargs) -> ModelOutput:

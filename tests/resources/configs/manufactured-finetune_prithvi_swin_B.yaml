@@ -129,6 +129,7 @@ model:
     ignore_index: -1
     freeze_backbone: true
     freeze_decoder: false
+    freeze_head: false
     model_factory: PrithviModelFactory
 
     # uncomment this block for tiled inference
