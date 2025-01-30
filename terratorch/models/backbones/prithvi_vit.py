@@ -215,7 +215,7 @@ def _create_prithvi(
 
     if ckpt_path is not None:
         # Load model from checkpoint
-        state_dict = torch.load(ckpt_path, map_location="cpu")
+        state_dict = torch.load(ckpt_path, map_location="cpu", weights_only=True)
         state_dict = checkpoint_filter_wrapper_fn(state_dict, model, pretrained_bands, model_bands)
         model.load_state_dict(state_dict, strict=False)
     elif pretrained:
@@ -225,7 +225,7 @@ def _create_prithvi(
             # Load model from Hugging Face
             pretrained_path = hf_hub_download(repo_id=pretrained_weights[variant]["hf_hub_id"],
                                               filename=pretrained_weights[variant]["hf_hub_filename"])
-            state_dict = torch.load(pretrained_path, map_location="cpu")
+            state_dict = torch.load(pretrained_path, map_location="cpu", weights_only=True)
             state_dict = checkpoint_filter_wrapper_fn(state_dict, model, pretrained_bands, model_bands)
             model.load_state_dict(state_dict, strict=True)
         except RuntimeError as e:
