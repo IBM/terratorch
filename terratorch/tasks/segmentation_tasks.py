@@ -145,7 +145,7 @@ class SemanticSegmentationTask(TerraTorchTask):
             self.select_classes = lambda y: y.argmax(dim=1) 
         else:
             self.select_classes = lambda y: y
-        print(self.output_most_probable)
+
     def configure_losses(self) -> None:
         """Initialize the loss criterion.
 
