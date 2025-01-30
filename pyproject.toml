@@ -29,7 +29,7 @@ classifiers = [
 ]
 
 dependencies = [
-  "torch",
+  "torch<=2.5.0",
   "torchvision",
   "rioxarray",
   "albumentations==1.4.10",
