@@ -1,0 +1,81 @@
+# lightning.pytorch==2.1.1
+seed_everything: 0
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: 16-mixed
+  logger:
+    class_path: TensorBoardLogger
+    init_args:
+      save_dir: <path>
+      name: fire_scars
+  callbacks:
+    - class_path: RichProgressBar
+    - class_path: LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+    - class_path: EarlyStopping
+      init_args:
+        monitor: val/loss
+        patience: 40
+
+  max_epochs: 200
+  check_val_every_n_epoch: 1
+  log_every_n_steps: 50
+  enable_checkpointing: true
+  default_root_dir: <path>
+
+# dataset available: https://huggingface.co/datasets/ibm-nasa-geospatial/hls_burn_scars
+data:
+  class_path: terratorch.datamodules.era5.ERA5DataModule
+
+model:
+  class_path: WxCTask
+  init_args:
+    model_args:
+      in_channels: 1280
+      input_size_time: 1
+      n_lats_px: 64
+      n_lons_px: 128
+      patch_size_px: [2, 2]
+      mask_unit_size_px: [8, 16]
+      mask_ratio_inputs: 0.5
+      embed_dim: 2560
+      n_blocks_encoder: 12
+      n_blocks_decoder: 2
+      mlp_multiplier: 4
+      n_heads: 16
+      dropout: 0.0
+      drop_path: 0.05
+      parameter_dropout: 0.0
+      residual: none
+      masking_mode: both
+      decoder_shifting: False
+      positional_encoding: absolute
+      checkpoint_encoder: [3, 6, 9, 12, 15, 18, 21, 24]
+      checkpoint_decoder: [1, 3]
+      in_channels_static: 3
+      input_scalers_mu: torch.tensor([0] * 1280)
+      input_scalers_sigma: torch.tensor([1] * 1280)
+      input_scalers_epsilon: 0
+      static_input_scalers_mu: torch.tensor([0] * 3)
+      static_input_scalers_sigma: torch.tensor([1] * 3)
+      static_input_scalers_epsilon: 0
+      output_scalers: torch.tensor([0] * 1280)
+      backbone_weights: magnet-flux-uvtp122-epoch-99-loss-0.1022.pt
+      backbone: prithviwxc
+      aux_decoders: unetpincer
+      skip_connection: True
+    model_factory: WxCModelFactory
+    mode: eval
+optimizer:
+  class_path: torch.optim.Adam
+  init_args:
+    lr: 1.5e-5
+    weight_decay: 0.05
+lr_scheduler:
+  class_path: ReduceLROnPlateau
+  init_args:
+    monitor: val/loss

@@ -157,20 +157,6 @@ def checkpoint_filter_fn_mae(
 
     return state_dict
 
-
-def pad_images(imgs: Tensor,patch_size: int, padding:str) -> Tensor:
-    p = patch_size
-    # h, w = imgs.shape[3], imgs.shape[4]
-    t, h, w = imgs.shape[-3:]
-    h_pad, w_pad = (p - h % p) % p, (p - w % p) % p  # Ensure padding is within bounds
-    if h_pad > 0 or w_pad > 0:
-        imgs = torch.stack([
-            nn.functional.pad(img, (0, w_pad, 0, h_pad), mode=padding)
-            for img in imgs  # Apply per image to avoid NotImplementedError from torch.nn.functional.pad
-        ])
-    return imgs
-
-
 def _create_prithvi(
     variant: str,
     pretrained: bool = False,  # noqa: FBT001, FBT002    
