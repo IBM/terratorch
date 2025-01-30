@@ -73,6 +73,7 @@ def compute_float_mask_statistics(dataloader: DataLoader) -> dict[str, float]:
 def get_logger():
 
     loglevel = os.getenv("LOGLEVEL")
+
     if loglevel:
         logging.basicConfig(level=loglevel.upper())
 
