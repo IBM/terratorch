@@ -32,7 +32,6 @@ dependencies = [
   "torch",
   "torchvision",
   "rioxarray",
-  # see issue #64
   "albumentations",
   "albucore",
   "rasterio",
@@ -42,11 +41,10 @@ dependencies = [
   "jsonargparse==4.32.0",
   "h5py",
   "mlflow",
-  # broken due to https://github.com/Lightning-AI/pytorch-lightning/issues/19977
   "lightning",
   "segmentation-models-pytorch",
   "jsonargparse",
-  # Dependencies not available on PyPI
+  "pytest",
 ]
 
 [project.optional-dependencies]
