@@ -47,6 +47,14 @@ def test_finetune_bands_str(model_name, case):
 
     gc.collect()
 
+@pytest.mark.parametrize("model_name", ["prithvi_eo_v2_300"])
+@pytest.mark.parametrize("case", ["fit", "test", "validate"])
+def test_finetune_pad(case):
+    command_list = [case, "-c", f"tests/resources/configs/manufactured-finetune_prithvi_pixelwise_pad.yaml"]
+    _ = build_lightning_cli(command_list)
+
+    gc.collect()
+
 @pytest.mark.parametrize("model_name", ["prithvi_swin_B"])
 def test_finetune_metrics_from_file(model_name):
 

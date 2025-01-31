@@ -20,7 +20,7 @@ trainer:
       init_args:
         monitor: val/loss
         patience: 100
-  max_epochs: 2
+  max_epochs: 1
   check_val_every_n_epoch: 1
   log_every_n_steps: 20
   enable_checkpointing: true
@@ -100,6 +100,7 @@ model:
       # backbone_pretrained_cfg_overlay:
       #   file: tests/prithvi_vit_300.pt
       backbone_drop_path_rate: 0.3
+      backbone_patch_size: 16
       # backbone_window_size: 8
       decoder_channels: 64
       num_frames: 1
