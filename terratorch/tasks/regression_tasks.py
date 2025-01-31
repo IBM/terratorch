@@ -154,6 +154,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
         #
         freeze_backbone: bool = False,  # noqa: FBT001, FBT002
         freeze_decoder: bool = False,  # noqa: FBT001, FBT002
+        freeze_head: bool = False,  # noqa: FBT001, FBT002
         plot_on_val: bool | int = 10,
         tiled_inference_parameters: TiledInferenceParameters | None = None,
         test_dataloaders_names: list[str] | None = None,
@@ -187,7 +188,8 @@ class PixelwiseRegressionTask(TerraTorchTask):
             scheduler_hparams (dict | None): Parameters to be passed for instantiation of the scheduler.
                 Overriden by config / cli specification through LightningCLI.
             freeze_backbone (bool, optional): Whether to freeze the backbone. Defaults to False.
-            freeze_decoder (bool, optional): Whether to freeze the decoder and segmentation head. Defaults to False.
+            freeze_decoder (bool, optional): Whether to freeze the decoder. Defaults to False.
+            freeze_head (bool, optional): Whether to freeze the segmentation head. Defaults to False.
             plot_on_val (bool | int, optional): Whether to plot visualizations on validation.
                 If true, log every epoch. Defaults to 10. If int, will plot every plot_on_val epochs.
             tiled_inference_parameters (TiledInferenceParameters | None, optional): Inference parameters

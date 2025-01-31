@@ -60,6 +60,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         #
         freeze_backbone: bool = False,  # noqa: FBT001, FBT002
         freeze_decoder: bool = False,  # noqa: FBT002, FBT001
+        freeze_head: bool = False, 
         plot_on_val: bool | int = 10,
         class_names: list[str] | None = None,
         tiled_inference_parameters: TiledInferenceParameters = None,
@@ -97,7 +98,8 @@ class SemanticSegmentationTask(TerraTorchTask):
             scheduler_hparams (dict | None): Parameters to be passed for instantiation of the scheduler.
                 Overriden by config / cli specification through LightningCLI.
             freeze_backbone (bool, optional): Whether to freeze the backbone. Defaults to False.
-            freeze_decoder (bool, optional): Whether to freeze the decoder and segmentation head. Defaults to False.
+            freeze_decoder (bool, optional): Whether to freeze the decoder. Defaults to False.
+            freeze_head (bool, optional): Whether to freeze the segmentation head. Defaults to False.
             plot_on_val (bool | int, optional): Whether to plot visualizations on validation.
             If true, log every epoch. Defaults to 10. If int, will plot every plot_on_val epochs.
             class_names (list[str] | None, optional): List of class names passed to metrics for better naming.
