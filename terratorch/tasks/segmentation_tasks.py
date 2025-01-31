@@ -319,6 +319,34 @@ class SemanticSegmentationTask(TerraTorchTask):
             finally:
                 plt.close()
 
+    def on_validation_epoch_end(self) -> None:
+        self.log_dict(self.val_metrics.compute(), sync_dist=True)
+        self.val_metrics.reset()
+        return super().on_validation_epoch_end()
+
+    def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
+        """Compute the test loss and additional metrics.
+
+        Args:
+            batch: The output of your DataLoader.
+            batch_idx: Integer displaying index of this batch.
+            dataloader_idx: Index of the current dataloader.
+        """
+        x = batch["image"]
+        y = batch["mask"]
+
+        model_output: ModelOutput = self(x)
+        loss = self.test_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
+        self.test_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
+        y_hat_hard = to_segmentation_prediction(model_output)
+        self.test_metrics.update(y_hat_hard, y)
+        torch.cuda.memory_summary(device=None, abbreviated=False)
+    def on_test_epoch_end(self) -> None:
+        self.log_dict(self.test_metrics.compute(), sync_dist=True)
+        self.test_metrics.reset()
+        return super().on_test_epoch_end()
+
+
     def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         """Compute the predicted class probabilities.
 
@@ -350,6 +378,8 @@ class SemanticSegmentationTask(TerraTorchTask):
                 self.tiled_inference_parameters,
             )
         else:
+
             y_hat: Tensor = self(x, **rest).output
+
         y_hat = y_hat.argmax(dim=1)
         return y_hat, file_names

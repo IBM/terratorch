@@ -27,6 +27,14 @@ PRITHVI_V1_STD = [1282.0, 1270.0, 1399.0, 1368.0, 1292.0, 1155.0]
 PRITHVI_V2_MEAN = [1087.0, 1342.0, 1433.0, 2734.0, 1958.0, 1363.0]
 PRITHVI_V2_STD = [2248.0, 2179.0, 2178.0, 1850.0, 1242.0, 1049.0]
 
+# TODO This operation is probably a workaround. For some reason the variable 
+# "model_bands" is being repeated. It's necessary to check the reason for it.
+def _overwrite_with_kwargs(extra_kwargs, kwargs):
+
+    for k in extra_kwargs.keys():
+        if k in kwargs.keys():
+            extra_kwargs[k] = kwargs.pop(k)
+    return extra_kwargs, kwargs 
 
 def _cfg(**kwargs):
     return {
@@ -255,7 +263,9 @@ def prithvi_eo_tiny(
     bands: list[HLSBands] | None = None,
     **kwargs,
 ) -> PrithviViT:
-
+    vars_updated, kwargs = _overwrite_with_kwargs({"pretrained": pretrained, "model_bands": bands}, kwargs)
+    pretrained = vars_updated["pretrained"]
+    bands = vars_updated["model_bands"]
     return _create_prithvi("prithvi_eo_tiny", pretrained=pretrained, model_bands=bands, **kwargs)
 
 
@@ -265,7 +275,9 @@ def prithvi_eo_v1_100(
     bands: list[HLSBands] | None = None,
     **kwargs,
 ) -> PrithviViT:
-
+    vars_updated, kwargs = _overwrite_with_kwargs({"pretrained": pretrained, "model_bands": bands}, kwargs)
+    pretrained = vars_updated["pretrained"]
+    bands = vars_updated["model_bands"]
     return _create_prithvi("prithvi_eo_v1_100", pretrained=pretrained, model_bands=bands, **kwargs)
 
 
@@ -275,7 +287,9 @@ def prithvi_eo_v2_300(
     bands: list[HLSBands] | None = None,
     **kwargs,
 ) -> PrithviViT:
-
+    vars_updated, kwargs = _overwrite_with_kwargs({"pretrained": pretrained, "model_bands": bands}, kwargs)
+    pretrained = vars_updated["pretrained"]
+    bands = vars_updated["model_bands"]
     return _create_prithvi("prithvi_eo_v2_300", pretrained=pretrained, model_bands=bands, **kwargs)
 
 
@@ -285,7 +299,9 @@ def prithvi_eo_v2_600(
     bands: list[HLSBands] | None = None,
     **kwargs,
 ) -> PrithviViT:
-
+    vars_updated, kwargs = _overwrite_with_kwargs({"pretrained": pretrained, "model_bands": bands}, kwargs)
+    pretrained = vars_updated["pretrained"]
+    bands = vars_updated["model_bands"]
     return _create_prithvi("prithvi_eo_v2_600", pretrained=pretrained, model_bands=bands, **kwargs)
 
 
@@ -295,7 +311,9 @@ def prithvi_eo_v2_300_tl(
     bands: list[HLSBands] | None = None,
     **kwargs,
 ) -> PrithviViT:
-
+    vars_updated, kwargs = _overwrite_with_kwargs({"pretrained": pretrained, "model_bands": bands}, kwargs)
+    pretrained = vars_updated["pretrained"]
+    bands = vars_updated["model_bands"]
     return _create_prithvi("prithvi_eo_v2_300_tl", pretrained=pretrained, model_bands=bands, **kwargs)
 
 
@@ -305,7 +323,9 @@ def prithvi_eo_v2_600_tl(
     bands: list[HLSBands] | None = None,
     **kwargs,
 ) -> PrithviViT:
-
+    vars_updated, kwargs = _overwrite_with_kwargs({"pretrained": pretrained, "model_bands": bands}, kwargs)
+    pretrained = vars_updated["pretrained"]
+    bands = vars_updated["model_bands"]
     return _create_prithvi("prithvi_eo_v2_600_tl", pretrained=pretrained, model_bands=bands, **kwargs)
 
 
@@ -319,7 +339,9 @@ def prithvi_vit_tiny(
 
     warnings.warn(f"The model prithvi_vit_tiny was renamed to prithvi_eo_tiny. "
                   f"prithvi_vit_tiny will be removed in a future version.", FutureWarning)
-
+    vars_updated, kwargs = _overwrite_with_kwargs({"pretrained": pretrained, "model_bands": model_bands}, kwargs)
+    pretrained = vars_updated["pretrained"]
+    bands = vars_updated["model_bands"]
     return prithvi_eo_tiny(pretrained=pretrained, model_bands=bands, **kwargs)
 
 

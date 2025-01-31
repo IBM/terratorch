@@ -289,6 +289,12 @@ class ClassificationTask(TerraTorchTask):
         rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
 
+        # Avoiding GPU memory overloading
+        # Removing GPU cache
+        torch.cuda.empty_cache()
+        # Forcing the Python garbage collector
+        gc.collect()
+
         y_hat = self(x).output
         y_hat = y_hat.argmax(dim=1)
         return y_hat, file_names

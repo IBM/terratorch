@@ -3,6 +3,7 @@
 from collections.abc import Sequence
 from functools import partial
 from typing import Any
+import gc
 
 import logging
 import lightning
@@ -386,10 +387,12 @@ class PixelwiseRegressionTask(TerraTorchTask):
 
         def model_forward(x):
             return self(x).output
-
+        
         if self.tiled_inference_parameters:
             # TODO: tiled inference does not work with additional input data (**rest)
             y_hat: Tensor = tiled_inference(model_forward, x, 1, self.tiled_inference_parameters)
         else:
+
             y_hat: Tensor = self(x, **rest).output
+
         return y_hat, file_names

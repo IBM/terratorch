@@ -178,6 +178,22 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             data = data.fillna(nan_replace)
         return data
 
+    def _generate_bands_intervals(self, bands_intervals: list[int | str | HLSBands | tuple[int]] | None = None):
+        if bands_intervals is None:
+            return None
+        bands = []
+        for element in bands_intervals:
+            # if its an interval
+            if isinstance(element, tuple):
+                if len(element) != 2:  # noqa: PLR2004
+                    msg = "When defining an interval, a tuple of two integers should be passed, defining start and end indices inclusive"
+                    raise Exception(msg)
+                expanded_element = list(range(element[0], element[1])) 
+                bands.extend(expanded_element)
+            else:
+                bands.append(element)
+        return bands
+
 
 class GenericNonGeoSegmentationDataset(GenericPixelWiseDataset):
     """GenericNonGeoSegmentationDataset"""
