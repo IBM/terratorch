@@ -46,7 +46,8 @@ dependencies = [
   "jsonargparse",
   "pytest",
   #"torchgeo @ git+https://github.com/microsoft/torchgeo.git@fedf99375535f801565856cd774bfa9e5a251d55",
-  "torchgeo"
+  "torchgeo",
+  "einops"
 ]
 
 [project.optional-dependencies]
