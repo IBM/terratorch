@@ -1,8 +1,0 @@
-geobench @ git+https://github.com/fmartiescofet/geo-bench.git # pull from this fork untl geobench dependencies are updated
-#mmcv==2.0.0
-#ftfy
-#regex
-#openmim
-
-# Lastly, install mmsegmentation using mim:
-# mim mmsegmentation
