@@ -238,6 +238,10 @@ def checkpoint_filter_fn_vit_adapter(
             continue
         clean_dict[k] = v
 
+    for k, v in model.state_dict().items():
+        if any(k.startswith(prefix) for prefix in PrithviViTAdapter.extra_layers):
+            clean_dict[k] = v
+
     return clean_dict
 
 
@@ -262,15 +266,17 @@ def _create_prithvi(
 
     if vit_adapter:
         if not _has_vit_adapter:
-            raise ImportError(
+            msg = (
                 "PrithviViTAdapter is not available. The following error occurred while importing the module: "
                 f"{_adapter_import_error}"
             )
+            raise ImportError(msg)
         if variant not in prithvi_adapter_cfgs:
-            raise ValueError(
+            msg = (
                 f"ViT Adapter not available for variant {variant}. "
                 f"Available variants: {list(prithvi_adapter_cfgs.keys())}."
             )
+            raise ValueError(msg)
         model_args |= prithvi_adapter_cfgs[variant].copy()
 
     # Backwards compatibility from timm (pretrained_cfg_overlay={"file": "<path to weights>"}) TODO: Remove before v1.0
@@ -342,23 +348,7 @@ def _create_prithvi(
             )
             state_dict = torch.load(pretrained_path, map_location="cpu")
             state_dict = checkpoint_filter_wrapper_fn(state_dict, model, pretrained_bands, model_bands)
-            if not vit_adapter:
-                model.load_state_dict(state_dict, strict=True)
-            else:
-                incompatible_keys = model.load_state_dict(state_dict, strict=False)
-                for k in incompatible_keys.missing_keys:
-                    if not k.startswith(PrithviViTAdapter.extra_layers):
-                        msg = (
-                            f"All missing keys should start with one of {PrithviViTAdapter.extra_layers}. "
-                            "Missing key {k} for model loading."
-                        )
-                        raise ValueError(msg)
-                if len(incompatible_keys.unexpected_keys) > 0:
-                    msg = (
-                        f"There should not be any unexpected keys. Please report the error to terratorch. "
-                        f"Unexpected keys: {incompatible_keys.unexpected_keys}"
-                    )
-                    raise ValueError(msg)
+            model.load_state_dict(state_dict, strict=True)
         except RuntimeError as e:
             logger.error(f"Failed to load the pre-trained weights for {variant}.")
             raise e
