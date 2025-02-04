@@ -213,24 +213,32 @@ def _create_prithvi(
 
     model = prithvi_model_class(**model_args)
 
-    if ckpt_path is not None:
-        # Load model from checkpoint
-        state_dict = torch.load(ckpt_path, map_location="cpu", weights_only=True)
-        state_dict = checkpoint_filter_wrapper_fn(state_dict, model, pretrained_bands, model_bands)
-        model.load_state_dict(state_dict, strict=False)
-    elif pretrained:
-        try:
-            # Download config.json to count model downloads
-            _ = hf_hub_download(repo_id=pretrained_weights[variant]["hf_hub_id"], filename="config.json")
-            # Load model from Hugging Face
-            pretrained_path = hf_hub_download(repo_id=pretrained_weights[variant]["hf_hub_id"],
-                                              filename=pretrained_weights[variant]["hf_hub_filename"])
-            state_dict = torch.load(pretrained_path, map_location="cpu", weights_only=True)
+    if pretrained:
+        if ckpt_path is not None:
+            # Load model from checkpoint
+            state_dict = torch.load(ckpt_path, map_location="cpu", weights_only=True)
             state_dict = checkpoint_filter_wrapper_fn(state_dict, model, pretrained_bands, model_bands)
-            model.load_state_dict(state_dict, strict=True)
-        except RuntimeError as e:
-            logger.error(f"Failed to load the pre-trained weights for {variant}.")
-            raise e
+            loaded_keys = model.load_state_dict(state_dict, strict=False)
+            if loaded_keys.missing_keys:
+                logger.warning(f"Missing keys in ckpt_path {ckpt_path}: {loaded_keys.missing_keys}")
+            if loaded_keys.unexpected_keys:
+                logger.warning(f"Missing keys in ckpt_path {ckpt_path}: {loaded_keys.missing_keys}")
+        else:
+            try:
+                # Download config.json to count model downloads
+                _ = hf_hub_download(repo_id=pretrained_weights[variant]["hf_hub_id"], filename="config.json")
+                # Load model from Hugging Face
+                pretrained_path = hf_hub_download(repo_id=pretrained_weights[variant]["hf_hub_id"],
+                                                  filename=pretrained_weights[variant]["hf_hub_filename"])
+                state_dict = torch.load(pretrained_path, map_location="cpu", weights_only=True)
+                state_dict = checkpoint_filter_wrapper_fn(state_dict, model, pretrained_bands, model_bands)
+                model.load_state_dict(state_dict, strict=True)
+            except RuntimeError as e:
+                logger.error(f"Failed to load the pre-trained weights for {variant}.")
+                raise e
+
+    model.model_bands = model_bands
+    model.pretrained_bands = pretrained_bands
 
     assert encoder_only or "out_indices" not in kwargs, "out_indices provided for a MAE model."
     if encoder_only:
@@ -243,8 +251,6 @@ def _create_prithvi(
 
         model.forward = forward_filter_indices
         model.out_indices = out_indices
-        model.model_bands = model_bands
-        model.pretrained_bands = pretrained_bands
 
     return model
 
