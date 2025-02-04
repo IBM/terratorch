@@ -251,7 +251,6 @@ class PrithviViT(nn.Module):
         self.in_chans = in_chans
         self.num_frames = num_frames
         self.embed_dim = embed_dim
-        self.out_channels = [embed_dim] * depth
         self.img_size = to_2tuple(img_size)
         if isinstance(patch_size, int):
             patch_size = (1, patch_size, patch_size)
@@ -263,6 +262,7 @@ class PrithviViT(nn.Module):
             in_chans=in_chans,
             embed_dim=embed_dim,
         )
+        self.out_channels = [embed_dim * self.patch_embed.grid_size[0]] * depth
 
         # Optional temporal and location embedding
         coords_encoding = coords_encoding or []
