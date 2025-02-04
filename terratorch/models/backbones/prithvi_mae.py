@@ -90,11 +90,7 @@ def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
 
 
 def _get_1d_sincos_embed_from_grid_torch(embed_dim: int, pos: torch.Tensor):
-    """ This is the torch version of *get_1d_sincos_pos_embed_from_grid()*. However,
-        it was modified to cast omega values to pos.dtype which must be float (and not int as in
-        regular positional embeddings). This was required in order to allow for native FSDP mixed
-        precision support: modify omega to appropriate dtype (pos carries the correct float dtype),
-        instead of manually forcing float32.
+    """ Modified torch version of *get_1d_sincos_pos_embed_from_grid()*.
 
         embed_dim: output dimension for each position
         pos: a list of positions to be encoded: size (M,) - must be float dtype!
@@ -145,7 +141,7 @@ class PatchEmbed(nn.Module):
         self.input_size = input_size
         self.patch_size = patch_size
         self.grid_size = [s // p for s, p in zip(self.input_size, self.patch_size)]
-        assert self.grid_size >= [1,1,1], "Patch size is bigger than input size."
+        assert self.grid_size >= [1, 1, 1], "Patch size is bigger than input size."
         self.num_patches = self.grid_size[0] * self.grid_size[1] * self.grid_size[2]
         self.flatten = flatten
 
@@ -336,24 +332,30 @@ class PrithviViT(nn.Module):
 
         return sequence_unmasked, mask, ids_restore
 
-    def interpolate_pos_encoding(self, x, t, w, h):
+    def interpolate_pos_encoding(self, t, w, h):
         """
         Adapted from:
         - transformers.models.vit.modeling_vit.ViTEmbeddings.interpolate_pos_encoding,
         - https://github.com/facebookresearch/dino/blob/de9ee3df6cf39fac952ab558447af1fa1365362a/vision_transformer.py#L174-L194
         """
-        if x.shape[1] == self.pos_embed.shape[1] and w == h:
-            # No interpolation needed
-            return self.pos_embed
-
-        class_pos_embed = self.pos_embed[:, :1]
-        patch_pos_embed = self.pos_embed[:, 1:]
         t_patches = t // self.patch_embed.patch_size[0]
         w_patches = w // self.patch_embed.patch_size[1]
         h_patches = h // self.patch_embed.patch_size[2]
+        if [t_patches, w_patches, h_patches] == self.patch_embed.grid_size:
+            # No interpolation needed
+            return self.pos_embed
+        if t_patches != self.patch_embed.grid_size[0]:
+            # Re-compute pos embedding to handle changed num_frames
+            grid_size = (t_patches, *self.patch_embed.grid_size[1:])
+            pos_embed = get_3d_sincos_pos_embed(self.pos_embed.shape[-1], grid_size, add_cls_token=True)
+            pos_embed = torch.from_numpy(pos_embed).float().unsqueeze(0)
+        else:
+            grid_size = self.patch_embed.grid_size
+            pos_embed = self.pos_embed
 
-        n_sqrt = int((patch_pos_embed.shape[1] / t_patches) ** 0.5)
-        patch_pos_embed = patch_pos_embed.reshape(t_patches, n_sqrt, n_sqrt, self.embed_dim).permute(0, 3, 1, 2)
+        class_pos_embed, patch_pos_embed = pos_embed[:, :1], pos_embed[:, 1:]
+
+        patch_pos_embed = patch_pos_embed.reshape(*grid_size, self.embed_dim).permute(0, 3, 1, 2)
 
         patch_pos_embed = nn.functional.interpolate(
             patch_pos_embed,
@@ -378,7 +380,7 @@ class PrithviViT(nn.Module):
         # embed patches
         x = self.patch_embed(x)
 
-        pos_embed = self.interpolate_pos_encoding(x, t, h, w)
+        pos_embed = self.interpolate_pos_encoding(t, h, w)
         # add pos embed w/o cls token
         x = x + pos_embed[:, 1:, :]
 
@@ -419,7 +421,7 @@ class PrithviViT(nn.Module):
         # embed patches
         x = self.patch_embed(x)
 
-        pos_embed = self.interpolate_pos_encoding(x, t, h, w)
+        pos_embed = self.interpolate_pos_encoding(t, h, w)
         # add pos embed w/o cls token
         x = x + pos_embed[:, 1:, :]
 
@@ -526,24 +528,30 @@ class MAEDecoder(nn.Module):
         torch.nn.init.normal_(self.mask_token, std=0.02)
         self.apply(_init_weights)
 
-    def interpolate_pos_encoding(self, x, t, w, h):
+    def interpolate_pos_encoding(self, t, w, h):
         """
         Adapted from:
         - transformers.models.vit.modeling_vit.ViTEmbeddings.interpolate_pos_encoding,
         - https://github.com/facebookresearch/dino/blob/de9ee3df6cf39fac952ab558447af1fa1365362a/vision_transformer.py#L174-L194
         """
-        if x.shape[1] == self.decoder_pos_embed.shape[1] and w == h:
-            # No interpolation needed
-            return self.decoder_pos_embed
-
-        class_pos_embed = self.decoder_pos_embed[:, :1]
-        patch_pos_embed = self.decoder_pos_embed[:, 1:]
         t_patches = t // self.patch_size[0]
         w_patches = w // self.patch_size[1]
         h_patches = h // self.patch_size[2]
+        if [t_patches, w_patches, h_patches] == self.grid_size:
+            # No interpolation needed
+            return self.pos_embed
+        if t_patches != self.grid_size[0]:
+            # Re-compute pos embedding to handle changed num_frames
+            grid_size = (t_patches, *self.grid_size[1:])
+            decoder_pos_embed = get_3d_sincos_pos_embed(self.decoder_pos_embed.shape[-1], grid_size, add_cls_token=True)
+            decoder_pos_embed = torch.from_numpy(decoder_pos_embed).float().unsqueeze(0)
+        else:
+            grid_size = self.grid_size
+            decoder_pos_embed = self.decoder_pos_embed
 
-        n_sqrt = int((patch_pos_embed.shape[1] / t_patches) ** 0.5)
-        patch_pos_embed = patch_pos_embed.reshape(t_patches, n_sqrt, n_sqrt, self.decoder_embed_dim).permute(0, 3, 1, 2)
+        class_pos_embed, patch_pos_embed = decoder_pos_embed[:, :1], decoder_pos_embed[:, 1:]
+
+        patch_pos_embed = patch_pos_embed.reshape(*grid_size, self.decoder_embed_dim).permute(0, 3, 1, 2)
 
         patch_pos_embed = nn.functional.interpolate(
             patch_pos_embed,
@@ -574,7 +582,7 @@ class MAEDecoder(nn.Module):
 
         # add pos embed
         t, h, w = input_size[-3:]
-        decoder_pos_embed = self.interpolate_pos_encoding(x, t, w, h)
+        decoder_pos_embed = self.interpolate_pos_encoding(t, w, h)
         cls_token = cls_token + decoder_pos_embed[:, :1, :]
         x = x + decoder_pos_embed[:, 1:, :]
 
