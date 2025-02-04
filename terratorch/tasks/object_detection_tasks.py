@@ -110,36 +110,45 @@ class ObjectDetectionTask(TerraTorchTask):
             {'boxes': batch['boxes'][i], 'labels': batch['labels'][i]}
             for i in range(batch_size)
         ]
-        loss, y_hat = self(x, y).output
-        # From Faster-RCNN
-        # loss = {
+        loss = self(x, y).output
+        if type(loss) is tuple:
+            loss, y_hat = loss
+        else:
+            y_hat = None
+        # loss = {  # Faster-RCNN
         #     loss_classifier
         #     loss_box_reg
         #     loss_objectness
         #     loss_rpn_box_reg
         # }
-        # y_hat = list of {
+        #
+        # loss = {  # FCOS
+        #     classification
+        #     bbox_regression
+        #     bbox_ctrness
+        # }
+        #
+        # loss = {  # RETINANET
+        #     classification
+        #     bbox_regression
+        # }
+        #
+        # y_hat = list of {  # Faster-RCNN
         #     boxes: tensor(N, 4)
         #     labels: tensor(N)
         #     scores: tensor(N)
         # }
+        # y_hat = None  # FCOS, RETINANET
         loss["loss"] = sum(loss.values())
-        # loss={
-        #     loss_classifier
-        #     loss_box_reg
-        #     loss_objectness
-        #     loss_rpn_box_reg
-        #     loss
-        # }
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=batch_size)
-        self.train_metrics.update(y_hat, y)
-
+        if y_hat:
+            self.train_metrics.update(y_hat, y)
         return loss["loss"]
 
     def on_train_epoch_end(self) -> None:
         metrics = self.train_metrics.compute()
         metrics.pop('train/classes', None)
-        # metrics={
+        # metrics = {
         #     train/map
         #     train/map_50
         #     train/map_75
@@ -174,8 +183,29 @@ class ObjectDetectionTask(TerraTorchTask):
             {'boxes': batch['boxes'][i], 'labels': batch['labels'][i]}
             for i in range(batch_size)
         ]
-        loss, y_hat = self(x, y).output
-        loss["loss"] = sum(loss.values())
+        y_hat = self(x, y).output
+        if type(y_hat) is tuple:
+            loss, y_hat = y_hat
+        else:
+            loss = None
+        # loss = {  # Faster-RCNN
+        #     loss_classifier
+        #     loss_box_reg
+        #     loss_objectness
+        #     loss_rpn_box_reg
+        # }
+        #
+        # loss = None  # FOCS, RETINANET
+        #
+        # y_hat = list of {
+        #     boxes: tensor(N, 4)
+        #     labels: tensor(N)
+        #     scores: tensor(N)
+        # }
+        if loss:
+            loss["loss"] = sum(loss.values())
+        else:
+            loss = {"loss": 0}
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=batch_size)
         self.val_metrics.update(y_hat, y)
 
