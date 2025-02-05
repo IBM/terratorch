@@ -79,7 +79,7 @@ class PrithviViTAdapter(PrithviViT):  # type: ignore
         self.num_block = len(self.blocks)
         self.interaction_indexes = interaction_indexes
         self.add_vit_feature = add_vit_feature
-        self.out_channels = [self.embed_dim] * 4
+        self.out_channels = [self.embed_dim * self.patch_embed.grid_size[0]] * 4
 
         embed_dim = self.embed_dim
         self.level_embed = nn.Parameter(torch.zeros(3, embed_dim))
@@ -174,7 +174,7 @@ class PrithviViTAdapter(PrithviViT):  # type: ignore
         W = int(x.shape[-1] / self.patch_embed.patch_size[2])  # noqa: N806
         x = self.patch_embed(x)
         bs, n, dim = x.shape
-        pos_embed = self.interpolate_pos_encoding(x, t, h, w)
+        pos_embed = self.interpolate_pos_encoding(t, h, w)
 
         # We don't have dropout in Prithvi
         # x = self.pos_drop(x + pos_embed)

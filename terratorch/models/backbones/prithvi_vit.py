@@ -369,8 +369,6 @@ def _create_prithvi(
             raise ValueError(msg)
         model.forward = model.forward_features
         model.out_indices = [indexes[-1] for indexes in model.interaction_indexes]
-        model.model_bands = model_bands
-        model.pretrained_bands = pretrained_bands
     elif encoder_only:
         default_out_indices = list(range(len(model.blocks)))
         out_indices = kwargs.pop("out_indices", default_out_indices)
