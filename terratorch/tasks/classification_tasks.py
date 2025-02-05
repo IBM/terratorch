@@ -28,7 +28,7 @@ def to_class_prediction(y: ModelOutput) -> Tensor:
 class ClassificationTask(TerraTorchTask):
     """Classification Task that accepts models from a range of sources.
 
-    This class is analog in functionality to class:ClassificationTask defined by torchgeo.
+    This class is analog in functionality to the class ClassificationTask defined by torchgeo.
     However, it has some important differences:
         - Accepts the specification of a model factory
         - Logs metrics per class
