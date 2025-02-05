@@ -1,4 +1,4 @@
-# Data
+# Data Processing
 We rely on TorchGeo for the implementation of datasets and data modules.
 
 Check out [the TorchGeo tutorials on datasets](https://torchgeo.readthedocs.io/en/stable/tutorials/custom_raster_dataset.html) for more in depth information.
@@ -75,6 +75,19 @@ For the `NonGeoDataset` case, we also provide "generic" datasets and datamodules
 
 Below is a documented example of how a custom dataset and data module class can be implemented.
 
-### :::terratorch.datasets.fire_scars
+### Datasets
 
-### :::terratorch.datamodules.fire_scars
+#### :::terratorch.datasets.fire_scars
+#### :::terratorch.datasets.biomassters
+#### :::terratorch.datasets.burn_intensity
+#### :::terratorch.datasets.carbonflux
+#### :::terratorch.datasets.forestnet
+
+### Datamodules
+#### :::terratorch.datamodules.fire_scars
+#### :::terratorch.datamodules.biomassters
+#### :::terratorch.datamodules.burn_intensity
+#### :::terratorch.datamodules.carbonflux
+#### :::terratorch.datamodules.forestnet
+
+

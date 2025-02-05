@@ -72,7 +72,6 @@ class ClassificationTask(TerraTorchTask):
         """Constructor
 
         Args:
-
             Defaults to None.
             model_args (Dict): Arguments passed to the model factory.
             model_factory (str, optional): ModelFactory class to be used to instantiate the model.
