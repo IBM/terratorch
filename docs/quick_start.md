@@ -1,18 +1,24 @@
 # Quick start
-We suggest using `3.10 <= Python <= 3.12`.
+## Configuring the environment
+
+### Python
+TerraTorch is currently tested for Python in `3.10 <= Python <= 3.12`. 
+
 To get started, make sure to have `[PyTorch](https://pytorch.org/get-started/locally/) >= 2.0.0` and [GDAL](https://gdal.org/index.html) installed.
 
-Installing GDAL can be quite a complex process. If you don't have GDAL set up on your system, we reccomend using a conda environment and installing it with `conda install -c conda-forge gdal`.
+### GDAL
+GDAL is required  to read and write TIFF images. It is usually easy to install in Unix/Linux systems, but if it is not your case 
+we reccomend using a conda environment and installing it with `conda install -c conda-forge gdal`.
 
+## Installing TerraTorch
 For a stable point-release, use `pip install terratorch`.
 If you prefer to get the most recent version of the main branch, install the library with `pip install git+https://github.com/IBM/terratorch.git`.
 
 To install as a developer (e.g. to extend the library) clone this repo, and run `pip install -e .`.
 
-You can interact with the library at several levels of abstraction. Each deeper level of abstraction trades off some amount of flexibility for ease of use and configuration.
-
 ## Creating Backbones
 
+You can interact with the library at several levels of abstraction. Each deeper level of abstraction trades off some amount of flexibility for ease of use and configuration.
 In the simplest case, we might only want access a backbone and code all the rest ourselves. In this case, we can simply use the library as a backbone factory:
 
 ```python title="Instantiating a prithvi backbone"
