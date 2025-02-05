@@ -17,3 +17,9 @@ Under `examples/confs`
 * Burn Scar Segmentation: `burn_scars.yaml`
 
 * Scene Classification: `eurosat.yaml`
+
+External examples available in [Prithvi-EO-2.0](https://github.com/NASA-IMPACT/Prithvi-EO-2.0)
+
+* [Carbon Flux](https://github.com/NASA-IMPACT/Prithvi-EO-2.0/tree/main/examples/carbon_flux)
+* [Landslide](https://github.com/NASA-IMPACT/Prithvi-EO-2.0/blob/main/examples/example_landslide4sense.ipynb)
+* [Multitemporal Crop](https://github.com/NASA-IMPACT/Prithvi-EO-2.0/blob/main/examples/example_multitemporalcrop.ipynb)

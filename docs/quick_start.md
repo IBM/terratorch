@@ -4,8 +4,6 @@
 ### Python
 TerraTorch is currently tested for Python in `3.10 <= Python <= 3.12`. 
 
-To get started, make sure to have `[PyTorch](https://pytorch.org/get-started/locally/) >= 2.0.0` and [GDAL](https://gdal.org/index.html) installed.
-
 ### GDAL
 GDAL is required  to read and write TIFF images. It is usually easy to install in Unix/Linux systems, but if it is not your case 
 we reccomend using a conda environment and installing it with `conda install -c conda-forge gdal`.
