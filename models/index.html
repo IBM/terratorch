@@ -154,7 +154,7 @@
                 </li>
               </ul>
               <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../architecture/">For Developers</a>
+                <li class="toctree-l1"><a class="reference internal" href="../architecture/">Architecture Overview</a>
                 </li>
               </ul>
               <ul>
@@ -187,7 +187,7 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="models">Models</h1>
-<p>To interface with terratorch tasks correctly, models must conform to the <a class="autorefs autorefs-internal" href="#terratorch.models.model.Model">Model</a> ABC:</p>
+<p>To interface with terratorch tasks correctly, models must inherit from the <a class="autorefs autorefs-internal" href="#terratorch.models.model.Model">Model</a> parent class:</p>
 
 
 <div class="doc doc-object doc-class">
@@ -261,7 +261,7 @@
 
     </div>
 
-</div><p>and have a forward method which returns a <a class="autorefs autorefs-internal" href="#terratorch.models.model.ModelOutput">ModelOutput</a>:</p>
+</div><p>and have a forward method which returns an object <a class="autorefs autorefs-internal" href="#terratorch.models.model.ModelOutput">ModelOutput</a>:</p>
 
 
 <div class="doc doc-object doc-class">
@@ -318,8 +318,8 @@
     </div>
 
 </div><h2 id="model-factories">Model Factories</h2>
-<p>In order to be used by tasks, models must have a Model Factory which builds them.</p>
-<p>Factories must conform to the <a class="autorefs autorefs-internal" href="#terratorch.models.model.ModelFactory">ModelFactory</a> ABC:</p>
+<p>In order to be used by tasks, models must have a Model Factory which builds them.
+Factories must conform to the <a class="autorefs autorefs-internal" href="#terratorch.models.model.ModelFactory">ModelFactory</a> parent class. </p>
 
 
 <div class="doc doc-object doc-class">
