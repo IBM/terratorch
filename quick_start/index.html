@@ -43,6 +43,16 @@
               <ul class="current">
                 <li class="toctree-l1 current"><a class="reference internal current" href="#">Getting Started</a>
     <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#configuring-the-environment">Configuring the environment</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#python">Python</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#gdal">GDAL</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#installing-terratorch">Installing TerraTorch</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#creating-backbones">Creating Backbones</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#directly-creating-a-full-model">Directly creating a full model</a>
@@ -102,15 +112,20 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="quick-start">Quick start</h1>
-<p>We suggest using <code>3.10 &lt;= Python &lt;= 3.12</code>.
-To get started, make sure to have <code>[PyTorch](https://pytorch.org/get-started/locally/) &gt;= 2.0.0</code> and <a href="https://gdal.org/index.html">GDAL</a> installed.</p>
-<p>Installing GDAL can be quite a complex process. If you don't have GDAL set up on your system, we reccomend using a conda environment and installing it with <code>conda install -c conda-forge gdal</code>.</p>
+<h2 id="configuring-the-environment">Configuring the environment</h2>
+<h3 id="python">Python</h3>
+<p>TerraTorch is currently tested for Python in <code>3.10 &lt;= Python &lt;= 3.12</code>. </p>
+<p>To get started, make sure to have <code>[PyTorch](https://pytorch.org/get-started/locally/) &gt;= 2.0.0</code> and <a href="https://gdal.org/index.html">GDAL</a> installed.</p>
+<h3 id="gdal">GDAL</h3>
+<p>GDAL is required  to read and write TIFF images. It is usually easy to install in Unix/Linux systems, but if it is not your case 
+we reccomend using a conda environment and installing it with <code>conda install -c conda-forge gdal</code>.</p>
+<h2 id="installing-terratorch">Installing TerraTorch</h2>
 <p>For a stable point-release, use <code>pip install terratorch</code>.
 If you prefer to get the most recent version of the main branch, install the library with <code>pip install git+https://github.com/IBM/terratorch.git</code>.</p>
 <p>To install as a developer (e.g. to extend the library) clone this repo, and run <code>pip install -e .</code>.</p>
-<p>You can interact with the library at several levels of abstraction. Each deeper level of abstraction trades off some amount of flexibility for ease of use and configuration.</p>
 <h2 id="creating-backbones">Creating Backbones</h2>
-<p>In the simplest case, we might only want access a backbone and code all the rest ourselves. In this case, we can simply use the library as a backbone factory:</p>
+<p>You can interact with the library at several levels of abstraction. Each deeper level of abstraction trades off some amount of flexibility for ease of use and configuration.
+In the simplest case, we might only want access a backbone and code all the rest ourselves. In this case, we can simply use the library as a backbone factory:</p>
 <div class="language-python highlight"><span class="filename">Instantiating a prithvi backbone</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">terratorch</span> <span class="kn">import</span> <span class="n">BACKBONE_REGISTRY</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># find available prithvi models</span>

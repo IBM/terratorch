@@ -129,7 +129,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="overview-for-developers">Overview (for developers)</h1>
+                <h1 id="architecure-overview">Architecure Overview</h1>
 <p>The main goal of the design is to extend TorchGeo's existing tasks to be able to handle Prithvi backbones with appropriate decoders and heads.
 At the same time, we wish to keep the existing TorchGeo functionality intact so it can be leveraged with pretrained models that are already included.</p>
 <p>We achieve this by making new tasks that accept model factory classes, containing a <code>build_model</code> method. This strategy in principle allows arbitrary models to be trained for these tasks, given they respect some reasonable minimal interface.
