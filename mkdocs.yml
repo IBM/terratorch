@@ -32,7 +32,7 @@ nav:
     - EncoderDecoderFactory: encoder_decoder_factory.md
   - Examples: examples.md
     #- FAQ: faq.md
-  - For Developers: architecture.md
+  - Architecture Overview: architecture.md
   - License: license.md
 
 markdown_extensions:
