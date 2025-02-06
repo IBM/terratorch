@@ -8,6 +8,12 @@ from terratorch.datasets.generic_pixel_wise_dataset import (
 from terratorch.datasets.generic_scalar_label_dataset import (
     GenericNonGeoClassificationDataset,
 )
+from terratorch.datasets.generic_multimodal_dataset import (
+    GenericMultimodalDataset,
+    GenericMultimodalSegmentationDataset,
+    GenericMultimodalPixelwiseRegressionDataset,
+    GenericMultimodalScalarDataset,
+)
 from terratorch.datasets.hls import HLSL30, HLSS30
 from terratorch.datasets.m_bigearthnet import MBigEarthNonGeo
 from terratorch.datasets.m_brick_kiln import MBrickKilnNonGeo
@@ -30,9 +36,18 @@ from terratorch.datasets.open_sentinel_map import OpenSentinelMap
 from terratorch.datasets.pastis import PASTIS
 
 # GenericNonGeoRegressionDataset,
-from terratorch.datasets.sen1floods11 import Sen1Floods11NonGeo
+
+from terratorch.datasets.sen1floods11_lat_lon import Sen1Floods11NonGeo
+from terratorch.datasets.utils import HLSBands, OpticalBands, SARBands
+
+#from terratorch.datasets.sen1floods11 import Sen1Floods11NonGeo
 from terratorch.datasets.sen4agrinet import Sen4AgriNet
-from terratorch.datasets.utils import HLSBands
+
+from terratorch.datasets.burn_intensity import BurnIntensityNonGeo
+from terratorch.datasets.carbonflux import CarbonFluxNonGeo
+from terratorch.datasets.landslide4sense import Landslide4SenseNonGeo
+from terratorch.datasets.forestnet import ForestNetNonGeo
+from terratorch.datasets.biomassters import BioMasstersNonGeo
 
 # TorchGeo RasterDatasets
 from terratorch.datasets.wsf import WSF2019, WSFEvolution
@@ -49,7 +64,17 @@ __all__ = (
     "GenericNonGeoSegmentationDataset",
     "GenericNonGeoPixelwiseRegressionDataset",
     "GenericNonGeoClassificationDataset",
-    #"GenericNonGeoRegressionDataset",
+    # "GenericNonGeoRegressionDataset",
+    "GenericMultimodalDataset",
+    "GenericMultimodalSegmentationDataset",
+    "GenericMultimodalPixelwiseRegressionDataset",
+    "GenericMultimodalScalarDataset",
+    "GenericNonGeoRegressionDataset",
+    "BurnIntensityNonGeo",
+    "CarbonFluxNonGeo",
+    "Landslide4SenseNonGeo",
+    "BioMasstersNonGeo",
+    "ForestNetNonGeo",
     "FireScarsNonGeo",
     "FireScarsHLS",
     "FireScarsSegmentationMask",
@@ -76,5 +101,7 @@ __all__ = (
     "WSFEvolution",
     "HLSL30",
     "HLSS30",
+    "OpticalBands",
+    "SARBands",
     "OpenEarthMapNonGeo"
 )

@@ -1,0 +1,165 @@
+# lightning.pytorch==2.1.1
+seed_everything: 0
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: 16-mixed
+  logger:
+    class_path: TensorBoardLogger
+    init_args:
+      save_dir: output
+      name: multimodal_prithvi_sen1floods11
+      version: test_best
+  callbacks:
+    - class_path: RichProgressBar
+    - class_path: LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+    - class_path: EarlyStopping
+      init_args:
+        monitor: val/loss
+        patience: 40
+
+  max_epochs: 100
+  check_val_every_n_epoch: 1
+  log_every_n_steps: 50
+  enable_checkpointing: True
+  default_root_dir: output/multimodal_prithvi_sen1floods11/
+
+data:
+  class_path: terratorch.datamodules.GenericMultiModalDataModule
+  init_args:
+    task: 'segmentation'
+    batch_size: 16
+    num_workers: 4
+    modalities: # Define names of modalities
+      - S2L2A
+      - S1
+    rgb_modality: S2L2A # If not provided, uses first modality
+    rgb_indices:
+      - 3
+      - 2
+      - 1
+
+    # Data roots are defined as dicts with modalities as keys
+    train_data_root:
+      S2L2A: data/sen1floods11/data/data/flood_events/HandLabeled/S2L2AHand
+      S1: data/sen1floods11/data/data/flood_events/HandLabeled/S1Hand
+    train_label_data_root: data/sen1floods11/data/data/flood_events/HandLabeled/LabelHand
+    val_data_root:
+      S2L2A: data/sen1floods11/data/data/flood_events/HandLabeled/S2L2AHand
+      S1: data/sen1floods11/data/data/flood_events/HandLabeled/S1Hand
+    val_label_data_root: data/sen1floods11/data/data/flood_events/HandLabeled/LabelHand
+    test_data_root:
+      S2L2A: data/sen1floods11/data/data/flood_events/HandLabeled/S2L2AHand
+      S1: data/sen1floods11/data/data/flood_events/HandLabeled/S1Hand
+    test_label_data_root: data/sen1floods11/data/data/flood_events/HandLabeled/LabelHand
+
+    train_split: data/sen1floods11/splits/splits/flood_handlabeled/flood_train_data.txt
+    val_split: data/sen1floods11/splits/splits/flood_handlabeled/flood_valid_data.txt
+    test_split: data/sen1floods11/splits/splits/flood_handlabeled/flood_test_data.txt
+
+    allow_substring_file_names: True
+    image_grep:
+      S2L2A: "*_S2L2AHand.tif"
+      S1: "*_S1Hand.tif"
+    label_grep: "*_LabelHand.tif"
+    no_label_replace: -1
+    no_data_replace: 0
+    concat_bands: true # Concatenate modalities along band dim for single-modal models like Prithvi
+
+    # Define standardization values as dicts (no scaling if modality is not included)
+    means:
+      S2L2A:
+        - 1793.243
+        - 1924.863
+        - 2184.553
+        - 2340.936
+        - 2671.402
+        - 3240.082
+        - 3468.412
+        - 3563.244
+        - 3627.704
+        - 3711.071
+        - 3416.714
+        - 2849.625
+      S1:
+        - -12.577
+        - -20.265
+
+    stds:
+      S2L2A:
+        - 1160.144
+        - 1201.092
+        - 1219.943
+        - 1397.225
+        - 1400.035
+        - 1373.136
+        - 1429.17
+        - 1485.025
+        - 1447.836
+        - 1652.703
+        - 1471.002
+        - 1365.30
+      S1:
+        - 5.179
+        - 5.872
+
+    num_classes: 2
+
+    # Transforms are shared between all image modalities (e.g. same crop area)
+    train_transform:
+      - class_path: albumentations.RandomCrop
+        init_args:
+          height: 224
+          width: 224
+      - class_path: albumentations.D4
+      - class_path: ToTensorV2
+
+
+model:
+  class_path: terratorch.tasks.SemanticSegmentationTask
+  init_args:
+    model_factory: EncoderDecoderFactory
+    model_args:
+      backbone: prithvi_eo_v2_300
+      backbone_pretrained: false
+      backbone_bands:
+        - COASTAL_AEROSOL
+        - BLUE
+        - GREEN
+        - RED
+        - RED_EDGE_1
+        - RED_EDGE_2
+        - RED_EDGE_3
+        - NIR_BROAD
+        - NIR_NARROW
+        - CIRRUS
+        - SWIR_1
+        - SWIR_2
+        - VV
+        - VH
+      decoder: FCNDecoder
+      decoder_num_convs: 4
+      decoder_channels: 256
+      num_classes: 2
+      head_dropout: 0.1
+      head_channel_list:
+        - 256
+    loss: dice
+    ignore_index: -1
+    freeze_backbone: false
+    freeze_decoder: false
+
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 6.e-5
+    weight_decay: 0.05
+lr_scheduler:
+  class_path: ReduceLROnPlateau
+  init_args:
+    monitor: val/loss
+

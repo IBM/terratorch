@@ -20,7 +20,7 @@ trainer:
       init_args:
         monitor: val/loss
         patience: 100
-  max_epochs: 2
+  max_epochs: 1
   check_val_every_n_epoch: 1
   log_every_n_steps: 20
   enable_checkpointing: true
@@ -31,16 +31,16 @@ data:
     batch_size: 2
     num_workers: 4
     train_transform:
-      - class_path: albumentations.HorizontalFlip
-        init_args:
-          p: 0.5      
-      - class_path: albumentations.Rotate
-        init_args:
-          limit: 30
-          border_mode: 0 # cv2.BORDER_CONSTANT
-          value: 0
-          # mask_value: 1
-          p: 0.5
+      #- class_path: albumentations.HorizontalFlip
+      #  init_args:
+      #    p: 0.5      
+      #- class_path: albumentations.Rotate
+      #  init_args:
+      #    limit: 30
+      #    border_mode: 0 # cv2.BORDER_CONSTANT
+      #    value: 0
+      #    # mask_value: 1
+      #    p: 0.5
       - class_path: ToTensorV2
     dataset_bands:
       - [0, 11]

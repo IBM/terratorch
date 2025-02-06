@@ -1,13 +1,15 @@
 # Copyright contributors to the Terratorch project
-
+from typing import List
+import logging 
 import torch
 import torch.nn.functional as F  # noqa: N812
+import torchvision.transforms as transforms
 from segmentation_models_pytorch.base import SegmentationModel
 from torch import nn
 
 from terratorch.models.heads import RegressionHead, SegmentationHead
 from terratorch.models.model import AuxiliaryHeadWithDecoderWithoutInstantiatedHead, Model, ModelOutput
-
+from terratorch.models.utils import pad_images
 
 def freeze_module(module: nn.Module):
     for param in module.parameters():
@@ -26,6 +28,8 @@ class PixelWiseModel(Model, SegmentationModel):
         encoder: nn.Module,
         decoder: nn.Module,
         head_kwargs: dict,
+        patch_size: int = None, 
+        padding: str = None,
         decoder_includes_head: bool = False,
         auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
         neck: nn.Module | None = None,
@@ -69,17 +73,17 @@ class PixelWiseModel(Model, SegmentationModel):
 
         self.neck = neck
         self.rescale = rescale
+        self.patch_size = patch_size
+        self.padding = padding
 
     def freeze_encoder(self):
         freeze_module(self.encoder)
 
     def freeze_decoder(self):
         freeze_module(self.decoder)
-        freeze_module(self.head)
 
-    # TODO: do this properly
-    def check_input_shape(self, x: torch.Tensor) -> bool:  # noqa: ARG002
-        return True
+    def freeze_head(self):
+        freeze_module(self.head)
 
     @staticmethod
     def _check_for_single_channel_and_squeeze(x):
@@ -89,11 +93,27 @@ class PixelWiseModel(Model, SegmentationModel):
 
     def forward(self, x: torch.Tensor, **kwargs) -> ModelOutput:
         """Sequentially pass `x` through model`s encoder, decoder and heads"""
-        self.check_input_shape(x)
-        input_size = x.shape[-2:]
+
+        def _get_size(x):
+            if isinstance(x, torch.Tensor):
+                return x.shape[-2:]
+            elif isinstance(x, dict):
+                # Multimodal input in passed as dict (Assuming first modality to be an image)
+                return list(x.values())[0].shape[-2:]
+            elif hasattr(kwargs, 'image_size'):
+                return kwargs['image_size']
+            else:
+                ValueError('Could not infer image shape.')
+
+        image_size = _get_size(x)
+        if isinstance(x, torch.Tensor) and self.patch_size:
+            # Only works for single image modalities
+            x = pad_images(x, self.patch_size, self.padding)
+        input_size = _get_size(x)
+
         features = self.encoder(x, **kwargs)
 
-        ## only for backwards compatibility with pre-neck times.
+        # only for backwards compatibility with pre-neck times.
         if self.neck:
             prepare = self.neck
         else:
@@ -106,13 +126,18 @@ class PixelWiseModel(Model, SegmentationModel):
         if self.rescale and mask.shape[-2:] != input_size:
             mask = F.interpolate(mask, size=input_size, mode="bilinear")
         mask = self._check_for_single_channel_and_squeeze(mask)
+        mask = mask[..., :image_size[0], :image_size[1]]
+
         aux_outputs = {}
         for name, decoder in self.aux_heads.items():
             aux_output = decoder([f.clone() for f in features])
             if self.rescale and aux_output.shape[-2:] != input_size:
                 aux_output = F.interpolate(aux_output, size=input_size, mode="bilinear")
             aux_output = self._check_for_single_channel_and_squeeze(aux_output)
+            aux_output = aux_output[..., :image_size[0], :image_size[1]]
             aux_outputs[name] = aux_output
+
+
         return ModelOutput(output=mask, auxiliary_heads=aux_outputs)
 
     def _get_head(self, task: str, input_embed_dim: int, head_kwargs):

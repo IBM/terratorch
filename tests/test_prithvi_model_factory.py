@@ -31,7 +31,7 @@ def model_input() -> torch.Tensor:
     return torch.ones((1, NUM_CHANNELS, 224, 224))
 
 
-@pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
 def test_create_classification_model(backbone, model_factory: PrithviModelFactory, model_input):
     model = model_factory.build_model(
         "classification",
@@ -48,7 +48,7 @@ def test_create_classification_model(backbone, model_factory: PrithviModelFactor
         assert model(model_input).output.shape == EXPECTED_CLASSIFICATION_OUTPUT_SHAPE
 
 
-@pytest.mark.parametrize("backbone", ["prithvi_vit_100", "prithvi_vit_300"])
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
 def test_create_classification_model_no_in_channels(backbone, model_factory: PrithviModelFactory, model_input):
     model = model_factory.build_model(
         "classification",
@@ -65,7 +65,7 @@ def test_create_classification_model_no_in_channels(backbone, model_factory: Pri
 
     gc.collect()
 
-@pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
 def test_create_pixelwise_model(backbone, task, expected, decoder, model_factory: PrithviModelFactory, model_input):
@@ -92,7 +92,7 @@ def test_create_pixelwise_model(backbone, task, expected, decoder, model_factory
 
     gc.collect()
 
-@pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
 def test_create_pixelwise_model_no_in_channels(
@@ -120,7 +120,7 @@ def test_create_pixelwise_model_no_in_channels(
 
     gc.collect()
 
-@pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
 def test_create_pixelwise_model_with_aux_heads(
@@ -156,7 +156,7 @@ def test_create_pixelwise_model_with_aux_heads(
 
     gc.collect()
 
-@pytest.mark.parametrize("backbone", ["prithvi_vit_100"])
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
 def test_create_pixelwise_model_with_extra_bands(backbone, task, expected, decoder, model_factory: PrithviModelFactory):

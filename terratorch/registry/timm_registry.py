@@ -29,7 +29,7 @@ class TimmRegistry(Set):
     def register(self, constructor: Callable | type) -> Callable:
         raise NotImplementedError()
 
-    def build(self, name: str, *constructor_args, **constructor_kwargs) -> nn.Module:
+    def build(self, name: str, features_only=True, *constructor_args, **constructor_kwargs) -> nn.Module:
         """Build and return the component.
         Use prefixes ending with _ to forward to a specific source
         """
@@ -38,7 +38,7 @@ class TimmRegistry(Set):
                 timm.create_model(
                     name,
                     *constructor_args,
-                    features_only=True,
+                    features_only=features_only,
                     **constructor_kwargs,
                 )
             )

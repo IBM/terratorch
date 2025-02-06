@@ -45,7 +45,6 @@ STDS = {
     "SWIR_2": 0.07659938,
 }
 
-
 class Sen1Floods11NonGeoDataModule(NonGeoDataModule):
     """NonGeo Fire Scars data module implementation"""
 
@@ -58,6 +57,7 @@ class Sen1Floods11NonGeoDataModule(NonGeoDataModule):
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
         val_transform: A.Compose | None | list[A.BasicTransform] = None,
         test_transform: A.Compose | None | list[A.BasicTransform] = None,
+        predict_transform: A.Compose | None | list[A.BasicTransform] = None,
         drop_last: bool = True,
         constant_scale: float = 0.0001,
         no_data_replace: float | None = 0,
@@ -74,6 +74,7 @@ class Sen1Floods11NonGeoDataModule(NonGeoDataModule):
         self.train_transform = wrap_in_compose_is_list(train_transform)
         self.val_transform = wrap_in_compose_is_list(val_transform)
         self.test_transform = wrap_in_compose_is_list(test_transform)
+        self.predict_transform = wrap_in_compose_is_list(predict_transform)
         self.aug = AugmentationSequential(K.Normalize(means, stds), data_keys=["image"])
         self.drop_last = drop_last
         self.constant_scale = constant_scale
@@ -109,6 +110,17 @@ class Sen1Floods11NonGeoDataModule(NonGeoDataModule):
                 split="test",
                 data_root=self.data_root,
                 transform=self.test_transform,
+                bands=self.bands,
+                constant_scale=self.constant_scale,
+                no_data_replace=self.no_data_replace,
+                no_label_replace=self.no_label_replace,
+                use_metadata=self.use_metadata,
+            )
+        if stage in ["predict"]:
+            self.predict_dataset = self.dataset_class(
+                split="test",
+                data_root=self.data_root,
+                transform=self.predict_transform,
                 bands=self.bands,
                 constant_scale=self.constant_scale,
                 no_data_replace=self.no_data_replace,

@@ -1,6 +1,7 @@
-from functools import partial
 from typing import Any
-
+from functools import partial
+import os
+import logging
 import lightning
 import matplotlib.pyplot as plt
 import segmentation_models_pytorch as smp
@@ -8,17 +9,19 @@ import torch
 from lightning.pytorch.callbacks import Callback
 from torch import Tensor, nn
 from torchgeo.datasets.utils import unbind_samples
-from torchgeo.trainers import BaseTask
 from torchmetrics import ClasswiseWrapper, MetricCollection
 from torchmetrics.classification import MulticlassAccuracy, MulticlassF1Score, MulticlassJaccardIndex
 
-from terratorch.models.model import AuxiliaryHead, Model, ModelOutput
+from terratorch.models.model import AuxiliaryHead, ModelOutput
 from terratorch.registry import MODEL_FACTORY_REGISTRY
 from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
 from terratorch.tasks.tiled_inference import TiledInferenceParameters, tiled_inference
+from terratorch.tasks.base_task import TerraTorchTask
 
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
+
+logger = logging.getLogger("terratorch")
 
 
 def to_segmentation_prediction(y: ModelOutput) -> Tensor:
@@ -26,7 +29,7 @@ def to_segmentation_prediction(y: ModelOutput) -> Tensor:
     return y_hat.argmax(dim=1)
 
 
-class SemanticSegmentationTask(BaseTask):
+class SemanticSegmentationTask(TerraTorchTask):
     """Semantic Segmentation Task that accepts models from a range of sources.
 
     This class is analog in functionality to class:SemanticSegmentationTask defined by torchgeo.
@@ -41,7 +44,8 @@ class SemanticSegmentationTask(BaseTask):
     def __init__(
         self,
         model_args: dict,
-        model_factory: str,
+        model_factory: str | None = None,
+        model: torch.nn.Module | None = None,
         loss: str = "ce",
         aux_heads: list[AuxiliaryHead] | None = None,
         aux_loss: dict[str, float] | None = None,
@@ -56,10 +60,12 @@ class SemanticSegmentationTask(BaseTask):
         #
         freeze_backbone: bool = False,  # noqa: FBT001, FBT002
         freeze_decoder: bool = False,  # noqa: FBT002, FBT001
+        freeze_head: bool = False, 
         plot_on_val: bool | int = 10,
         class_names: list[str] | None = None,
         tiled_inference_parameters: TiledInferenceParameters = None,
         test_dataloaders_names: list[str] | None = None,
+        lr_overrides: dict[str, float] | None = None,
     ) -> None:
         """Constructor
 
@@ -67,7 +73,9 @@ class SemanticSegmentationTask(BaseTask):
 
             Defaults to None.
             model_args (Dict): Arguments passed to the model factory.
-            model_factory (str): ModelFactory class to be used to instantiate the model.
+            model_factory (str, optional): ModelFactory class to be used to instantiate the model.
+                Is ignored when model is provided.
+            model (torch.nn.Module, optional): Custom model.
             loss (str, optional): Loss to be used. Currently, supports 'ce', 'jaccard' or 'focal' loss.
                 Defaults to "ce".
             aux_loss (dict[str, float] | None, optional): Auxiliary loss weights.
@@ -90,7 +98,8 @@ class SemanticSegmentationTask(BaseTask):
             scheduler_hparams (dict | None): Parameters to be passed for instantiation of the scheduler.
                 Overriden by config / cli specification through LightningCLI.
             freeze_backbone (bool, optional): Whether to freeze the backbone. Defaults to False.
-            freeze_decoder (bool, optional): Whether to freeze the decoder and segmentation head. Defaults to False.
+            freeze_decoder (bool, optional): Whether to freeze the decoder. Defaults to False.
+            freeze_head (bool, optional): Whether to freeze the segmentation head. Defaults to False.
             plot_on_val (bool | int, optional): Whether to plot visualizations on validation.
             If true, log every epoch. Defaults to 10. If int, will plot every plot_on_val epochs.
             class_names (list[str] | None, optional): List of class names passed to metrics for better naming.
@@ -100,12 +109,28 @@ class SemanticSegmentationTask(BaseTask):
             test_dataloaders_names (list[str] | None, optional): Names used to differentiate metrics when
                 multiple dataloaders are returned by test_dataloader in the datamodule. Defaults to None,
                 which assumes only one test dataloader is used.
+            lr_overrides (dict[str, float] | None, optional): Dictionary to override the default lr in specific
+                parameters. The key should be a substring of the parameter names (it will check the substring is
+                contained in the parameter name)and the value should be the new lr. Defaults to None.
         """
         self.tiled_inference_parameters = tiled_inference_parameters
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
-        self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
-        super().__init__()
+
+        if model is not None and model_factory is not None:
+            logger.warning("A model_factory and a model was provided. The model_factory is ignored.")
+        if model is None and model_factory is None:
+            raise ValueError("A model_factory or a model (torch.nn.Module) must be provided.")
+
+        if model_factory and model is None:
+            self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
+
+        super().__init__(task="segmentation")
+
+        if model is not None:
+            # Custom model
+            self.model = model
+
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
         self.test_loss_handler: list[LossHandler] = []
         for metrics in self.test_metrics:
@@ -113,35 +138,6 @@ class SemanticSegmentationTask(BaseTask):
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
         self.monitor = f"{self.val_metrics.prefix}loss"
         self.plot_on_val = int(plot_on_val)
-
-    # overwrite early stopping
-    def configure_callbacks(self) -> list[Callback]:
-        return []
-
-    def configure_models(self) -> None:
-        self.model: Model = self.model_factory.build_model(
-            "segmentation", aux_decoders=self.aux_heads, **self.hparams["model_args"]
-        )
-        if self.hparams["freeze_backbone"]:
-            self.model.freeze_encoder()
-        if self.hparams["freeze_decoder"]:
-            self.model.freeze_decoder()
-
-    def configure_optimizers(
-        self,
-    ) -> "lightning.pytorch.utilities.types.OptimizerLRSchedulerConfig":
-        optimizer = self.hparams["optimizer"]
-        if optimizer is None:
-            optimizer = "Adam"
-        return optimizer_factory(
-            optimizer,
-            self.hparams["lr"],
-            self.parameters(),
-            self.hparams["optimizer_hparams"],
-            self.hparams["scheduler"],
-            self.monitor,
-            self.hparams["scheduler_hparams"],
-        )
 
     def configure_losses(self) -> None:
         """Initialize the loss criterion.
@@ -236,36 +232,19 @@ class SemanticSegmentationTask(BaseTask):
         x = batch["image"]
         y = batch["mask"]
         other_keys = batch.keys() - {"image", "mask", "filename"}
+
         rest = {k: batch[k] for k in other_keys}
 
         model_output: ModelOutput = self(x, **rest)
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
-        self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
+        self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat_hard = to_segmentation_prediction(model_output)
         self.train_metrics.update(y_hat_hard, y)
 
         return loss["loss"]
 
-    def on_train_epoch_end(self) -> None:
-        self.log_dict(self.train_metrics.compute(), sync_dist=True)
-        self.train_metrics.reset()
-        return super().on_train_epoch_end()
-
-    def _do_plot_samples(self, batch_index):
-        if not self.plot_on_val:  # dont plot if self.plot_on_val is 0
-            return False
-
-        return (
-            batch_index < BATCH_IDX_FOR_VALIDATION_PLOTTING
-            and hasattr(self.trainer, "datamodule")
-            and self.logger
-            and not self.current_epoch % self.plot_on_val  # will be True every self.plot_on_val epochs
-            and hasattr(self.logger, "experiment")
-            and (hasattr(self.logger.experiment, "add_figure") or hasattr(self.logger.experiment, "log_figure"))
-        )
-
-    def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
-        """Compute the validation loss and additional metrics.
+    def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
+        """Compute the test loss and additional metrics.
 
         Args:
             batch: The output of your DataLoader.
@@ -275,10 +254,38 @@ class SemanticSegmentationTask(BaseTask):
         x = batch["image"]
         y = batch["mask"]
         other_keys = batch.keys() - {"image", "mask", "filename"}
+
+        rest = {k: batch[k] for k in other_keys}
+
+        model_output: ModelOutput = self(x, **rest)
+        if dataloader_idx >= len(self.test_loss_handler):
+            msg = "You are returning more than one test dataloader but not defining enough test_dataloaders_names."
+            raise ValueError(msg)
+        loss = self.test_loss_handler[dataloader_idx].compute_loss(model_output, y, self.criterion, self.aux_loss)
+        self.test_loss_handler[dataloader_idx].log_loss(
+            partial(self.log, add_dataloader_idx=False),  # We don't need the dataloader idx as prefixes are different
+            loss_dict=loss,
+            batch_size=y.shape[0],
+        )
+        y_hat_hard = to_segmentation_prediction(model_output)
+        self.test_metrics[dataloader_idx].update(y_hat_hard, y)
+
+    def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
+        """Compute the validation loss and additional metrics.
+        Args:
+            batch: The output of your DataLoader.
+            batch_idx: Integer displaying index of this batch.
+            dataloader_idx: Index of the current dataloader.
+        """
+        x = batch["image"]
+        y = batch["mask"]
+
+        other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
+
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
-        self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
+        self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat_hard = to_segmentation_prediction(model_output)
         self.val_metrics.update(y_hat_hard, y)
 
@@ -286,6 +293,15 @@ class SemanticSegmentationTask(BaseTask):
             try:
                 datamodule = self.trainer.datamodule
                 batch["prediction"] = y_hat_hard
+
+                if isinstance(batch["image"], dict):
+                    if hasattr(datamodule, "rgb_modality"):
+                        # Generic multimodal dataset
+                        batch["image"] = batch["image"][datamodule.rgb_modality]
+                    else:
+                        # Multimodal dataset. Assuming first item to be the modality to visualize.
+                        batch["image"] = batch["image"][list(batch["image"].keys())[0]]
+
                 for key in ["image", "mask", "prediction"]:
                     batch[key] = batch[key].cpu()
                 sample = unbind_samples(batch)[0]
@@ -303,42 +319,6 @@ class SemanticSegmentationTask(BaseTask):
             finally:
                 plt.close()
 
-    def on_validation_epoch_end(self) -> None:
-        self.log_dict(self.val_metrics.compute(), sync_dist=True)
-        self.val_metrics.reset()
-        return super().on_validation_epoch_end()
-
-    def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
-        """Compute the test loss and additional metrics.
-
-        Args:
-            batch: The output of your DataLoader.
-            batch_idx: Integer displaying index of this batch.
-            dataloader_idx: Index of the current dataloader.
-        """
-        x = batch["image"]
-        y = batch["mask"]
-        other_keys = batch.keys() - {"image", "mask", "filename"}
-        rest = {k: batch[k] for k in other_keys}
-        model_output: ModelOutput = self(x, **rest)
-        if dataloader_idx >= len(self.test_loss_handler):
-            msg = "You are returning more than one test dataloader but not defining enough test_dataloaders_names."
-            raise ValueError(msg)
-        loss = self.test_loss_handler[dataloader_idx].compute_loss(model_output, y, self.criterion, self.aux_loss)
-        self.test_loss_handler[dataloader_idx].log_loss(
-            partial(self.log, add_dataloader_idx=False),  # We don't need the dataloader idx as prefixes are different
-            loss_dict=loss,
-            batch_size=x.shape[0],
-        )
-        y_hat_hard = to_segmentation_prediction(model_output)
-        self.test_metrics[dataloader_idx].update(y_hat_hard, y)
-
-    def on_test_epoch_end(self) -> None:
-        for metrics in self.test_metrics:
-            self.log_dict(metrics.compute(), sync_dist=True)
-            metrics.reset()
-        return super().on_test_epoch_end()
-
     def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         """Compute the predicted class probabilities.
 
@@ -351,9 +331,11 @@ class SemanticSegmentationTask(BaseTask):
             Output predicted probabilities.
         """
         x = batch["image"]
-        file_names = batch["filename"]
+        file_names = batch["filename"] if "filename" in batch else None
         other_keys = batch.keys() - {"image", "mask", "filename"}
+
         rest = {k: batch[k] for k in other_keys}
+
         model_output: ModelOutput = self(x, **rest)
 
         def model_forward(x):
@@ -361,9 +343,13 @@ class SemanticSegmentationTask(BaseTask):
 
         if self.tiled_inference_parameters:
             y_hat: Tensor = tiled_inference(
-                model_forward, x, self.hparams["model_args"]["num_classes"], self.tiled_inference_parameters
+                # TODO: tiled inference does not work with additional input data (**rest)
+                model_forward,
+                x,
+                self.hparams["model_args"]["num_classes"],
+                self.tiled_inference_parameters,
             )
         else:
-            y_hat: Tensor = self(x).output
+            y_hat: Tensor = self(x, **rest).output
         y_hat = y_hat.argmax(dim=1)
         return y_hat, file_names

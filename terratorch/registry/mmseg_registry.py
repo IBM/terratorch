@@ -94,4 +94,4 @@ if importlib.util.find_spec("mmseg"):
     MMSEG_DECODER_REGISTRY = MMSegRegistry()
     DECODER_REGISTRY.register_source("mmseg", MMSEG_DECODER_REGISTRY)
 else:
-    logging.debug("mmseg not installed, so MmsegDecoderRegistry not created")
+    logging.getLogger("terratorch").debug("mmseg not installed, so MmsegDecoderRegistry not created")
