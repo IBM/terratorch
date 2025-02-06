@@ -66,6 +66,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         tiled_inference_parameters: TiledInferenceParameters = None,
         test_dataloaders_names: list[str] | None = None,
         lr_overrides: dict[str, float] | None = None,
+        output_most_probable: bool = True,
     ) -> None:
         """Constructor
 
@@ -112,6 +113,8 @@ class SemanticSegmentationTask(TerraTorchTask):
             lr_overrides (dict[str, float] | None, optional): Dictionary to override the default lr in specific
                 parameters. The key should be a substring of the parameter names (it will check the substring is
                 contained in the parameter name)and the value should be the new lr. Defaults to None.
+            output_most_probable (bool): A boolean to define if the output during the inference will be just
+                for the most probable class or if it will include all of them. 
         """
         self.tiled_inference_parameters = tiled_inference_parameters
         self.aux_loss = aux_loss
@@ -138,6 +141,12 @@ class SemanticSegmentationTask(TerraTorchTask):
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
         self.monitor = f"{self.val_metrics.prefix}loss"
         self.plot_on_val = int(plot_on_val)
+        self.output_most_probable = output_most_probable
+
+        if output_most_probable:
+            self.select_classes = lambda y: y.argmax(dim=1) 
+        else:
+            self.select_classes = lambda y: y
 
     def configure_losses(self) -> None:
         """Initialize the loss criterion.
@@ -351,5 +360,7 @@ class SemanticSegmentationTask(TerraTorchTask):
             )
         else:
             y_hat: Tensor = self(x, **rest).output
-        y_hat = y_hat.argmax(dim=1)
+
+        y_hat = self.select_classes(y_hat)
+
         return y_hat, file_names
