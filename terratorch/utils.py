@@ -75,9 +75,8 @@ def get_logger():
     loglevel = os.getenv("LOGLEVEL")
 
     if loglevel:
-        logging.basicConfig(level=loglevel.upper())
+        logging.basicConfig(level=loglevel.upper(), format='%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s', datefmt='%Y-%m-%d:%H:%M:%S')
 
     logger = logging.getLogger("terratorch")
-
     return logger 
 
