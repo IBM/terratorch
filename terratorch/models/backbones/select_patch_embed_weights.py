@@ -27,12 +27,14 @@ def get_state_dict(state_dict):
 
 def get_proj_key(state_dict, return_prefix=False):
 
+    prefix_key = None 
+
     for key in state_dict.keys():
         if key.endswith('patch_embed.proj.weight') or key.endswith('patch_embed.projection.weight'):
             proj_key = key
             break
 
-    if return_prefix:
+    if return_prefix and prefix_key:
 
         for sufix in ['patch_embed.proj.weight', 'patch_embed.projection.weight']:
             if proj_key.endswith(sufix):
