@@ -27,7 +27,7 @@ def get_state_dict(state_dict):
 
 def get_proj_key(state_dict, return_prefix=False):
 
-    prefix_key = None 
+    proj_key = None 
 
     for key in state_dict.keys():
         if key.endswith('patch_embed.proj.weight') or key.endswith('patch_embed.projection.weight'):
