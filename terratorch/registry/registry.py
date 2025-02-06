@@ -56,8 +56,10 @@ class MultiSourceRegistry(Mapping[str, T], typing.Generic[T]):
 
         # if no prefix, try to build in order
         for source in self._sources.values():
-            with suppress(KeyError):
+            try:
                 return source.build(name, *constructor_args, **constructor_kwargs)
+            except KeyError:
+                raise Exception(f"It wasn't possible to load model from source {source}.")
 
         msg = f"Could not instantiate model {name} not from any source."
         raise KeyError(msg)
@@ -138,6 +140,7 @@ class Registry(Set):
         """Build and return the component.
         Use prefixes ending with _ to forward to a specific source
         """
+        print(self._registry.keys())
         return self._registry[name](*constructor_args, **constructor_kwargs)
 
     def __iter__(self):
