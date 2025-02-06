@@ -23,33 +23,90 @@ SUPPORTED_TASKS = PIXEL_WISE_TASKS + SCALAR_TASKS
 
 
 class TemporalWrapper(nn.Module):
-    def __init__(self, encoder, pooling="mean"):
+    def __init__(self, encoder: nn.Module, pooling="mean", concat=False):
+        """
+        Wrapper for applying a temporal encoder across multiple time steps.
+
+        Args:
+            encoder (nn.Module): The feature extractor (backbone).
+            pooling (str): Type of pooling ('mean' or 'max').
+            concat (bool): Whether to concatenate features instead of pooling.
+        """
         super().__init__()
         self.encoder = encoder
-        if pooling == "mean":
-            self.pooling = torch.mean
-        elif pooling == "max":
-            self.pooling = torch.max
+        self.concat = concat
+        self.pooling_type = pooling
+
+        if pooling not in ["mean", "max"]:
+            raise ValueError("Pooling must be 'mean' or 'max'")
+
+        # Ensure the encoder has an out_channels attribute
+        if hasattr(encoder, "out_channels"):
+            self.out_channels = encoder.out_channels * (1 if not concat else encoder.out_channels)
         else:
-            msg = "Pooling must be 'mean' or 'max'"
-            raise ValueError(msg)
+            raise AttributeError("Encoder must have an `out_channels` attribute.")
 
-    def forward(self, x):
-        # x is a list of tensors, each corresponding to a different timestamp
-        features = [self.encoder(t) for t in x]
-        # Stack features along a new dimension and apply pooling
-        features = torch.stack(features, dim=0)
-        if self.pooling == torch.max:
-            pooled_features, _ = self.pooling(features, dim=0)
+    def forward(self, x: torch.Tensor) -> list[torch.Tensor]:
+        """
+        Forward pass for temporal processing.
+
+        Args:
+            x (Tensor): Input tensor of shape [B, C, T, H, W].
+
+        Returns:
+            List[Tensor]: A list of processed tensors, one per feature map.
+        """
+        if x.dim() != 5:
+            raise ValueError(f"Expected input shape [B, C, T, H, W], but got {x.shape}")
+
+        batch_size, channels, timesteps, height, width = x.shape
+        x = x.permute(0, 2, 1, 3, 4)
+
+        # Initialize lists to store feature maps at each timestamp
+        num_feature_maps = None  # Will determine dynamically
+        features_per_map = []  # Stores feature maps across timestamps
+
+        for t in range(timesteps):
+            feat = self.encoder(x[:, :, t, :, :])  # Extract features at timestamp t
+
+            if not isinstance(feat, list):  # If the encoder outputs a single feature map, convert to list
+                feat = [feat]
+
+            if num_feature_maps is None:
+                num_feature_maps = len(feat)  # Determine how many feature maps the encoder produces
+
+            for i, feature_map in enumerate(feat):
+                if len(features_per_map) <= i:
+                    features_per_map.append([])  # Create list for each feature map
+
+                features_per_map[i].append(feature_map)  # Store feature map at time t
+
+        # Stack features along the temporal dimension
+        for i in range(num_feature_maps):
+            try:
+                features_per_map[i] = torch.stack(features_per_map[i], dim=2)  # Shape: [B, C', T, H', W']
+            except RuntimeError as e:
+                raise
+
+        # Apply pooling or concatenation
+        if self.concat:
+            return [feat.view(batch_size, -1, height, width) for feat in features_per_map]  # Flatten T into C'
+        elif self.pooling_type == "max":
+            return [torch.max(feat, dim=2)[0] for feat in features_per_map]  # Max pooling across T
         else:
-            pooled_features = self.pooling(features, dim=0)
-        return pooled_features
+            return [torch.mean(feat, dim=2) for feat in features_per_map]  # Mean pooling across T
 
-
-def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
+def _get_backbone(backbone: str | nn.Module, use_temporal=False, temporal_pooling="mean", **backbone_kwargs) -> nn.Module:
     if isinstance(backbone, nn.Module):
-        return backbone
-    return BACKBONE_REGISTRY.build(backbone, **backbone_kwargs)
+        model = backbone
+    else:
+        model = BACKBONE_REGISTRY.build(backbone, **backbone_kwargs)
+
+    # Apply TemporalWrapper inside _get_backbone
+    if use_temporal:
+        model = TemporalWrapper(model, pooling=temporal_pooling)
+
+    return model
 
 
 def _get_decoder_and_head_kwargs(
@@ -100,7 +157,7 @@ class EncoderDecoderFactory(ModelFactory):
         necks: list[dict] | None = None,
         aux_decoders: list[AuxiliaryHead] | None = None,
         rescale: bool = True,  # noqa: FBT002, FBT001,
-        use_temporal: bool = False,
+        backbone_use_temporal: bool = False,
         temporal_pooling: str = "mean",
         **kwargs,
     ) -> Model:
@@ -141,7 +198,7 @@ class EncoderDecoderFactory(ModelFactory):
             raise NotImplementedError(msg)
 
         backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
-        backbone = _get_backbone(backbone, **backbone_kwargs)
+        backbone = _get_backbone(backbone, use_temporal=backbone_use_temporal, temporal_pooling = temporal_pooling, **backbone_kwargs)
 
         try:
             out_channels = backbone.out_channels
@@ -163,10 +220,6 @@ class EncoderDecoderFactory(ModelFactory):
         decoder, head_kwargs, decoder_includes_head = _get_decoder_and_head_kwargs(
             decoder, channel_list, decoder_kwargs, head_kwargs, num_classes=num_classes
         )
-
-        # Add temporal wrapper if enabled
-        if use_temporal:
-            backbone = TemporalWrapper(backbone, pooling=temporal_pooling)
 
         if aux_decoders is None:
             _check_all_args_used(kwargs)
