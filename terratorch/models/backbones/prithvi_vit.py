@@ -9,9 +9,10 @@ from terratorch.models.backbones.select_patch_embed_weights import select_patch_
 from terratorch.datasets.utils import generate_bands_intervals
 from terratorch.models.backbones.prithvi_mae import PrithviViT, PrithviMAE
 from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
+from terratorch.utils import get_logger
 from huggingface_hub import hf_hub_download
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 PRETRAINED_BANDS = [
     HLSBands.BLUE,
@@ -116,7 +117,6 @@ def checkpoint_filter_fn_vit(
             clean_dict[k] = v
 
     state_dict = clean_dict
-
     state_dict = select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands)
 
     return state_dict
@@ -215,6 +215,7 @@ def _create_prithvi(
 
     if ckpt_path is not None:
         # Load model from checkpoint
+        logger.info(f"Loading weights for local checkpoint: {ckpt_path}")
         state_dict = torch.load(ckpt_path, map_location="cpu")
         state_dict = checkpoint_filter_wrapper_fn(state_dict, model, pretrained_bands, model_bands)
         model.load_state_dict(state_dict, strict=False)
@@ -225,6 +226,8 @@ def _create_prithvi(
             # Load model from Hugging Face
             pretrained_path = hf_hub_download(repo_id=pretrained_weights[variant]["hf_hub_id"],
                                               filename=pretrained_weights[variant]["hf_hub_filename"])
+
+            logger.info(f"Loading weights from remote: {pretrained_path}")
             state_dict = torch.load(pretrained_path, map_location="cpu")
             state_dict = checkpoint_filter_wrapper_fn(state_dict, model, pretrained_bands, model_bands)
             model.load_state_dict(state_dict, strict=True)

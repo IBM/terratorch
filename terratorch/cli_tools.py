@@ -446,7 +446,6 @@ def build_lightning_cli(
                 UserWarning,
                 stacklevel=1,
             )
-    print(args)
     return MyLightningCLI(
         model_class=BaseTask,
         subclass_mode_model=True,
@@ -486,6 +485,7 @@ class LightningInferenceModel:
         self.model = model
         self.datamodule = datamodule
         if checkpoint_path:
+            logger.info(f"Loading weights from local checkpoint: {checkpoint_path}")
             weights = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
             if "state_dict" in weights:
                 weights = weights["state_dict"]
