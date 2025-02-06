@@ -103,6 +103,7 @@ def select_patch_embed_weights(
 
         state_dict[proj_key] = temp_weight
 
-    state_dict = remove_prefixes(state_dict, prefix)
+    if prefix:
+        state_dict = remove_prefixes(state_dict, prefix)
 
     return state_dict
