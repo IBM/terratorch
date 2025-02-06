@@ -34,7 +34,7 @@ def get_proj_key(state_dict, return_prefix=False):
             proj_key = key
             break
 
-    if return_prefix and prefix_key:
+    if return_prefix and proj_key:
 
         for sufix in ['patch_embed.proj.weight', 'patch_embed.projection.weight']:
             if proj_key.endswith(sufix):
