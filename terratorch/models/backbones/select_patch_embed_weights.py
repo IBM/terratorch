@@ -18,6 +18,37 @@ def patch_embed_weights_are_compatible(model_patch_embed: torch.Tensor, checkpoi
     checkpoint_shape = [checkpoint_patch_embed.shape[i] for i in range(len(checkpoint_patch_embed.shape)) if i != 1]
     return model_shape == checkpoint_shape
 
+def get_state_dict(state_dict):
+
+    if "state_dict" in state_dict.keys():
+        return state_dict["state_dict"]
+    else:
+        return state_dict
+
+def get_proj_key(state_dict, return_prefix=False):
+
+    for key in state_dict.keys():
+        if key.endswith('patch_embed.proj.weight') or key.endswith('patch_embed.projection.weight'):
+            proj_key = key
+            break
+
+    if return_prefix:
+
+        for sufix in ['patch_embed.proj.weight', 'patch_embed.projection.weight']:
+            if proj_key.endswith(sufix):
+                prefix = proj_key.replace(sufix, "")
+                break
+    else:
+        prefix = None
+
+    return proj_key, prefix
+
+def remove_prefixes(state_dict, prefix):
+    new_state_dict = {}
+    for k, v in state_dict.items():
+        new_state_dict[k.replace(prefix, "")] = v
+    return new_state_dict
+
 def select_patch_embed_weights(
     state_dict: dict, model: nn.Module, pretrained_bands: list[HLSBands | int | OpticalBands| SARBands], model_bands: list[HLSBands | int | OpticalBands| SARBands], proj_key: str | None = None
 ) -> dict:
@@ -38,18 +69,20 @@ def select_patch_embed_weights(
     """
     if (type(pretrained_bands) == type(model_bands)) | (type(pretrained_bands) == int) | (type(model_bands) == int):
 
+        state_dict = get_state_dict(state_dict) 
+
         if proj_key is None:
             # Search for patch embedding weight in state dict
-            for key in state_dict.keys():
-                if key.endswith('patch_embed.proj.weight') or key.endswith('patch_embed.projection.weight'):
-                    proj_key = key
-                    break
+            proj_key, prefix = get_proj_key(state_dict, return_prefix=True)
         if proj_key is None or proj_key not in state_dict:
             raise Exception("Could not find key for patch embed weight in state_dict.")
 
         patch_embed_weight = state_dict[proj_key]
 
-        temp_weight = model.state_dict()[proj_key].clone()
+        # It seems `proj_key` can have different names for 
+        # the checkpoint and the model instance
+        proj_key_, _  = get_proj_key(model.state_dict())
+        temp_weight = model.state_dict()[proj_key_].clone()
 
         # only do this if the patch size and tubelet size match. If not, start with random weights
         if patch_embed_weights_are_compatible(temp_weight, patch_embed_weight):
@@ -67,5 +100,7 @@ def select_patch_embed_weights(
             )
 
         state_dict[proj_key] = temp_weight
+
+    state_dict = remove_prefixes(state_dict, prefix)
 
     return state_dict
