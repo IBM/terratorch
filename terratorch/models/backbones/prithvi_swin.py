@@ -109,7 +109,7 @@ def checkpoint_filter_fn(state_dict: dict[str, torch.Tensor], model: torch.nn.Mo
         _state_dict = state_dict["model"]
     else:
         _state_dict = state_dict
-
+    print("A")
     # strip prefix of state_dict
     if next(iter(_state_dict.keys())).startswith("module."):
         _state_dict = {k[7:]: v for k, v in _state_dict.items()}
@@ -132,8 +132,9 @@ def checkpoint_filter_fn(state_dict: dict[str, torch.Tensor], model: torch.nn.Mo
                 state_dict[k[9:]] = v
             else:
                 state_dict[k] = v
-
+    print("B")
     relative_position_bias_table_keys = [k for k in state_dict.keys() if "relative_position_bias_table" in k]
+    rint(relative_position_bias_table_keys)
     for table_key in relative_position_bias_table_keys:
         table_pretrained = state_dict[table_key]
         table_current = model.state_dict()[table_key]
@@ -150,11 +151,11 @@ def checkpoint_filter_fn(state_dict: dict[str, torch.Tensor], model: torch.nn.Mo
                 mode="bicubic",
             )
             state_dict[table_key] = table_pretrained_resized.view(nH2, L2).permute(1, 0).contiguous()
-
+    print("C")
     if hasattr(model.head.fc, "weight"):
         state_dict["head.fc.weight"] = model.head.fc.weight.detach().clone()
         state_dict["head.fc.bias"] = model.head.fc.bias.detach().clone()
-
+    print("D")
     state_dict = select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands)
     return state_dict
 
@@ -166,6 +167,8 @@ def _create_swin_mmseg_transformer(
     pretrained: bool = False,  # noqa: FBT002, FBT001
     **kwargs,
 ):
+    ckpt_path = kwargs.pop("ckpt_path")
+
     if pretrained_bands is None:
         pretrained_bands = PRETRAINED_BANDS
 
@@ -213,6 +216,12 @@ def _create_swin_mmseg_transformer(
             feature_cfg={"flatten_sequential": True, "out_indices": out_indices},
             **kwargs,
         )
+
+    if pretrained:
+        if ckpt_path is not None:
+            # Load model from checkpoint
+            state_dict = torch.load(ckpt_path, map_location="cpu", weights_only=True)
+            state_dict = checkpoint_filter_wrapper_fn(state_dict, model)
 
     model.pretrained_bands = pretrained_bands
     model.model_bands = model_bands
