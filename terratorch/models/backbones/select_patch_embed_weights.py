@@ -72,6 +72,7 @@ def select_patch_embed_weights(
     if (type(pretrained_bands) == type(model_bands)) | (type(pretrained_bands) == int) | (type(model_bands) == int):
 
         state_dict = get_state_dict(state_dict) 
+        prefix = None # we expect no prefix will be necessary in principle 
 
         if proj_key is None:
             # Search for patch embedding weight in state dict
@@ -84,7 +85,11 @@ def select_patch_embed_weights(
         # It seems `proj_key` can have different names for 
         # the checkpoint and the model instance
         proj_key_, _  = get_proj_key(model.state_dict())
-        temp_weight = model.state_dict()[proj_key_].clone()
+
+        if proj_key_:
+            temp_weight = model.state_dict()[proj_key_].clone()
+        else:
+            temp_weight = model.state_dict()[proj_key].clone()
 
         # only do this if the patch size and tubelet size match. If not, start with random weights
         if patch_embed_weights_are_compatible(temp_weight, patch_embed_weight):
@@ -103,7 +108,7 @@ def select_patch_embed_weights(
 
         state_dict[proj_key] = temp_weight
 
-    if prefix:
-        state_dict = remove_prefixes(state_dict, prefix)
+        if prefix:
+            state_dict = remove_prefixes(state_dict, prefix)
 
     return state_dict
