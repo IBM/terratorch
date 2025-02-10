@@ -97,6 +97,13 @@ def weights_are_swin_implementation(state_dict: dict[str, torch.Tensor]):
             return True
     return False
 
+def identify_prefix(state_dict, model):
+
+    state_dict_ = model.state_dict()
+
+    prefix = list(state_dict.keys())[0].replace(list(state_dict_.keys())[0], "")
+
+    return prefix 
 
 def checkpoint_filter_fn(state_dict: dict[str, torch.Tensor], model: torch.nn.Module, pretrained_bands, model_bands):
     """convert patch embedding weight from manual patchify + linear proj to conv"""
@@ -109,7 +116,7 @@ def checkpoint_filter_fn(state_dict: dict[str, torch.Tensor], model: torch.nn.Mo
         _state_dict = state_dict["model"]
     else:
         _state_dict = state_dict
-    print("A")
+
     # strip prefix of state_dict
     if next(iter(_state_dict.keys())).startswith("module."):
         _state_dict = {k[7:]: v for k, v in _state_dict.items()}
@@ -132,12 +139,22 @@ def checkpoint_filter_fn(state_dict: dict[str, torch.Tensor], model: torch.nn.Mo
                 state_dict[k[9:]] = v
             else:
                 state_dict[k] = v
-    print("B")
+
     relative_position_bias_table_keys = [k for k in state_dict.keys() if "relative_position_bias_table" in k]
-    rint(relative_position_bias_table_keys)
+    # If the checkpoint uses a prefix for the keys, let's discover it.
+    prefix = identify_prefix(state_dict, model)
+
     for table_key in relative_position_bias_table_keys:
+
+        # If we have prefixes, we need to remove them to use the information
+        # from the checkpoint.
+        if prefix:
+            table_key_ = table_key.replace(prefix, "")
+        else:
+            table_key_ = table_key
+
         table_pretrained = state_dict[table_key]
-        table_current = model.state_dict()[table_key]
+        table_current = model.state_dict()[table_key_]
         L1, nH1 = table_pretrained.size()
         L2, nH2 = table_current.size()
         if nH1 != nH2:
@@ -151,11 +168,11 @@ def checkpoint_filter_fn(state_dict: dict[str, torch.Tensor], model: torch.nn.Mo
                 mode="bicubic",
             )
             state_dict[table_key] = table_pretrained_resized.view(nH2, L2).permute(1, 0).contiguous()
-    print("C")
-    if hasattr(model.head.fc, "weight"):
-        state_dict["head.fc.weight"] = model.head.fc.weight.detach().clone()
-        state_dict["head.fc.bias"] = model.head.fc.bias.detach().clone()
-    print("D")
+
+    #if hasattr(model.head.fc, "weight"):
+    #    state_dict["head.fc.weight"] = model.head.fc.weight.detach().clone()
+    #    state_dict["head.fc.bias"] = model.head.fc.bias.detach().clone()
+
     state_dict = select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands)
     return state_dict
 
