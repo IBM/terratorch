@@ -121,6 +121,7 @@ def checkpoint_filter_fn(state_dict: dict[str, torch.Tensor], model: torch.nn.Mo
     if next(iter(_state_dict.keys())).startswith("module."):
         _state_dict = {k[7:]: v for k, v in _state_dict.items()}
 
+
     if weights_are_swin_implementation(_state_dict):
         # keep only encoder weights
         state_dict = OrderedDict()
@@ -153,8 +154,14 @@ def checkpoint_filter_fn(state_dict: dict[str, torch.Tensor], model: torch.nn.Mo
         else:
             table_key_ = table_key
 
+        # Trying to minimize inconsistencies with older checkpoints
+        # strip prefix of state_dict
+        if table_key_.startswith("stages_"):
+            table_key_ = table_key_.replace("stages_", "stages.")
+
         table_pretrained = state_dict[table_key]
         table_current = model.state_dict()[table_key_]
+
         L1, nH1 = table_pretrained.size()
         L2, nH2 = table_current.size()
         if nH1 != nH2:
@@ -174,7 +181,13 @@ def checkpoint_filter_fn(state_dict: dict[str, torch.Tensor], model: torch.nn.Mo
     #    state_dict["head.fc.bias"] = model.head.fc.bias.detach().clone()
 
     state_dict = select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands)
-    return state_dict
+
+    state_dict_ = {}
+    for k, v in state_dict.items():
+        if k.startswith("stages_"):
+            state_dict_[k.replace("stages_", "stages.")] = v
+
+    return state_dict_
 
 
 def _create_swin_mmseg_transformer(
@@ -212,6 +225,7 @@ def _create_swin_mmseg_transformer(
 
     # When the pretrained configuration is not available in HF, we shift to 
     # pretrained=False
+    """
     try:
         model: MMSegSwinTransformer = build_model_with_cfg(
             MMSegSwinTransformer,
@@ -233,12 +247,53 @@ def _create_swin_mmseg_transformer(
             feature_cfg={"flatten_sequential": True, "out_indices": out_indices},
             **kwargs,
         )
+    """
+
+    # Backwards compatibility from timm (pretrained_cfg_overlay={"file": "<path to weights>"}) TODO: Remove before v1.0
+    if "pretrained_cfg_overlay" in kwargs:
+        warnings.warn(f"pretrained_cfg_overlay is deprecated and will be removed in a future version, "
+                      f"use ckpt_path=<file path> instead.", DeprecationWarning, stacklevel=2)
+        if ckpt_path is not None:
+            warnings.warn(f"pretrained_cfg_overlay and ckpt_path are provided, ignoring pretrained_cfg_overlay.")
+        elif "file" not in kwargs["pretrained_cfg_overlay"]:
+            warnings.warn("pretrained_cfg_overlay does not include 'file path', ignoring pretrained_cfg_overlay.")
+        else:
+            ckpt_path = kwargs.pop("pretrained_cfg_overlay")["file"]
+
+        _ = kwargs.pop("pretrained_cfg")
+        _ = kwargs.pop("pretrained_cfg_overlay")
+        _ = kwargs.pop("features_only")
+
+    model = MMSegSwinTransformer(**kwargs)
 
     if pretrained:
         if ckpt_path is not None:
             # Load model from checkpoint
             state_dict = torch.load(ckpt_path, map_location="cpu", weights_only=True)
             state_dict = checkpoint_filter_wrapper_fn(state_dict, model)
+            loaded_keys = model.load_state_dict(state_dict, strict=False)
+            if loaded_keys.missing_keys:
+                logger.warning(f"Missing keys in ckpt_path {ckpt_path}: {loaded_keys.missing_keys}")
+            if loaded_keys.unexpected_keys:
+                logger.warning(f"Missing keys in ckpt_path {ckpt_path}: {loaded_keys.missing_keys}")
+        else:
+            assert variant in pretrained_weights, (f"No pre-trained model found for variant {variant} "
+                                                   f"(pretrained models: {pretrained_weights.keys()})")
+
+            try:
+                # Download config.json to count model downloads
+                _ = hf_hub_download(repo_id=pretrained_weights[variant]["hf_hub_id"], filename="config.json")
+                # Load model from Hugging Face
+                pretrained_path = hf_hub_download(repo_id=pretrained_weights[variant]["hf_hub_id"],
+                                                  filename=pretrained_weights[variant]["hf_hub_filename"])
+                state_dict = torch.load(pretrained_path, map_location="cpu", weights_only=True)
+                state_dict = checkpoint_filter_wrapper_fn(state_dict, model, pretrained_bands, model_bands)
+                model.load_state_dict(state_dict, strict=True)
+            except RuntimeError as e:
+                logger.error(f"Failed to load the pre-trained weights for {variant}.")
+                raise e
+    elif ckpt_path is not None:
+        logger.warning(f"ckpt_path is provided but pretrained is set to False, ignoring ckpt_path {ckpt_path}.")
 
     model.pretrained_bands = pretrained_bands
     model.model_bands = model_bands
