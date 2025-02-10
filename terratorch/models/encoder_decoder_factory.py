@@ -1,8 +1,8 @@
 # Copyright contributors to the Terratorch project
 
-
+from typing import List
 import warnings
-
+import logging 
 from torch import nn
 
 from terratorch.models.model import (
@@ -65,6 +65,8 @@ def _check_all_args_used(kwargs):
         msg = f"arguments {kwargs} were passed but not used."
         raise ValueError(msg)
 
+def _get_argument_from_instance(model, name):
+    return getattr(model._timm_module.patch_embed, name)[-1]
 
 @MODEL_FACTORY_REGISTRY.register
 class EncoderDecoderFactory(ModelFactory):
@@ -128,6 +130,17 @@ class EncoderDecoderFactory(ModelFactory):
         backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
         backbone = _get_backbone(backbone, **backbone_kwargs)
 
+        # If patch size is not provided in the config or by the model, it might lead to errors due to irregular images.
+        patch_size = backbone_kwargs.get("patch_size", None)
+
+        if patch_size is None:
+            # Infer patch size from model by checking all backbone modules
+            for module in backbone.modules():
+                if hasattr(module, "patch_size"):
+                    patch_size = module.patch_size
+                    break
+        padding = backbone_kwargs.get("padding", "reflect")
+
         if peft_config is not None:
             if not backbone_kwargs.get("pretrained", False):
                 msg = (
@@ -166,6 +179,8 @@ class EncoderDecoderFactory(ModelFactory):
                 backbone,
                 decoder,
                 head_kwargs,
+                patch_size=patch_size,
+                padding=padding,
                 necks=neck_list,
                 decoder_includes_head=decoder_includes_head,
                 rescale=rescale,
@@ -191,6 +206,8 @@ class EncoderDecoderFactory(ModelFactory):
             backbone,
             decoder,
             head_kwargs,
+            patch_size=patch_size,
+            padding=padding,
             necks=neck_list,
             decoder_includes_head=decoder_includes_head,
             rescale=rescale,
@@ -203,6 +220,8 @@ def _build_appropriate_model(
     backbone: nn.Module,
     decoder: nn.Module,
     head_kwargs: dict,
+    patch_size: int | list | None,
+    padding: str,
     decoder_includes_head: bool = False,
     necks: list[Neck] | None = None,
     rescale: bool = True,  # noqa: FBT001, FBT002
@@ -218,6 +237,8 @@ def _build_appropriate_model(
             backbone,
             decoder,
             head_kwargs,
+            patch_size=patch_size,
+            padding=padding,
             decoder_includes_head=decoder_includes_head,
             neck=neck_module,
             rescale=rescale,
@@ -229,6 +250,8 @@ def _build_appropriate_model(
             backbone,
             decoder,
             head_kwargs,
+            patch_size=patch_size,
+            padding=padding,
             decoder_includes_head=decoder_includes_head,
             neck=neck_module,
             auxiliary_heads=auxiliary_heads,

@@ -1,6 +1,7 @@
 import importlib
 import sys
 from collections.abc import Callable
+import logging 
 
 import timm
 import torch
@@ -108,6 +109,7 @@ class ClayModelFactory(ModelFactory):
 
         # Path for accessing the model source code.
         self.syspath_kwarg = "model_sys_path"
+        backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
 
         # TODO: support auxiliary heads
         if not isinstance(backbone, nn.Module):
@@ -119,8 +121,6 @@ class ClayModelFactory(ModelFactory):
             if task not in SUPPORTED_TASKS:
                 msg = f"Task {task} not supported. Please choose one of {SUPPORTED_TASKS}"
                 raise NotImplementedError(msg)
-
-            backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
 
             # Trying to find the model on HuggingFace.
             try:
@@ -143,6 +143,16 @@ class ClayModelFactory(ModelFactory):
             backbone: nn.Module = Embedder(ckpt_path=checkpoint_path, **backbone_kwargs)
             print("Model Clay was successfully restored.")
 
+        # If patch size is not provided in the config or by the model, it might lead to errors due to irregular images.
+        patch_size = backbone_kwargs.get("patch_size", None)
+        if patch_size is None:
+            # Infer patch size from model by checking all backbone modules
+            for module in backbone.modules():
+                if hasattr(module, "patch_size"):
+                    patch_size = module.patch_size
+                    break
+        padding = backbone_kwargs.get("padding", "reflect")
+
         # allow decoder to be a module passed directly
         decoder_cls = _get_decoder(decoder)
         decoder_kwargs, kwargs = extract_prefix_keys(kwargs, "decoder_")
@@ -157,7 +167,7 @@ class ClayModelFactory(ModelFactory):
             head_kwargs["num_classes"] = num_classes
         if aux_decoders is None:
             return _build_appropriate_model(
-                task, backbone, decoder, head_kwargs, prepare_features_for_image_model, rescale=rescale
+                task, backbone, decoder, head_kwargs, prepare_features_for_image_model, patch_size=patch_size, padding=padding, rescale=rescale
             )
 
         to_be_aux_decoders: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] = []
@@ -186,6 +196,8 @@ class ClayModelFactory(ModelFactory):
             decoder,
             head_kwargs,
             prepare_features_for_image_model,
+            patch_size=patch_size,
+            padding=padding,
             rescale=rescale,
             auxiliary_heads=to_be_aux_decoders,
         )
@@ -197,6 +209,8 @@ def _build_appropriate_model(
     decoder: nn.Module,
     head_kwargs: dict,
     prepare_features_for_image_model: Callable,
+    patch_size: int | list | None,
+    padding: str,
     rescale: bool = True,  # noqa: FBT001, FBT002
     auxiliary_heads: dict | None = None,
 ):
@@ -206,6 +220,8 @@ def _build_appropriate_model(
             backbone,
             decoder,
             head_kwargs,
+            patch_size=patch_size,
+            padding=padding,
             rescale=rescale,
             auxiliary_heads=auxiliary_heads,
         )
@@ -215,6 +231,8 @@ def _build_appropriate_model(
             backbone,
             decoder,
             head_kwargs,
+            patch_size=patch_size,
+            padding=padding,
             auxiliary_heads=auxiliary_heads,
         )
 
