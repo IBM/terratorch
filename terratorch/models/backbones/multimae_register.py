@@ -310,6 +310,8 @@ def multimae_base(
 
     if output_adapters is not None:
         output_adapters, loss_functions = _parse_output_adapters(output_adapters)
+    else:
+        loss_functions = None
 
     model_args = {
         "input_adapters": input_adapters,
