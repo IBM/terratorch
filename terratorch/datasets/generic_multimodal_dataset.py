@@ -87,6 +87,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         reduce_zero_label: bool = False,
         channel_position: int = -3,
         scalar_label: bool = False,
+        data_with_sample_dim: bool = False,
         concat_bands: bool = False,
         *args, **kwargs,
     ) -> None:
@@ -166,6 +167,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         self.expand_temporal_dimension = expand_temporal_dimension
         self.channel_position = channel_position
         self.scalar_label = scalar_label
+        self.data_with_sample_dim = data_with_sample_dim
         self.concat_bands = concat_bands
         assert not self.concat_bands or len(self.non_image_modalities) == 0, \
             (f"concat_bands can only be used with image modalities, "
@@ -362,7 +364,8 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
         if self.concat_bands:
             # Concatenate bands of all image modalities
-            output["image"] = torch.cat([output.pop(m) for m in self.image_modalities if m in output])
+            data = [output.pop(m) for m in self.image_modalities if m in output]
+            output["image"] = torch.cat(data, dim=1 if self.data_with_sample_dim else 0)
         else:
             # Tasks expect data to be stored in "image", moving modalities to image dict
             output["image"] = {m: output.pop(m) for m in self.modalities if m in output}
