@@ -140,7 +140,7 @@ class Registry(Set):
         """Build and return the component.
         Use prefixes ending with _ to forward to a specific source
         """
-        print(self._registry.keys())
+
         return self._registry[name](*constructor_args, **constructor_kwargs)
 
     def __iter__(self):
