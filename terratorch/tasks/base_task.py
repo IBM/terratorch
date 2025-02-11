@@ -47,6 +47,9 @@ class TerraTorchTask(BaseTask):
         if self.hparams["freeze_decoder"]:
             self.model.freeze_decoder()
 
+        if self.hparams["freeze_head"]:
+            self.model.freeze_head()
+
     def configure_optimizers(
         self,
     ) -> "lightning.pytorch.utilities.types.OptimizerLRSchedulerConfig":
