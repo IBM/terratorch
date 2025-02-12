@@ -1,4 +1,4 @@
-# Architecure Overview
+# Architecture Overview
 
 The main goal of the design is to extend TorchGeo's existing tasks to be able to handle Prithvi backbones with appropriate decoders and heads.
 At the same time, we wish to keep the existing TorchGeo functionality intact so it can be leveraged with pretrained models that are already included.
