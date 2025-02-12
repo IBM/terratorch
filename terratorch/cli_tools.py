@@ -137,6 +137,18 @@ def import_custom_modules(custom_modules_path: str | Path | None = None) -> None
     else:
         logger.debug("No custom module is being used.")
 
+# TODO remove it for future releases
+def remove_unexpected_prefix(state_dict):
+    state_dict_ = {}
+    for k, v in state_dict.items():
+        keys = k.split(".")
+        if "_timm_module" in keys:
+            index = keys.index("_timm_module")
+            keys.pop(index)
+            k_ = ".".join(keys)
+        state_dict_[k_] = v 
+    return state_dict_
+
 class CustomWriter(BasePredictionWriter):
     """Callback class to write geospatial data to file."""
 
@@ -491,6 +503,7 @@ class LightningInferenceModel:
             weights = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
             if "state_dict" in weights:
                 weights = weights["state_dict"]
+            weights = remove_unexpected_prefix(weights)
             weights = {k.replace("model.", ""): v for k, v in weights.items() if k.startswith("model.")}
             self.model.model.load_state_dict(weights)
 
