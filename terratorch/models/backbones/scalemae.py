@@ -258,7 +258,7 @@ def vit_huge_patch14(**kwargs):
     return model
 
 def load_scalemae_weights(model: nn.Module, ckpt_data: str, model_bands: list[HLSBands], input_size: int = 224) -> nn.Module:
-    checkpoint_model = torch.load(ckpt_data, map_location="cpu")["model"]
+    checkpoint_model = torch.load(ckpt_data, map_location="cpu", weights_only=True)["model"]
     state_dict = model.state_dict()
 
     for k in ["head.weight", "head.bias"]:

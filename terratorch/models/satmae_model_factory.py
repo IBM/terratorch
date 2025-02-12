@@ -227,9 +227,9 @@ class SatMAEModelFactory(ModelFactory):
                 backbone: nn.Module = ModelWrapper(model=backbone_template(**backbone_kwargs), kind=backbone_kind)
 
                 if self.CPU_ONLY:
-                    model_dict = torch.load(checkpoint_path, map_location="cpu")
+                    model_dict = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
                 else:
-                    model_dict = torch.load(checkpoint_path)
+                    model_dict = torch.load(checkpoint_path, weights_only=True)
 
                
                 # Filtering parameters from the model state_dict (when necessary)
