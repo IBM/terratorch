@@ -154,14 +154,14 @@ def checkpoint_filter_fn(state_dict: dict[str, torch.Tensor], model: torch.nn.Mo
     for table_key in relative_position_bias_table_keys:
 
         # The checkpoints can sometimes contain unexpected prefixes.
-        # TODO Guarantee that it wil not happen in the future.
+        # TODO Guarantee that it will not happen in the future.
         if prefix:
             table_key_ = table_key.replace(prefix, "")
         else:
             table_key_  = table_key
 
         # In an unexpected behavior, the prefix can sometimes contain
-        # "_" or ".". We are enforicing ".". 
+        # "_" or ".". We are enforcing ".". 
         # TODO Standardize it. 
         table_key_ = adapt_prefix(table_key_)
 

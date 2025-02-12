@@ -20,12 +20,40 @@ def patch_embed_weights_are_compatible(model_patch_embed: torch.Tensor, checkpoi
 
 def get_state_dict(state_dict):
 
-    if "state_dict" in state_dict.keys():
-        return state_dict["state_dict"]
+    def search_state_dict(keys):
+        key = 0
+        for k in keys:
+            if k.endswith("state_dict"):
+                key = k
+                break
+        return key
+
+    state_dict_key = search_state_dict(state_dict.keys())
+
+    if state_dict_key:
+        return state_dict[state_dict_key]
     else:
         return state_dict
 
-def get_proj_key(state_dict, return_prefix=False):
+def get_common_prefix(keys):
+
+    keys_big_list = []
+
+    keys = list(keys)
+    keys.pop(-1)
+
+    for k in keys:
+        keys_big_list.append(set(k.split(".")))
+    prefix_list = set.intersection(*keys_big_list)
+
+    if len(prefix_list) > 1:
+        prefix = ".".join(prefix_list)
+    else:
+        prefix = prefix_list.pop()
+
+    return prefix + "."
+
+def get_proj_key(state_dict, encoder_only=True, return_prefix=False):
 
     proj_key = None 
 
@@ -34,12 +62,15 @@ def get_proj_key(state_dict, return_prefix=False):
             proj_key = key
             break
 
-    if return_prefix and proj_key:
 
-        for sufix in ['patch_embed.proj.weight', 'patch_embed.projection.weight']:
-            if proj_key.endswith(sufix):
-                prefix = proj_key.replace(sufix, "")
-                break
+    if return_prefix and proj_key:
+        if encoder_only:
+            for sufix in ['patch_embed.proj.weight', 'patch_embed.projection.weight']:
+                if proj_key.endswith(sufix):
+                    prefix = proj_key.replace(sufix, "")
+                    break
+        else:
+                prefix = get_common_prefix(state_dict.keys()) 
     else:
         prefix = None
 
@@ -52,8 +83,9 @@ def remove_prefixes(state_dict, prefix):
     return new_state_dict
 
 def select_patch_embed_weights(
-    state_dict: dict, model: nn.Module, pretrained_bands: list[HLSBands | int | OpticalBands| SARBands], model_bands: list[HLSBands | int | OpticalBands| SARBands], proj_key: str | None = None
-) -> dict:
+    state_dict: dict, model: nn.Module, pretrained_bands: list[HLSBands | int | OpticalBands| SARBands], model_bands: list[HLSBands | int | OpticalBands| SARBands],
+    proj_key: str | None = None, encoder_only:bool=True) -> dict:
+
     """Filter out the patch embedding weights according to the bands being used.
     If a band exists in the pretrained_bands, but not in model_bands, drop it.
     If a band exists in model_bands, but not pretrained_bands, randomly initialize those weights.
@@ -76,7 +108,7 @@ def select_patch_embed_weights(
 
         if proj_key is None:
             # Search for patch embedding weight in state dict
-            proj_key, prefix = get_proj_key(state_dict, return_prefix=True)
+            proj_key, prefix = get_proj_key(state_dict, return_prefix=True, encoder_only=encoder_only)
         if proj_key is None or proj_key not in state_dict:
             raise Exception("Could not find key for patch embed weight in state_dict.")
 
@@ -84,7 +116,7 @@ def select_patch_embed_weights(
 
         # It seems `proj_key` can have different names for 
         # the checkpoint and the model instance
-        proj_key_, _  = get_proj_key(model.state_dict())
+        proj_key_, _  = get_proj_key(model.state_dict(), encoder_only=encoder_only)
 
         if proj_key_:
             temp_weight = model.state_dict()[proj_key_].clone()
