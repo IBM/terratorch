@@ -28,7 +28,7 @@ nav:
   - Examples: examples.md 
   - License: license.md
   - Components:
-    - Architecture Overview: architecture.m
+    - Architecture Overview: architecture.md
     - Tasks: tasks.md
     - Models: models.md
     - Data: data.md
