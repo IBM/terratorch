@@ -62,8 +62,18 @@
     </ul>
                 </li>
               </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../examples/">Examples</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../license/">License</a>
+                </li>
+              </ul>
               <p class="caption"><span class="caption-text">Components</span></p>
               <ul>
+                  <li class="toctree-l1"><a class="" href="../architecture.m">Architecture Overview</a>
+                  </li>
                   <li class="toctree-l1"><a class="reference internal" href="../tasks/">Tasks</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../models/">Models</a>
@@ -74,18 +84,6 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../encoder_decoder_factory/">EncoderDecoderFactory</a>
                   </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../examples/">Examples</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../architecture/">Architecture Overview</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../license/">License</a>
-                </li>
               </ul>
       </div>
     </div>
@@ -125,7 +123,7 @@ If you prefer to get the most recent version of the main branch, install the lib
 <h2 id="creating-backbones">Creating Backbones</h2>
 <p>You can interact with the library at several levels of abstraction. Each deeper level of abstraction trades off some amount of flexibility for ease of use and configuration.
 In the simplest case, we might only want access a backbone and code all the rest ourselves. In this case, we can simply use the library as a backbone factory:</p>
-<div class="language-python highlight"><span class="filename">Instantiating a prithvi backbone</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">terratorch</span> <span class="kn">import</span> <span class="n">BACKBONE_REGISTRY</span>
+<div class="language-python highlight"><span class="filename">Instantiating a prithvi backbone</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">terratorch</span><span class="w"> </span><span class="kn">import</span> <span class="n">BACKBONE_REGISTRY</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># find available prithvi models</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nb">print</span><span class="p">([</span><span class="n">model_name</span> <span class="k">for</span> <span class="n">model_name</span> <span class="ow">in</span> <span class="n">BACKBONE_REGISTRY</span> <span class="k">if</span> <span class="s2">&quot;terratorch_prithvi&quot;</span> <span class="ow">in</span> <span class="n">model_name</span><span class="p">])</span>
@@ -157,9 +155,9 @@ In the simplest case, we might only want access a backbone and code all the rest
 <p>To explicitly determine the registry that will build the model, you may prepend a prefix such as <code>timm_</code> to the model name. In this case, the <code>timm</code> model registry will be exclusively searched for the model.</p>
 <h2 id="directly-creating-a-full-model">Directly creating a full model</h2>
 <p>We also provide a model factory for a task specific model built on one a backbones:</p>
-<div class="language-python highlight"><span class="filename">Building a full model, with task specific decoder</span><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span> <span class="nn">terratorch</span> <span class="c1"># even though we don&#39;t use the import directly, we need it so that the models are available in the timm registry</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span> <span class="nn">terratorch.models</span> <span class="kn">import</span> <span class="n">EncoderDecoderFactory</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">from</span> <span class="nn">terratorch.datasets</span> <span class="kn">import</span> <span class="n">HLSBands</span>
+<div class="language-python highlight"><span class="filename">Building a full model, with task specific decoder</span><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">terratorch</span> <span class="c1"># even though we don&#39;t use the import directly, we need it so that the models are available in the timm registry</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">terratorch.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">EncoderDecoderFactory</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">terratorch.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">HLSBands</span>
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">model_factory</span> <span class="o">=</span> <span class="n">EncoderDecoderFactory</span><span class="p">()</span>
 </span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
@@ -318,7 +316,7 @@ Alternatively, all the process can be summarized in configuration files written 
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
         <a href=".." class="btn btn-neutral float-left" title="Welcome to TerraTorch"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../tasks/" class="btn btn-neutral float-right" title="Tasks">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../examples/" class="btn btn-neutral float-right" title="Examples">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -348,7 +346,7 @@ Alternatively, all the process can be summarized in configuration files written 
       <span><a href=".." style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../tasks/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../examples/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
