@@ -26,7 +26,7 @@ One of the most important design decisions was delegating the model construction
 - Prefers composition over inheritance
 - Allows new models to be easily added by introducing new factories
 
-Models are expected to be `torch.nn.Module`s and implement the [Model][terratorch.models.model.Model] interface, providing:
+Models are expected to be `torch.nn.Module` and implement the [Model][terratorch.models.model.Model] interface, providing:
     
 - `freeze_encoder()`
 - `freeze_decoder()`
