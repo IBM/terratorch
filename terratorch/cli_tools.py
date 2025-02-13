@@ -146,6 +146,8 @@ def remove_unexpected_prefix(state_dict):
             index = keys.index("_timm_module")
             keys.pop(index)
             k_ = ".".join(keys)
+        else:
+            k_ = k
         state_dict_[k_] = v 
     return state_dict_
 
