@@ -99,7 +99,7 @@ Necks are `nn.Modules`, with an additional method `process_channel_list` which i
 
 ## Decoders
 
-To be a valid decoder, an object must be an `nn.Module` with an additional attribute `out_channels` which is an `int` with the channel dimension of the output.
+To be a valid decoder, an object must be an `nn.Module` with an attribute `out_channels`, an `int` representing the channel dimension of the output.
 
 The first argument to its constructor will be a list of channel dimensions it should expect as input.
 
