@@ -33,7 +33,7 @@ trainer:
   default_root_dir: output/ForestNet
 
 data:
-  class_path: GenericNonGeoClassificationDataModule
+  class_path: terratorch.datamodules.GenericNonGeoClassificationDataModule
   init_args:
     batch_size: 16
     num_workers: 8

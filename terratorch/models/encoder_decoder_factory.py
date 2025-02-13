@@ -1,6 +1,8 @@
 # Copyright contributors to the Terratorch project
 
-
+from typing import List
+import warnings
+import logging 
 from torch import nn
 
 from terratorch.models.model import (
@@ -10,6 +12,7 @@ from terratorch.models.model import (
     ModelFactory,
 )
 from terratorch.models.necks import Neck, build_neck_list
+from terratorch.models.peft_utils import get_peft_backbone
 from terratorch.models.pixel_wise_model import PixelWiseModel
 from terratorch.models.scalar_output_model import ScalarOutputModel
 from terratorch.models.utils import extract_prefix_keys
@@ -62,6 +65,8 @@ def _check_all_args_used(kwargs):
         msg = f"arguments {kwargs} were passed but not used."
         raise ValueError(msg)
 
+def _get_argument_from_instance(model, name):
+    return getattr(model._timm_module.patch_embed, name)[-1]
 
 @MODEL_FACTORY_REGISTRY.register
 class EncoderDecoderFactory(ModelFactory):
@@ -74,6 +79,7 @@ class EncoderDecoderFactory(ModelFactory):
         necks: list[dict] | None = None,
         aux_decoders: list[AuxiliaryHead] | None = None,
         rescale: bool = True,  # noqa: FBT002, FBT001
+        peft_config: dict | None = None,
         **kwargs,
     ) -> Model:
         """Generic model factory that combines an encoder and decoder, together with a head, for a specific task.
@@ -102,6 +108,15 @@ class EncoderDecoderFactory(ModelFactory):
             rescale (bool): Whether to apply bilinear interpolation to rescale the model output if its size
                 is different from the ground truth. Only applicable to pixel wise models
                 (e.g. segmentation, pixel wise regression). Defaults to True.
+            peft_config (dict): Configuration options for using [PEFT](https://huggingface.co/docs/peft/index).
+                The dictionary should have the following keys:
+
+                - "method": Which PEFT method to use. Should be one implemented in PEFT, a list is available [here](https://huggingface.co/docs/peft/package_reference/peft_types#peft.PeftType).
+                - "replace_qkv": String containing a substring of the name of the submodules to replace with QKVSep.
+                  This should be used when the qkv matrices are merged together in a single linear layer and the PEFT
+                  method should be applied separately to query, key and value matrices (e.g. if LoRA is only desired in
+                  Q and V matrices). e.g. If using Prithvi this should be "qkv"
+                - "peft_config_kwargs": Dictionary containing keyword arguments which will be passed to [PeftConfig](https://huggingface.co/docs/peft/package_reference/config#peft.PeftConfig)
 
 
         Returns:
@@ -114,6 +129,27 @@ class EncoderDecoderFactory(ModelFactory):
 
         backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
         backbone = _get_backbone(backbone, **backbone_kwargs)
+
+        # If patch size is not provided in the config or by the model, it might lead to errors due to irregular images.
+        patch_size = backbone_kwargs.get("patch_size", None)
+
+        if patch_size is None:
+            # Infer patch size from model by checking all backbone modules
+            for module in backbone.modules():
+                if hasattr(module, "patch_size"):
+                    patch_size = module.patch_size
+                    break
+        padding = backbone_kwargs.get("padding", "reflect")
+
+        if peft_config is not None:
+            if not backbone_kwargs.get("pretrained", False):
+                msg = (
+                    "You are using PEFT without a pretrained backbone. If you are loading a checkpoint afterwards "
+                    "this is probably fine, but if you are training a model check the backbone_pretrained parameter."
+                )
+                warnings.warn(msg, stacklevel=1)
+
+            backbone = get_peft_backbone(peft_config, backbone)
 
         try:
             out_channels = backbone.out_channels
@@ -138,7 +174,17 @@ class EncoderDecoderFactory(ModelFactory):
 
         if aux_decoders is None:
             _check_all_args_used(kwargs)
-            return _build_appropriate_model(task, backbone, decoder, head_kwargs, necks=neck_list, decoder_includes_head=decoder_includes_head, rescale=rescale)
+            return _build_appropriate_model(
+                task,
+                backbone,
+                decoder,
+                head_kwargs,
+                patch_size=patch_size,
+                padding=padding,
+                necks=neck_list,
+                decoder_includes_head=decoder_includes_head,
+                rescale=rescale,
+            )
 
         to_be_aux_decoders: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] = []
         for aux_decoder in aux_decoders:
@@ -160,6 +206,8 @@ class EncoderDecoderFactory(ModelFactory):
             backbone,
             decoder,
             head_kwargs,
+            patch_size=patch_size,
+            padding=padding,
             necks=neck_list,
             decoder_includes_head=decoder_includes_head,
             rescale=rescale,
@@ -172,6 +220,8 @@ def _build_appropriate_model(
     backbone: nn.Module,
     decoder: nn.Module,
     head_kwargs: dict,
+    patch_size: int | list | None,
+    padding: str,
     decoder_includes_head: bool = False,
     necks: list[Neck] | None = None,
     rescale: bool = True,  # noqa: FBT001, FBT002
@@ -187,6 +237,8 @@ def _build_appropriate_model(
             backbone,
             decoder,
             head_kwargs,
+            patch_size=patch_size,
+            padding=padding,
             decoder_includes_head=decoder_includes_head,
             neck=neck_module,
             rescale=rescale,
@@ -198,6 +250,8 @@ def _build_appropriate_model(
             backbone,
             decoder,
             head_kwargs,
+            patch_size=patch_size,
+            padding=padding,
             decoder_includes_head=decoder_includes_head,
             neck=neck_module,
             auxiliary_heads=auxiliary_heads,

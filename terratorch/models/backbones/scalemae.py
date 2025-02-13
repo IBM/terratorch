@@ -26,6 +26,8 @@ from torch import nn
 from terratorch.datasets.utils import HLSBands
 from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
 
+logger = logging.getLogger(__name__)
+
 scalemae_model_registry: dict[str, Callable] = {}
 
 PRETRAINED_BANDS = [
@@ -264,7 +266,7 @@ def load_scalemae_weights(model: nn.Module, ckpt_data: str, model_bands: list[HL
                 k in checkpoint_model
                 and checkpoint_model[k].shape != state_dict[k].shape
             ):
-                logging.info(f"Removing key {k} from pretrained checkpoint")
+                logger.info(f"Removing key {k} from pretrained checkpoint")
                 del checkpoint_model[k]
 
     if input_size != 224:
@@ -272,14 +274,14 @@ def load_scalemae_weights(model: nn.Module, ckpt_data: str, model_bands: list[HL
             "pos_embed" in checkpoint_model
             and checkpoint_model["pos_embed"].shape != state_dict["pos_embed"].shape
         ):
-            logging.info("Removing key pos_embed from pretrained checkpoint")
+            logger.info("Removing key pos_embed from pretrained checkpoint")
             del checkpoint_model["pos_embed"]
 
     checkpoint_model = select_patch_embed_weights(checkpoint_model, model, PRETRAINED_BANDS, model_bands)
     # load pre-trained model
     msg = model.load_state_dict(checkpoint_model, strict=False)
 
-    logging.info(msg)
+    logger.info(msg)
     return model
 
 
@@ -294,7 +296,7 @@ def create_model(model_name: str, ckpt_path: str | None = None, bands: list[HLSB
 
     if bands is None:
         bands: list[HLSBands | int | str] = PRETRAINED_BANDS
-        logging.info(
+        logger.info(
             f"Model bands not passed. Assuming bands are ordered in the same way as {PRETRAINED_BANDS}.\
             Pretrained patch_embed layer may be misaligned with current bands"
         )

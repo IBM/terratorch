@@ -20,6 +20,9 @@ import numpy as np
 import rasterio
 import torch
 
+import random
+import string
+
 # Allows classes to be referenced using only the class name
 import torchgeo.datamodules
 import yaml
@@ -31,8 +34,11 @@ from lightning.pytorch import LightningDataModule, LightningModule, Trainer
 from lightning.pytorch.callbacks import BasePredictionWriter, ModelCheckpoint, RichProgressBar
 from lightning.pytorch.cli import ArgsType, LightningArgumentParser, LightningCLI, SaveConfigCallback
 from torchgeo.trainers import BaseTask
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 import terratorch.datamodules
+from terratorch.utils import compute_mask_statistics, compute_statistics
 import terratorch.tasks  # noqa: F401
 from terratorch.datamodules import (  # noqa: F401
     GenericNonGeoClassificationDataModule,
@@ -56,7 +62,7 @@ from terratorch.tasks import (
     SemanticSegmentationTask,  # noqa: F401
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("terratorch")
 
 def flatten(list_of_lists):
     return list(itertools.chain.from_iterable(list_of_lists))
@@ -74,6 +80,11 @@ def is_one_band(img):
 
 
 def write_tiff(img_wrt, filename, metadata):
+
+    # Adapting the number of bands to be compatible with the 
+    # output dimensions.
+    count = img_wrt.shape[0]
+    metadata['count'] = count
 
     with rasterio.open(filename, "w", **metadata) as dest:
         if is_one_band(img_wrt):
@@ -101,7 +112,8 @@ def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16"):
     logger.info(f"Saving output to {out_file_name} ...")
     write_tiff(result, os.path.join(out_dir, out_file_name), metadata)
 
-def import_custom_modules(custom_modules_path:None | Path | str =None) -> None:
+
+def import_custom_modules(custom_modules_path: str | Path | None = None) -> None:
 
     if custom_modules_path:
 
@@ -118,12 +130,12 @@ def import_custom_modules(custom_modules_path:None | Path | str =None) -> None:
             try:
                 importlib.import_module(module_dir)
                 logger.info(f"Found {custom_modules_path}")
-            except Exception:
-                raise Exception(f"It was not possible to import modules from {custom_modules_path}.")
+            except ImportError:
+                raise ImportError(f"It was not possible to import modules from {custom_modules_path}.")
         else:
-            raise Exception(f"Modules path {custom_modules_path} isn't a directory. Check if you have defined it properly.")
+            raise ValueError(f"Modules path {custom_modules_path} isn't a directory. Check if you have defined it properly.")
     else:
-        logger.info("No custom module is being used.")
+        logger.debug("No custom module is being used.")
 
 class CustomWriter(BasePredictionWriter):
     """Callback class to write geospatial data to file."""
@@ -152,10 +164,15 @@ class CustomWriter(BasePredictionWriter):
         if not os.path.exists(output_dir):
             os.makedirs(output_dir, exist_ok=True)
 
-        pred_batch, filename_batch = prediction
-
-        for prediction, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
-            save_prediction(prediction, file_name, output_dir, dtype=trainer.out_dtype)
+        if isinstance(prediction, torch.Tensor):
+            filename_batch = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+            torch.save(prediction, os.path.join(output_dir, f"{filename_batch}.pt"))
+        elif isinstance(prediction, tuple):
+            pred_batch, filename_batch = prediction
+            for prediction, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
+                save_prediction(prediction, file_name, output_dir, dtype=trainer.out_dtype)
+        else:
+            raise TypeError(f"Unknown type for prediction{type(prediction)}")
 
     def write_on_epoch_end(self, trainer, pl_module, predictions, batch_indices):  # noqa: ARG002
         # this will create N (num processes) files in `output_dir` each containing
@@ -203,7 +220,12 @@ def clean_config_for_deployment_and_dump(config: dict[str, Any]):
     ## Model
     # set pretrained to false
     if "model_args" in deploy_config["model"]["init_args"]:
-        deploy_config["model"]["init_args"]["model_args"]["pretrained"] = False
+        # for the new prithvi EO v2 models, alter the backbone_pretrained value only.
+        if "pretrained" in deploy_config["model"]["init_args"]["model_args"]:
+            deploy_config["model"]["init_args"]["model_args"]["pretrained"] = False
+        elif "backbone_pretrained" in deploy_config["model"]["init_args"]["model_args"]:
+            deploy_config["model"]["init_args"]["model_args"]["backbone_pretrained"] = False
+    
 
     return yaml.safe_dump(deploy_config)
 
@@ -385,14 +407,25 @@ class MyLightningCLI(LightningCLI):
             self.trainer.deploy_config = config.deploy_config_file
 
         # Custom modules path
-        if hasattr(self.config.fit, "custom_modules_path"):
-
-            custom_modules_path =  self.config.fit.custom_modules_path
+        if hasattr(self.config, "fit") and hasattr(self.config.fit, "custom_modules_path"):
+            custom_modules_path = self.config.fit.custom_modules_path
+        elif hasattr(self.config, "validate") and hasattr(self.config.validate, "custom_modules_path"):
+            custom_modules_path = self.config.validate.custom_modules_path
+        elif hasattr(self.config, "test") and hasattr(self.config.test, "custom_modules_path"):
+            custom_modules_path = self.config.test.custom_modules_path
+        elif hasattr(self.config, "predict") and hasattr(self.config.predict, "custom_modules_path"):
+            custom_modules_path = self.config.predict.custom_modules_path
         else:
-            default_path = Path(".") / "custom_modules"
-            custom_modules_path = os.environ.get("TERRATORCH_CUSTOM_MODULE_PATH", default_path)
+            custom_modules_path = os.getenv("TERRATORCH_CUSTOM_MODULE_PATH", None)
 
         import_custom_modules(custom_modules_path)
+
+    @staticmethod
+    def subcommands() -> dict[str, set[str]]:
+        existing_subcommands = LightningCLI.subcommands()
+        existing_subcommands["compute_statistics"] = {"datamodule"}
+        return existing_subcommands
+
 
 def build_lightning_cli(
     args: ArgsType = None,
@@ -432,6 +465,7 @@ def build_lightning_cli(
         # save only state_dict as well as full state. Only state_dict will be used for exporting the model
         trainer_defaults={"callbacks": [CustomWriter(write_interval="batch")]},
         run=run,
+        trainer_class=MyTrainer,
     )
 
 
@@ -554,3 +588,42 @@ class LightningInferenceModel:
                 tmpdir,
             )
             return prediction.squeeze(0)
+
+
+class MyTrainer(Trainer):
+    def compute_statistics(self, datamodule: LightningDataModule, **kwargs) -> None:
+        """
+        Compute the dataset statistics for the training dataset.
+
+        This method will compute the mean and standard deviation of the image data and the count and percentage of each
+        unique value in the masks in case these are int and the mean and standard deviation of the mask values in case
+        these are floats. The statistics are computed using the entire training dataset and are printed to the logger.
+
+        Please note that this method assumes that there is only one train dataloader in the datamodule. The train
+        transforms are removed before computing the statistics to ensure that the statistics are computed on the raw
+        data without any augmentation and randomization.
+        """
+        # remove train transforms, this may not work for all datamodules
+        if hasattr(datamodule, "train_transform"):
+            datamodule.train_transform = None
+        datamodule.setup("fit")
+        original_dataloader = datamodule.train_dataloader()
+        if not isinstance(original_dataloader, DataLoader):
+            msg = "DataLoader not found in datamodule.train_dataloader()"
+            raise ValueError(msg)
+        new_dataloader = DataLoader(
+            dataset=original_dataloader.dataset,
+            batch_size=original_dataloader.batch_size,
+            shuffle=False,
+            num_workers=original_dataloader.num_workers,
+            collate_fn=original_dataloader.collate_fn,
+            pin_memory=original_dataloader.pin_memory,
+            drop_last=False,
+        )
+        image_stats = compute_statistics(new_dataloader)
+        logger.info("Image statistics:")
+        logger.info(yaml.dump(image_stats))
+        if "mask" in datamodule.train_dataloader().dataset[0]:
+            mask_stats = compute_mask_statistics(new_dataloader)
+            logger.info("Mask statistics:")
+            logger.info(yaml.dump(mask_stats))

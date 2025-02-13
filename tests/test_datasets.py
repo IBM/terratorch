@@ -29,8 +29,10 @@ from terratorch.datasets import (
     MSACropTypeNonGeo,
     MSo2SatNonGeo,
     MultiTemporalCropClassification,
-    Sen1Floods11NonGeo,
+    #Sen1Floods11NonGeo,
 )
+from terratorch.datasets.sen1floods11 import Sen1Floods11NonGeo
+
 from terratorch.datasets.transforms import FlattenTemporalIntoChannels, UnflattenTemporalFromChannels
 
 
@@ -529,10 +531,10 @@ def crop_classification_data_root(tmp_path):
             img_data.rio.to_raster(str(image_path))
             mask_data.rio.to_raster(str(mask_path))
 
-    with open(training_dir / "training_data.txt", "w") as f:
+    with open(data_root / "training_data.txt", "w") as f:
         f.write("\n".join([f"chip_{i}" for i in range(2)]))
 
-    with open(validation_dir / "validation_data.txt", "w") as f:
+    with open(data_root / "validation_data.txt", "w") as f:
         f.write("\n".join([f"chip_{i}" for i in range(2)]))
 
     metadata = pd.DataFrame({
@@ -541,7 +543,7 @@ def crop_classification_data_root(tmp_path):
         "middle_img_date": ["2021-01-15", "2021-01-16"],
         "last_img_date": ["2021-02-01", "2021-02-02"],
     })
-    metadata.to_csv(data_root / "chip_df_final.csv", index=False)
+    metadata.to_csv(data_root / "chips_df.csv", index=False)
 
     return str(data_root)
 

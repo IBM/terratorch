@@ -20,45 +20,59 @@ trainer:
       init_args:
         monitor: val/loss
         patience: 100
-  max_epochs: 5
+  max_epochs: 1
   check_val_every_n_epoch: 1
   log_every_n_steps: 20
   enable_checkpointing: true
   default_root_dir: tests/
 data:
-  class_path: GenericNonGeoSegmentationDataModule
+  class_path: GenericNonGeoPixelwiseRegressionDataModule
   init_args:
-    batch_size: 4
+    batch_size: 2
     num_workers: 4
     train_transform:
-      - class_path: albumentations.HorizontalFlip
-        init_args:
-          p: 0.5      
-      - class_path: albumentations.Rotate
-        init_args:
-          limit: 30
-          border_mode: 0 # cv2.BORDER_CONSTANT
-          value: 0
-          # mask_value: 1
-          p: 0.5
+      #- class_path: albumentations.HorizontalFlip
+      #  init_args:
+      #    p: 0.5      
+      #- class_path: albumentations.Rotate
+      #  init_args:
+      #    limit: 30
+      #    border_mode: 0 # cv2.BORDER_CONSTANT
+      #    value: 0
+      #    # mask_value: 1
+      #    p: 0.5
       - class_path: ToTensorV2
     dataset_bands:
-      - [0, 11]
+      - 0
+      - BLUE
+      - GREEN
+      - RED
+      - NIR_NARROW
+      - SWIR_1
+      - SWIR_2
+      - 1
+      - 2
+      - 3
+      - 4
     output_bands:
-      - [1, 3]
-      - [4, 6]
+      - BLUE
+      - GREEN
+      - RED
+      - NIR_NARROW
+      - SWIR_1
+      - SWIR_2
     rgb_indices:
       - 2
       - 1
       - 0
-    train_data_root: tests/
-    train_label_data_root: tests/
-    val_data_root: tests/
-    val_label_data_root: tests/
-    test_data_root: tests/
-    test_label_data_root: tests/ 
-    img_grep: "segmentation*input*.tif"
-    label_grep: "segmentation*label*.tif"
+    train_data_root: tests/resources/inputs
+    train_label_data_root: tests/resources/inputs
+    val_data_root: tests/resources/inputs
+    val_label_data_root: tests/resources/inputs
+    test_data_root: tests/resources/inputs
+    test_label_data_root: tests/resources/inputs 
+    img_grep: "regression*input*.tif"
+    label_grep: "regression*label*.tif"
     means:
     - 547.36707
     - 898.5121
@@ -75,19 +89,20 @@ data:
     - 1067.641
     no_label_replace: -1
     no_data_replace: 0
-    num_classes: 2
+
 model:
-  class_path: terratorch.tasks.SemanticSegmentationTask
+  class_path: terratorch.tasks.PixelwiseRegressionTask
   init_args:
     model_args:
       decoder: UperNetDecoder
-      pretrained: true
-      backbone: prithvi_swin_B
-      backbone_pretrained_cfg_overlay:
-        file: tests/prithvi_swin_B.pt
+      pretrained: false
+      backbone: prithvi_eo_v1_100
+      #backbone_pretrained_cfg_overlay:
+        #file: tests/all_ecos_random/version_0/checkpoints/epoch=0_state_dict.ckpt #tests/prithvi_vit_100.pt
       backbone_drop_path_rate: 0.3
+      num_frames: 1
       # backbone_window_size: 8
-      decoder_channels: 256
+      decoder_channels: 64
       in_channels: 6
       bands:
         - BLUE
@@ -96,10 +111,10 @@ model:
         - NIR_NARROW
         - SWIR_1
         - SWIR_2
-      num_frames: 1
-      num_classes: 2
       head_dropout: 0.5708022831486758
-    loss: ce
+      head_final_act: torch.nn.ReLU
+      head_learned_upscale_layers: 2
+    loss: rmse
     #aux_heads:
     #  - name: aux_head
     #    decoder: IdentityDecoder

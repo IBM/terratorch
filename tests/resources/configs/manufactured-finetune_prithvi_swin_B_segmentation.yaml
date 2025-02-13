@@ -20,15 +20,15 @@ trainer:
       init_args:
         monitor: val/loss
         patience: 100
-  max_epochs: 2
+  max_epochs: 5
   check_val_every_n_epoch: 1
   log_every_n_steps: 20
   enable_checkpointing: true
   default_root_dir: tests/
 data:
-  class_path: GenericNonGeoPixelwiseRegressionDataModule
+  class_path: GenericNonGeoSegmentationDataModule
   init_args:
-    batch_size: 2
+    batch_size: 4
     num_workers: 4
     train_transform:
       - class_path: albumentations.HorizontalFlip
@@ -43,24 +43,10 @@ data:
           p: 0.5
       - class_path: ToTensorV2
     dataset_bands:
-      - 0
-      - BLUE
-      - GREEN
-      - RED
-      - NIR_NARROW
-      - SWIR_1
-      - SWIR_2
-      - 1
-      - 2
-      - 3
-      - 4
+      - [0, 11]
     output_bands:
-      - BLUE
-      - GREEN
-      - RED
-      - NIR_NARROW
-      - SWIR_1
-      - SWIR_2
+      - [1, 3]
+      - [4, 6]
     rgb_indices:
       - 2
       - 1
@@ -71,8 +57,8 @@ data:
     val_label_data_root: tests/resources/inputs
     test_data_root: tests/resources/inputs
     test_label_data_root: tests/resources/inputs 
-    img_grep: "regression*input*.tif"
-    label_grep: "regression*label*.tif"
+    img_grep: "segmentation*input*.tif"
+    label_grep: "segmentation*label*.tif"
     means:
     - 547.36707
     - 898.5121
@@ -89,20 +75,19 @@ data:
     - 1067.641
     no_label_replace: -1
     no_data_replace: 0
-
+    num_classes: 2
 model:
-  class_path: terratorch.tasks.PixelwiseRegressionTask
+  class_path: terratorch.tasks.SemanticSegmentationTask
   init_args:
     model_args:
       decoder: UperNetDecoder
-      pretrained: false
-      backbone: prithvi_vit_100
-      # backbone_pretrained_cfg_overlay:
-      #   file: tests/prithvi_vit_100.pt
+      pretrained: true
+      backbone: prithvi_swin_B
+        #backbone_pretrained_cfg_overlay:
+        #file: tests/prithvi_swin_B.pt
       backbone_drop_path_rate: 0.3
-      num_frames: 1
       # backbone_window_size: 8
-      decoder_channels: 64
+      decoder_channels: 256
       in_channels: 6
       bands:
         - BLUE
@@ -111,10 +96,11 @@ model:
         - NIR_NARROW
         - SWIR_1
         - SWIR_2
+      num_frames: 1
+      num_classes: 2
       head_dropout: 0.5708022831486758
-      head_final_act: torch.nn.ReLU
-      head_learned_upscale_layers: 2
-    loss: rmse
+    output_most_probable: false
+    loss: ce
     #aux_heads:
     #  - name: aux_head
     #    decoder: IdentityDecoder

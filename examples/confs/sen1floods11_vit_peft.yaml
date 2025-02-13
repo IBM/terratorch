@@ -19,7 +19,7 @@ trainer:
   enable_checkpointing: true
   default_root_dir: <your_path_here>
 data:
-  class_path: GenericNonGeoSegmentationDataModule
+  class_path: terratorch.datamodules.GenericNonGeoSegmentationDataModule
   init_args:
     batch_size: 16
     num_workers: 8
@@ -78,17 +78,15 @@ data:
       - 0.09772074
       - 0.07659938
     num_classes: 2
+
 model:
   class_path: terratorch.tasks.SemanticSegmentationTask
   init_args:
     model_args:
-      decoder: FCNHead
-      backbone_pretrained: True
-      backbone: prithvi_vit_100
-      backbone_pretrain_img_size: 512
-      decoder_num_convs: 4
+      decoder: FCNDecoder
+      backbone_pretrained: true
+      backbone: prithvi_eo_v1_100
       decoder_channels: 256
-      decoder_dropout_ratio: 0.1
       backbone_bands:
         - BLUE
         - GREEN
@@ -97,18 +95,42 @@ model:
         - SWIR_1
         - SWIR_2
       num_classes: 2
+      head_dropout: 0.1
+      decoder_num_convs: 4
+      head_channel_list:
+        - 256
       necks:
-        - name: ReshapeTokensToImage
         - name: SelectIndices
           indices:
             - -1
+        - name: ReshapeTokensToImage
+      peft_config:
+        method: LORA
+        replace_qkv: qkv # As we want to apply LoRA separately and only to Q and V, we need to separate the matrix.
+        peft_config_kwargs:
+          target_modules:
+            - qkv.q_linear
+            - qkv.v_linear
+            - mlp.fc1
+            - mlp.fc2
     loss: ce
-    
+    aux_heads:
+      - name: aux_head
+        decoder: FCNDecoder
+        decoder_args:
+          decoder_channels: 256
+          decoder_in_index: -1
+          decoder_num_convs: 2
+          head_dropout: 0.1
+          # head_channel_list:
+          #   - 64
+    aux_loss:
+      aux_head: 1.0
     ignore_index: -1
     class_weights:
       - 0.3
       - 0.7
-    freeze_backbone: true
+    freeze_backbone: false
     freeze_decoder: false
     model_factory: EncoderDecoderFactory
 optimizer:

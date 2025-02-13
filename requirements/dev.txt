@@ -1,4 +1,0 @@
-mkdocs-material==9.5.46
-mkdocstrings[python]
-h5py==3.12.1
-jupyterlab
