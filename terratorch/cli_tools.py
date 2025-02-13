@@ -505,6 +505,8 @@ class LightningInferenceModel:
             weights = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
             if "state_dict" in weights:
                 weights = weights["state_dict"]
+            # It removes a residual prefix (related to timm) from older
+            # checkpoints.
             weights = remove_unexpected_prefix(weights)
             weights = {k.replace("model.", ""): v for k, v in weights.items() if k.startswith("model.")}
             self.model.model.load_state_dict(weights)

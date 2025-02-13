@@ -149,6 +149,8 @@ def checkpoint_filter_fn(state_dict: dict[str, torch.Tensor], model: torch.nn.Mo
                 state_dict[k] = v
 
     relative_position_bias_table_keys = [k for k in state_dict.keys() if "relative_position_bias_table" in k]
+    # Sometimes the checkpoints can contain an unexpected prefix that must be
+    # removed. 
     prefix = identify_prefix(state_dict, model)
 
     for table_key in relative_position_bias_table_keys:
