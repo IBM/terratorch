@@ -64,7 +64,6 @@ class TemporalWrapper(nn.Module):
             raise ValueError(f"Expected input shape [B, C, T, H, W], but got {x.shape}")
 
         batch_size, channels, timesteps, height, width = x.shape
-        x = x.permute(0, 2, 1, 3, 4)
 
         # Initialize lists to store feature maps at each timestamp
         num_feature_maps = None  # Will determine dynamically
