@@ -25,10 +25,51 @@ The [EncoderDecoderFactory][terratorch.models.encoder_decoder_factory.EncoderDec
 
 ## Encoders
 
-To be a valid encoder, an object must be an `nn.Module` with an additional attribute `out_channels` which is a list of the channel dimension of the features it returns.
+To be a valid encoder, an object must be an `nn.Module` and contain an attribute `out_channels`, basically a list of the channel dimensions corresponding to
+the features it returns.
+The forward method of any encoder should return a list of `torch.Tensor`.
 
-It's forward method should return a list of `torch.Tensor`.
+```sh
+In [19]: backbone = BACKBONE_REGISTRY.build("prithvi_eo_v2_300", pretrained=True)
 
+In [20]: import numpy as np
+
+In [21]: import torch
+
+In [22]: input_image = torch.tensor(np.random.rand(1,6,224,224).astype("float32"))
+
+In [23]: output = backbone.forward(input_image)
+
+In [24]: [item.shape for item in output]
+
+Out[24]: 
+
+[torch.Size([1, 197, 1024]),
+ torch.Size([1, 197, 1024]),
+ torch.Size([1, 197, 1024]),
+ torch.Size([1, 197, 1024]),
+ torch.Size([1, 197, 1024]),
+ torch.Size([1, 197, 1024]),
+ torch.Size([1, 197, 1024]),
+ torch.Size([1, 197, 1024]),
+ torch.Size([1, 197, 1024]),
+ torch.Size([1, 197, 1024]),
+ torch.Size([1, 197, 1024]),
+ torch.Size([1, 197, 1024]),
+ torch.Size([1, 197, 1024]),
+ torch.Size([1, 197, 1024]),
+ torch.Size([1, 197, 1024]),
+ torch.Size([1, 197, 1024]),
+ torch.Size([1, 197, 1024]),
+ torch.Size([1, 197, 1024]),
+ torch.Size([1, 197, 1024]),
+ torch.Size([1, 197, 1024]),
+ torch.Size([1, 197, 1024]),
+ torch.Size([1, 197, 1024]),
+ torch.Size([1, 197, 1024]),
+ torch.Size([1, 197, 1024])]
+
+```
 
 ## Necks
 
