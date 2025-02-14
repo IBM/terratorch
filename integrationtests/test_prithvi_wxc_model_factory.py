@@ -223,6 +223,8 @@ def test_wxc_downscaling_pincer_instantiate():
 
 def test_wxc_downscaling_pincer_task():
     model_args = {
+        "backbone":  "prithviwxc",
+        "aux_decoders": "downscaler",
         "in_channels": 1280,
         "input_size_time": 1,
         "n_lats_px": 64,
@@ -249,12 +251,10 @@ def test_wxc_downscaling_pincer_task():
         "residual": "none",
         "masking_mode": "both",
         "positional_encoding": "absolute",
-        "backbone": "prithviwxc",
-        "aux_decoders": "downscaler",
+        "config_path": "./integrationtests/test_prithvi_wxc_model_factory_config.yaml",
     }
 
-
-    task = WxCTask(WxCModelFactory(), model_args=model_args, mode='train')
+    task = WxCTask('WxCModelFactory', model_args=model_args, mode='train')
 
 
 
