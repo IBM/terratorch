@@ -1,6 +1,7 @@
 # Copyright contributors to the Terratorch project
 
 import os
+import sys
 
 import pytest
 import torch
@@ -186,6 +187,75 @@ def test_wxc_unet_pincer_inference():
     results = trainer.predict(model=task, datamodule=dm, return_predictions=True)
 
     dist.destroy_process_group()
+
+def test_wxc_downscaling_pincer_instantiate():
+    kwargs = {
+        "in_channels": 1280,
+        "input_size_time": 1,
+        "n_lats_px": 64,
+        "n_lons_px": 128,
+        "in_channels_static": 3,
+        "input_scalers_mu": torch.tensor([0] * 1280),
+        "input_scalers_sigma": torch.tensor([1] * 1280),
+        "input_scalers_epsilon": 0,
+        "static_input_scalers_mu": torch.tensor([0] * 3),
+        "static_input_scalers_sigma": torch.tensor([1] * 3),
+        "static_input_scalers_epsilon": 0,
+        "output_scalers": torch.tensor([0] * 1280),
+        "patch_size_px": [2, 2],
+        "mask_unit_size_px": [8, 16],
+        "mask_ratio_inputs": 0.5,
+        "embed_dim": 2560,
+        "n_blocks_encoder": 12,
+        "n_blocks_decoder": 2,
+        "mlp_multiplier": 4,
+        "n_heads": 16,
+        "dropout": 0.0,
+        "drop_path": 0.05,
+        "parameter_dropout": 0.0,
+        "residual": "none",
+        "masking_mode": "both",
+        "positional_encoding": "absolute",
+        "config_path": "./integrationtests/test_prithvi_wxc_model_factory_config.yaml",
+    }
+
+    WxCModelFactory().build_model(backbone="prithviwxc", aux_decoders="downscaler", **kwargs)
+
+def test_wxc_downscaling_pincer_task():
+    model_args = {
+        "in_channels": 1280,
+        "input_size_time": 1,
+        "n_lats_px": 64,
+        "n_lons_px": 128,
+        "in_channels_static": 3,
+        "input_scalers_mu": torch.tensor([0] * 1280),
+        "input_scalers_sigma": torch.tensor([1] * 1280),
+        "input_scalers_epsilon": 0,
+        "static_input_scalers_mu": torch.tensor([0] * 3),
+        "static_input_scalers_sigma": torch.tensor([1] * 3),
+        "static_input_scalers_epsilon": 0,
+        "output_scalers": torch.tensor([0] * 1280),
+        "patch_size_px": [2, 2],
+        "mask_unit_size_px": [8, 16],
+        "mask_ratio_inputs": 0.5,
+        "embed_dim": 2560,
+        "n_blocks_encoder": 12,
+        "n_blocks_decoder": 2,
+        "mlp_multiplier": 4,
+        "n_heads": 16,
+        "dropout": 0.0,
+        "drop_path": 0.05,
+        "parameter_dropout": 0.0,
+        "residual": "none",
+        "masking_mode": "both",
+        "positional_encoding": "absolute",
+        "backbone": "prithviwxc",
+        "aux_decoders": "downscaler",
+    }
+
+
+    task = WxCTask(WxCModelFactory(), model_args=model_args, mode='train')
+
 
 
 def test_wxc_unet_pincer_train():

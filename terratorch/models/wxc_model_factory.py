@@ -1,5 +1,3 @@
-# Copyright contributors to the Terratorch project
-import timm
 import torch
 from torch import nn
 
@@ -8,8 +6,6 @@ import typing
 import logging
 import importlib
 
-import terratorch.models.decoders as decoder_registry
-from terratorch.datasets import HLSBands
 from terratorch.models.model import (
     Model,
     ModelFactory,
@@ -18,6 +14,8 @@ from terratorch.models.model import (
 from terratorch.registry import MODEL_FACTORY_REGISTRY
 
 from terratorch.models.pincers.unet_pincer import UNetPincer
+from terratorch.models.pincers.wxc_downscaling_pincer import get_downscaling_pincer
+
 
 logger = logging.getLogger(__name__)
 
@@ -61,8 +59,11 @@ class WxCModelFactory(ModelFactory):
                 raise
 
             #remove parameters not meant for the backbone but for other parts of the model
-            logger.trace(kwargs)
-            skip_connection = kwargs.pop('skip_connection')
+            logger.debug(kwargs)
+            if 'skip_connection' in kwargs.keys():
+                skip_connection = kwargs.pop('skip_connection')
+            if 'config_path' in kwargs.keys():
+                config_path = kwargs.pop('config_path')
 
             backbone = prithviwxc.PrithviWxC(**kwargs)
 
@@ -111,8 +112,20 @@ class WxCModelFactory(ModelFactory):
 
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             backbone.to(device)
-            if aux_decoders is not None:
+            if aux_decoders == 'unetpincer':
                 model_to_return = UNetPincer(backbone, skip_connection=skip_connection).to(device)
+                return model_to_return
+            if aux_decoders == 'downscaler':
+                # from granitewxc.utils.config import get_config #TODO rkie fix: import flaky
+                from granitewxc.utils.config import ExperimentConfig
+                import yaml
+                def get_config(config_path: str) -> ExperimentConfig:
+                    cfg = yaml.safe_load(open(config_path, 'r'))
+                    return ExperimentConfig.from_dict(cfg)
+
+                # end TODO
+                config = get_config(config_path)
+                model_to_return = get_downscaling_pincer(config, backbone)
                 return model_to_return
             return WxCModuleWrapper(backbone)
 

@@ -1,12 +1,12 @@
 from granitewxc.utils.config import ExperimentConfig
 from granitewxc.utils.downscaling_model import ClimateDownscaleFinetuneModel
-from wxc_embedding_network import get_embedding_network
-from wxc_upscaler import get_upscaler
+from terratorch.models.pincers.wxc_embedding_network import get_embedding_network
+from terratorch.models.pincers.wxc_upscaler import get_upscaler
 from torch import nn
 import numpy as np
 from granitewxc.utils.downscaling_model import get_scalers
 
-def get_downscaling_pincer(config: ExperimentConfig, backbone: nn.Model):
+def get_downscaling_pincer(config: ExperimentConfig, backbone: nn.Module):
 
     n_output_parameters = len(config.data.output_vars)
     if config.model.__dict__.get('loss_type', 'patch_rmse_loss')=='cross_entropy':
@@ -16,7 +16,7 @@ def get_downscaling_pincer(config: ExperimentConfig, backbone: nn.Model):
             n_output_parameters = len(np.load(config.model.cross_entropy_bin_boundaries_file)) + 1
 
     embedding, embedding_static, upscale = get_embedding_network(config)
-    head = get_upscaler()
+    head = get_upscaler(config, n_output_parameters)
     scalers = get_scalers(config)
 
     model = ClimateDownscaleFinetuneModel(
