@@ -7,10 +7,10 @@ from torchgeo.trainers import BaseTask
 
 from terratorch.models.model import Model
 from terratorch.tasks.optimizer_factory import optimizer_factory
+from terratorch.utils import get_logger
 
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
-logger = logging.getLogger("terratorch")
-
+logger = get_logger()
 
 class TerraTorchTask(BaseTask):
     """

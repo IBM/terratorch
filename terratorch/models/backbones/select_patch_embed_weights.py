@@ -36,8 +36,8 @@ def select_patch_embed_weights(
     Returns:
         dict: New state dict
     """
-    if (type(pretrained_bands) == type(model_bands)) | (type(pretrained_bands) == int) | (type(model_bands) == int):
 
+    if (type(pretrained_bands) == type(model_bands)) | (type(pretrained_bands) == int) | (type(model_bands) == int):
         if proj_key is None:
             # Search for patch embedding weight in state dict
             for key in state_dict.keys():
@@ -45,10 +45,9 @@ def select_patch_embed_weights(
                     proj_key = key
                     break
         if proj_key is None or proj_key not in state_dict:
-            raise Exception("Could not find key for patch embed weight in state_dict.")
+            raise Exception(f"Could not find key {proj_key} for patch embed weight in state_dict.")
 
         patch_embed_weight = state_dict[proj_key]
-
         temp_weight = model.state_dict()[proj_key].clone()
 
         # only do this if the patch size and tubelet size match. If not, start with random weights

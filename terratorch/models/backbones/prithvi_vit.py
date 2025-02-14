@@ -9,9 +9,10 @@ from terratorch.models.backbones.select_patch_embed_weights import select_patch_
 from terratorch.datasets.utils import generate_bands_intervals
 from terratorch.models.backbones.prithvi_mae import PrithviViT, PrithviMAE
 from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
+from terratorch.utils import get_logger
 from huggingface_hub import hf_hub_download
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 PRETRAINED_BANDS = [
     HLSBands.BLUE,
@@ -116,7 +117,6 @@ def checkpoint_filter_fn_vit(
             clean_dict[k] = v
 
     state_dict = clean_dict
-
     state_dict = select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands)
 
     return state_dict
