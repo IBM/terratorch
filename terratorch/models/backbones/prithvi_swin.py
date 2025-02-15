@@ -226,6 +226,7 @@ def _create_swin_mmseg_transformer(
     # TODO Totally remove the usage of timm for Swin in the future.
     # When the pretrained configuration is not available in HF, we shift to 
     # pretrained=False
+    """
     try:
         model: MMSegSwinTransformer = build_model_with_cfg(
             MMSegSwinTransformer,
@@ -247,6 +248,8 @@ def _create_swin_mmseg_transformer(
             feature_cfg={"flatten_sequential": True, "out_indices": out_indices},
             **kwargs,
         )
+    """
+    model = MMSegSwinTransformer(**kwargs)
 
     model.pretrained_bands = pretrained_bands
     model.model_bands = model_bands
