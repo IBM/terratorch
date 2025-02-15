@@ -907,6 +907,7 @@ class MMSegSwinTransformer(nn.Module):
         norm_layer=nn.LayerNorm,
         with_cp=False,  # noqa: FBT002
         frozen_stages=-1,
+        **kwargs, 
     ):
         self.frozen_stages = frozen_stages
         self.output_fmt = "NHWC"
