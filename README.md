@@ -44,7 +44,7 @@ To install as a developer (e.g. to extend the library):
 ```
 git clone https://github.com/IBM/terratorch.git
 cd terratorch
-pip install -r requirements/required.txt -r requirements/dev.txt
+pip install -r requirements_test.txt
 conda install -c conda-forge gdal
 pip install -e .
 ```
