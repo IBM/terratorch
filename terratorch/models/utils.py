@@ -36,7 +36,7 @@ def pad_images(imgs: Tensor, patch_size: int | list, padding: str) -> Tensor:
                          f"but no multi-temporal data provided (data shape = {imgs.shape}).")
 
     h, w = imgs.shape[-2:]
-    t = imgs.shape[-3:] if len(imgs.shape) > 4 else 1
+    t = imgs.shape[-3] if len(imgs.shape) > 4 else 1
     t_pad, h_pad, w_pad = (p_t - t % p_t) % p_t, (p_h - h % p_h) % p_h, (p_w - w % p_w) % p_w
     if t_pad > 0:
         # Multi-temporal padding
