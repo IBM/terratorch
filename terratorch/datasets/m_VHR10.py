@@ -84,7 +84,7 @@ class mVHR10(VHR10):
             sample['boxes'] = sample['label']['boxes']
             sample['masks'] = sample['label']['masks']
             del sample['label']
-
+        
         if self.transforms is not None:
             sample = self.transforms(sample)
 
@@ -247,7 +247,8 @@ class mVHR10(VHR10):
 
                 # Add masks
                 if show_pred_masks:
-                    mask = prediction_masks[i]
+
+                    mask = prediction_masks[i][0]
                     contours = skimage.measure.find_contours(mask, 0.5)
                     for verts in contours:
                         verts = np.fliplr(verts)
