@@ -8,6 +8,7 @@ theme:
     - content.code.select
     - navigation.tabs
 plugins:
+  - search 
   - autorefs
   - mkdocstrings:
       handlers:
