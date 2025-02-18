@@ -151,6 +151,14 @@ def remove_unexpected_prefix(state_dict):
         state_dict_[k_] = v 
     return state_dict_
 
+# TODO remove it for future releases
+def remove_unexpected_prefix(state_dict):
+    state_dict_ = {}
+    for k, v in state_dict.items():
+        k_ = k.replace("stages_", "stages.")
+        state_dict_[k_] = v 
+    return state_dict_
+
 class CustomWriter(BasePredictionWriter):
     """Callback class to write geospatial data to file."""
 
