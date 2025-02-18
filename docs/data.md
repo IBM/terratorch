@@ -10,6 +10,8 @@ TorchGeo provides `GeoDataset` and `NonGeoDataset`.
 - If your data is already nicely tiled and ready for consumption by a neural network, you can inherit from `NonGeoDataset`. This is essentially a wrapper of a regular torch dataset.
 - If your data consists of large GeoTiffs you would like to sample from during training, you can leverage the powerful `GeoDataset` from torch. This will automatically align your input data and labels and enable a variety of geo-aware samplers.
 
+For additional examples on fine-tuning a Terratorch model using these components, please refer to the [Prithvi EO Examples](https://github.com/NASA-IMPACT/Prithvi-EO-2.0) repository.
+
 ## Using Datasets already implemented in TorchGeo
 
 Using existing TorchGeo DataModules is very easy! Just plug them in!
@@ -73,21 +75,67 @@ For the `NonGeoDataset` case, we also provide "generic" datasets and datamodules
 
 ## Custom datasets and data modules
 
-Below is a documented example of how a custom dataset and data module class can be implemented.
+Our custom datasets and data modules are crafted to handle specific data, offering enhanced control and flexibility throughout the workflow. 
+In case you want to use Terratorch on your specific data, we invite you to develop your own dataset and data module classes by following the examples below. 
 
 ### Datasets
-
-#### :::terratorch.datasets.fire_scars
 #### :::terratorch.datasets.biomassters
 #### :::terratorch.datasets.burn_intensity
 #### :::terratorch.datasets.carbonflux
 #### :::terratorch.datasets.forestnet
+#### :::terratorch.datasets.fire_scars
+#### :::terratorch.datasets.landslide4sense
+#### :::terratorch.datasets.m_eurosat
+#### :::terratorch.datasets.m_bigearthnet
+#### :::terratorch.datasets.m_brick_kiln
+#### :::terratorch.datasets.m_forestnet
+#### :::terratorch.datasets.m_so2sat
+#### :::terratorch.datasets.m_pv4ger
+#### :::terratorch.datasets.m_cashew_plantation
+#### :::terratorch.datasets.m_nz_cattle
+#### :::terratorch.datasets.m_chesapeake_landcover
+#### :::terratorch.datasets.m_pv4ger_seg
+#### :::terratorch.datasets.m_SA_crop_type
+#### :::terratorch.datasets.m_neontree
+#### :::terratorch.datasets.multi_temporal_crop_classification
+#### :::terratorch.datasets.open_sentinel_map
+#### :::terratorch.datasets.openearthmap
+#### :::terratorch.datasets.pastis
+#### :::terratorch.datasets.sen1floods11
+#### :::terratorch.datasets.sen4agrinet
+#### :::terratorch.datasets.sen4map
 
 ### Datamodules
-#### :::terratorch.datamodules.fire_scars
 #### :::terratorch.datamodules.biomassters
 #### :::terratorch.datamodules.burn_intensity
 #### :::terratorch.datamodules.carbonflux
 #### :::terratorch.datamodules.forestnet
+#### :::terratorch.datamodules.fire_scars
+#### :::terratorch.datamodules.landslide4sense
+#### :::terratorch.datamodules.m_eurosat
+#### :::terratorch.datamodules.m_bigearthnet
+#### :::terratorch.datamodules.m_brick_kiln
+#### :::terratorch.datamodules.m_forestnet
+#### :::terratorch.datamodules.m_so2sat
+#### :::terratorch.datamodules.m_pv4ger
+#### :::terratorch.datamodules.m_cashew_plantation
+#### :::terratorch.datamodules.m_nz_cattle
+#### :::terratorch.datamodules.m_chesapeake_landcover
+#### :::terratorch.datamodules.m_pv4ger_seg
+#### :::terratorch.datamodules.m_SA_crop_type
+#### :::terratorch.datamodules.m_neontree
+#### :::terratorch.datamodules.multi_temporal_crop_classification
+#### :::terratorch.datamodules.open_sentinel_map
+#### :::terratorch.datamodules.openearthmap
+#### :::terratorch.datamodules.pastis
+#### :::terratorch.datamodules.sen1floods11
+#### :::terratorch.datamodules.sen4agrinet
+#### :::terratorch.datamodules.sen4map
+
+## Transforms
+The transforms module provides a set of specialized image transformations designed to manipulate spatial, temporal, and multimodal data efficiently. 
+These transformations allow for greater flexibility when working with multi-temporal, multi-channel, and multi-modal datasets, ensuring that data can be formatted appropriately for different model architectures.
+
+### :::terratorch.datasets.transforms
 
 
