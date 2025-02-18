@@ -62,9 +62,12 @@ def collate_fn_detection(batch):
     return new_batch
 
 
-def get_transform(train, image_size=896):
+def get_transform(train, image_size=896, pad=True):
     transforms = []
-    transforms.append(A.PadIfNeeded(min_height=image_size, min_width=image_size, value=0, border_mode=0))
+    if pad:
+        transforms.append(A.PadIfNeeded(min_height=image_size, min_width=image_size, value=0, border_mode=0))
+    else:
+        transforms.append(A.Resize(height=image_size, width=image_size))
     if train:
         transforms.append(A.CenterCrop(width=image_size, height=image_size))
         transforms.append(A.HorizontalFlip(p=0.5))
@@ -88,7 +91,6 @@ def apply_transforms(sample, transforms):
                              masks=sample["masks"], 
                              bboxes=sample["boxes"],
                              labels=sample["labels"])
-
     transformed['boxes'] = torch.tensor(transformed['bboxes'], dtype=torch.float32)
     transformed['labels'] = torch.tensor(transformed['labels'], dtype=torch.int64)
     del transformed['bboxes']
@@ -145,6 +147,8 @@ class mVHR10DataModule(NonGeoDataModule):
         second_level_split_proportions = (0.7, 0.15, 0.15),
         batch_size: int = 4,
         num_workers: int = 0,
+        pad = True,
+        image_size=896,
         # means = ,
         # stds = ,
         collate_fn = None,
@@ -162,9 +166,9 @@ class mVHR10DataModule(NonGeoDataModule):
                          second_level_split_proportions=second_level_split_proportions,
                          **kwargs)
 
-        self.train_transform = partial(apply_transforms,transforms=get_transform(True))
-        self.val_transform = partial(apply_transforms,transforms=get_transform(False))
-        self.test_transform = partial(apply_transforms,transforms=get_transform(False))
+        self.train_transform = partial(apply_transforms,transforms=get_transform(True, image_size, pad))
+        self.val_transform = partial(apply_transforms,transforms=get_transform(False, image_size, pad))
+        self.test_transform = partial(apply_transforms,transforms=get_transform(False, image_size, pad))
 
         self.aug = Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225), max_pixel_value=255)
 
@@ -195,7 +199,7 @@ class mVHR10DataModule(NonGeoDataModule):
             self.val_dataset = mVHR10(
                 root = self.root,
                 split = self.split, 
-                transforms = self.train_transform,
+                transforms = self.val_transform,
                 download = self.download, 
                 checksum = self.checksum,
                 second_level_split="val",
@@ -205,7 +209,7 @@ class mVHR10DataModule(NonGeoDataModule):
             self.test_dataset = mVHR10(
                 root = self.root,
                 split = self.split, 
-                transforms = self.train_transform,
+                transforms = self.test_transform,
                 download = self.download, 
                 checksum = self.checksum,
                 second_level_split="test",
@@ -227,6 +231,7 @@ class mVHR10DataModule(NonGeoDataModule):
         """
         dataset = self._valid_attribute(f"{split}_dataset", "dataset")
         batch_size = self.batch_size
+
         return DataLoader(
             dataset=dataset,
             batch_size=batch_size,
