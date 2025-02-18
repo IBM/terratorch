@@ -20,6 +20,7 @@ from terratorch.registry import MODEL_FACTORY_REGISTRY
 from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
 import pdb
+import torch
 
 from torchvision.ops import nms
 
@@ -89,6 +90,11 @@ class ObjectDetectionTask(BaseTask):
         self.monitor = f"{self.val_metrics.prefix}map"
         self.iou_threshold = iou_threshold
         self.score_threshold = score_threshold
+        self.lr = lr
+        if optimizer_hparams is not None:
+            if "lr" in self.hparams["optimizer_hparams"].keys():
+                self.lr = float(self.hparams["optimizer_hparams"]["lr"])
+                del self.hparams["optimizer_hparams"]["lr"]
 
     def configure_models(self) -> None:
         self.model: Model = self.model_factory.build_model(
@@ -127,7 +133,7 @@ class ObjectDetectionTask(BaseTask):
             optimizer = "Adam"
         return optimizer_factory(
             optimizer,
-            self.hparams["lr"],
+            self.lr,
             self.parameters(),
             self.hparams["optimizer_hparams"],
             self.hparams["scheduler"],
@@ -144,14 +150,16 @@ class ObjectDetectionTask(BaseTask):
         Returns:
             Reformated batch
         """
+
         if 'masks' in batch.keys():
             y = [
-                {'boxes': batch['boxes'][i], 'labels': batch['labels'][i]}
+                {'boxes': batch['boxes'][i], 'labels': batch['labels'][i], 'masks': torch.cat([x[None] for x in batch['masks'][i]])}
                 for i in range(batch_size)
             ]
         else:
+
             y = [
-                {'boxes': batch['boxes'][i], 'labels': batch['labels'][i], 'masks': batch['masks'][i]}
+                {'boxes': batch['boxes'][i], 'labels': batch['labels'][i]}
                 for i in range(batch_size)
             ]
 
@@ -204,7 +212,7 @@ class ObjectDetectionTask(BaseTask):
         batch_size = x.shape[0]
         y = self.reformat_batch(batch, batch_size)
         loss_dict = self(x, y)
-        if isinstance(y_hat, dict) is False:
+        if isinstance(loss_dict, dict) is False:
             loss_dict = loss_dict.output
         train_loss: Tensor = sum(loss_dict.values())
         self.log_dict(loss_dict, batch_size=batch_size)
@@ -221,7 +229,7 @@ class ObjectDetectionTask(BaseTask):
             batch_idx: Integer displaying index of this batch.
             dataloader_idx: Index of the current dataloader.
         """
-
+        
         x = batch['image']
         batch_size = x.shape[0]
         y = self.reformat_batch(batch, batch_size)
@@ -246,16 +254,15 @@ class ObjectDetectionTask(BaseTask):
             and hasattr(self.logger, 'experiment')
             and hasattr(self.logger.experiment, 'add_figure')
         ):
+
             dataset = self.trainer.datamodule.val_dataset
             batch['prediction_boxes'] = [b['boxes'].cpu() for b in y_hat]
             batch['prediction_labels'] = [b['labels'].cpu() for b in y_hat]
             batch['prediction_scores'] = [b['scores'].cpu() for b in y_hat]
+            if "masks" in y_hat[0].keys(): 
+                batch['prediction_masks'] = [b['masks'].cpu() for b in y_hat]
             batch['image'] = batch['image'].cpu()
             sample = unbind_samples(batch)[0]
-            # Convert image to uint8 for plotting
-            # if torch.is_floating_point(sample['image']):
-            #     sample['image'] *= 255
-            #     sample['image'] = sample['image'].to(torch.uint8)
 
             fig: Figure | None = None
             try:

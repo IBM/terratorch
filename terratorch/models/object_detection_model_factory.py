@@ -25,6 +25,8 @@ from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
 
 import numpy as np
+from functools import partial
+import torch
 
 SUPPORTED_TASKS = ['object_detection']
 
@@ -82,11 +84,15 @@ class ObjectDetectionModelFactory(ModelFactory):
         if task not in SUPPORTED_TASKS:
             msg = f"Task {task} not supported. Please choose one of {SUPPORTED_TASKS}"
             raise NotImplementedError(msg)
-
         backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
-        backbone = _get_backbone(backbone, **backbone_kwargs)
-        in_channels = len(backbone_kwargs["bands"])
+        framework_kwargs, kwargs = extract_prefix_keys(kwargs, "framework_")
         
+        backbone = _get_backbone(backbone, **backbone_kwargs)
+        if 'in_channels' in backbone_kwargs.keys():
+            in_channels = backbone_kwargs['in_channels']
+        else:
+            in_channels = len(backbone_kwargs["model_bands"]) if "model_bands" in backbone_kwargs.keys() else len(backbone_kwargs["bands"])
+
         try:
             out_channels = backbone.out_channels
         except AttributeError as e:
@@ -96,18 +102,18 @@ class ObjectDetectionModelFactory(ModelFactory):
         if necks is None:
             necks = []
         neck_list, channel_list = build_neck_list(necks, out_channels)
-                                                  
+
         neck_module = nn.Sequential(*neck_list)
 
         combined_backbone = BackboneWrapper(backbone, neck_module, channel_list)
         # pdb.set_trace()
         
         if framework == 'faster-rcnn':
-            
+
             sizes = ((32), (64), (128), (256), (512))
             sizes = sizes[:len(combined_backbone.channel_list)]
-            anchor_generator = AnchorGenerator(sizes=sizes, 
-                                               aspect_ratios=((0.5, 1.0, 2.0)))
+            aspect_ratios = ((0.5, 1.0, 2.0),) * len(sizes)
+            anchor_generator = AnchorGenerator(sizes=sizes, aspect_ratios=aspect_ratios)
 
             roi_pooler = MultiScaleRoIAlign(
                 featmap_names=['feat0', 'feat1', 'feat2', 'feat3'], output_size=7, sampling_ratio=2
@@ -120,15 +126,17 @@ class ObjectDetectionModelFactory(ModelFactory):
                 box_roi_pool=roi_pooler,
                 _skip_resize=True,
                 image_mean = np.repeat(0, in_channels),
-                image_std = np.repeat(1, in_channels)
+                image_std = np.repeat(1, in_channels),
+                **framework_kwargs
             )
         elif framework == 'fcos':
 
             sizes = ((8,), (16,), (32,), (64,), (128,), (256,))
             sizes=sizes[:len(combined_backbone.channel_list)]
+            aspect_ratios = ((1.0,), (1.0,), (1.0,), (1.0,), (1.0,), (1.0,)) * len(sizes)
             anchor_generator = AnchorGenerator(
                 sizes=sizes,
-                aspect_ratios=((1.0,), (1.0,), (1.0,), (1.0,), (1.0,), (1.0,)),
+                aspect_ratios=aspect_ratios,
             )
 
             model = torchvision.models.detection.FCOS(
@@ -137,7 +145,8 @@ class ObjectDetectionModelFactory(ModelFactory):
                 anchor_generator=anchor_generator, 
                 _skip_resize=True,
                 image_mean = np.repeat(0, in_channels),
-                image_std = np.repeat(1, in_channels)
+                image_std = np.repeat(1, in_channels),
+                **framework_kwargs
 
             )
         elif framework == 'retinanet':
@@ -151,9 +160,8 @@ class ObjectDetectionModelFactory(ModelFactory):
                 (512, 645, 812),
             )
             sizes=sizes[:len(combined_backbone.channel_list)]
-            aspect_ratios = ((0.5, 1.0, 2.0),) * len(anchor_sizes)
-            anchor_generator = AnchorGenerator(anchor_sizes, aspect_ratios)
-
+            aspect_ratios = ((0.5, 1.0, 2.0),) * len(sizes)
+            anchor_generator = AnchorGenerator(sizes, aspect_ratios)
             head = RetinaNetHead(
                 combined_backbone.out_channels,
                 anchor_generator.num_anchors_per_location()[0],
@@ -167,9 +175,42 @@ class ObjectDetectionModelFactory(ModelFactory):
                 anchor_generator=anchor_generator,
                 head=head,
                 _skip_resize=True,
-                image_mean = np.repeat(0, in_channels),
-                image_std = np.repeat(1, in_channels)  
+                image_mean=np.repeat(0, in_channels),
+                image_std=np.repeat(1, in_channels),
+                **framework_kwargs
             )
+
+        elif framework == 'mask-rcnn':
+
+            sizes = ((32), (64), (128), (256), (512))
+            sizes = sizes[:len(combined_backbone.channel_list)]
+            aspect_ratios = ((0.5, 1.0, 2.0),) * len(sizes)
+            anchor_generator = AnchorGenerator(sizes=sizes, aspect_ratios=aspect_ratios)
+
+            rpn_head = torchvision.models.detection.faster_rcnn.RPNHead(combined_backbone.out_channels, anchor_generator.num_anchors_per_location()[0], conv_depth=2)
+            box_head = torchvision.models.detection.faster_rcnn.FastRCNNConvFCHead(
+                (combined_backbone.out_channels, 7, 7), [256, 256, 256, 256], [1024], norm_layer=nn.BatchNorm2d
+            )
+            mask_head = torchvision.models.detection.mask_rcnn.MaskRCNNHeads(combined_backbone.out_channels, [256, 256, 256, 256], 1, norm_layer=nn.BatchNorm2d)
+            roi_pooler = MultiScaleRoIAlign(
+                featmap_names=['feat0', 'feat1', 'feat2', 'feat3'], output_size=7, sampling_ratio=2
+            )
+
+            model = torchvision.models.detection.MaskRCNN(
+                combined_backbone,
+                num_classes=num_classes,
+                rpn_anchor_generator=anchor_generator,
+                rpn_head=rpn_head,
+                box_head=box_head,
+                box_roi_pool=roi_pooler,
+                mask_roi_pool=roi_pooler,
+                mask_head=mask_head,
+                _skip_resize=True,
+                image_mean=np.repeat(0, in_channels),
+                image_std=np.repeat(1, in_channels),
+                **framework_kwargs
+            )
+
         else:
             raise ValueError(f"Model type '{model}' is not valid.")
 
