@@ -189,7 +189,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         image_modalities: list[str] | None = None,
         rgb_modality: str | None = None,
         rgb_indices: list[int] | None = None,
-        allow_substring_file_names: bool = False,
+        allow_substring_file_names: bool = True,
         class_names: list[str] | None = None,
         constant_scale: dict[float] = None,
         train_transform: dict | A.Compose | None | list[A.BasicTransform] = None,
