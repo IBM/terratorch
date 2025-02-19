@@ -152,32 +152,6 @@ prithvi_adapter_cfgs = {
         "use_extra_extractor": True,
         "with_cp": False,
     },
-    "prithvi_eo_v2_600": {  # not from original paper
-        "interaction_indexes": [[0, 7], [8, 15], [16, 23], [24, 31]],
-        "conv_inplane": 64,
-        "add_vit_feature": True,
-        "deform_num_heads": 16,
-        "n_points": 4,
-        "init_values": 0,
-        "with_cffn": False,
-        "cffn_ratio": 0.25,
-        "deform_ratio": 0.5,
-        "use_extra_extractor": True,
-        "with_cp": False,
-    },
-    "prithvi_eo_v2_600_tl": {  # not from original paper
-        "interaction_indexes": [[0, 7], [8, 15], [16, 23], [24, 31]],
-        "conv_inplane": 64,
-        "add_vit_feature": True,
-        "deform_num_heads": 16,
-        "n_points": 4,
-        "init_values": 0,
-        "with_cffn": False,
-        "cffn_ratio": 0.25,
-        "deform_ratio": 0.5,
-        "use_extra_extractor": True,
-        "with_cp": False,
-    },
 }
 
 
