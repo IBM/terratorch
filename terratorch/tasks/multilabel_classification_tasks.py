@@ -70,7 +70,7 @@ class MultiLabelClassificationTask(ClassificationTask):
 
     def training_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         x = batch["image"]
-        y = batch["label"]
+        y = batch["label"].to(torch.float32)
         other_keys = batch.keys() - {"image", "label", "filename"}
         rest = {k:batch[k] for k in other_keys}
 
@@ -84,7 +84,7 @@ class MultiLabelClassificationTask(ClassificationTask):
 
     def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         x = batch["image"]
-        y = batch["label"]
+        y = batch["label"].to(torch.float32)
         other_keys = batch.keys() - {"image", "label", "filename"}
         rest = {k:batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
@@ -95,7 +95,7 @@ class MultiLabelClassificationTask(ClassificationTask):
 
     def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         x = batch["image"]
-        y = batch["label"]
+        y = batch["label"].to(torch.float32)
         other_keys = batch.keys() - {"image", "label", "filename"}
         rest = {k:batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
