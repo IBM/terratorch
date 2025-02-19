@@ -223,7 +223,7 @@ class ClassificationTask(TerraTorchTask):
 
         model_output: ModelOutput = self(x, **rest)
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
-        self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
+        self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat_hard = to_class_prediction(model_output)
         self.train_metrics.update(y_hat_hard, y)
 
@@ -243,7 +243,7 @@ class ClassificationTask(TerraTorchTask):
         rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
-        self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
+        self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat_hard = to_class_prediction(model_output)
         self.val_metrics.update(y_hat_hard, y)
 
@@ -267,7 +267,7 @@ class ClassificationTask(TerraTorchTask):
         self.test_loss_handler[dataloader_idx].log_loss(
             partial(self.log, add_dataloader_idx=False),  # We don't need the dataloader idx as prefixes are different
             loss_dict=loss,
-            batch_size=x.shape[0],
+            batch_size=y.shape[0],
         )
         y_hat_hard = to_class_prediction(model_output)
         self.test_metrics[dataloader_idx].update(y_hat_hard, y)
