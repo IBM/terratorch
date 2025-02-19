@@ -1,8 +1,8 @@
-from typing import Any
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from functools import partial
 from torch import Tensor
 from torchmetrics import MetricCollection
 from torchmetrics.classification import (
@@ -68,7 +68,7 @@ class MultiLabelClassificationTask(ClassificationTask):
         y_hat = y.output
         return torch.sigmoid(y_hat)
 
-    def training_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
+    def training_step(self, batch: object, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         x = batch["image"]
         y = batch["label"].to(torch.float32)
         other_keys = batch.keys() - {"image", "label", "filename"}
@@ -82,7 +82,7 @@ class MultiLabelClassificationTask(ClassificationTask):
 
         return loss["loss"]
 
-    def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
+    def validation_step(self, batch: object, batch_idx: int, dataloader_idx: int = 0) -> None:
         x = batch["image"]
         y = batch["label"].to(torch.float32)
         other_keys = batch.keys() - {"image", "label", "filename"}
@@ -93,13 +93,39 @@ class MultiLabelClassificationTask(ClassificationTask):
         y_hat = self.to_multilabel_prediction(model_output)
         self.val_metrics.update(y_hat, y)
 
-    def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
+    def test_step(self, batch: object, batch_idx: int, dataloader_idx: int = 0) -> None:
         x = batch["image"]
         y = batch["label"].to(torch.float32)
         other_keys = batch.keys() - {"image", "label", "filename"}
         rest = {k:batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
-        loss = self.test_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
-        self.test_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
+        if dataloader_idx >= len(self.test_loss_handler):
+            msg = "You are returning more than one test dataloader but not defining enough test_dataloaders_names."
+            raise ValueError(msg)
+        loss = self.test_loss_handler[dataloader_idx].compute_loss(model_output, y, self.criterion, self.aux_loss)
+        self.test_loss_handler[dataloader_idx].log_loss(
+            partial(self.log, add_dataloader_idx=False),  # We don't need the dataloader idx as prefixes are different
+            loss_dict=loss,
+            batch_size=y.shape[0],
+        )
         y_hat = self.to_multilabel_prediction(model_output)
-        self.test_metrics.update(y_hat, y)
+        self.test_metrics[dataloader_idx].update(y_hat, y)
+
+    def predict_step(self, batch: object, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
+        """Compute the predicted class probabilities.
+
+        Args:
+            batch: The output of your DataLoader.
+            batch_idx: Integer displaying index of this batch.
+            dataloader_idx: Index of the current dataloader.
+
+        Returns:
+            Output predicted probabilities.
+        """
+        x = batch["image"]
+        file_names = batch["filename"] if "filename" in batch else None
+        other_keys = batch.keys() - {"image", "label", "filename"}
+        rest = {k: batch[k] for k in other_keys}
+        model_output = self(x, **rest)
+        y_hat = self.to_multilabel_prediction(model_output)
+        return y_hat, file_names
