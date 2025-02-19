@@ -1,14 +1,28 @@
 # Data Processing
-We rely on TorchGeo for the implementation of datasets and data modules.
 
-Check out [the TorchGeo tutorials on datasets](https://torchgeo.readthedocs.io/en/stable/tutorials/custom_raster_dataset.html) for more in depth information.
+In our workflow, we leverage TorchGeo to implement datasets and data modules, ensuring robust and flexible data handling. For a deeper dive into working with datasets using TorchGeo, please refer to the [TorchGeo tutorials on datasets](https://torchgeo.readthedocs.io/en/stable/tutorials/custom_raster_dataset.html).
 
-In general, it is reccomended you create a TorchGeo dataset specifically for your dataset. This gives you complete control and flexibility on how data is loaded, what transforms are done over it, and even how it is plotted if you log with tools like TensorBoard.
+In most cases, it’s best to create a custom TorchGeo dataset tailored to your specific data. Doing so gives you complete control over:
+- Data Loading: Customize how your data is read and organized.
+- Transforms: Decide which preprocessing or augmentation steps to apply.
+- Visualization: Define custom plotting methods (for example, when logging with TensorBoard).
 
-TorchGeo provides `GeoDataset` and `NonGeoDataset`.
+TorchGeo offers two primary classes to suit different data formats:
+- `NonGeoDataset`:
+  Use this if your dataset is already split into neatly tiled pieces ready for neural network consumption. Essentially, `NonGeoDataset` is a wrapper around a standard PyTorch dataset, making it straightforward to integrate into your pipeline.
+- `GeoDataset`:  
+  Opt for this class if your data comes in the form of large GeoTiff files from which you need to sample during training. `GeoDataset` automatically aligns your input data with corresponding labels and supports a range of geo-aware sampling techniques.
 
-- If your data is already nicely tiled and ready for consumption by a neural network, you can inherit from `NonGeoDataset`. This is essentially a wrapper of a regular torch dataset.
-- If your data consists of large GeoTiffs you would like to sample from during training, you can leverage the powerful `GeoDataset` from torch. This will automatically align your input data and labels and enable a variety of geo-aware samplers.
+
+In addition to these specialized TorchGeo datasets, TerraTorch offers generic datasets and data modules designed to work with directory-based data structures, similar to those used in MMLab libraries. These generic tools simplify data loading when your data is organized in conventional file directories:
+- The Generic Pixel-wise Dataset is ideal for tasks where each pixel represents a sample (e.g., segmentation or dense prediction problems).
+- The Generic Scalar Label Dataset is best suited for classification tasks where each sample is associated with a single label.
+
+TerraTorch also provides corresponding generic data modules that bundle the dataset with training, validation, and testing splits, integrating seamlessly with PyTorch Lightning. This arrangement makes it easy to manage data loading, batching, and preprocessing with minimal configuration.
+
+While generic datasets offer a quick start for common data structures, many projects require more tailored solutions. Custom datasets and data modules give you complete control over the entire data handling process—from fine-tuned data loading and specific transformations to enhanced visualization. By developing your own dataset and data module classes, you ensure that every step—from data ingestion to final model input—is optimized for your particular use case. TerraTorch’s examples provide an excellent starting point to build these custom components and integrate them seamlessly into your training pipeline.
+
+For additional examples on fine-tuning a TerraTorch model using these components, please refer to the [Prithvi EO Examples](https://github.com/NASA-IMPACT/Prithvi-EO-2.0) repository.
 
 ## Using Datasets already implemented in TorchGeo
 
@@ -73,21 +87,67 @@ For the `NonGeoDataset` case, we also provide "generic" datasets and datamodules
 
 ## Custom datasets and data modules
 
-Below is a documented example of how a custom dataset and data module class can be implemented.
+Our custom datasets and data modules are crafted to handle specific data, offering enhanced control and flexibility throughout the workflow. 
+In case you want to use TerraTorch on your specific data, we invite you to develop your own dataset and data module classes by following the examples below. 
 
 ### Datasets
-
-#### :::terratorch.datasets.fire_scars
 #### :::terratorch.datasets.biomassters
 #### :::terratorch.datasets.burn_intensity
 #### :::terratorch.datasets.carbonflux
 #### :::terratorch.datasets.forestnet
+#### :::terratorch.datasets.fire_scars
+#### :::terratorch.datasets.landslide4sense
+#### :::terratorch.datasets.m_eurosat
+#### :::terratorch.datasets.m_bigearthnet
+#### :::terratorch.datasets.m_brick_kiln
+#### :::terratorch.datasets.m_forestnet
+#### :::terratorch.datasets.m_so2sat
+#### :::terratorch.datasets.m_pv4ger
+#### :::terratorch.datasets.m_cashew_plantation
+#### :::terratorch.datasets.m_nz_cattle
+#### :::terratorch.datasets.m_chesapeake_landcover
+#### :::terratorch.datasets.m_pv4ger_seg
+#### :::terratorch.datasets.m_SA_crop_type
+#### :::terratorch.datasets.m_neontree
+#### :::terratorch.datasets.multi_temporal_crop_classification
+#### :::terratorch.datasets.open_sentinel_map
+#### :::terratorch.datasets.openearthmap
+#### :::terratorch.datasets.pastis
+#### :::terratorch.datasets.sen1floods11
+#### :::terratorch.datasets.sen4agrinet
+#### :::terratorch.datasets.sen4map
 
 ### Datamodules
-#### :::terratorch.datamodules.fire_scars
 #### :::terratorch.datamodules.biomassters
 #### :::terratorch.datamodules.burn_intensity
 #### :::terratorch.datamodules.carbonflux
 #### :::terratorch.datamodules.forestnet
+#### :::terratorch.datamodules.fire_scars
+#### :::terratorch.datamodules.landslide4sense
+#### :::terratorch.datamodules.m_eurosat
+#### :::terratorch.datamodules.m_bigearthnet
+#### :::terratorch.datamodules.m_brick_kiln
+#### :::terratorch.datamodules.m_forestnet
+#### :::terratorch.datamodules.m_so2sat
+#### :::terratorch.datamodules.m_pv4ger
+#### :::terratorch.datamodules.m_cashew_plantation
+#### :::terratorch.datamodules.m_nz_cattle
+#### :::terratorch.datamodules.m_chesapeake_landcover
+#### :::terratorch.datamodules.m_pv4ger_seg
+#### :::terratorch.datamodules.m_SA_crop_type
+#### :::terratorch.datamodules.m_neontree
+#### :::terratorch.datamodules.multi_temporal_crop_classification
+#### :::terratorch.datamodules.open_sentinel_map
+#### :::terratorch.datamodules.openearthmap
+#### :::terratorch.datamodules.pastis
+#### :::terratorch.datamodules.sen1floods11
+#### :::terratorch.datamodules.sen4agrinet
+#### :::terratorch.datamodules.sen4map
+
+## Transforms
+The transforms module provides a set of specialized image transformations designed to manipulate spatial, temporal, and multimodal data efficiently. 
+These transformations allow for greater flexibility when working with multi-temporal, multi-channel, and multi-modal datasets, ensuring that data can be formatted appropriately for different model architectures.
+
+### :::terratorch.datasets.transforms
 
 
