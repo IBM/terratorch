@@ -157,8 +157,6 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         self.image_modalities = image_modalities or self.modalities
         self.non_image_modalities = list(set(self.modalities) - set(image_modalities))
         self.modalities = self.image_modalities + self.non_image_modalities  # Ensure image modalities to be first
-        if scalar_label:
-            self.non_image_modalities += ["label"]
 
         self.constant_scale = constant_scale or {}
         self.no_data_replace = no_data_replace
@@ -299,7 +297,9 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
         # If no transform is given, apply only to transform to torch tensor
         if isinstance(transform, A.Compose):
-            self.transform = MultimodalTransforms(transform, non_image_modalities=self.non_image_modalities)
+            self.transform = MultimodalTransforms(transform,
+                                                  non_image_modalities=self.non_image_modalities + ['label']
+                                                  if scalar_label else self.non_image_modalities)
         elif transform is None:
             self.transform = MultimodalToTensor(self.modalities)
         else:
