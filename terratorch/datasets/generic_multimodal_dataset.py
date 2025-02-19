@@ -184,7 +184,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             if str(self.split_file).endswith(".txt"):
                 with open(self.split_file) as f:
                     split = f.readlines()
-                valid_files = {rf"{substring.strip()}" for substring in split}
+                valid_files = [rf"{substring.strip()}" for substring in split]
             else:
                 valid_files = list(load_table_data(self.split_file).index)
 
