@@ -56,7 +56,12 @@ class MultiLabelClassificationTask(ClassificationTask):
 
         self.train_metrics = metrics.clone(prefix="train/")
         self.val_metrics = metrics.clone(prefix="val/")
-        self.test_metrics = metrics.clone(prefix="test/")
+        if self.hparams["test_dataloaders_names"] is not None:
+            self.test_metrics = nn.ModuleList(
+                [metrics.clone(prefix=f"test/{dl_name}/") for dl_name in self.hparams["test_dataloaders_names"]]
+            )
+        else:
+            self.test_metrics = nn.ModuleList([metrics.clone(prefix="test/")])
 
     @staticmethod
     def to_multilabel_prediction(y: ModelOutput) -> Tensor:
