@@ -64,6 +64,8 @@ from terratorch.tasks import (
 
 logger = logging.getLogger("terratorch")
 
+from terratorch.utils import remove_unexpected_prefix
+
 def flatten(list_of_lists):
     return list(itertools.chain.from_iterable(list_of_lists))
 
@@ -136,20 +138,6 @@ def import_custom_modules(custom_modules_path: str | Path | None = None) -> None
             raise ValueError(f"Modules path {custom_modules_path} isn't a directory. Check if you have defined it properly.")
     else:
         logger.debug("No custom module is being used.")
-
-# TODO remove it for future releases
-def remove_unexpected_prefix(state_dict):
-    state_dict_ = {}
-    for k, v in state_dict.items():
-        keys = k.split(".")
-        if "_timm_module" in keys:
-            index = keys.index("_timm_module")
-            keys.pop(index)
-            k_ = ".".join(keys)
-        else:
-            k_ = k
-        state_dict_[k_] = v 
-    return state_dict_
 
 class CustomWriter(BasePredictionWriter):
     """Callback class to write geospatial data to file."""
