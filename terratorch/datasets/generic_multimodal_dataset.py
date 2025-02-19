@@ -204,7 +204,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                 get_file_id = lambda s: os.path.basename(s)
 
             if allow_missing_modalities:
-                valid_files = set([get_file_id(file) for file in np.concatenate(list(image_files.values()))])
+                valid_files = list(set([get_file_id(file) for file in np.concatenate(list(image_files.values()))]))
             else:
                 valid_files = [get_file_id(file) for file in image_files[self.modalities[0]]]
 
