@@ -1,5 +1,5 @@
 import os
-
+import gc 
 import matplotlib.pyplot as plt
 import pandas as pd
 import pytest
@@ -79,3 +79,5 @@ def test_burn_intensity_datamodule(dummy_burn_intensity_data):
     sample = unbind_samples(batch)[0]
     datamodule.plot(sample)
     plt.close()
+
+    gc.collect()

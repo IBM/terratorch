@@ -1,5 +1,5 @@
 import os
-
+import gc 
 import matplotlib.pyplot as plt
 import pytest
 from utils import create_dummy_image

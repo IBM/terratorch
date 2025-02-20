@@ -1,5 +1,5 @@
 import json
-
+import gc
 import matplotlib.pyplot as plt
 import pytest
 from utils import create_dummy_h5_pickle
@@ -63,3 +63,4 @@ def test_forestnet_datamodule(dummy_forestnet_data):
     sample = unbind_samples(val_batch)[0]
     datamodule.plot(sample)
     plt.close()
+    gc.collect()

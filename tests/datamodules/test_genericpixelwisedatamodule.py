@@ -1,5 +1,5 @@
 import os
-
+import gc
 import pytest
 from utils import create_dummy_tiff
 
@@ -147,3 +147,5 @@ def test_generic_non_geo_pixelwise_regression_datamodule(dummy_regression_data):
     loader = dm.predict_dataloader()
     batch = next(iter(loader))
     assert "image" in batch
+
+    gc.collect()
