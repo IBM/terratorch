@@ -17,6 +17,7 @@ from terratorch.models.pixel_wise_model import PixelWiseModel
 from terratorch.models.scalar_output_model import ScalarOutputModel
 from terratorch.models.utils import extract_prefix_keys
 from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY, MODEL_FACTORY_REGISTRY
+from terratorch.registry.timm_registry import TimmBackboneWrapper
 
 PIXEL_WISE_TASKS = ["segmentation", "regression"]
 SCALAR_TASKS = ["classification"]
@@ -152,7 +153,11 @@ class EncoderDecoderFactory(ModelFactory):
             backbone = get_peft_backbone(peft_config, backbone)
 
         try:
-            out_channels = backbone.out_channels
+            if isinstance(backbone, TimmBackboneWrapper):
+                backbone_ = backbone._timm_module
+                out_channels = backbone_.out_channels
+            else:
+                out_channels = backbone.out_channels
         except AttributeError as e:
             msg = "backbone must have out_channels attribute"
             raise AttributeError(msg) from e

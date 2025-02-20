@@ -34,6 +34,7 @@ class TimmRegistry(Set):
         Use prefixes ending with _ to forward to a specific source
         """
         try:
+            """
             return TimmBackboneWrapper(
                 timm.create_model(
                     name,
@@ -42,6 +43,14 @@ class TimmRegistry(Set):
                     **constructor_kwargs,
                 )
             )
+            """
+            return timm.create_model(
+                    name,
+                    *constructor_args,
+                    features_only=features_only,
+                    **constructor_kwargs,
+                )
+
         except RuntimeError as e:
             if "Unknown model" in str(e):
                 msg = f"Unknown model {name}"
