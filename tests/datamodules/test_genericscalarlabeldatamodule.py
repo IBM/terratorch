@@ -1,5 +1,5 @@
 import os
-
+import gc
 import pytest
 from utils import create_dummy_tiff
 
@@ -56,3 +56,4 @@ def test_generic_non_geo_classification_datamodule(dummy_classification_data):
     pred_batch = next(iter(pred_loader))
     assert "image" in pred_batch
 
+    gc.collect()

@@ -1,3 +1,4 @@
+import gc
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
@@ -55,3 +56,4 @@ def test_landslide4sense_datamodule(dummy_landslide_data):
     sample = unbind_samples(val_batch)[0]
     datamodule.plot(sample)
     plt.close()
+    gc.collect()
