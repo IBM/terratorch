@@ -15,7 +15,18 @@ def albumentations_to_callable_with_dict(albumentation: list[BasicTransform] | N
     albumentation = Compose(albumentation)
 
     def fn(data):
-        return albumentation(**data)
+        # workaround to solve problems with key `label`
+        if "label" in data:
+            label = data.pop("label")
+            label_in = True
+        else:
+            label_in = False
+
+        data_transformed = albumentation(**data)
+
+        if label_in:
+            data_transformed["label"] = label
+        return data_transformed
 
     return fn
 
