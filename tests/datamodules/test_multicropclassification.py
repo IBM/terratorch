@@ -1,3 +1,4 @@
+import gc
 import matplotlib.pyplot as plt
 import pytest
 from utils import create_dummy_tiff
@@ -68,3 +69,4 @@ def test_multitemp_crop_datamodule(dummy_multitemp_crop_data):
     sample = unbind_samples(val_batch)[0]
     datamodule.plot(sample)
     plt.close()
+    gc.collect()

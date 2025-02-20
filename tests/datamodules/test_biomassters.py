@@ -1,5 +1,5 @@
 import os
-
+import gc
 import pandas as pd
 import pytest
 from torch.utils.data import DataLoader
@@ -79,3 +79,4 @@ def test_biomasters_datamodule(dummy_biomasters_data):
     assert "S1" in batch, "Key S1 not found on predict_dataloader"
     assert "S2" in batch, "Key S2 not found on predict_dataloader"
 
+    gc.collect()

@@ -1,5 +1,5 @@
 import json
-
+import gc
 import pytest
 import matplotlib.pyplot as plt
 from torchgeo.datasets import unbind_samples
@@ -61,3 +61,4 @@ def test_pv4ger_datamodule(dummy_pv4ger_data):
     sample = unbind_samples(val_batch)[0]
     datamodule.plot(sample)
     plt.close()
+    gc.collect()

@@ -1,5 +1,5 @@
 from pathlib import Path
-
+import gc
 import pytest
 from utils import create_dummy_tiff
 
@@ -107,3 +107,4 @@ def test_generic_multimodal_datamodule(dummy_multimodal_data: Path):
     assert "image" in test_batch, "Missing key 'image' in test batch"
     assert "mask" in test_batch, "Missing key 'mask' in test batch"
 
+    gc.collect()

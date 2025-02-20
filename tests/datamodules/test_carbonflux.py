@@ -1,5 +1,5 @@
 import os
-
+import gc 
 import pandas as pd
 import pytest
 from utils import create_dummy_image
@@ -82,3 +82,4 @@ def test_carbon_flux_datamodule(dummy_carbon_flux_data):
     predict_batch = next(iter(predict_loader))
     assert "image" in predict_batch, "Missing key 'image' in predict batch"
 
+    gc.collect()
