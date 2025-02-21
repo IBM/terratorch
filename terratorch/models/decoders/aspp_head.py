@@ -205,6 +205,7 @@ class ASPPHead(nn.Module):
 
         return output
 
+@TERRATORCH_DECODER_REGISTRY.register
 class ASPPSegmentationHead(ASPPHead):
     """Rethinking Atrous Convolution for Semantic Image Segmentation.
 
@@ -258,6 +259,7 @@ class ASPPSegmentationHead(ASPPHead):
 
         return output
 
+@TERRATORCH_DECODER_REGISTRY.register
 class ASPPRegressionHead(ASPPHead):
     """Rethinking Atrous Convolution for regression.
 
