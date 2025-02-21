@@ -25,7 +25,7 @@ class UNet(nn.Module):
 
     Args:
         in_channels (int): Number of input image channels. Default" 3.
-        base_channels (int): Number of base channels of each stage.
+        out_channels (int): Number of base channels of each stage.
             The output channels of the first stage. Default: 64.
         num_stages (int): Number of stages in encoder, normally 5. Default: 5.
         strides (Sequence[int 1 | 2]): Strides of each stage in encoder.
@@ -77,7 +77,7 @@ class UNet(nn.Module):
 
     def __init__(self,
                  in_channels=3,
-                 base_channels=64,
+                 out_channels=64,
                  num_stages=5,
                  strides=(1, 1, 1, 1, 1),
                  enc_num_convs=(2, 2, 2, 2, 2),
@@ -152,7 +152,7 @@ class UNet(nn.Module):
         self.strides = strides
         self.downsamples = downsamples
         self.norm_eval = norm_eval
-        self.base_channels = base_channels
+        self.out_channels = out_channels
 
         self.encoder = nn.ModuleList()
         self.decoder = nn.ModuleList()
@@ -166,9 +166,9 @@ class UNet(nn.Module):
                 self.decoder.append(
                     UpConvBlock(
                         conv_block=BasicConvBlock,
-                        in_channels=base_channels * 2**i,
-                        skip_channels=base_channels * 2**(i - 1),
-                        out_channels=base_channels * 2**(i - 1),
+                        in_channels=out_channels * 2**i,
+                        skip_channels=out_channels * 2**(i - 1),
+                        out_channels=out_channels * 2**(i - 1),
                         num_convs=dec_num_convs[i - 1],
                         stride=1,
                         dilation=dec_dilations[i - 1],
@@ -183,7 +183,7 @@ class UNet(nn.Module):
             enc_conv_block.append(
                 BasicConvBlock(
                     in_channels=in_channels,
-                    out_channels=base_channels * 2**i,
+                    out_channels=out_channels * 2**i,
                     num_convs=enc_num_convs[i],
                     stride=strides[i],
                     dilation=enc_dilations[i],
@@ -194,7 +194,7 @@ class UNet(nn.Module):
                     dcn=None,
                     plugins=None))
             self.encoder.append((nn.Sequential(*enc_conv_block)))
-            in_channels = base_channels * 2**i
+            in_channels = out_channels * 2**i
 
     def forward(self, x):
         x = x[0]
