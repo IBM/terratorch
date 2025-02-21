@@ -399,16 +399,17 @@ class MultiMAE(nn.Module):
                     ids_restore=ids_restore,
                 )
 
-        loss = {f'{domain}_loss': self.loss_functions[domain](pred, x[domain])
+        loss = {f'{domain}_loss': self.loss_functions[domain](pred, x[domain], task_masks[domain])
                 for domain, pred in preds.items()}
 
         loss['loss'] = torch.stack(list(loss.values())).sum()
 
         # Convert token masks to pixel masks
         for key, mask in task_masks.items():
+            # TODO: Assumes squared inputs
             N_sqrt = int(mask.shape[1] ** 0.5)
             mask = mask.view(B, N_sqrt, N_sqrt)
-            task_masks[key] = F.interpolate(mask.unsqueeze(1), size=(H, W), mode='nearest').squeeze(1)
+            task_masks[key] = F.interpolate(mask.unsqueeze(1).to(torch.uint8), size=(H, W), mode='nearest').squeeze(1)
 
         return loss, preds, task_masks
 
