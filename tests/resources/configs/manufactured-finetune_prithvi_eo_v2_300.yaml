@@ -65,6 +65,7 @@ data:
       - 2
       - 1
       - 0
+    check_stackability: false
     train_data_root: tests/resources/inputs
     train_label_data_root: tests/resources/inputs
     val_data_root: tests/resources/inputs
