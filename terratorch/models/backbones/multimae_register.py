@@ -7,7 +7,7 @@ import numpy as np
 from functools import partial
 from huggingface_hub import hf_hub_download
 
-from terratorch.datasets.utils import HLSBands, Modalities, S1Bands, DEMBands, LULCclasses
+from terratorch.datasets.utils import Modalities, OpticalBands, SARBands, MetadataBands
 from terratorch.models.backbones.multimae.multimae import MultiMAE, MultiViT
 from terratorch.models.backbones.multimae.criterion import MaskedMSELoss, MaskedCrossEntropyLoss
 from terratorch.models.backbones.multimae.input_adapters import PatchedInputAdapter, SemSegInputAdapter
@@ -47,7 +47,16 @@ pretrained_weights = {}
 
 # TODO: make these user definable
 DOMAIN_CONF = {
-    Modalities.S1: {
+    Modalities.S1GRD: {
+        "channels": 2,
+        "stride_level": 1,
+        "input_adapter": partial(PatchedInputAdapter, num_channels=2),
+        "output_adapter": partial(SpatialOutputAdapter, num_channels=2),
+        "loss": MaskedMSELoss,
+        "image_size": 224,
+        "patch_size": 16,
+    },
+    Modalities.S1RTC: {
         "channels": 2,
         "stride_level": 1,
         "input_adapter": partial(PatchedInputAdapter, num_channels=2),
