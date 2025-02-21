@@ -238,17 +238,22 @@ class SemanticSegmentationTask(TerraTorchTask):
             batch_idx: Integer displaying index of this batch.
             dataloader_idx: Index of the current dataloader.
         """
+        # Testing because of failures.
         x = batch["image"]
         y = batch["mask"]
         other_keys = batch.keys() - {"image", "mask", "filename"}
 
         rest = {k: batch[k] for k in other_keys}
-
         model_output: ModelOutput = self(x, **rest)
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat_hard = to_segmentation_prediction(model_output)
-        self.train_metrics.update(y_hat_hard, y)
+        try:
+            self.train_metrics.update(y_hat_hard, y)
+        except:
+            print(f'{y_hat_hard.shape=}')
+            print(f'{y.shape=}')
+            print(f'{batch["filename"]=}')
 
         return loss["loss"]
 
