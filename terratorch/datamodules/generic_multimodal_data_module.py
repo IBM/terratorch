@@ -206,7 +206,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         sample_replace: bool = False,
         channel_position: int = -3,
         concat_bands: bool = False,
-        check_stackability: bool = False,
+        check_stackability: bool = True,
         **kwargs: Any,
     ) -> None:
         """Constructor
