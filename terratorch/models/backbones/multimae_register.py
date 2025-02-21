@@ -101,6 +101,15 @@ DOMAIN_CONF = {
         "image_size": 224,
         "patch_size": 16,
     },
+    Modalities.NDVI: {
+        "channels": 1,
+        "stride_level": 1,
+        "input_adapter": partial(PatchedInputAdapter, num_channels=1),
+        "output_adapter": partial(SpatialOutputAdapter, num_channels=1),
+        "loss": MaskedMSELoss,
+        "image_size": 224,
+        "patch_size": 16,
+    },
     Modalities.LULC: {
         "classes": 9,
         "stride_level": 1,
