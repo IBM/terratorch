@@ -167,10 +167,6 @@ class ReconstructionTask(BaseTask):
         """
         x = batch["image"]
         if isinstance(x, dict):
-            for k in x.keys():
-                # TODO: Test for OOM error
-                x[k] = x[k][:4]
-
             batch_size = list(x.values())[0].shape[0]
             image_size = list(x.values())[0].shape[-2:]
         elif isinstance(x, torch.Tensor):
