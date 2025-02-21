@@ -4,28 +4,38 @@ This module handles registering multimae models into timm.
 import logging
 import torch
 import numpy as np
-from pathlib import Path
 from functools import partial
-from timm.models import FeatureInfo
-from timm.models._builder import build_model_with_cfg
-from timm.models._registry import generate_default_cfgs, register_model
+from huggingface_hub import hf_hub_download
 
 from terratorch.datasets.utils import HLSBands, Modalities, S1Bands, DEMBands, LULCclasses
 from terratorch.models.backbones.multimae.multimae import MultiMAE, MultiViT
 from terratorch.models.backbones.multimae.criterion import MaskedMSELoss, MaskedCrossEntropyLoss
 from terratorch.models.backbones.multimae.input_adapters import PatchedInputAdapter, SemSegInputAdapter
 from terratorch.models.backbones.multimae.output_adapters import SpatialOutputAdapter, ConvNeXtAdapter
+from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY, TERRATORCH_FULL_MODEL_REGISTRY
 
 logger = logging.getLogger(__name__)
 
-def _cfg(file: Path = "", **kwargs) -> dict:
+def _cfg(**kwargs) -> dict:
     return {
-        "file": file,
-        "source": "file",
-        "license": "mit",
+        "input_adapters": ['RGB'],
+        "output_adapters": [],
+        "dim_tokens": 768,
+        "depth": 12,
+        "num_heads": 12,
+        "mlp_ratio": 4,
+        "qkv_bias": True,
+        "norm_layer": partial(torch.nn.LayerNorm, eps=1e-6),
         **kwargs,
     }
 
+multimae_cfgs = {
+    "multimae_small": _cfg(dim_tokens=384, depth=12, num_heads=6),
+    "multimae_base": _cfg(),
+    "multimae_large": _cfg(dim_tokens=1024, depth=24, num_heads=16),
+}
+
+pretrained_weights = {}
 
 # TODO: Add pretrained models
 # PRETRAINED_BANDS: list[HLSBands | int] = [
@@ -33,18 +43,6 @@ def _cfg(file: Path = "", **kwargs) -> dict:
 #     HLSBands.GREEN,
 #     HLSBands.RED,
 # ]
-
-# default_cfgs = generate_default_cfgs(
-#     {
-#         "multimae_base": _cfg(
-#             file=""
-#         ),
-#         "multimae_large": _cfg(
-#             file=""
-#         )
-#
-#     }
-# )
 
 
 # TODO: make these user definable
@@ -170,9 +168,16 @@ def _instantiate_output_adapter_from_dict(spec: dict, task: str, context_tasks: 
     )
 
 
+def _instantiate_loss_from_dict(spec: dict) -> MaskedMSELoss | MaskedCrossEntropyLoss:
+    return spec["loss"](
+        patch_size=spec["patch_size"],
+        stride=spec["stride_level"],
+    )
+
+
 def _parse_output_adapters(
     adapter_spec: list | dict[str, str | dict[str, int | str]],
-) -> dict[str, SpatialOutputAdapter | SpatialOutputAdapter]:
+) -> (dict[str, SpatialOutputAdapter | SpatialOutputAdapter], dict[str, MaskedMSELoss | MaskedCrossEntropyLoss]):
 
     if isinstance(adapter_spec, list):
         # list to dict
@@ -181,6 +186,7 @@ def _parse_output_adapters(
         msg = "Duplicate keys in output adapters"
         raise Exception(msg)
     output_adapters = {}
+    loss_functions = {}
 
     for adapter_name, spec in adapter_spec.items():
         match spec:
@@ -196,56 +202,30 @@ def _parse_output_adapters(
                         task=adapter_name,
                         context_tasks=list(adapter_spec.keys()),
                     )
+                    loss_functions[adapter_name] = _instantiate_loss_from_dict(DOMAIN_CONF[spec])
                 else:
                     msg = f"output Domain {adapter_name} does not exist. Choose one of {list(DOMAIN_CONF.keys())}"
                     raise ValueError(msg)
-            case {"type": "SpatialOutputAdapter", "num_channels": num_channels, **kwargs}:  # Used for pre-training
+            case {"type": "SpatialOutputAdapter", "num_channels": num_channels, "patch_size": patch_size, **kwargs}:
                 output_adapters[adapter_name] = SpatialOutputAdapter(
                     task=adapter_name,
                     context_tasks=list(adapter_spec.keys()),
+                    patch_size_full=patch_size,
                     num_channels=num_channels,
                     **kwargs
                 )
-            case {"type": "ConvNeXtAdapter", "num_classes": num_classes,  **kwargs}:
-                output_adapters[adapter_name] = ConvNeXtAdapter(num_classes=num_classes, **kwargs)
+                loss_functions[adapter_name] = MaskedMSELoss(patch_size=patch_size)
+            case {"type": "ConvNeXtAdapter", "num_classes": num_classes,  "patch_size": patch_size, **kwargs}:
+                output_adapters[adapter_name] = ConvNeXtAdapter(
+                    num_classes=num_classes,
+                    patch_size=patch_size,
+                    **kwargs
+                )
+                loss_functions[adapter_name] = MaskedCrossEntropyLoss(patch_size=patch_size)
             case _:
                 msg = f"Invalid output adapter config for adapter {adapter_name}"
                 raise ValueError(msg)
-    return output_adapters
-
-
-# If you need to adapt the checkpoint file, do it here
-def checkpoint_filter_fn(
-    modalities: list[str],
-    state_dict: dict[str, torch.Tensor],
-    model: torch.nn.Module,
-):
-    new_state_dict = {}
-
-    for k, v in state_dict.items():
-        if "output_adapters" in k:
-            continue
-
-        # drop pos emb
-        if "pos_emb" in k:
-            continue
-
-        if k.startswith("input_adapters."):
-            try:
-                modality_name = k.split(".")[1]
-                modality = Modalities(modality_name)
-            except ValueError:
-                print(f"Modality {modality_name} is not in allowed modalities. Skipping {k}.")
-                continue
-            if modality.value not in modalities:
-                print(f"Removing input adapter for {modality_name}: {k}")
-                continue
-        if k.startswith("encoder."):
-            new_k = "layers." + k.removeprefix("encoder.")
-            new_state_dict[new_k] = v
-        else:
-            new_state_dict[k] = v
-    return new_state_dict
+    return output_adapters, loss_functions
 
 
 class PrepareMultimodalFeaturesForDecoder:
@@ -275,116 +255,148 @@ class PrepareMultimodalFeaturesForDecoder:
 
 def _create_multimae(
     variant: str,
-    modalities: list[str],
     pretrained: bool = False,
-    features_only: bool = True,
+    ckpt_path: str = None,
+    encoder_only: bool = True,
     merging_method: str = None,
     **kwargs,
 ):
-    model: torch.nn.Module = build_model_with_cfg(
-        MultiViT if features_only else MultiMAE,  # MultiViT is an encoder-only model
-        variant,
-        pretrained,
-        # if you need to adapt the checkpoint file
-        pretrained_filter_fn=partial(checkpoint_filter_fn, modalities),
-        pretrained_strict=False,
-        feature_cfg={
-            "flatten_sequential": True,
-        },
-        features_only=False,
-        merging_method=merging_method,
-        **kwargs,
-    )
-    default_out_indices = list(range(len(model.layers)))
-    out_indices = kwargs.get("out_indices", default_out_indices)
-    model.feature_info = FeatureInfo(model.feature_info, out_indices)
+    model_args = multimae_cfgs[variant].copy()
+    model_args.update(kwargs)
+
+    model_class = MultiViT if encoder_only else MultiMAE
+
+    model = model_class(**model_args, merging_method=merging_method)
+
+    if pretrained:
+        if ckpt_path is not None:
+            # Load model from checkpoint
+            state_dict = torch.load(ckpt_path, map_location="cpu", weights_only=True)
+        else:
+            assert variant in pretrained_weights, (f"No pre-trained model found for variant {variant} "
+                                                   f"(pretrained models: {pretrained_weights.keys()})")
+
+            state_dict_file = hf_hub_download(repo_id=pretrained_weights[variant]['hf_hub_id'],
+                                              filename=pretrained_weights[variant]['hf_hub_filename'])
+            state_dict = torch.load(state_dict_file, map_location="cpu", weights_only=True)
+
+        # TODO: add manual filtering of keys for strict weight loading
+        loaded_keys = model.load_state_dict(state_dict, strict=False)
+        if loaded_keys.missing_keys:
+            logger.warning(f"Missing keys in ckpt_path {ckpt_path}: {loaded_keys.missing_keys}")
+        if loaded_keys.unexpected_keys:
+            logger.warning(f"Missing keys in ckpt_path {ckpt_path}: {loaded_keys.missing_keys}")
+    elif ckpt_path is not None:
+        logger.warning(f"ckpt_path is provided but pretrained is set to False, ignoring ckpt_path {ckpt_path}.")
 
     model.prepare_features_for_image_model = PrepareMultimodalFeaturesForDecoder(
-        modalities,
+        modalities=list(model.input_adapters.keys()),
         merging_method=merging_method
     )
     return model
 
+@TERRATORCH_FULL_MODEL_REGISTRY.register
+@TERRATORCH_BACKBONE_REGISTRY.register
+def multimae_small(
+    input_adapters: dict[str, str | dict[str, int | str]] | None = None,
+    output_adapters: dict[str, str | dict[str, int | str]] | None = None,
+    pretrained: bool = False,
+    encoder_only: bool = True,
+    **kwargs,
+) -> torch.nn.Module:
+    """MultiMAE small model."""
 
-@register_model
+    if input_adapters is None:
+        input_adapters = ['S1GRD', 'S1RTC', 'S2L1C', 'S2L2A', 'S2RGB', 'NDVI', 'DEM', 'LULC']
+        logger.warning(f'Using default adapters.')
+    input_adapters = _parse_input_adapters(input_adapters)
+
+    loss_functions = None
+    if output_adapters is not None:
+        output_adapters, loss_functions = _parse_output_adapters(output_adapters)
+        encoder_only = False
+
+    merging_method = None if output_adapters else kwargs.get('merging_method', 'concat')
+
+    transformer = _create_multimae(
+        "multimae_small",
+        input_adapters=input_adapters,
+        output_adapters=output_adapters,
+        loss_functions=loss_functions,
+        pretrained=pretrained,
+        encoder_only=encoder_only,
+        merging_method=merging_method,
+        **kwargs,
+    )
+    return transformer
+
+@TERRATORCH_FULL_MODEL_REGISTRY.register
+@TERRATORCH_BACKBONE_REGISTRY.register
 def multimae_base(
     input_adapters: dict[str, str | dict[str, int | str]] | None = None,
     output_adapters: dict[str, str | dict[str, int | str]] | None = None,
     pretrained: bool = False,
-    features_only: bool = True,
+    encoder_only: bool = True,
     **kwargs,
 ) -> torch.nn.Module:
     """MultiMAE base model."""
 
     if input_adapters is None:
-        input_adapters = ['S1', 'S2L1C', 'S2L2A', 'DEM', 'LULC']
+        input_adapters = ['S1GRD', 'S1RTC', 'S2L1C', 'S2L2A', 'S2RGB', 'NDVI', 'DEM', 'LULC']
         logger.warning(f'Using default adapters.')
     input_adapters = _parse_input_adapters(input_adapters)
 
+    loss_functions = None
     if output_adapters is not None:
-        output_adapters = _parse_output_adapters(output_adapters)
+        output_adapters, loss_functions = _parse_output_adapters(output_adapters)
+        encoder_only = False
 
-    model_args = {
-        "input_adapters": input_adapters,
-        "output_adapters": output_adapters,
-        "dim_tokens": 768,
-        "depth": 12,
-        "num_heads": 12,
-        "mlp_ratio": 4,
-        "qkv_bias": True,
-        "norm_layer": partial(torch.nn.LayerNorm, eps=1e-6),
-    }
-
-    kwargs.pop('features_only', None)
     merging_method = None if output_adapters else kwargs.get('merging_method', 'concat')
 
     transformer = _create_multimae(
         "multimae_base",
-        list(input_adapters.keys()),
+        input_adapters=input_adapters,
+        output_adapters=output_adapters,
+        loss_functions=loss_functions,
         pretrained=pretrained,
-        features_only=output_adapters is None,
+        encoder_only=encoder_only,
         merging_method=merging_method,
-        **dict(model_args, **kwargs),
+        **kwargs,
     )
     return transformer
 
 
-@register_model
+@TERRATORCH_FULL_MODEL_REGISTRY.register
+@TERRATORCH_BACKBONE_REGISTRY.register
 def multimae_large(
     input_adapters: dict[str, str | dict[str, int | str]] | None = None,
     output_adapters: dict[str, str | dict[str, int | str]] | None = None,
-    pretrained: bool = False,  # noqa: FBT002, FBT001
+    pretrained: bool = False,
+    encoder_only: bool = True,
     **kwargs,
 ) -> torch.nn.Module:
     """MultiMAE large model."""
 
     if input_adapters is None:
-        input_adapters = ['S1', 'S2L1C', 'S2L2A', 'DEM', 'LULC']
+        input_adapters = ['S1GRD', 'S1RTC', 'S2L1C', 'S2L2A', 'S2RGB', 'NDVI', 'DEM', 'LULC']
+        logger.warning(f'Using default adapters.')
     input_adapters = _parse_input_adapters(input_adapters)
 
+    loss_functions = None
     if output_adapters is not None:
-        output_adapters = _parse_output_adapters(output_adapters)
+        output_adapters, loss_functions = _parse_output_adapters(output_adapters)
+        encoder_only = False
 
-    model_args = {
-        "input_adapters": input_adapters,
-        "output_adapters": output_adapters,
-        "dim_tokens": 1024,
-        "depth": 24,
-        "num_heads": 16,
-        "mlp_ratio": 4,
-        "qkv_bias": True,
-        "norm_layer": partial(torch.nn.LayerNorm, eps=1e-6),
-    }
-
-    kwargs.pop('features_only', None)
     merging_method = None if output_adapters else kwargs.get('merging_method', 'concat')
 
     transformer = _create_multimae(
         "multimae_large",
-        list(input_adapters.keys()),
+        input_adapters=input_adapters,
+        output_adapters=output_adapters,
+        loss_functions=loss_functions,
         pretrained=pretrained,
-        features_only=output_adapters is None,
+        encoder_only=encoder_only,
         merging_method=merging_method,
-        **dict(model_args, **kwargs),
+        **kwargs,
     )
     return transformer
