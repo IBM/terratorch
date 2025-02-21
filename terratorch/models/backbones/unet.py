@@ -98,7 +98,6 @@ class UNet(nn.Module):
         super(UNet, self).__init__()
 
         self.pretrained = pretrained
-        print(pretrained)
         assert not (init_cfg and pretrained), \
             'init_cfg and pretrained cannot be setting at the same time'
         if isinstance(pretrained, str):
