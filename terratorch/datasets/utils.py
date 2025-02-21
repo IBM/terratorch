@@ -74,13 +74,11 @@ class SARBands(Enum):
         except ValueError:
             return x
 
-class S1Bands(Enum):
-    VV = 'VV'
-    VH = 'VH'
 
-
-class DEMBands(Enum):
+class MetadataBands(Enum):
     DEM = 'DEM'
+    NDVI = 'NDVI'
+    LULC = 'LULC'
 
 
 class LULCclasses(Enum):
@@ -88,11 +86,13 @@ class LULCclasses(Enum):
 
 
 class Modalities(Enum):
-    S1 = "S1"
+    S1GRD = "S1GRD"
+    S1RTC = "S1RTC"
     S2L1C = "S2L1C"
     S2L2A = "S2L2A"
     S2RGB = "S2RGB"
     DEM = "DEM"
+    NDVI = "NDVI"
     LULC = "LULC"
 
 
