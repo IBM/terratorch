@@ -755,6 +755,7 @@ class PrithviMAE(nn.Module):
         latent, mask, ids_restore = self.encoder(pixel_values, temporal_coords, location_coords, mask_ratio)
         pred = self.decoder(latent, ids_restore, temporal_coords, location_coords, input_size=pixel_values.shape)
         loss = self.forward_loss(pixel_values, pred, mask)
+        loss = {'loss': loss}  # TerraTorch expects loss dict
         return loss, pred, mask
 
     def forward_features(
