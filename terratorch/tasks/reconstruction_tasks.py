@@ -142,6 +142,7 @@ class ReconstructionTask(BaseTask):
             for key in x.keys():
                 x[key] = self.mask_input(x[key], mask[key])
         else:
+            x = x.clone()
             if len(x.shape) == 4:
                 # Adding channel dim to mask
                 mask = mask.unsqueeze(1).repeat(1, x.shape[1], 1, 1)
