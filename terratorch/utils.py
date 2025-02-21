@@ -80,3 +80,18 @@ def get_logger():
     logger = logging.getLogger("terratorch")
     return logger 
 
+# TODO remove it for future releases
+def remove_unexpected_prefix(state_dict):
+    state_dict_ = {}
+    for k, v in state_dict.items():
+        keys = k.split(".")
+        if "_timm_module" in keys:
+            index = keys.index("_timm_module")
+            keys.pop(index)
+            k_ = ".".join(keys)
+        else:
+            k_ = k
+        state_dict_[k_] = v 
+    return state_dict_
+
+
