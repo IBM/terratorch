@@ -8,7 +8,7 @@ from torchgeo.datasets.utils import unbind_samples
 from torchgeo.trainers import BaseTask
 from torchmetrics import MeanAbsoluteError, MeanSquaredError, MetricCollection
 
-from terratorch.models.model import Model
+from terratorch.models.model import Model, ReconstructionOutput
 from terratorch.registry import MODEL_FACTORY_REGISTRY
 from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.tiled_inference import TiledInferenceParameters, tiled_inference
@@ -99,34 +99,11 @@ class ReconstructionTask(BaseTask):
         if self.hparams["freeze_decoder"]:
             self.model.freeze_decoder()
 
-    def configure_losses(self) -> None:
-        """Initialize the loss criterion.
-
-        Raises:
-            ValueError: If *loss* is invalid.
-        """
-        loss: str = self.hparams["loss"].lower()
-        if loss == "mse":
-            self.criterion: nn.Module = IgnoreIndexLossWrapper(
-                nn.MSELoss(reduction="none"), self.ignore_index
-            )
-        elif loss == "mae":
-            self.criterion = IgnoreIndexLossWrapper(nn.L1Loss(reduction="none"), self.ignore_index)
-        elif loss == "rmse":
-            # IMPORTANT! Root is done only after ignore index! Otherwise, the mean taken is incorrect
-            self.criterion = RootLossWrapper(
-                IgnoreIndexLossWrapper(nn.MSELoss(reduction="none"), self.ignore_index), reduction=None
-            )
-        elif loss == "huber":
-            self.criterion = IgnoreIndexLossWrapper(nn.HuberLoss(reduction="none"), self.ignore_index)
-        else:
-            exception_message = f"Loss type '{loss}' is not valid. Currently, supports 'mse', 'rmse' or 'mae' loss."
-            raise ValueError(exception_message)
-
     def configure_metrics(self) -> None:
         """Initialize the performance metrics."""
 
         def instantiate_metrics():
+            # TODO: Handle segmentation outputs (e.g. for LULC maps with multimodal models)
             metrics = {
                 "RMSE": MeanSquaredError(squared=False),
                 "MSE": MeanSquaredError(squared=True),
@@ -154,26 +131,30 @@ class ReconstructionTask(BaseTask):
             self.val_metrics = MetricCollection(instantiate_metrics(), prefix="val/")
             self.test_metrics = MetricCollection(instantiate_metrics(), prefix="test/")
 
-    def mask_input(self, x: torch.Tensor, pred: torch.Tensor, mask: torch.Tensor, image_size: int | tuple[int]
-                   ) -> (torch.Tensor, torch.Tensor):
+    def mask_input(self, x: torch.Tensor | dict, mask: torch.Tensor | dict) -> torch.Tensor:
+        """
+        Args:
+            x: input tensor or dict of input tensors, [B, C, H, W] or [B, C, T, H, W].
+            mask: mask tensor or dict of mask tensors, [B, H, W] or [B, T, H, W].
+        """
         if isinstance(x, dict):
             # Multimodal data
             for key in x.keys():
-                x[key], mask[key] = self.mask_input(x[key], pred[key], mask[key], image_size)
+                x[key] = self.mask_input(x[key], mask[key])
         else:
-            if mask.shape != pred.shape:  # Assuming mask with dims [B, T] and pred with [B, T, E]
-                mask = self.model.unpatchify(mask.unsqueeze(-1).repeat(1, 1, pred.shape[-1]), image_size=image_size)
-            if mask.shape != x.shape and len(x.shape):
-                if len(mask.shape) == 5 and len(x.shape) == 4:
-                    # Add time dim for non-temporal input and temporal models
-                    x = x.unsqueeze(2)
-                else:
-                    raise ValueError(f'Found incompatible shape for mask {mask.shape} and input {x.shape}')
+            if len(x.shape) == 4:
+                # Adding channel dim to mask
+                mask = mask.unsqueeze(1).repeat(1, x.shape[1], 1, 1)
+            elif len(x.shape) == 5:
+                # Temporal data
+                mask = mask.unsqueeze(1).repeat(1, x.shape[1], 1, 1, 1)
+            if x.dtype == torch.uint8:
+                # Convert for NaN ignore_index
+                x = x.to(torch.float32)
             # Mask input
             x[mask == True] = self.ignore_index
 
-        return x, mask
-
+        return x
 
     def training_step(self, batch: dict, batch_idx: int, dataloader_idx: int = 0) -> torch.Tensor:
         """Compute the train loss and additional metrics.
@@ -186,7 +167,7 @@ class ReconstructionTask(BaseTask):
         x = batch["image"]
         if isinstance(x, dict):
             batch_size = list(x.values())[0].shape[0]
-            image_size = list(x.values())[0].shape[:-2]
+            image_size = list(x.values())[0].shape[-2:]
         elif isinstance(x, torch.Tensor):
             batch_size = x.shape[0]
             image_size = x.shape[-2:]
@@ -196,27 +177,25 @@ class ReconstructionTask(BaseTask):
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
 
-        loss, pred, mask = self(x, **rest)
+        output: ReconstructionOutput | tuple = self(x, **rest)
+        if not isinstance(output, ReconstructionOutput):
+            output = ReconstructionOutput(*output)
 
-        self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=batch_size)
+        self.train_loss_handler.log_loss(self.log, loss_dict=output.loss, batch_size=batch_size)
 
-        if self.masked_metric and mask is not None:
-            x, mask = self.mask_input(x, pred, mask, image_size)
+        if self.masked_metric and output.mask is not None:
+            x = self.mask_input(x, output.mask)
 
         if isinstance(x, dict):
             # Multimodal data
-            for key in pred.keys():
-                pred[key] = self.model.unpatchify(pred[key], image_size=image_size)
-
             for modality in x.keys():
-                if modality in self.val_metrics:
-                    self.train_metrics[modality].update(pred[modality], x[modality])
+                if modality in self.train_metrics:
+                    self.train_metrics[modality].update(output.pred[modality], x[modality])
         else:
             # Single modality
-            pred = self.model.unpatchify(pred, image_size=image_size)
-            self.train_metrics.update(pred, x)
+            self.train_metrics.update(output.pred, x)
 
-        return loss["loss"]
+        return output.loss["loss"]
 
     def on_train_epoch_end(self) -> None:
         if isinstance(self.test_metrics, MetricCollection):
@@ -252,7 +231,7 @@ class ReconstructionTask(BaseTask):
         x = batch["image"]
         if isinstance(x, dict):
             batch_size = list(x.values())[0].shape[0]
-            image_size = list(x.values())[0].shape[:-2]
+            image_size = list(x.values())[0].shape[-2:]
         elif isinstance(x, torch.Tensor):
             batch_size = x.shape[0]
             image_size = x.shape[-2:]
@@ -262,28 +241,26 @@ class ReconstructionTask(BaseTask):
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
 
-        loss, pred, mask = self(x, **rest)
+        output: ReconstructionOutput | tuple = self(x, **rest)
+        if not isinstance(output, ReconstructionOutput):
+            output = ReconstructionOutput(*output)
 
-        self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=batch_size)
+        self.val_loss_handler.log_loss(self.log, loss_dict=output.loss, batch_size=batch_size)
 
-        if self.masked_metric and mask is not None:
-            x, mask = self.mask_input(x, pred, mask, image_size)
+        if self.masked_metric and output.mask is not None:
+            x = self.mask_input(x, output.mask)
 
         if isinstance(x, dict):
             if not isinstance(self.val_metrics, nn.ModuleDict):
                 raise ValueError(f'Multimodal data provided but no image modalities. '
                                  f'Please provide modalities (list of str) to the ReconstructionTask.')
             # Multimodal data
-            for key in pred.keys():
-                pred[key] = self.model.unpatchify(pred[key], image_size=image_size)
-
             for modality in x.keys():
                 if modality in self.val_metrics:
-                    self.val_metrics[modality].update(pred[modality], x[modality])
+                    self.val_metrics[modality].update(output.pred[modality], x[modality])
         else:
             # Single modality
-            pred = self.model.unpatchify(pred, image_size=image_size)
-            self.val_metrics.update(pred, x)
+            self.val_metrics.update(output.pred, x)
 
         if self._do_plot_samples(batch_idx):
             try:
@@ -292,11 +269,12 @@ class ReconstructionTask(BaseTask):
                     # Multimodal input
                     rgb_modality = getattr(datamodule, 'rgb_modality', None) or list(batch["image"].keys())[0]
                     batch["image"] = batch["image"][rgb_modality]
-                    batch["prediction"] = pred[rgb_modality].cpu()
-                    batch["mask"] = mask[rgb_modality].cpu()
+                    batch["prediction"] = output.pred[rgb_modality].cpu()
+                    if output.mask is not None:
+                        batch["mask"] = output.mask[rgb_modality].cpu()
                 else:
-                    batch["prediction"] = pred.cpu()
-                    batch["mask"] = mask.cpu()
+                    batch["prediction"] = output.pred.cpu()
+                    batch["mask"] = output.mask.cpu()
                 batch['image'] = batch['image'].cpu()
                 sample = unbind_samples(batch)[0]
                 fig = datamodule.val_dataset.plot(sample)
@@ -334,7 +312,7 @@ class ReconstructionTask(BaseTask):
         x = batch["image"]
         if isinstance(x, dict):
             batch_size = list(x.values())[0].shape[0]
-            image_size = list(x.values())[0].shape[:-2]
+            image_size = list(x.values())[0].shape[-2:]
         elif isinstance(x, torch.Tensor):
             batch_size = x.shape[0]
             image_size = x.shape[-2:]
@@ -344,25 +322,23 @@ class ReconstructionTask(BaseTask):
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
 
-        loss, pred, mask = self(x, **rest)
+        output: ReconstructionOutput | tuple = self(x, **rest)
+        if not isinstance(output, ReconstructionOutput):
+            output = ReconstructionOutput(*output)
 
-        self.test_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=batch_size)
+        self.test_loss_handler.log_loss(self.log, loss_dict=output.loss, batch_size=batch_size)
 
-        if self.masked_metric and mask is not None:
-            x, mask = self.mask_input(x, pred, mask, image_size)
+        if self.masked_metric and output.mask is not None:
+            x = self.mask_input(x, output.mask)
 
         if isinstance(x, dict):
             # Multimodal data
-            for key in pred.keys():
-                pred[key] = self.model.unpatchify(pred[key], image_size=image_size)
-
             for modality in x.keys():
-                if modality in self.val_metrics:
-                    self.test_metrics[modality].update(pred[modality], x[modality])
+                if modality in self.test_metrics:
+                    self.test_metrics[modality].update(output.pred[modality], x[modality])
         else:
             # Single modality
-            pred = self.model.unpatchify(pred, image_size=image_size)
-            self.test_metrics.update(pred, x)
+            self.test_metrics.update(output.pred, x)
 
     def on_test_epoch_end(self) -> None:
         if isinstance(self.test_metrics, MetricCollection):
@@ -393,8 +369,11 @@ class ReconstructionTask(BaseTask):
         rest = {k: batch[k] for k in other_keys}
 
         def model_forward(x):
-            pred = self(x)[1]
-            pred = self.model.unpatchify(pred, image_size=image_size)
+            out = self(x)[1]
+            if isinstance(out, ReconstructionOutput):
+                pred  = out.pred
+            else:
+                pred = out[1]
             return pred
 
         # Tiled inference for autoencoder ? Is it making sense ?
