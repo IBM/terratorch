@@ -65,7 +65,6 @@ prithvi_cfgs = {
                                  coords_encoding=["time", "location"], coords_scale_learn=True),
 }
 
-# Timm pretrained configs
 pretrained_weights = {
         "prithvi_eo_v1_100": {
             "hf_hub_id": "ibm-nasa-geospatial/Prithvi-EO-1.0-100M",
