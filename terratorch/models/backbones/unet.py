@@ -194,8 +194,13 @@ class UNet(nn.Module):
             in_channels = base_channels * 2**i
 
     def forward(self, x):
-        x = x[0]
-        self._check_input_divisible(x)
+        self._check_input_divisible(x[0])
+        print([i.shape for i in x])
+        if len(x) > 1:
+            x = torch.cat(x, dim=0)
+        else:
+            x = x[0]
+
         enc_outs = []
         for enc in self.encoder:
             x = enc(x)
