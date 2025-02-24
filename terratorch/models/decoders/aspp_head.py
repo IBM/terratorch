@@ -2,8 +2,10 @@ import torch
 from torch import nn
 import numpy as np
 
+from terratorch.registry import TERRATORCH_DECODER_REGISTRY
 from .utils import ConvModule, resize
 
+@TERRATORCH_DECODER_REGISTRY.register
 class ASPPModule(nn.Module):
     """Atrous Spatial Pyramid Pooling (ASPP) Module.
 
@@ -57,6 +59,7 @@ class ASPPModule(nn.Module):
 
         return outs
 
+@TERRATORCH_DECODER_REGISTRY.register
 class ASPPHead(nn.Module):
     """Rethinking Atrous Convolution for Semantic Image Segmentation.
 
@@ -202,6 +205,7 @@ class ASPPHead(nn.Module):
 
         return output
 
+@TERRATORCH_DECODER_REGISTRY.register
 class ASPPSegmentationHead(ASPPHead):
     """Rethinking Atrous Convolution for Semantic Image Segmentation.
 
@@ -255,6 +259,7 @@ class ASPPSegmentationHead(ASPPHead):
 
         return output
 
+@TERRATORCH_DECODER_REGISTRY.register
 class ASPPRegressionHead(ASPPHead):
     """Rethinking Atrous Convolution for regression.
 
