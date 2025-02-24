@@ -393,22 +393,6 @@ class MyLightningCLI(LightningCLI):
         parser.add_argument("--deploy_config_file", type=bool, default=True)
         parser.add_argument("--custom_modules_path", type=str, default=None)
 
-        # parser.set_defaults({"trainer.enable_checkpointing": False})
-        """
-        parser.add_lightning_class_args(StateDictAwareModelCheckpoint, "ModelCheckpoint")
-        parser.set_defaults({"ModelCheckpoint.filename": "{epoch}", "ModelCheckpoint.monitor": "val/loss"})
-
-        parser.add_lightning_class_args(StateDictAwareModelCheckpoint, "StateDictModelCheckpoint")
-        parser.set_defaults(
-            {
-                "StateDictModelCheckpoint.filename": "{epoch}_state_dict",
-                "StateDictModelCheckpoint.save_weights_only": True,
-                "StateDictModelCheckpoint.monitor": "val/loss",
-            }
-        )
-
-        parser.link_arguments("ModelCheckpoint.dirpath", "StateDictModelCheckpoint.dirpath")
-        """
     def instantiate_classes(self) -> None:
 
         # Adding default configuration for checkpoint saving when 
