@@ -103,17 +103,14 @@ def add_default_checkpointing_config(config):
 
     if enable_checkpointing:
         print("Enabling ModelCheckpoint since the user defined enable_checkpointing=True.")
-        config["ModelCheckpoint"] = {}
-        config["ModelCheckpoint"]["init_args"] = {}
-        config["ModelCheckpoint"]["class_path"] = StateDictAwareModelCheckpoint
-        config["ModelCheckpoint"]["init_args"]["filename"] = "{epoch}"
-        config["ModelCheckpoint"]["init_args"]["monitor"] = "val/loss"
-        config["StateDictModelCheckpoint"] = {}
-        config["StateDictModelCheckpoint"]["init_args"] = {}
-        config["StateDictModelCheckpoint"]["class_path"] = StateDictAwareModelCheckpoint
-        config["StateDictModelCheckpoint"]["init_args"]["filename"] = "{epoch}_state_dict",
-        config["StateDictModelCheckpoint"]["init_args"]["save_weights_only"] = True,
-        config["StateDictModelCheckpoint"]["init_args"]["monitor"] = "val/loss",
+
+        config["ModelCheckpoint"] = StateDictAwareModelCheckpoint
+        config["ModelCheckpoint.filename"] = "{epoch}"
+        config["ModelCheckpoint.monitor"] = "val/loss"
+        config["StateDictModelCheckpoint"] = StateDictAwareModelCheckpoint
+        config["StateDictModelCheckpoint.filename"] = "{epoch}_state_dict"
+        config["StateDictModelCheckpoint.save_weights_only"] = True
+        config["StateDictModelCheckpoint.monitor"] = "val/loss"
 
     return config 
 
