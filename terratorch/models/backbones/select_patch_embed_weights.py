@@ -101,6 +101,7 @@ def select_patch_embed_weights(
     Returns:
         dict: New state dict
     """
+
     if (type(pretrained_bands) == type(model_bands)) | (type(pretrained_bands) == int) | (type(model_bands) == int):
 
         state_dict = get_state_dict(state_dict) 
@@ -110,7 +111,7 @@ def select_patch_embed_weights(
             # Search for patch embedding weight in state dict
             proj_key, prefix = get_proj_key(state_dict, return_prefix=True, encoder_only=encoder_only)
         if proj_key is None or proj_key not in state_dict:
-            raise Exception("Could not find key for patch embed weight in state_dict.")
+            raise Exception(f"Could not find key {proj_key} for patch embed weight in state_dict.")
 
         patch_embed_weight = state_dict[proj_key]
 

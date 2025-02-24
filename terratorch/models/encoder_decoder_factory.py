@@ -17,11 +17,13 @@ from terratorch.models.pixel_wise_model import PixelWiseModel
 from terratorch.models.scalar_output_model import ScalarOutputModel
 from terratorch.models.utils import extract_prefix_keys
 from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY, MODEL_FACTORY_REGISTRY
+from terratorch.utils import get_logger
 
 PIXEL_WISE_TASKS = ["segmentation", "regression"]
 SCALAR_TASKS = ["classification"]
 SUPPORTED_TASKS = PIXEL_WISE_TASKS + SCALAR_TASKS
 
+logger = get_logger()
 
 def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
     if isinstance(backbone, nn.Module):
@@ -231,6 +233,16 @@ def _build_appropriate_model(
         neck_module: nn.Module = nn.Sequential(*necks)
     else:
         neck_module = None
+
+    # Printing data for debugging
+    logger.debug(f"Task: {task}")
+    logger.debug(f"Backbone: {backbone.__class__}")
+    logger.debug(f"Decoder: {decoder.__class__}")
+    logger.debug(f"head_kwargs: {head_kwargs}")
+    logger.debug(f"patch_size: {patch_size}")
+    logger.debug(f"rescale: {rescale}")
+    logger.debug(f"necks: {necks}")
+
     if task in PIXEL_WISE_TASKS:
         return PixelWiseModel(
             task,

@@ -22,11 +22,11 @@ from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
 from terratorch.tasks.tiled_inference import TiledInferenceParameters, tiled_inference
 from terratorch.tasks.base_task import TerraTorchTask
+from terratorch.utils import get_logger
 
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
 
-logger = logging.getLogger("terratorch")
-
+logger = get_logger()
 
 class RootLossWrapper(nn.Module):
     def __init__(self, loss_function: nn.Module, reduction: None | str = "mean") -> None:
@@ -226,6 +226,9 @@ class PixelwiseRegressionTask(TerraTorchTask):
         self.monitor = f"{self.val_metrics.prefix}loss"
         self.plot_on_val = int(plot_on_val)
 
+        logger.info(f"Instantiating a class {self.__class__}")
+        logger.debug(f"Using hparams: {self.hparams}")
+
     def configure_losses(self) -> None:
         """Initialize the loss criterion.
 
@@ -233,6 +236,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
             ValueError: If *loss* is invalid.
         """
         loss: str = self.hparams["loss"].lower()
+
         if loss == "mse":
             self.criterion: nn.Module = IgnoreIndexLossWrapper(
                 nn.MSELoss(reduction="none"), self.hparams["ignore_index"]

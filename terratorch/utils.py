@@ -1,6 +1,7 @@
+import os
 import math
 from collections import Counter
-
+import logging
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -68,6 +69,16 @@ def compute_float_mask_statistics(dataloader: DataLoader) -> dict[str, float]:
     variance = sum_squared / n_data
     std = math.sqrt(variance)
     return {"mean": mean, "std": std}
+
+def get_logger():
+
+    loglevel = os.getenv("LOGLEVEL")
+
+    if loglevel:
+        logging.basicConfig(level=loglevel.upper(), format='%(asctime)s,%(msecs)03d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s', datefmt='%Y-%m-%d:%H:%M:%S')
+
+    logger = logging.getLogger("terratorch")
+    return logger 
 
 # TODO remove it for future releases
 def remove_unexpected_prefix(state_dict):
