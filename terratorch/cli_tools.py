@@ -96,6 +96,24 @@ def write_tiff(img_wrt, filename, metadata):
             dest.write(img_wrt[i, :, :], i + 1)
     return filename
 
+def add_default_checkpointing_config(config):
+
+    subcommand = config["subcommand"]
+    enable_checkpointing = config[subcommand + ".trainer.enable_checkpointing"]
+
+    if enable_checkpointing:
+        print("Enabling ModelCheckpoint since the user defined enable_checkpointing=True.")
+
+        config["ModelCheckpoint"] = StateDictAwareModelCheckpoint
+        config["ModelCheckpoint"].filename = "{epoch}"
+        config["ModelCheckpoint"].monitor = "val/loss"
+
+        config["StateDictModelCheckpoint"] = StateDictAwareModelCheckpoint
+        config["StateDictModelCheckpoint"].filename = "{epoch}_state_dict",
+        config["StateDictModelCheckpoint"].save_weights_only = True,
+        config["StateDictModelCheckpoint"].monitor = "val/loss",
+
+    return config 
 
 def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16"):
     mask, metadata = open_tiff(input_file_name)
@@ -376,7 +394,7 @@ class MyLightningCLI(LightningCLI):
         parser.add_argument("--custom_modules_path", type=str, default=None)
 
         # parser.set_defaults({"trainer.enable_checkpointing": False})
-
+        """
         parser.add_lightning_class_args(StateDictAwareModelCheckpoint, "ModelCheckpoint")
         parser.set_defaults({"ModelCheckpoint.filename": "{epoch}", "ModelCheckpoint.monitor": "val/loss"})
 
@@ -390,8 +408,12 @@ class MyLightningCLI(LightningCLI):
         )
 
         parser.link_arguments("ModelCheckpoint.dirpath", "StateDictModelCheckpoint.dirpath")
-
+        """
     def instantiate_classes(self) -> None:
+
+        # Adding default configuration for checkpoint saving when 
+        # enable_checkpointing is True. 
+        self.config = add_default_checkpointing_config(self.config)
 
         super().instantiate_classes()
         # get the predict_output_dir. Depending on the value of run, it may be in the subcommand
