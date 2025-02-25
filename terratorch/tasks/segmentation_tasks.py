@@ -252,7 +252,7 @@ class SemanticSegmentationTask(TerraTorchTask):
             self.train_metrics.update(y_hat_hard, y)
         except:
             # Sometimes y has a channel dim
-            y = y.reshape(y_hat_hard)
+            y = y.reshape(y_hat_hard.shape)
             self.train_metrics.update(y_hat_hard, y)
 
             print(f'{y_hat_hard.shape=}')
@@ -309,7 +309,7 @@ class SemanticSegmentationTask(TerraTorchTask):
             self.val_metrics.update(y_hat_hard, y)
         except:
             # Sometimes y has a channel dim
-            y = y.reshape(y_hat_hard)
+            y = y.reshape(y_hat_hard.shape)
             self.val_metrics.update(y_hat_hard, y)
 
         if self._do_plot_samples(batch_idx):
