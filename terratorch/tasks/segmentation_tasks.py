@@ -241,6 +241,10 @@ class SemanticSegmentationTask(TerraTorchTask):
         # Testing because of failures.
         x = batch["image"]
         y = batch["mask"]
+        if len(y.shape) == 4:
+            print(f'mask with channel dim ({y.shape})')
+            print(f'{batch["filename"]=}')
+            y = y.squeeze(1)
         other_keys = batch.keys() - {"image", "mask", "filename"}
 
         rest = {k: batch[k] for k in other_keys}
@@ -248,16 +252,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat_hard = to_segmentation_prediction(model_output)
-        try:
-            self.train_metrics.update(y_hat_hard, y)
-        except:
-            print(f'{y_hat_hard.shape=}')
-            print(f'{y.shape=}')
-            print(f'{batch["filename"]=}')
-            # Sometimes y has a channel dim
-            y = y.reshape(y_hat_hard.shape)
-            self.train_metrics.update(y_hat_hard, y)
-
+        self.train_metrics.update(y_hat_hard, y)
 
         return loss["loss"]
 
@@ -271,6 +266,10 @@ class SemanticSegmentationTask(TerraTorchTask):
         """
         x = batch["image"]
         y = batch["mask"]
+        if len(y.shape) == 4:
+            print(f'mask with channel dim ({y.shape})')
+            print(f'{batch["filename"]=}')
+            y = y.squeeze(1)
         other_keys = batch.keys() - {"image", "mask", "filename"}
 
         rest = {k: batch[k] for k in other_keys}
@@ -297,7 +296,10 @@ class SemanticSegmentationTask(TerraTorchTask):
         """
         x = batch["image"]
         y = batch["mask"]
-
+        if len(y.shape) == 4:
+            print(f'mask with channel dim ({y.shape})')
+            print(f'{batch["filename"]=}')
+            y = y.squeeze(1)
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
@@ -305,12 +307,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat_hard = to_segmentation_prediction(model_output)
-        try:
-            self.val_metrics.update(y_hat_hard, y)
-        except:
-            # Sometimes y has a channel dim
-            y = y.reshape(y_hat_hard.shape)
-            self.val_metrics.update(y_hat_hard, y)
+        self.val_metrics.update(y_hat_hard, y)
 
         if self._do_plot_samples(batch_idx):
             try:
