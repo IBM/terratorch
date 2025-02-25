@@ -186,6 +186,7 @@ class ASPPHead(nn.Module):
                 H, W) which is feature map for last layer of decoder head.
         """
         inputs = self._transform_inputs(inputs)
+
         aspp_outs = [
             resize(
                 self.image_pool(inputs),
@@ -193,6 +194,7 @@ class ASPPHead(nn.Module):
                 mode='bilinear',
                 align_corners=self.align_corners)
         ]
+
         aspp_outs.extend(self.aspp_modules(inputs))
         aspp_outs = torch.cat(aspp_outs, dim=1)
         feats = self.bottleneck(aspp_outs)
@@ -298,7 +300,6 @@ class ASPPRegressionHead(ASPPHead):
     def regression_head(self, features):
 
         """PixelWise regression"""
-
         if self.dropout is not None:
             features = self.dropout(features)
         output = self.conv_reg(features)

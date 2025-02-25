@@ -197,13 +197,11 @@ class UNet(nn.Module):
             in_channels = out_channels * 2**i
 
     def forward(self, x):
-        print(self)
+
+        # We can check just the first image, since the batch 
+        # already was approved by the stackability test, which means
+        # all images has the same dimensions. 
         self._check_input_divisible(x[0])
-        print(x.shape)
-        #if len(x) > 1:
-        #    x = torch.cat(x, dim=0)
-        #else:
-        #    x = x[0]
 
         enc_outs = []
         for enc in self.encoder:
@@ -213,8 +211,7 @@ class UNet(nn.Module):
         for i in reversed(range(len(self.decoder))):
             x = self.decoder[i](enc_outs[i], x)
             dec_outs.append(x)
-
-        return dec_outs[-1]
+        return dec_outs
 
     def train(self, mode=True):
         """Convert the model into training mode while keep normalization layer
