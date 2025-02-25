@@ -301,7 +301,12 @@ class SemanticSegmentationTask(TerraTorchTask):
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat_hard = to_segmentation_prediction(model_output)
-        self.val_metrics.update(y_hat_hard, y)
+        try:
+            self.val_metrics.update(y_hat_hard, y)
+        except:
+            print(f'{y_hat_hard.shape=}')
+            print(f'{y.shape=}')
+            print(f'{batch["filename"]=}')
 
         if self._do_plot_samples(batch_idx):
             try:
