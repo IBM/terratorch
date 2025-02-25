@@ -100,17 +100,27 @@ def add_default_checkpointing_config(config):
 
     subcommand = config["subcommand"]
     enable_checkpointing = config[subcommand + ".trainer.enable_checkpointing"]
+    callbacks = config[subcommand + ".trainer.callbacks"]
+    check_callbacks = [op for op in callbacks if "ModelCheckpoint" in op.class_path]
+
+    if len(check_callbacks) > 0:
+        there_is_checkpointing = True
+    else:
+        there_is_checkpointing = False
 
     if enable_checkpointing:
-        print("Enabling ModelCheckpoint since the user defined enable_checkpointing=True.")
+        if not there_is_checkpointing:
+            print("Enabling ModelCheckpoint since the user defined enable_checkpointing=True.")
 
-        config["ModelCheckpoint"] = StateDictAwareModelCheckpoint
-        config["ModelCheckpoint.filename"] = "{epoch}"
-        config["ModelCheckpoint.monitor"] = "val/loss"
-        config["StateDictModelCheckpoint"] = StateDictAwareModelCheckpoint
-        config["StateDictModelCheckpoint.filename"] = "{epoch}_state_dict"
-        config["StateDictModelCheckpoint.save_weights_only"] = True
-        config["StateDictModelCheckpoint.monitor"] = "val/loss"
+            config["ModelCheckpoint"] = StateDictAwareModelCheckpoint
+            config["ModelCheckpoint.filename"] = "{epoch}"
+            config["ModelCheckpoint.monitor"] = "val/loss"
+            config["StateDictModelCheckpoint"] = StateDictAwareModelCheckpoint
+            config["StateDictModelCheckpoint.filename"] = "{epoch}_state_dict"
+            config["StateDictModelCheckpoint.save_weights_only"] = True
+            config["StateDictModelCheckpoint.monitor"] = "val/loss"
+        else:
+            print("No extra checkpoint config will be added, since the user already defined it in the callbacks.")
 
     return config 
 
@@ -244,7 +254,6 @@ def clean_config_for_deployment_and_dump(config: dict[str, Any]):
             deploy_config["model"]["init_args"]["model_args"]["pretrained"] = False
         elif "backbone_pretrained" in deploy_config["model"]["init_args"]["model_args"]:
             deploy_config["model"]["init_args"]["model_args"]["backbone_pretrained"] = False
-    
 
     return yaml.safe_dump(deploy_config)
 
@@ -395,7 +404,8 @@ class MyLightningCLI(LightningCLI):
     def instantiate_classes(self) -> None:
 
         # Adding default configuration for checkpoint saving when 
-        # enable_checkpointing is True. 
+        # enable_checkpointing is True and no checkpointing is included as
+        # callback. 
         self.config = add_default_checkpointing_config(self.config)
 
         super().instantiate_classes()
