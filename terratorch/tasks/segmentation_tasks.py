@@ -251,13 +251,13 @@ class SemanticSegmentationTask(TerraTorchTask):
         try:
             self.train_metrics.update(y_hat_hard, y)
         except:
+            print(f'{y_hat_hard.shape=}')
+            print(f'{y.shape=}')
+            print(f'{batch["filename"]=}')
             # Sometimes y has a channel dim
             y = y.reshape(y_hat_hard.shape)
             self.train_metrics.update(y_hat_hard, y)
 
-            print(f'{y_hat_hard.shape=}')
-            print(f'{y.shape=}')
-            print(f'{batch["filename"]=}')
 
         return loss["loss"]
 
