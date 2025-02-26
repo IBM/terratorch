@@ -110,7 +110,7 @@ def add_default_checkpointing_config(config):
 
     if enable_checkpointing:
         if not there_is_checkpointing:
-            print("Enabling ModelCheckpoint since the user defined enable_checkpointing=True.")
+            logger.info("Enabling ModelCheckpoint since the user defined enable_checkpointing=True.")
 
             config["ModelCheckpoint"] = StateDictAwareModelCheckpoint
             config["ModelCheckpoint.filename"] = "{epoch}"
@@ -120,7 +120,7 @@ def add_default_checkpointing_config(config):
             config["StateDictModelCheckpoint.save_weights_only"] = True
             config["StateDictModelCheckpoint.monitor"] = "val/loss"
         else:
-            print("No extra checkpoint config will be added, since the user already defined it in the callbacks.")
+            logger.info("No extra checkpoint config will be added, since the user already defined it in the callbacks.")
 
     return config 
 
