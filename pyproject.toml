@@ -85,9 +85,10 @@ wxc = [
   "granitewxc"
 ]
 
-#geobench = [
-#  "geobench @ git+https://github.com/fmartiescofet/geo-bench.git" # pull from fork until depenedencies for geobench are relaxed
-#]
+visualize = [
+  "torchview",
+  "graphiviz"
+]
 
 peft = [
   "peft"
