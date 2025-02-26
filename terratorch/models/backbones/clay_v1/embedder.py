@@ -67,7 +67,7 @@ class Embedder(nn.Module):
 
     def load_clay_weights(self, ckpt_path):
         "Load the weights from the Clay model encoder."
-        ckpt = torch.load(ckpt_path)
+        ckpt = torch.load(ckpt_path, weights_only=True)
         state_dict = ckpt.get("state_dict")
         state_dict = {
             re.sub(r"^model\.encoder\.", "", name): param

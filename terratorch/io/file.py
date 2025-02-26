@@ -34,10 +34,11 @@ def load_torch_weights(model:nn.Module=None, save_dir: str = None, name: str = N
                 torch.load(
                     os.path.join(save_dir, name),
                     map_location=torch.device(device),
+                    weights_only=True,
                 )
             )
         else:
-            model.load_state_dict(torch.load(os.path.join(save_dir, name), map_location='cpu'))
+            model.load_state_dict(torch.load(os.path.join(save_dir, name), map_location='cpu', weights_only=True))
 
     except Exception:
         print(

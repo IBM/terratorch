@@ -68,3 +68,19 @@ def compute_float_mask_statistics(dataloader: DataLoader) -> dict[str, float]:
     variance = sum_squared / n_data
     std = math.sqrt(variance)
     return {"mean": mean, "std": std}
+
+# TODO remove it for future releases
+def remove_unexpected_prefix(state_dict):
+    state_dict_ = {}
+    for k, v in state_dict.items():
+        keys = k.split(".")
+        if "_timm_module" in keys:
+            index = keys.index("_timm_module")
+            keys.pop(index)
+            k_ = ".".join(keys)
+        else:
+            k_ = k
+        state_dict_[k_] = v 
+    return state_dict_
+
+
