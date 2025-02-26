@@ -1,5 +1,6 @@
 # EncoderDecoderFactory
-Check the [Glossary][glossary.md] for more information about the terms used in this page. 
+*Check the [Glossary](glossary.md) for more information about the terms used in this page.*
+
 The [EncoderDecoderFactory][terratorch.models.encoder_decoder_factory.EncoderDecoderFactory] is the main class
 used to instantiate and compose models for general tasks. 
 
