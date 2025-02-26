@@ -2,8 +2,10 @@ import torch
 from torch import nn
 import numpy as np
 
+from terratorch.registry import TERRATORCH_DECODER_REGISTRY
 from .utils import ConvModule, resize
 
+@TERRATORCH_DECODER_REGISTRY.register
 class ASPPModule(nn.Module):
     """Atrous Spatial Pyramid Pooling (ASPP) Module.
 
@@ -57,6 +59,7 @@ class ASPPModule(nn.Module):
 
         return outs
 
+@TERRATORCH_DECODER_REGISTRY.register
 class ASPPHead(nn.Module):
     """Rethinking Atrous Convolution for Semantic Image Segmentation.
 
@@ -183,6 +186,7 @@ class ASPPHead(nn.Module):
                 H, W) which is feature map for last layer of decoder head.
         """
         inputs = self._transform_inputs(inputs)
+
         aspp_outs = [
             resize(
                 self.image_pool(inputs),
@@ -190,6 +194,7 @@ class ASPPHead(nn.Module):
                 mode='bilinear',
                 align_corners=self.align_corners)
         ]
+
         aspp_outs.extend(self.aspp_modules(inputs))
         aspp_outs = torch.cat(aspp_outs, dim=1)
         feats = self.bottleneck(aspp_outs)
@@ -202,6 +207,7 @@ class ASPPHead(nn.Module):
 
         return output
 
+@TERRATORCH_DECODER_REGISTRY.register
 class ASPPSegmentationHead(ASPPHead):
     """Rethinking Atrous Convolution for Semantic Image Segmentation.
 
@@ -213,7 +219,8 @@ class ASPPSegmentationHead(ASPPHead):
             Default: (1, 6, 12, 18).
     """
 
-    def __init__(self, dilations:list | tuple =(1, 6, 12, 18), 
+    def __init__(self, channel_list,
+                 dilations:list | tuple =(1, 6, 12, 18), 
                  in_channels:int=None, 
                  channels:int=None,
                  num_classes:int=2,
@@ -255,6 +262,7 @@ class ASPPSegmentationHead(ASPPHead):
 
         return output
 
+@TERRATORCH_DECODER_REGISTRY.register
 class ASPPRegressionHead(ASPPHead):
     """Rethinking Atrous Convolution for regression.
 
@@ -266,7 +274,8 @@ class ASPPRegressionHead(ASPPHead):
             Default: (1, 6, 12, 18).
     """
 
-    def __init__(self, dilations:list | tuple =(1, 6, 12, 18), 
+    def __init__(self, channel_list,
+                 dilations:list | tuple =(1, 6, 12, 18), 
                  in_channels:int=None, 
                  channels:int=None,
                  out_channels:int=1,
@@ -293,7 +302,6 @@ class ASPPRegressionHead(ASPPHead):
     def regression_head(self, features):
 
         """PixelWise regression"""
-
         if self.dropout is not None:
             features = self.dropout(features)
         output = self.conv_reg(features)
