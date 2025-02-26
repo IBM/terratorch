@@ -53,6 +53,10 @@
                 </li>
               </ul>
               <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../glossary/">Glossary</a>
+                </li>
+              </ul>
+              <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../license/">License</a>
                 </li>
               </ul>
@@ -132,7 +136,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="architecture-overview">Architecture Overview</h1>
+                <h1 id="architecture-overview">Architecture Overview<a class="headerlink" href="#architecture-overview" title="Permanent link">#</a></h1>
 <p>The main goal of the design is to extend TorchGeo's existing tasks to be able to handle Prithvi backbones with appropriate decoders and heads.
 At the same time, we wish to keep the existing TorchGeo functionality intact so it can be leveraged with pretrained models that are already included.</p>
 <p>We achieve this by making new tasks that accept model factory classes, containing a <code>build_model</code> method. This strategy in principle allows arbitrary models to be trained for these tasks, given they respect some reasonable minimal interface.
@@ -145,7 +149,7 @@ Together with this, we provide the <a class="autorefs autorefs-internal" href=".
 <li>Familiarity with <a href="https://torchgeo.readthedocs.io/en/stable/">TorchGeo</a></li>
 <li>Familiarity with <a href="https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.cli.LightningCLI.html#lightning.pytorch.cli.LightningCLI">LightningCLI</a></li>
 </ul>
-<h2 id="tasks">Tasks</h2>
+<h2 id="tasks">Tasks<a class="headerlink" href="#tasks" title="Permanent link">#</a></h2>
 <p>Tasks are the main coordinators for training and inference for specific tasks. They are LightningModules that contain a model and abstract away all the logic for training steps, metric computation and inference.</p>
 <p>One of the most important design decisions was delegating the model construction to a model factory. This has a few advantages:</p>
 <ul>
@@ -160,7 +164,7 @@ Together with this, we provide the <a class="autorefs autorefs-internal" href=".
 <li><code>forward()</code></li>
 </ul>
 <p>Additionally, the <code>forward()</code> method is expected to return an object of type <a class="autorefs autorefs-internal" href="../models/#terratorch.models.model.ModelOutput">ModelOutput</a>, containing the main head's output, as well as any additional auxiliary outputs. The names of these auxiliary heads are matched with the names of the provided auxiliary losses.</p>
-<h3 id="models">Models</h3>
+<h3 id="models">Models<a class="headerlink" href="#models" title="Permanent link">#</a></h3>
 <p>Models constructed by the <a class="autorefs autorefs-internal" href="../encoder_decoder_factory/#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory">EncoderDecoderFactory</a> have an internal structure explicitly divided into backbones, necks, decoders and heads. This structure is provided by the <a class="autorefs autorefs-internal" href="#terratorch.models.pixel_wise_model.PixelWiseModel">PixelWiseModel</a> and <a class="autorefs autorefs-internal" href="#terratorch.models.scalar_output_model.ScalarOutputModel">ScalarOutputModel</a> classes.</p>
 <p>However, as long as models implement the <a class="autorefs autorefs-internal" href="../models/#terratorch.models.model.Model">Model</a> interface, and return <a class="autorefs autorefs-internal" href="../models/#terratorch.models.model.ModelOutput">ModelOutput</a> in their forward method, they can take on any structure.</p>
 
@@ -173,7 +177,7 @@ Together with this, we provide the <a class="autorefs autorefs-internal" href=".
             <code>terratorch.models.pixel_wise_model.PixelWiseModel</code>
 
 
-</h4>
+<a href="#terratorch.models.pixel_wise_model.PixelWiseModel" class="headerlink" title="Permanent link">#</a></h4>
 
 
     <div class="doc doc-contents first">
@@ -480,7 +484,7 @@ and optionally a "prepare_features_for_image_model" method.</p>
 <h5 id="terratorch.models.pixel_wise_model.PixelWiseModel.__init__" class="doc doc-heading">
             <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">encoder</span><span class="p">,</span> <span class="n">decoder</span><span class="p">,</span> <span class="n">head_kwargs</span><span class="p">,</span> <span class="n">patch_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">decoder_includes_head</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">auxiliary_heads</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">neck</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rescale</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
 
-</h5>
+<a href="#terratorch.models.pixel_wise_model.PixelWiseModel.__init__" class="headerlink" title="Permanent link">#</a></h5>
 
 
     <div class="doc doc-contents ">
@@ -697,7 +701,7 @@ Uses bilinear interpolation. Defaults to True.</p>
 <h5 id="terratorch.models.pixel_wise_model.PixelWiseModel.forward" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">forward</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
-</h5>
+<a href="#terratorch.models.pixel_wise_model.PixelWiseModel.forward" class="headerlink" title="Permanent link">#</a></h5>
 
 
     <div class="doc doc-contents ">
@@ -823,7 +827,7 @@ Uses bilinear interpolation. Defaults to True.</p>
             <code>terratorch.models.scalar_output_model.ScalarOutputModel</code>
 
 
-</h4>
+<a href="#terratorch.models.scalar_output_model.ScalarOutputModel" class="headerlink" title="Permanent link">#</a></h4>
 
 
     <div class="doc doc-contents first">
@@ -1060,7 +1064,7 @@ and optionally a "prepare_features_for_image_model" method.</p>
 <h5 id="terratorch.models.scalar_output_model.ScalarOutputModel.__init__" class="doc doc-heading">
             <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">encoder</span><span class="p">,</span> <span class="n">decoder</span><span class="p">,</span> <span class="n">head_kwargs</span><span class="p">,</span> <span class="n">patch_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">decoder_includes_head</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">auxiliary_heads</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">neck</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
-</h5>
+<a href="#terratorch.models.scalar_output_model.ScalarOutputModel.__init__" class="headerlink" title="Permanent link">#</a></h5>
 
 
     <div class="doc doc-contents ">
@@ -1256,7 +1260,7 @@ Defaults to None, which applies the identity.</p>
 <h5 id="terratorch.models.scalar_output_model.ScalarOutputModel.forward" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">forward</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
-</h5>
+<a href="#terratorch.models.scalar_output_model.ScalarOutputModel.forward" class="headerlink" title="Permanent link">#</a></h5>
 
 
     <div class="doc doc-contents ">
@@ -1328,9 +1332,9 @@ Defaults to None, which applies the identity.</p>
 
     </div>
 
-</div><h3 id="encoderdecoderfactory">EncoderDecoderFactory</h3>
+</div><h3 id="encoderdecoderfactory">EncoderDecoderFactory<a class="headerlink" href="#encoderdecoderfactory" title="Permanent link">#</a></h3>
 <p>We expect this factory to be widely employed by users. With that in mind, we dive deeper into it <a href="../encoder_decoder_factory/">here</a>.</p>
-<h3 id="loss">Loss</h3>
+<h3 id="loss">Loss<a class="headerlink" href="#loss" title="Permanent link">#</a></h3>
 <p>For convenience, we provide a loss handler that can be used to compute the full loss (from the main head and auxiliary heads as well).</p>
 
 
@@ -1342,7 +1346,7 @@ Defaults to None, which applies the identity.</p>
             <code>terratorch.tasks.loss_handler</code>
 
 
-</h2>
+<a href="#terratorch.tasks.loss_handler" class="headerlink" title="Permanent link">#</a></h2>
 
     <div class="doc doc-contents first">
 
@@ -1370,7 +1374,7 @@ Defaults to None, which applies the identity.</p>
             <code>LossHandler</code>
 
 
-</h3>
+<a href="#terratorch.tasks.loss_handler.LossHandler" class="headerlink" title="Permanent link">#</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -1589,7 +1593,7 @@ Defaults to None, which applies the identity.</p>
 <h4 id="terratorch.tasks.loss_handler.LossHandler.__init__" class="doc doc-heading">
             <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">loss_prefix</span><span class="p">)</span></code>
 
-</h4>
+<a href="#terratorch.tasks.loss_handler.LossHandler.__init__" class="headerlink" title="Permanent link">#</a></h4>
 
 
     <div class="doc doc-contents ">
@@ -1647,7 +1651,7 @@ Defaults to None, which applies the identity.</p>
 <h4 id="terratorch.tasks.loss_handler.LossHandler.compute_loss" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">compute_loss</span><span class="p">(</span><span class="n">model_output</span><span class="p">,</span> <span class="n">ground_truth</span><span class="p">,</span> <span class="n">criterion</span><span class="p">,</span> <span class="n">aux_loss_weights</span><span class="p">)</span></code>
 
-</h4>
+<a href="#terratorch.tasks.loss_handler.LossHandler.compute_loss" class="headerlink" title="Permanent link">#</a></h4>
 
 
     <div class="doc doc-contents ">
@@ -1868,7 +1872,7 @@ All other heads are returned with the same key as their name.</p>
 <h4 id="terratorch.tasks.loss_handler.LossHandler.log_loss" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">log_loss</span><span class="p">(</span><span class="n">log_function</span><span class="p">,</span> <span class="n">loss_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
-</h4>
+<a href="#terratorch.tasks.loss_handler.LossHandler.log_loss" class="headerlink" title="Permanent link">#</a></h4>
 
 
     <div class="doc doc-contents ">
@@ -1979,9 +1983,9 @@ All other heads are returned with the same key as their name.</p>
 
     </div>
 
-</div><h2 id="generic-datasets-datamodules">Generic datasets / datamodules</h2>
+</div><h2 id="generic-datasets-datamodules">Generic datasets / datamodules<a class="headerlink" href="#generic-datasets-datamodules" title="Permanent link">#</a></h2>
 <p>Refer to the section on <a href="../data/">data</a></p>
-<h2 id="exporting-models">Exporting models</h2>
+<h2 id="exporting-models">Exporting models<a class="headerlink" href="#exporting-models" title="Permanent link">#</a></h2>
 <p>Models are saved using the PyTorch format, which basically serializes the model weights using pickle
 and store them into a binary file. </p>
 <p><A future feature would be the possibility to save models in ONNX format, and export them that way. This would bring all the benefits of onnx.></p>

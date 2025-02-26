@@ -53,6 +53,10 @@
                 </li>
               </ul>
               <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../glossary/">Glossary</a>
+                </li>
+              </ul>
+              <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../license/">License</a>
                 </li>
               </ul>
@@ -188,7 +192,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="models">Models</h1>
+                <h1 id="models">Models<a class="headerlink" href="#models" title="Permanent link">#</a></h1>
 <p>To interface with terratorch tasks correctly, models must inherit from the <a class="autorefs autorefs-internal" href="#terratorch.models.model.Model">Model</a> parent class:</p>
 
 
@@ -200,7 +204,7 @@
             <code>terratorch.models.model.Model</code>
 
 
-</h2>
+<a href="#terratorch.models.model.Model" class="headerlink" title="Permanent link">#</a></h2>
 
 
     <div class="doc doc-contents first">
@@ -278,7 +282,7 @@
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
   </span>
 
-</h2>
+<a href="#terratorch.models.model.ModelOutput" class="headerlink" title="Permanent link">#</a></h2>
 
 
     <div class="doc doc-contents first">
@@ -319,7 +323,7 @@
 
     </div>
 
-</div><h2 id="model-factories">Model Factories</h2>
+</div><h2 id="model-factories">Model Factories<a class="headerlink" href="#model-factories" title="Permanent link">#</a></h2>
 <p>In order to be used by tasks, models must have a Model Factory which builds them.
 Factories must conform to the <a class="autorefs autorefs-internal" href="#terratorch.models.model.ModelFactory">ModelFactory</a> parent class. </p>
 
@@ -332,7 +336,7 @@ Factories must conform to the <a class="autorefs autorefs-internal" href="#terra
             <code>terratorch.models.model.ModelFactory</code>
 
 
-</h2>
+<a href="#terratorch.models.model.ModelFactory" class="headerlink" title="Permanent link">#</a></h2>
 
 
     <div class="doc doc-contents first">
@@ -375,7 +379,7 @@ Factories must conform to the <a class="autorefs autorefs-internal" href="#terra
 <p>For most cases, the <a href="../encoder_decoder_factory/">encoder decoder factory</a> can be used to combine a backbone with a decoder.</p>
 <p>To add new backbones or decoders, to be used with the <a href="../encoder_decoder_factory/">encoder decoder factory</a> they should be <a href="../registry/">registered</a>. </p>
 <p>To add a new model factory, it should be registered in the <code>MODEL_FACTORY_REGISTRY</code>.</p>
-<h2 id="adding-a-new-model">Adding a new model</h2>
+<h2 id="adding-a-new-model">Adding a new model<a class="headerlink" href="#adding-a-new-model" title="Permanent link">#</a></h2>
 <p>To add a new backbone, simply create a class and annotate it (or a constructor function that instantiates it) with <code>@TERRATORCH_BACKBONE_FACTORY.register</code>. </p>
 <p>The model will be registered with the same name as the function. To create many model variants from the same class, the reccomended approach is to annotate a constructor function from each with a fully descriptive name.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">terratorch.registry</span> <span class="kn">import</span> <span class="n">TERRATORCH_BACKBONE_REGISTRY</span><span class="p">,</span> <span class="n">BACKBONE_REGISTRY</span>
@@ -430,7 +434,7 @@ E.g. to pass a local path, you can pass the parameter <code>backbone_pretrained_
             <code>terratorch.models.backbones.select_patch_embed_weights</code>
 
 
-</h2>
+<a href="#terratorch.models.backbones.select_patch_embed_weights" class="headerlink" title="Permanent link">#</a></h2>
 
     <div class="doc doc-contents first">
 
@@ -455,9 +459,9 @@ E.g. to pass a local path, you can pass the parameter <code>backbone_pretrained_
 
 
 <h3 id="terratorch.models.backbones.select_patch_embed_weights.select_patch_embed_weights" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">select_patch_embed_weights</span><span class="p">(</span><span class="n">state_dict</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">pretrained_bands</span><span class="p">,</span> <span class="n">model_bands</span><span class="p">,</span> <span class="n">proj_key</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">select_patch_embed_weights</span><span class="p">(</span><span class="n">state_dict</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">pretrained_bands</span><span class="p">,</span> <span class="n">model_bands</span><span class="p">,</span> <span class="n">proj_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">encoder_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
 
-</h3>
+<a href="#terratorch.models.backbones.select_patch_embed_weights.select_patch_embed_weights" class="headerlink" title="Permanent link">#</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -549,107 +553,129 @@ If a band exists in model_bands, but not pretrained_bands, randomly initialize t
 </table>
             <details class="quote">
               <summary>Source code in <code>terratorch/models/backbones/select_patch_embed_weights.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-21">21</a></span>
-<span class="normal"><a href="#__codelineno-0-22">22</a></span>
-<span class="normal"><a href="#__codelineno-0-23">23</a></span>
-<span class="normal"><a href="#__codelineno-0-24">24</a></span>
-<span class="normal"><a href="#__codelineno-0-25">25</a></span>
-<span class="normal"><a href="#__codelineno-0-26">26</a></span>
-<span class="normal"><a href="#__codelineno-0-27">27</a></span>
-<span class="normal"><a href="#__codelineno-0-28">28</a></span>
-<span class="normal"><a href="#__codelineno-0-29">29</a></span>
-<span class="normal"><a href="#__codelineno-0-30">30</a></span>
-<span class="normal"><a href="#__codelineno-0-31">31</a></span>
-<span class="normal"><a href="#__codelineno-0-32">32</a></span>
-<span class="normal"><a href="#__codelineno-0-33">33</a></span>
-<span class="normal"><a href="#__codelineno-0-34">34</a></span>
-<span class="normal"><a href="#__codelineno-0-35">35</a></span>
-<span class="normal"><a href="#__codelineno-0-36">36</a></span>
-<span class="normal"><a href="#__codelineno-0-37">37</a></span>
-<span class="normal"><a href="#__codelineno-0-38">38</a></span>
-<span class="normal"><a href="#__codelineno-0-39">39</a></span>
-<span class="normal"><a href="#__codelineno-0-40">40</a></span>
-<span class="normal"><a href="#__codelineno-0-41">41</a></span>
-<span class="normal"><a href="#__codelineno-0-42">42</a></span>
-<span class="normal"><a href="#__codelineno-0-43">43</a></span>
-<span class="normal"><a href="#__codelineno-0-44">44</a></span>
-<span class="normal"><a href="#__codelineno-0-45">45</a></span>
-<span class="normal"><a href="#__codelineno-0-46">46</a></span>
-<span class="normal"><a href="#__codelineno-0-47">47</a></span>
-<span class="normal"><a href="#__codelineno-0-48">48</a></span>
-<span class="normal"><a href="#__codelineno-0-49">49</a></span>
-<span class="normal"><a href="#__codelineno-0-50">50</a></span>
-<span class="normal"><a href="#__codelineno-0-51">51</a></span>
-<span class="normal"><a href="#__codelineno-0-52">52</a></span>
-<span class="normal"><a href="#__codelineno-0-53">53</a></span>
-<span class="normal"><a href="#__codelineno-0-54">54</a></span>
-<span class="normal"><a href="#__codelineno-0-55">55</a></span>
-<span class="normal"><a href="#__codelineno-0-56">56</a></span>
-<span class="normal"><a href="#__codelineno-0-57">57</a></span>
-<span class="normal"><a href="#__codelineno-0-58">58</a></span>
-<span class="normal"><a href="#__codelineno-0-59">59</a></span>
-<span class="normal"><a href="#__codelineno-0-60">60</a></span>
-<span class="normal"><a href="#__codelineno-0-61">61</a></span>
-<span class="normal"><a href="#__codelineno-0-62">62</a></span>
-<span class="normal"><a href="#__codelineno-0-63">63</a></span>
-<span class="normal"><a href="#__codelineno-0-64">64</a></span>
-<span class="normal"><a href="#__codelineno-0-65">65</a></span>
-<span class="normal"><a href="#__codelineno-0-66">66</a></span>
-<span class="normal"><a href="#__codelineno-0-67">67</a></span>
-<span class="normal"><a href="#__codelineno-0-68">68</a></span>
-<span class="normal"><a href="#__codelineno-0-69">69</a></span>
-<span class="normal"><a href="#__codelineno-0-70">70</a></span>
-<span class="normal"><a href="#__codelineno-0-71">71</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="k">def</span> <span class="nf">select_patch_embed_weights</span><span class="p">(</span>
-</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22"></a>    <span class="n">state_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">pretrained_bands</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">HLSBands</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">OpticalBands</span><span class="o">|</span> <span class="n">SARBands</span><span class="p">],</span> <span class="n">model_bands</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">HLSBands</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">OpticalBands</span><span class="o">|</span> <span class="n">SARBands</span><span class="p">],</span> <span class="n">proj_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Filter out the patch embedding weights according to the bands being used.</span>
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25"></a><span class="sd">    If a band exists in the pretrained_bands, but not in model_bands, drop it.</span>
-</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="sd">    If a band exists in model_bands, but not pretrained_bands, randomly initialize those weights.</span>
-</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27"></a>
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28"></a>
-</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29"></a><span class="sd">    Args:</span>
-</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="sd">        state_dict (dict): State Dict</span>
-</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a><span class="sd">        model (nn.Module): Model to load the weights onto.</span>
-</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a><span class="sd">        pretrained_bands (list[HLSBands | int]): List of bands the model was pretrained on, in the correct order.</span>
-</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a><span class="sd">        model_bands (list[HLSBands | int]): List of bands the model is going to be finetuned on, in the correct order</span>
-</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a><span class="sd">        proj_key (str, optional): Key to patch embedding projection weight in state_dict.</span>
-</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a>
-</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a><span class="sd">    Returns:</span>
-</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a><span class="sd">        dict: New state dict</span>
-</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38"></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a>    <span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">pretrained_bands</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">model_bands</span><span class="p">))</span> <span class="o">|</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">pretrained_bands</span><span class="p">)</span> <span class="o">==</span> <span class="nb">int</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">model_bands</span><span class="p">)</span> <span class="o">==</span> <span class="nb">int</span><span class="p">):</span>
-</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a>
-</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a>        <span class="k">if</span> <span class="n">proj_key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a>            <span class="c1"># Search for patch embedding weight in state dict</span>
-</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a>            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a>                <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;patch_embed.proj.weight&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">key</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;patch_embed.projection.weight&#39;</span><span class="p">):</span>
-</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a>                    <span class="n">proj_key</span> <span class="o">=</span> <span class="n">key</span>
-</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a>                    <span class="k">break</span>
-</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47"></a>        <span class="k">if</span> <span class="n">proj_key</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">proj_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">state_dict</span><span class="p">:</span>
-</span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48"></a>            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Could not find key for patch embed weight in state_dict.&quot;</span><span class="p">)</span>
-</span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49"></a>
-</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a>        <span class="n">patch_embed_weight</span> <span class="o">=</span> <span class="n">state_dict</span><span class="p">[</span><span class="n">proj_key</span><span class="p">]</span>
-</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a>
-</span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52"></a>        <span class="n">temp_weight</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()[</span><span class="n">proj_key</span><span class="p">]</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
-</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a>
-</span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a>        <span class="c1"># only do this if the patch size and tubelet size match. If not, start with random weights</span>
-</span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a>        <span class="k">if</span> <span class="n">patch_embed_weights_are_compatible</span><span class="p">(</span><span class="n">temp_weight</span><span class="p">,</span> <span class="n">patch_embed_weight</span><span class="p">):</span>
-</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a>            <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">xavier_uniform_</span><span class="p">(</span><span class="n">temp_weight</span><span class="o">.</span><span class="n">view</span><span class="p">([</span><span class="n">temp_weight</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
-</span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57"></a>            <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">band</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">model_bands</span><span class="p">):</span>
-</span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58"></a>                <span class="k">if</span> <span class="n">band</span> <span class="ow">in</span> <span class="n">pretrained_bands</span><span class="p">:</span>
-</span><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59"></a>                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loaded weights for </span><span class="si">{</span><span class="n">band</span><span class="si">}</span><span class="s2"> in position </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2"> of patch embed&quot;</span><span class="p">)</span>
-</span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60"></a>                    <span class="n">temp_weight</span><span class="p">[:,</span> <span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">patch_embed_weight</span><span class="p">[:,</span> <span class="n">pretrained_bands</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">band</span><span class="p">)]</span>
-</span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a>        <span class="k">else</span><span class="p">:</span>
-</span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62"></a>            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-</span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63"></a>                <span class="sa">f</span><span class="s2">&quot;Incompatible shapes between patch embedding of model </span><span class="si">{</span><span class="n">temp_weight</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> and</span><span class="se">\</span>
-</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a><span class="s2">                of checkpoint </span><span class="si">{</span><span class="n">patch_embed_weight</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-</span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a>                <span class="n">category</span><span class="o">=</span><span class="ne">UserWarning</span><span class="p">,</span>
-</span><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66"></a>                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-</span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a>            <span class="p">)</span>
-</span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a>
-</span><span id="__span-0-69"><a id="__codelineno-0-69" name="__codelineno-0-69"></a>        <span class="n">state_dict</span><span class="p">[</span><span class="n">proj_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_weight</span>
-</span><span id="__span-0-70"><a id="__codelineno-0-70" name="__codelineno-0-70"></a>
-</span><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71"></a>    <span class="k">return</span> <span class="n">state_dict</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-85"> 85</a></span>
+<span class="normal"><a href="#__codelineno-0-86"> 86</a></span>
+<span class="normal"><a href="#__codelineno-0-87"> 87</a></span>
+<span class="normal"><a href="#__codelineno-0-88"> 88</a></span>
+<span class="normal"><a href="#__codelineno-0-89"> 89</a></span>
+<span class="normal"><a href="#__codelineno-0-90"> 90</a></span>
+<span class="normal"><a href="#__codelineno-0-91"> 91</a></span>
+<span class="normal"><a href="#__codelineno-0-92"> 92</a></span>
+<span class="normal"><a href="#__codelineno-0-93"> 93</a></span>
+<span class="normal"><a href="#__codelineno-0-94"> 94</a></span>
+<span class="normal"><a href="#__codelineno-0-95"> 95</a></span>
+<span class="normal"><a href="#__codelineno-0-96"> 96</a></span>
+<span class="normal"><a href="#__codelineno-0-97"> 97</a></span>
+<span class="normal"><a href="#__codelineno-0-98"> 98</a></span>
+<span class="normal"><a href="#__codelineno-0-99"> 99</a></span>
+<span class="normal"><a href="#__codelineno-0-100">100</a></span>
+<span class="normal"><a href="#__codelineno-0-101">101</a></span>
+<span class="normal"><a href="#__codelineno-0-102">102</a></span>
+<span class="normal"><a href="#__codelineno-0-103">103</a></span>
+<span class="normal"><a href="#__codelineno-0-104">104</a></span>
+<span class="normal"><a href="#__codelineno-0-105">105</a></span>
+<span class="normal"><a href="#__codelineno-0-106">106</a></span>
+<span class="normal"><a href="#__codelineno-0-107">107</a></span>
+<span class="normal"><a href="#__codelineno-0-108">108</a></span>
+<span class="normal"><a href="#__codelineno-0-109">109</a></span>
+<span class="normal"><a href="#__codelineno-0-110">110</a></span>
+<span class="normal"><a href="#__codelineno-0-111">111</a></span>
+<span class="normal"><a href="#__codelineno-0-112">112</a></span>
+<span class="normal"><a href="#__codelineno-0-113">113</a></span>
+<span class="normal"><a href="#__codelineno-0-114">114</a></span>
+<span class="normal"><a href="#__codelineno-0-115">115</a></span>
+<span class="normal"><a href="#__codelineno-0-116">116</a></span>
+<span class="normal"><a href="#__codelineno-0-117">117</a></span>
+<span class="normal"><a href="#__codelineno-0-118">118</a></span>
+<span class="normal"><a href="#__codelineno-0-119">119</a></span>
+<span class="normal"><a href="#__codelineno-0-120">120</a></span>
+<span class="normal"><a href="#__codelineno-0-121">121</a></span>
+<span class="normal"><a href="#__codelineno-0-122">122</a></span>
+<span class="normal"><a href="#__codelineno-0-123">123</a></span>
+<span class="normal"><a href="#__codelineno-0-124">124</a></span>
+<span class="normal"><a href="#__codelineno-0-125">125</a></span>
+<span class="normal"><a href="#__codelineno-0-126">126</a></span>
+<span class="normal"><a href="#__codelineno-0-127">127</a></span>
+<span class="normal"><a href="#__codelineno-0-128">128</a></span>
+<span class="normal"><a href="#__codelineno-0-129">129</a></span>
+<span class="normal"><a href="#__codelineno-0-130">130</a></span>
+<span class="normal"><a href="#__codelineno-0-131">131</a></span>
+<span class="normal"><a href="#__codelineno-0-132">132</a></span>
+<span class="normal"><a href="#__codelineno-0-133">133</a></span>
+<span class="normal"><a href="#__codelineno-0-134">134</a></span>
+<span class="normal"><a href="#__codelineno-0-135">135</a></span>
+<span class="normal"><a href="#__codelineno-0-136">136</a></span>
+<span class="normal"><a href="#__codelineno-0-137">137</a></span>
+<span class="normal"><a href="#__codelineno-0-138">138</a></span>
+<span class="normal"><a href="#__codelineno-0-139">139</a></span>
+<span class="normal"><a href="#__codelineno-0-140">140</a></span>
+<span class="normal"><a href="#__codelineno-0-141">141</a></span>
+<span class="normal"><a href="#__codelineno-0-142">142</a></span>
+<span class="normal"><a href="#__codelineno-0-143">143</a></span>
+<span class="normal"><a href="#__codelineno-0-144">144</a></span>
+<span class="normal"><a href="#__codelineno-0-145">145</a></span>
+<span class="normal"><a href="#__codelineno-0-146">146</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-85"><a id="__codelineno-0-85" name="__codelineno-0-85"></a><span class="k">def</span> <span class="nf">select_patch_embed_weights</span><span class="p">(</span>
+</span><span id="__span-0-86"><a id="__codelineno-0-86" name="__codelineno-0-86"></a>    <span class="n">state_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">pretrained_bands</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">HLSBands</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">OpticalBands</span><span class="o">|</span> <span class="n">SARBands</span><span class="p">],</span> <span class="n">model_bands</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">HLSBands</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">OpticalBands</span><span class="o">|</span> <span class="n">SARBands</span><span class="p">],</span>
+</span><span id="__span-0-87"><a id="__codelineno-0-87" name="__codelineno-0-87"></a>    <span class="n">proj_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">encoder_only</span><span class="p">:</span><span class="nb">bool</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span id="__span-0-88"><a id="__codelineno-0-88" name="__codelineno-0-88"></a>
+</span><span id="__span-0-89"><a id="__codelineno-0-89" name="__codelineno-0-89"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Filter out the patch embedding weights according to the bands being used.</span>
+</span><span id="__span-0-90"><a id="__codelineno-0-90" name="__codelineno-0-90"></a><span class="sd">    If a band exists in the pretrained_bands, but not in model_bands, drop it.</span>
+</span><span id="__span-0-91"><a id="__codelineno-0-91" name="__codelineno-0-91"></a><span class="sd">    If a band exists in model_bands, but not pretrained_bands, randomly initialize those weights.</span>
+</span><span id="__span-0-92"><a id="__codelineno-0-92" name="__codelineno-0-92"></a>
+</span><span id="__span-0-93"><a id="__codelineno-0-93" name="__codelineno-0-93"></a>
+</span><span id="__span-0-94"><a id="__codelineno-0-94" name="__codelineno-0-94"></a><span class="sd">    Args:</span>
+</span><span id="__span-0-95"><a id="__codelineno-0-95" name="__codelineno-0-95"></a><span class="sd">        state_dict (dict): State Dict</span>
+</span><span id="__span-0-96"><a id="__codelineno-0-96" name="__codelineno-0-96"></a><span class="sd">        model (nn.Module): Model to load the weights onto.</span>
+</span><span id="__span-0-97"><a id="__codelineno-0-97" name="__codelineno-0-97"></a><span class="sd">        pretrained_bands (list[HLSBands | int]): List of bands the model was pretrained on, in the correct order.</span>
+</span><span id="__span-0-98"><a id="__codelineno-0-98" name="__codelineno-0-98"></a><span class="sd">        model_bands (list[HLSBands | int]): List of bands the model is going to be finetuned on, in the correct order</span>
+</span><span id="__span-0-99"><a id="__codelineno-0-99" name="__codelineno-0-99"></a><span class="sd">        proj_key (str, optional): Key to patch embedding projection weight in state_dict.</span>
+</span><span id="__span-0-100"><a id="__codelineno-0-100" name="__codelineno-0-100"></a>
+</span><span id="__span-0-101"><a id="__codelineno-0-101" name="__codelineno-0-101"></a><span class="sd">    Returns:</span>
+</span><span id="__span-0-102"><a id="__codelineno-0-102" name="__codelineno-0-102"></a><span class="sd">        dict: New state dict</span>
+</span><span id="__span-0-103"><a id="__codelineno-0-103" name="__codelineno-0-103"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-104"><a id="__codelineno-0-104" name="__codelineno-0-104"></a>    <span class="k">if</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">pretrained_bands</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">model_bands</span><span class="p">))</span> <span class="o">|</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">pretrained_bands</span><span class="p">)</span> <span class="o">==</span> <span class="nb">int</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">model_bands</span><span class="p">)</span> <span class="o">==</span> <span class="nb">int</span><span class="p">):</span>
+</span><span id="__span-0-105"><a id="__codelineno-0-105" name="__codelineno-0-105"></a>
+</span><span id="__span-0-106"><a id="__codelineno-0-106" name="__codelineno-0-106"></a>        <span class="n">state_dict</span> <span class="o">=</span> <span class="n">get_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span> 
+</span><span id="__span-0-107"><a id="__codelineno-0-107" name="__codelineno-0-107"></a>        <span class="n">prefix</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># we expect no prefix will be necessary in principle </span>
+</span><span id="__span-0-108"><a id="__codelineno-0-108" name="__codelineno-0-108"></a>
+</span><span id="__span-0-109"><a id="__codelineno-0-109" name="__codelineno-0-109"></a>        <span class="k">if</span> <span class="n">proj_key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-0-110"><a id="__codelineno-0-110" name="__codelineno-0-110"></a>            <span class="c1"># Search for patch embedding weight in state dict</span>
+</span><span id="__span-0-111"><a id="__codelineno-0-111" name="__codelineno-0-111"></a>            <span class="n">proj_key</span><span class="p">,</span> <span class="n">prefix</span> <span class="o">=</span> <span class="n">get_proj_key</span><span class="p">(</span><span class="n">state_dict</span><span class="p">,</span> <span class="n">return_prefix</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">encoder_only</span><span class="o">=</span><span class="n">encoder_only</span><span class="p">)</span>
+</span><span id="__span-0-112"><a id="__codelineno-0-112" name="__codelineno-0-112"></a>        <span class="k">if</span> <span class="n">proj_key</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">proj_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">state_dict</span><span class="p">:</span>
+</span><span id="__span-0-113"><a id="__codelineno-0-113" name="__codelineno-0-113"></a>            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Could not find key for patch embed weight in state_dict.&quot;</span><span class="p">)</span>
+</span><span id="__span-0-114"><a id="__codelineno-0-114" name="__codelineno-0-114"></a>
+</span><span id="__span-0-115"><a id="__codelineno-0-115" name="__codelineno-0-115"></a>        <span class="n">patch_embed_weight</span> <span class="o">=</span> <span class="n">state_dict</span><span class="p">[</span><span class="n">proj_key</span><span class="p">]</span>
+</span><span id="__span-0-116"><a id="__codelineno-0-116" name="__codelineno-0-116"></a>
+</span><span id="__span-0-117"><a id="__codelineno-0-117" name="__codelineno-0-117"></a>        <span class="c1"># It seems `proj_key` can have different names for </span>
+</span><span id="__span-0-118"><a id="__codelineno-0-118" name="__codelineno-0-118"></a>        <span class="c1"># the checkpoint and the model instance</span>
+</span><span id="__span-0-119"><a id="__codelineno-0-119" name="__codelineno-0-119"></a>        <span class="n">proj_key_</span><span class="p">,</span> <span class="n">_</span>  <span class="o">=</span> <span class="n">get_proj_key</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">encoder_only</span><span class="o">=</span><span class="n">encoder_only</span><span class="p">)</span>
+</span><span id="__span-0-120"><a id="__codelineno-0-120" name="__codelineno-0-120"></a>
+</span><span id="__span-0-121"><a id="__codelineno-0-121" name="__codelineno-0-121"></a>        <span class="k">if</span> <span class="n">proj_key_</span><span class="p">:</span>
+</span><span id="__span-0-122"><a id="__codelineno-0-122" name="__codelineno-0-122"></a>            <span class="n">temp_weight</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()[</span><span class="n">proj_key_</span><span class="p">]</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+</span><span id="__span-0-123"><a id="__codelineno-0-123" name="__codelineno-0-123"></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="__span-0-124"><a id="__codelineno-0-124" name="__codelineno-0-124"></a>            <span class="n">temp_weight</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()[</span><span class="n">proj_key</span><span class="p">]</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+</span><span id="__span-0-125"><a id="__codelineno-0-125" name="__codelineno-0-125"></a>
+</span><span id="__span-0-126"><a id="__codelineno-0-126" name="__codelineno-0-126"></a>        <span class="c1"># only do this if the patch size and tubelet size match. If not, start with random weights</span>
+</span><span id="__span-0-127"><a id="__codelineno-0-127" name="__codelineno-0-127"></a>        <span class="k">if</span> <span class="n">patch_embed_weights_are_compatible</span><span class="p">(</span><span class="n">temp_weight</span><span class="p">,</span> <span class="n">patch_embed_weight</span><span class="p">):</span>
+</span><span id="__span-0-128"><a id="__codelineno-0-128" name="__codelineno-0-128"></a>            <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">xavier_uniform_</span><span class="p">(</span><span class="n">temp_weight</span><span class="o">.</span><span class="n">view</span><span class="p">([</span><span class="n">temp_weight</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+</span><span id="__span-0-129"><a id="__codelineno-0-129" name="__codelineno-0-129"></a>            <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">band</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">model_bands</span><span class="p">):</span>
+</span><span id="__span-0-130"><a id="__codelineno-0-130" name="__codelineno-0-130"></a>                <span class="k">if</span> <span class="n">band</span> <span class="ow">in</span> <span class="n">pretrained_bands</span><span class="p">:</span>
+</span><span id="__span-0-131"><a id="__codelineno-0-131" name="__codelineno-0-131"></a>                    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loaded weights for </span><span class="si">{</span><span class="n">band</span><span class="si">}</span><span class="s2"> in position </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2"> of patch embed&quot;</span><span class="p">)</span>
+</span><span id="__span-0-132"><a id="__codelineno-0-132" name="__codelineno-0-132"></a>                    <span class="n">temp_weight</span><span class="p">[:,</span> <span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">patch_embed_weight</span><span class="p">[:,</span> <span class="n">pretrained_bands</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">band</span><span class="p">)]</span>
+</span><span id="__span-0-133"><a id="__codelineno-0-133" name="__codelineno-0-133"></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="__span-0-134"><a id="__codelineno-0-134" name="__codelineno-0-134"></a>            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+</span><span id="__span-0-135"><a id="__codelineno-0-135" name="__codelineno-0-135"></a>                <span class="sa">f</span><span class="s2">&quot;Incompatible shapes between patch embedding of model </span><span class="si">{</span><span class="n">temp_weight</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> and</span><span class="se">\</span>
+</span><span id="__span-0-136"><a id="__codelineno-0-136" name="__codelineno-0-136"></a><span class="s2">                of checkpoint </span><span class="si">{</span><span class="n">patch_embed_weight</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span id="__span-0-137"><a id="__codelineno-0-137" name="__codelineno-0-137"></a>                <span class="n">category</span><span class="o">=</span><span class="ne">UserWarning</span><span class="p">,</span>
+</span><span id="__span-0-138"><a id="__codelineno-0-138" name="__codelineno-0-138"></a>                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+</span><span id="__span-0-139"><a id="__codelineno-0-139" name="__codelineno-0-139"></a>            <span class="p">)</span>
+</span><span id="__span-0-140"><a id="__codelineno-0-140" name="__codelineno-0-140"></a>
+</span><span id="__span-0-141"><a id="__codelineno-0-141" name="__codelineno-0-141"></a>        <span class="n">state_dict</span><span class="p">[</span><span class="n">proj_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp_weight</span>
+</span><span id="__span-0-142"><a id="__codelineno-0-142" name="__codelineno-0-142"></a>
+</span><span id="__span-0-143"><a id="__codelineno-0-143" name="__codelineno-0-143"></a>        <span class="k">if</span> <span class="n">prefix</span><span class="p">:</span>
+</span><span id="__span-0-144"><a id="__codelineno-0-144" name="__codelineno-0-144"></a>            <span class="n">state_dict</span> <span class="o">=</span> <span class="n">remove_prefixes</span><span class="p">(</span><span class="n">state_dict</span><span class="p">,</span> <span class="n">prefix</span><span class="p">)</span>
+</span><span id="__span-0-145"><a id="__codelineno-0-145" name="__codelineno-0-145"></a>
+</span><span id="__span-0-146"><a id="__codelineno-0-146" name="__codelineno-0-146"></a>    <span class="k">return</span> <span class="n">state_dict</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -662,7 +688,7 @@ If a band exists in model_bands, but not pretrained_bands, randomly initialize t
 
     </div>
 
-</div><h2 id="decoders">Decoders</h2>
+</div><h2 id="decoders">Decoders<a class="headerlink" href="#decoders" title="Permanent link">#</a></h2>
 
 
 <div class="doc doc-object doc-module">
@@ -673,7 +699,7 @@ If a band exists in model_bands, but not pretrained_bands, randomly initialize t
             <code>terratorch.models.decoders.fcn_decoder</code>
 
 
-</h3>
+<a href="#terratorch.models.decoders.fcn_decoder" class="headerlink" title="Permanent link">#</a></h3>
 
     <div class="doc doc-contents first">
 
@@ -701,7 +727,7 @@ If a band exists in model_bands, but not pretrained_bands, randomly initialize t
             <code>FCNDecoder</code>
 
 
-</h4>
+<a href="#terratorch.models.decoders.fcn_decoder.FCNDecoder" class="headerlink" title="Permanent link">#</a></h4>
 
 
     <div class="doc doc-contents ">
@@ -828,7 +854,7 @@ If a band exists in model_bands, but not pretrained_bands, randomly initialize t
 <h5 id="terratorch.models.decoders.fcn_decoder.FCNDecoder.__init__" class="doc doc-heading">
             <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">embed_dim</span><span class="p">,</span> <span class="n">channels</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">num_convs</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">in_index</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></code>
 
-</h5>
+<a href="#terratorch.models.decoders.fcn_decoder.FCNDecoder.__init__" class="headerlink" title="Permanent link">#</a></h5>
 
 
     <div class="doc doc-contents ">
@@ -985,7 +1011,7 @@ If a band exists in model_bands, but not pretrained_bands, randomly initialize t
             <code>terratorch.models.decoders.identity_decoder</code>
 
 
-</h3>
+<a href="#terratorch.models.decoders.identity_decoder" class="headerlink" title="Permanent link">#</a></h3>
 
     <div class="doc doc-contents first">
 
@@ -1015,7 +1041,7 @@ If a band exists in model_bands, but not pretrained_bands, randomly initialize t
             <code>IdentityDecoder</code>
 
 
-</h4>
+<a href="#terratorch.models.decoders.identity_decoder.IdentityDecoder" class="headerlink" title="Permanent link">#</a></h4>
 
 
     <div class="doc doc-contents ">
@@ -1094,7 +1120,7 @@ If a band exists in model_bands, but not pretrained_bands, randomly initialize t
 <h5 id="terratorch.models.decoders.identity_decoder.IdentityDecoder.__init__" class="doc doc-heading">
             <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">embed_dim</span><span class="p">,</span> <span class="n">out_index</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></code>
 
-</h5>
+<a href="#terratorch.models.decoders.identity_decoder.IdentityDecoder.__init__" class="headerlink" title="Permanent link">#</a></h5>
 
 
     <div class="doc doc-contents ">
@@ -1187,7 +1213,7 @@ If a band exists in model_bands, but not pretrained_bands, randomly initialize t
             <code>terratorch.models.decoders.upernet_decoder</code>
 
 
-</h3>
+<a href="#terratorch.models.decoders.upernet_decoder" class="headerlink" title="Permanent link">#</a></h3>
 
     <div class="doc doc-contents first">
 
@@ -1215,7 +1241,7 @@ If a band exists in model_bands, but not pretrained_bands, randomly initialize t
             <code>PPM</code>
 
 
-</h4>
+<a href="#terratorch.models.decoders.upernet_decoder.PPM" class="headerlink" title="Permanent link">#</a></h4>
 
 
     <div class="doc doc-contents ">
@@ -1326,7 +1352,7 @@ If a band exists in model_bands, but not pretrained_bands, randomly initialize t
 <h5 id="terratorch.models.decoders.upernet_decoder.PPM.__init__" class="doc doc-heading">
             <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">pool_scales</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">align_corners</span><span class="p">)</span></code>
 
-</h5>
+<a href="#terratorch.models.decoders.upernet_decoder.PPM.__init__" class="headerlink" title="Permanent link">#</a></h5>
 
 
     <div class="doc doc-contents ">
@@ -1441,7 +1467,7 @@ Module.</p>
 <h5 id="terratorch.models.decoders.upernet_decoder.PPM.forward" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">forward</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></code>
 
-</h5>
+<a href="#terratorch.models.decoders.upernet_decoder.PPM.forward" class="headerlink" title="Permanent link">#</a></h5>
 
 
     <div class="doc doc-contents ">
@@ -1491,7 +1517,7 @@ Module.</p>
             <code>UperNetDecoder</code>
 
 
-</h4>
+<a href="#terratorch.models.decoders.upernet_decoder.UperNetDecoder" class="headerlink" title="Permanent link">#</a></h4>
 
 
     <div class="doc doc-contents ">
@@ -1800,7 +1826,7 @@ Module.</p>
 <h5 id="terratorch.models.decoders.upernet_decoder.UperNetDecoder.__init__" class="doc doc-heading">
             <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">embed_dim</span><span class="p">,</span> <span class="n">pool_scales</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">channels</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">align_corners</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">scale_modules</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
-</h5>
+<a href="#terratorch.models.decoders.upernet_decoder.UperNetDecoder.__init__" class="headerlink" title="Permanent link">#</a></h5>
 
 
     <div class="doc doc-contents ">
@@ -2046,7 +2072,7 @@ Defaults to False.</p>
 <h5 id="terratorch.models.decoders.upernet_decoder.UperNetDecoder.forward" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">forward</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span></code>
 
-</h5>
+<a href="#terratorch.models.decoders.upernet_decoder.UperNetDecoder.forward" class="headerlink" title="Permanent link">#</a></h5>
 
 
     <div class="doc doc-contents ">
@@ -2174,7 +2200,7 @@ H, W) which is feature map for last layer of decoder head.</p>
 <h5 id="terratorch.models.decoders.upernet_decoder.UperNetDecoder.psp_forward" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">psp_forward</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span></code>
 
-</h5>
+<a href="#terratorch.models.decoders.upernet_decoder.UperNetDecoder.psp_forward" class="headerlink" title="Permanent link">#</a></h5>
 
 
     <div class="doc doc-contents ">
@@ -2221,7 +2247,7 @@ H, W) which is feature map for last layer of decoder head.</p>
 
     </div>
 
-</div><h2 id="heads">Heads</h2>
+</div><h2 id="heads">Heads<a class="headerlink" href="#heads" title="Permanent link">#</a></h2>
 
 
 <div class="doc doc-object doc-module">
@@ -2232,7 +2258,7 @@ H, W) which is feature map for last layer of decoder head.</p>
             <code>terratorch.models.heads.regression_head</code>
 
 
-</h3>
+<a href="#terratorch.models.heads.regression_head" class="headerlink" title="Permanent link">#</a></h3>
 
     <div class="doc doc-contents first">
 
@@ -2260,7 +2286,7 @@ H, W) which is feature map for last layer of decoder head.</p>
             <code>RegressionHead</code>
 
 
-</h4>
+<a href="#terratorch.models.heads.regression_head.RegressionHead" class="headerlink" title="Permanent link">#</a></h4>
 
 
     <div class="doc doc-contents ">
@@ -2423,7 +2449,7 @@ H, W) which is feature map for last layer of decoder head.</p>
 <h5 id="terratorch.models.heads.regression_head.RegressionHead.__init__" class="doc doc-heading">
             <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">final_act</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">learned_upscale_layers</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">channel_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">batch_norm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code>
 
-</h5>
+<a href="#terratorch.models.heads.regression_head.RegressionHead.__init__" class="headerlink" title="Permanent link">#</a></h5>
 
 
     <div class="doc doc-contents ">
@@ -2650,7 +2676,7 @@ layer to be created. Defaults to None.</p>
             <code>terratorch.models.heads.segmentation_head</code>
 
 
-</h3>
+<a href="#terratorch.models.heads.segmentation_head" class="headerlink" title="Permanent link">#</a></h3>
 
     <div class="doc doc-contents first">
 
@@ -2678,7 +2704,7 @@ layer to be created. Defaults to None.</p>
             <code>SegmentationHead</code>
 
 
-</h4>
+<a href="#terratorch.models.heads.segmentation_head.SegmentationHead" class="headerlink" title="Permanent link">#</a></h4>
 
 
     <div class="doc doc-contents ">
@@ -2803,7 +2829,7 @@ layer to be created. Defaults to None.</p>
 <h5 id="terratorch.models.heads.segmentation_head.SegmentationHead.__init__" class="doc doc-heading">
             <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">channel_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code>
 
-</h5>
+<a href="#terratorch.models.heads.segmentation_head.SegmentationHead.__init__" class="headerlink" title="Permanent link">#</a></h5>
 
 
     <div class="doc doc-contents ">
@@ -2971,7 +2997,7 @@ layer to be created. Defaults to None.</p>
             <code>terratorch.models.heads.classification_head</code>
 
 
-</h3>
+<a href="#terratorch.models.heads.classification_head" class="headerlink" title="Permanent link">#</a></h3>
 
     <div class="doc doc-contents first">
 
@@ -2999,7 +3025,7 @@ layer to be created. Defaults to None.</p>
             <code>ClassificationHead</code>
 
 
-</h4>
+<a href="#terratorch.models.heads.classification_head.ClassificationHead" class="headerlink" title="Permanent link">#</a></h4>
 
 
     <div class="doc doc-contents ">
@@ -3140,7 +3166,7 @@ layer to be created. Defaults to None.</p>
 <h5 id="terratorch.models.heads.classification_head.ClassificationHead.__init__" class="doc doc-heading">
             <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">in_dim</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">dim_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">linear_after_pool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
-</h5>
+<a href="#terratorch.models.heads.classification_head.ClassificationHead.__init__" class="headerlink" title="Permanent link">#</a></h5>
 
 
     <div class="doc doc-contents ">
@@ -3306,7 +3332,7 @@ layer to be created. Defaults to None.</p>
 
     </div>
 
-</div><h2 id="auxiliary-heads">Auxiliary Heads</h2>
+</div><h2 id="auxiliary-heads">Auxiliary Heads<a class="headerlink" href="#auxiliary-heads" title="Permanent link">#</a></h2>
 
 
 <div class="doc doc-object doc-class">
@@ -3321,7 +3347,7 @@ layer to be created. Defaults to None.</p>
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
   </span>
 
-</h3>
+<a href="#terratorch.models.model.AuxiliaryHead" class="headerlink" title="Permanent link">#</a></h3>
 
 
     <div class="doc doc-contents first">
@@ -3428,7 +3454,7 @@ Parameters for the head should be prefixed with <code>head_</code>.</p>
 
     </div>
 
-</div><h2 id="model-output">Model Output</h2>
+</div><h2 id="model-output">Model Output<a class="headerlink" href="#model-output" title="Permanent link">#</a></h2>
 
 
 <div class="doc doc-object doc-class">
@@ -3443,7 +3469,7 @@ Parameters for the head should be prefixed with <code>head_</code>.</p>
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
   </span>
 
-</h3>
+<a href="#terratorch.models.model.ModelOutput" class="headerlink" title="Permanent link">#</a></h3>
 
 
     <div class="doc doc-contents first">
@@ -3484,7 +3510,7 @@ Parameters for the head should be prefixed with <code>head_</code>.</p>
 
     </div>
 
-</div><h2 id="model-factory">Model Factory</h2>
+</div><h2 id="model-factory">Model Factory<a class="headerlink" href="#model-factory" title="Permanent link">#</a></h2>
 
 
 <div class="doc doc-object doc-class">
@@ -3495,7 +3521,7 @@ Parameters for the head should be prefixed with <code>head_</code>.</p>
             <code>terratorch.models.PrithviModelFactory</code>
 
 
-</h3>
+<a href="#terratorch.models.PrithviModelFactory" class="headerlink" title="Permanent link">#</a></h3>
 
 
     <div class="doc doc-contents first">
@@ -3694,7 +3720,7 @@ Parameters for the head should be prefixed with <code>head_</code>.</p>
 <h4 id="terratorch.models.PrithviModelFactory.build_model" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">build_model</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">backbone</span><span class="p">,</span> <span class="n">decoder</span><span class="p">,</span> <span class="n">bands</span><span class="p">,</span> <span class="n">in_channels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">num_frames</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">prepare_features_for_image_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">aux_decoders</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rescale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
-</h4>
+<a href="#terratorch.models.PrithviModelFactory.build_model" class="headerlink" title="Permanent link">#</a></h4>
 
 
     <div class="doc doc-contents ">
@@ -4034,7 +4060,7 @@ is different from the ground truth. Only applicable to pixel wise models
             <code>terratorch.models.SMPModelFactory</code>
 
 
-</h3>
+<a href="#terratorch.models.SMPModelFactory" class="headerlink" title="Permanent link">#</a></h3>
 
 
     <div class="doc doc-contents first">
@@ -4299,7 +4325,7 @@ is different from the ground truth. Only applicable to pixel wise models
 <h4 id="terratorch.models.SMPModelFactory.build_model" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">build_model</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">backbone</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">bands</span><span class="p">,</span> <span class="n">in_channels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">prepare_features_for_image_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">regression_relu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
-</h4>
+<a href="#terratorch.models.SMPModelFactory.build_model" class="headerlink" title="Permanent link">#</a></h4>
 
 
     <div class="doc doc-contents ">
@@ -4704,7 +4730,7 @@ as auxiliary decoders or modified encoders.</p>
 
     </div>
 
-</div><h1 id="adding-new-model-types">Adding new model types</h1>
+</div><h1 id="adding-new-model-types">Adding new model types<a class="headerlink" href="#adding-new-model-types" title="Permanent link">#</a></h1>
 <p>Adding new model types is as simple as creating a new factory that produces models. See for instance the example below for a potential <code>SMPModelFactory</code>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span> <span class="nn">terratorch.models.model</span> <span class="kn">import</span> <span class="n">register_factory</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
@@ -4737,7 +4763,7 @@ as auxiliary decoders or modified encoders.</p>
 </span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>    <span class="k">def</span> <span class="nf">freeze_decoder</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 </span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a>        <span class="k">pass</span>
 </span></code></pre></div></p>
-<h1 id="custom-modules-with-cli">Custom modules with CLI</h1>
+<h1 id="custom-modules-with-cli">Custom modules with CLI<a class="headerlink" href="#custom-modules-with-cli" title="Permanent link">#</a></h1>
 <p>Custom modules must be in the import path in order to be registered in the appropriate registries. </p>
 <p>In order to do this without modifying the code when using the CLI, you may place your modules under a <code>custom_modules</code> directory. This must be in the directory from which you execute terratorch.</p>
               

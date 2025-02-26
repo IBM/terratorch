@@ -3,9 +3,9 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://ibm.github.io/terratorch/examples/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://ibm.github.io/terratorch/glossary/" />
       <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>Examples - TerraTorch</title>
+    <title>Glossary - TerraTorch</title>
     <link rel="stylesheet" href="../css/theme.css" />
     <link rel="stylesheet" href="../css/theme_extra.css" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
@@ -13,9 +13,9 @@
     
       <script>
         // Current page data
-        var mkdocs_page_name = "Examples";
-        var mkdocs_page_input_path = "examples.md";
-        var mkdocs_page_url = "/terratorch/examples/";
+        var mkdocs_page_name = "Glossary";
+        var mkdocs_page_input_path = "glossary.md";
+        var mkdocs_page_url = "/terratorch/glossary/";
       </script>
     
     <!--[if lt IE 9]>
@@ -48,16 +48,24 @@
                 <li class="toctree-l1"><a class="reference internal" href="../quick_start/">Getting Started</a>
                 </li>
               </ul>
-              <ul class="current">
-                <li class="toctree-l1 current"><a class="reference internal current" href="#">Examples</a>
-    <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#from-config-files">From config files</a>
-    </li>
-    </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../examples/">Examples</a>
                 </li>
               </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../glossary/">Glossary</a>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Glossary</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#encoder">Encoder</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#decoder">Decoder</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#head">Head</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#neck">Neck</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#factory">Factory</a>
+    </li>
+    </ul>
                 </li>
               </ul>
               <ul>
@@ -93,9 +101,9 @@
         <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
   <ul class="wy-breadcrumbs">
     <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
-      <li class="breadcrumb-item active">Examples</li>
+      <li class="breadcrumb-item active">Glossary</li>
     <li class="wy-breadcrumbs-aside">
-          <a href="https://github.com/IBM/terratorch/edit/master/docs/examples.md" class="icon icon-github"> Edit on GitHub</a>
+          <a href="https://github.com/IBM/terratorch/edit/master/docs/glossary.md" class="icon icon-github"> Edit on GitHub</a>
     </li>
   </ul>
   <hr/>
@@ -103,42 +111,31 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">#</a></h1>
-<p>For some examples of training using the existing tasks, check out the following pages on our github repo:</p>
-<h2 id="from-config-files">From config files<a class="headerlink" href="#from-config-files" title="Permanent link">#</a></h2>
-<p>Under <code>examples/confs</code></p>
-<ul>
-<li>
-<p>Flood Segmentation with ViT: <code>sen1floods11_vit.yaml</code></p>
-</li>
-<li>
-<p>Flood Segmentation with ViT and an SMP head: <code>sen1floods11_vit_smp.yaml</code></p>
-</li>
-<li>
-<p>Flood Segmentation with ViT and an MMSeg head: <code>sen1floods11_vit_mmseg.yaml</code></p>
-</li>
-<li>
-<p>Multitemporal Crop Segmentation: <code>multitemporal_crop.yaml</code></p>
-</li>
-<li>
-<p>Burn Scar Segmentation: <code>burn_scars.yaml</code></p>
-</li>
-<li>
-<p>Scene Classification: <code>eurosat.yaml</code></p>
-</li>
-</ul>
-<p>External examples available in <a href="https://github.com/NASA-IMPACT/Prithvi-EO-2.0">Prithvi-EO-2.0</a></p>
-<ul>
-<li><a href="https://github.com/NASA-IMPACT/Prithvi-EO-2.0/tree/main/examples/carbon_flux">Carbon Flux</a></li>
-<li><a href="https://github.com/NASA-IMPACT/Prithvi-EO-2.0/blob/main/examples/example_landslide4sense.ipynb">Landslide</a></li>
-<li><a href="https://github.com/NASA-IMPACT/Prithvi-EO-2.0/blob/main/examples/example_multitemporalcrop.ipynb">Multitemporal Crop</a></li>
-</ul>
+                <h1 id="glossary-of-terms-used-in-this-documentation-and-in-the-geospatial-ai-area">Glossary of terms used in this Documentation and in the Geospatial AI area<a class="headerlink" href="#glossary-of-terms-used-in-this-documentation-and-in-the-geospatial-ai-area" title="Permanent link">#</a></h1>
+<h2 id="encoder">Encoder<a class="headerlink" href="#encoder" title="Permanent link">#</a></h2>
+<p>The neural network used to map between the inputs and the intermdiary stage (usually referred as embedding
+or sometimes as latent space) of the forward step. The encoder is also frequently called backbone and, for 
+finetuning tasks, it is usually the part of the model which is not updated/trained. </p>
+<h2 id="decoder">Decoder<a class="headerlink" href="#decoder" title="Permanent link">#</a></h2>
+<p>The neural network employed to map between the intermediary stage (embedding/latent space) and the target
+output. For finetuning tasks, the decoder is the most essential part, since it is trained to map the embedding
+produced by a previoulsy trained encoder to a new task. </p>
+<h2 id="head">Head<a class="headerlink" href="#head" title="Permanent link">#</a></h2>
+<p>A network, usually very small when compared to the encoder and decoder, which is used as final step to adapt
+the decoder output to a specific task, for example, by applying a determined activation to it. </p>
+<h2 id="neck">Neck<a class="headerlink" href="#neck" title="Permanent link">#</a></h2>
+<p>Necks are operations placed between the encoder and the decoder stages aimed at adjusting possible
+discrepancies, as incompatible shapes, or applying some specific transform, as a normalization required for the task being executed. </p>
+<h2 id="factory">Factory<a class="headerlink" href="#factory" title="Permanent link">#</a></h2>
+<p>A Factory is a class which organizes the instantiation of a complete model, as a backbone-neck-decoder-head
+architecture. A class is intended to receive lists and dictionaries containing the required arguments used to
+build the model and returns a new instance already ready to be used. </p>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../quick_start/" class="btn btn-neutral float-left" title="Getting Started"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../glossary/" class="btn btn-neutral float-right" title="Glossary">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../examples/" class="btn btn-neutral float-left" title="Examples"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../license/" class="btn btn-neutral float-right" title="License">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -165,10 +162,10 @@
         </span>
     
     
-      <span><a href="../quick_start/" style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../examples/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../glossary/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../license/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>

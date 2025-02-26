@@ -53,6 +53,10 @@
                 </li>
               </ul>
               <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../glossary/">Glossary</a>
+                </li>
+              </ul>
+              <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../license/">License</a>
                 </li>
               </ul>
@@ -118,7 +122,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="registries">Registries</h1>
+                <h1 id="registries">Registries<a class="headerlink" href="#registries" title="Permanent link">#</a></h1>
 <p>TerraTorch keeps a set of registries which map strings to instances of those strings. They can be imported from <code>terratorch.registry</code>.</p>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
@@ -153,7 +157,7 @@
 </span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="p">)</span>
 </span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="c1"># Rest of your PyTorch / PyTorchLightning code</span>
 </span></code></pre></div>
-<h2 id="multisourceregistries">MultiSourceRegistries</h2>
+<h2 id="multisourceregistries">MultiSourceRegistries<a class="headerlink" href="#multisourceregistries" title="Permanent link">#</a></h2>
 <p><code>BACKBONE_REGISTRY</code> and <code>DECODER_REGISTRY</code> are special registries which dynamically aggregate multiple registries. They behave as if they were a single large registry by searching over multiple registries.</p>
 <p>For instance, the <code>DECODER_REGISTRY</code> holds the <code>TERRATORCH_DECODER_REGISTRY</code>, which is responsible for decoders implemented in terratorch, as well as the <code>SMP_DECODER_REGISTRY</code> and the <code>MMSEG_DECODER_REGISTRY</code> (if mmseg is installed).</p>
 <p>To make sure you access the object from a particular registry, you may prepend your string with the prefix from that registry.</p>
@@ -181,7 +185,7 @@
             <code>terratorch.registry.registry.MultiSourceRegistry</code>
 
 
-</h3>
+<a href="#terratorch.registry.registry.MultiSourceRegistry" class="headerlink" title="Permanent link">#</a></h3>
 
 
     <div class="doc doc-contents first">
@@ -381,7 +385,7 @@
 <h4 id="terratorch.registry.registry.MultiSourceRegistry.register_source" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">register_source</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">registry</span><span class="p">)</span></code>
 
-</h4>
+<a href="#terratorch.registry.registry.MultiSourceRegistry.register_source" class="headerlink" title="Permanent link">#</a></h4>
 
 
     <div class="doc doc-contents ">
@@ -423,7 +427,7 @@
             <code>terratorch.registry.registry.Registry</code>
 
 
-</h3>
+<a href="#terratorch.registry.registry.Registry" class="headerlink" title="Permanent link">#</a></h3>
 
 
     <div class="doc doc-contents first">
@@ -591,7 +595,7 @@ model_instance = registry.build("model")</p>
 <h4 id="terratorch.registry.registry.Registry.build" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">build</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="o">*</span><span class="n">constructor_args</span><span class="p">,</span> <span class="o">**</span><span class="n">constructor_kwargs</span><span class="p">)</span></code>
 
-</h4>
+<a href="#terratorch.registry.registry.Registry.build" class="headerlink" title="Permanent link">#</a></h4>
 
 
     <div class="doc doc-contents ">
@@ -622,7 +626,7 @@ Use prefixes ending with _ to forward to a specific source</p>
 <h4 id="terratorch.registry.registry.Registry.register" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">register</span><span class="p">(</span><span class="n">constructor</span><span class="p">)</span></code>
 
-</h4>
+<a href="#terratorch.registry.registry.Registry.register" class="headerlink" title="Permanent link">#</a></h4>
 
 
     <div class="doc doc-contents ">
@@ -688,7 +692,7 @@ Use prefixes ending with _ to forward to a specific source</p>
 
     </div>
 
-</div><h2 id="other-registries">Other Registries</h2>
+</div><h2 id="other-registries">Other Registries<a class="headerlink" href="#other-registries" title="Permanent link">#</a></h2>
 <p>Additionally, terratorch has the <code>NECK_REGISTRY</code>, where all necks must be registered, and the <code>MODEL_FACTORY_REGISTRY</code>, where all model factories must be registered.</p>
               
             </div>

@@ -53,6 +53,10 @@
                 </li>
               </ul>
               <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../glossary/">Glossary</a>
+                </li>
+              </ul>
+              <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../license/">License</a>
                 </li>
               </ul>
@@ -70,19 +74,15 @@
                   </li>
                   <li class="toctree-l1 current"><a class="reference internal current" href="#">EncoderDecoderFactory</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#the-factory">The Factory</a>
+    <li class="toctree-l2"><a class="reference internal" href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory">EncoderDecoderFactory</a>
         <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory">EncoderDecoderFactory</a>
-        <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory.build_model">build_model</a>
+    <li class="toctree-l3"><a class="reference internal" href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory.build_model">build_model</a>
     </li>
         </ul>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#terratorchmodelspixel_wise_modelpixelwisemodel">terratorch.models.pixel_wise_model.PixelWiseModel</a>
+    <li class="toctree-l2"><a class="reference internal" href="#terratorchmodelspixel_wise_modelpixelwisemodel">terratorch.models.pixel_wise_model.PixelWiseModel</a>
     </li>
-    <li class="toctree-l3"><a class="reference internal" href="#terratorchmodelsscalar_output_modelscalaroutputmodel">terratorch.models.scalar_output_model.ScalarOutputModel</a>
-    </li>
-        </ul>
+    <li class="toctree-l2"><a class="reference internal" href="#terratorchmodelsscalar_output_modelscalaroutputmodel">terratorch.models.scalar_output_model.ScalarOutputModel</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#encoders">Encoders</a>
     </li>
@@ -184,9 +184,10 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="encoderdecoderfactory">EncoderDecoderFactory</h1>
-<h2 id="the-factory">The Factory</h2>
-<p>A special factory provided by terratorch is the <a class="autorefs autorefs-internal" href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory">EncoderDecoderFactory</a>.</p>
+                <h1 id="encoderdecoderfactory">EncoderDecoderFactory<a class="headerlink" href="#encoderdecoderfactory" title="Permanent link">#</a></h1>
+<p><em>Check the <a href="../glossary/">Glossary</a> for more information about the terms used in this page.</em></p>
+<p>The <a class="autorefs autorefs-internal" href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory">EncoderDecoderFactory</a> is the main class
+used to instantiate and compose models for general tasks. </p>
 <p>This factory leverages the <code>BACKBONE_REGISTRY</code>, <code>DECODER_REGISTRY</code> and <code>NECK_REGISTRY</code> to compose models formed as encoder + decoder, with some optional glue in between provided by the necks.
 As most current models work this way, this is a particularly important factory, allowing for great flexibility in combining encoders and decoders from different sources.</p>
 <p>The factory allows arguments to be passed to the encoder, decoder and head. Arguments with the prefix <code>backbone_</code> will be routed to the backbone constructor, with <code>decoder_</code> and <code>head_</code> working the same way. These are accepted dynamically and not checked.
@@ -206,7 +207,7 @@ They must be instances of <a class="autorefs autorefs-internal" href="#terratorc
             <code>terratorch.models.encoder_decoder_factory.EncoderDecoderFactory</code>
 
 
-</h3>
+<a href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory" class="headerlink" title="Permanent link">#</a></h3>
 
 
     <div class="doc doc-contents first">
@@ -531,7 +532,7 @@ They must be instances of <a class="autorefs autorefs-internal" href="#terratorc
 <h4 id="terratorch.models.encoder_decoder_factory.EncoderDecoderFactory.build_model" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">build_model</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">backbone</span><span class="p">,</span> <span class="n">decoder</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">necks</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">aux_decoders</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rescale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">peft_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
-</h4>
+<a href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory.build_model" class="headerlink" title="Permanent link">#</a></h4>
 
 
     <div class="doc doc-contents ">
@@ -974,9 +975,9 @@ The dictionary should have the following keys:</p>
 
     </div>
 
-</div><h3 id="terratorchmodelspixel_wise_modelpixelwisemodel">terratorch.models.pixel_wise_model.PixelWiseModel</h3>
-<h3 id="terratorchmodelsscalar_output_modelscalaroutputmodel">terratorch.models.scalar_output_model.ScalarOutputModel</h3>
-<h2 id="encoders">Encoders</h2>
+</div><h3 id="terratorchmodelspixel_wise_modelpixelwisemodel">terratorch.models.pixel_wise_model.PixelWiseModel<a class="headerlink" href="#terratorchmodelspixel_wise_modelpixelwisemodel" title="Permanent link">#</a></h3>
+<h3 id="terratorchmodelsscalar_output_modelscalaroutputmodel">terratorch.models.scalar_output_model.ScalarOutputModel<a class="headerlink" href="#terratorchmodelsscalar_output_modelscalaroutputmodel" title="Permanent link">#</a></h3>
+<h2 id="encoders">Encoders<a class="headerlink" href="#encoders" title="Permanent link">#</a></h2>
 <p>To be a valid encoder, an object must be an <code>nn.Module</code> and contain an attribute <code>out_channels</code>, basically a list of the channel dimensions corresponding to
 the features it returns.
 The forward method of any encoder should return a list of <code>torch.Tensor</code>.</p>
@@ -1019,7 +1020,7 @@ The forward method of any encoder should return a list of <code>torch.Tensor</co
 </span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])</span>,
 </span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])]</span>
 </span></code></pre></div>
-<h2 id="necks">Necks</h2>
+<h2 id="necks">Necks<a class="headerlink" href="#necks" title="Permanent link">#</a></h2>
 <p>Necks are the glue between encoder and decoder. They can perform operations such as selecting elements from the output of the encoder (<a class="autorefs autorefs-internal" href="#terratorch.models.necks.SelectIndices">SelectIndices</a>), reshaping the outputs of ViTs so they are compatible with CNNs (<a class="autorefs autorefs-internal" href="#terratorch.models.necks.ReshapeTokensToImage">ReshapeTokensToImage</a>), amongst others.</p>
 <p>Necks are <code>nn.Modules</code>, with an additional method <code>process_channel_list</code> which informs the <a class="autorefs autorefs-internal" href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory">EncoderDecoderFactory</a> about how it will alter the channel list provided by <code>encoder.out_channels</code>.</p>
 
@@ -1032,7 +1033,7 @@ The forward method of any encoder should return a list of <code>torch.Tensor</co
             <code>terratorch.models.necks.Neck</code>
 
 
-</h3>
+<a href="#terratorch.models.necks.Neck" class="headerlink" title="Permanent link">#</a></h3>
 
 
     <div class="doc doc-contents first">
@@ -1112,7 +1113,7 @@ The forward method of any encoder should return a list of <code>torch.Tensor</co
             <code>terratorch.models.necks.SelectIndices</code>
 
 
-</h3>
+<a href="#terratorch.models.necks.SelectIndices" class="headerlink" title="Permanent link">#</a></h3>
 
 
     <div class="doc doc-contents first">
@@ -1183,7 +1184,7 @@ The forward method of any encoder should return a list of <code>torch.Tensor</co
 <h4 id="terratorch.models.necks.SelectIndices.__init__" class="doc doc-heading">
             <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">channel_list</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span></code>
 
-</h4>
+<a href="#terratorch.models.necks.SelectIndices.__init__" class="headerlink" title="Permanent link">#</a></h4>
 
 
     <div class="doc doc-contents ">
@@ -1253,7 +1254,7 @@ The forward method of any encoder should return a list of <code>torch.Tensor</co
             <code>terratorch.models.necks.PermuteDims</code>
 
 
-</h3>
+<a href="#terratorch.models.necks.PermuteDims" class="headerlink" title="Permanent link">#</a></h3>
 
 
     <div class="doc doc-contents first">
@@ -1322,7 +1323,7 @@ The forward method of any encoder should return a list of <code>torch.Tensor</co
 <h4 id="terratorch.models.necks.PermuteDims.__init__" class="doc doc-heading">
             <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">channel_list</span><span class="p">,</span> <span class="n">new_order</span><span class="p">)</span></code>
 
-</h4>
+<a href="#terratorch.models.necks.PermuteDims.__init__" class="headerlink" title="Permanent link">#</a></h4>
 
 
     <div class="doc doc-contents ">
@@ -1392,7 +1393,7 @@ The forward method of any encoder should return a list of <code>torch.Tensor</co
             <code>terratorch.models.necks.InterpolateToPyramidal</code>
 
 
-</h3>
+<a href="#terratorch.models.necks.InterpolateToPyramidal" class="headerlink" title="Permanent link">#</a></h3>
 
 
     <div class="doc doc-contents first">
@@ -1475,7 +1476,7 @@ The forward method of any encoder should return a list of <code>torch.Tensor</co
 <h4 id="terratorch.models.necks.InterpolateToPyramidal.__init__" class="doc doc-heading">
             <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">channel_list</span><span class="p">,</span> <span class="n">scale_factor</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;nearest&#39;</span><span class="p">)</span></code>
 
-</h4>
+<a href="#terratorch.models.necks.InterpolateToPyramidal.__init__" class="headerlink" title="Permanent link">#</a></h4>
 
 
     <div class="doc doc-contents ">
@@ -1531,7 +1532,7 @@ Args:
             <code>terratorch.models.necks.MaxpoolToPyramidal</code>
 
 
-</h3>
+<a href="#terratorch.models.necks.MaxpoolToPyramidal" class="headerlink" title="Permanent link">#</a></h3>
 
 
     <div class="doc doc-contents first">
@@ -1616,7 +1617,7 @@ Args:
 <h4 id="terratorch.models.necks.MaxpoolToPyramidal.__init__" class="doc doc-heading">
             <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">channel_list</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></code>
 
-</h4>
+<a href="#terratorch.models.necks.MaxpoolToPyramidal.__init__" class="headerlink" title="Permanent link">#</a></h4>
 
 
     <div class="doc doc-contents ">
@@ -1667,7 +1668,7 @@ Args:
             <code>terratorch.models.necks.ReshapeTokensToImage</code>
 
 
-</h3>
+<a href="#terratorch.models.necks.ReshapeTokensToImage" class="headerlink" title="Permanent link">#</a></h3>
 
 
     <div class="doc doc-contents first">
@@ -1794,7 +1795,7 @@ Args:
 <h4 id="terratorch.models.necks.ReshapeTokensToImage.__init__" class="doc doc-heading">
             <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">channel_list</span><span class="p">,</span> <span class="n">remove_cls_token</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">effective_time_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></code>
 
-</h4>
+<a href="#terratorch.models.necks.ReshapeTokensToImage.__init__" class="headerlink" title="Permanent link">#</a></h4>
 
 
     <div class="doc doc-contents ">
@@ -1913,7 +1914,7 @@ Defaults to 1.</p>
             <code>terratorch.models.necks.AddBottleneckLayer</code>
 
 
-</h3>
+<a href="#terratorch.models.necks.AddBottleneckLayer" class="headerlink" title="Permanent link">#</a></h3>
 
 
     <div class="doc doc-contents first">
@@ -1997,7 +1998,7 @@ Defaults to 1.</p>
             <code>terratorch.models.necks.LearnedInterpolateToPyramidal</code>
 
 
-</h3>
+<a href="#terratorch.models.necks.LearnedInterpolateToPyramidal" class="headerlink" title="Permanent link">#</a></h3>
 
 
     <div class="doc doc-contents first">
@@ -2101,11 +2102,11 @@ Defaults to 1.</p>
 
     </div>
 
-</div><h2 id="decoders">Decoders</h2>
+</div><h2 id="decoders">Decoders<a class="headerlink" href="#decoders" title="Permanent link">#</a></h2>
 <p>To be a valid decoder, an object must be an <code>nn.Module</code> with an attribute <code>out_channels</code>, an <code>int</code> representing the channel dimension of the output.</p>
 <p>The first argument to its constructor will be a list of channel dimensions it should expect as input.</p>
 <p>It's forward method should accept a list of embeddings.</p>
-<h2 id="heads">Heads</h2>
+<h2 id="heads">Heads<a class="headerlink" href="#heads" title="Permanent link">#</a></h2>
 <p>Most decoders require a final head to be added for a specific task (e.g. semantic segmentation vs pixel wise regression).</p>
 <p>Those registries producing decoders that dont require a head must expose the attribute <code>includes_head=True</code> so that a head is not added.
 Decoders passed as <code>nn.Modules</code> which dont require a head must expose the same attribute themselves.</p>
@@ -2119,7 +2120,7 @@ Decoders passed as <code>nn.Modules</code> which dont require a head must expose
             <code>terratorch.models.heads.classification_head.ClassificationHead</code>
 
 
-</h2>
+<a href="#terratorch.models.heads.classification_head.ClassificationHead" class="headerlink" title="Permanent link">#</a></h2>
 
 
     <div class="doc doc-contents first">
@@ -2260,7 +2261,7 @@ Decoders passed as <code>nn.Modules</code> which dont require a head must expose
 <h3 id="terratorch.models.heads.classification_head.ClassificationHead.__init__" class="doc doc-heading">
             <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">in_dim</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">dim_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">linear_after_pool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
-</h3>
+<a href="#terratorch.models.heads.classification_head.ClassificationHead.__init__" class="headerlink" title="Permanent link">#</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -2427,7 +2428,7 @@ layer to be created. Defaults to None.</p>
             <code>terratorch.models.heads.regression_head.RegressionHead</code>
 
 
-</h2>
+<a href="#terratorch.models.heads.regression_head.RegressionHead" class="headerlink" title="Permanent link">#</a></h2>
 
 
     <div class="doc doc-contents first">
@@ -2590,7 +2591,7 @@ layer to be created. Defaults to None.</p>
 <h3 id="terratorch.models.heads.regression_head.RegressionHead.__init__" class="doc doc-heading">
             <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">final_act</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">learned_upscale_layers</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">channel_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">batch_norm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code>
 
-</h3>
+<a href="#terratorch.models.heads.regression_head.RegressionHead.__init__" class="headerlink" title="Permanent link">#</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -2808,7 +2809,7 @@ layer to be created. Defaults to None.</p>
             <code>terratorch.models.heads.segmentation_head.SegmentationHead</code>
 
 
-</h2>
+<a href="#terratorch.models.heads.segmentation_head.SegmentationHead" class="headerlink" title="Permanent link">#</a></h2>
 
 
     <div class="doc doc-contents first">
@@ -2933,7 +2934,7 @@ layer to be created. Defaults to None.</p>
 <h3 id="terratorch.models.heads.segmentation_head.SegmentationHead.__init__" class="doc doc-heading">
             <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="n">channel_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code>
 
-</h3>
+<a href="#terratorch.models.heads.segmentation_head.SegmentationHead.__init__" class="headerlink" title="Permanent link">#</a></h3>
 
 
     <div class="doc doc-contents ">
@@ -3082,11 +3083,11 @@ layer to be created. Defaults to None.</p>
 
     </div>
 
-</div><h2 id="decoder-compatibilities">Decoder compatibilities</h2>
+</div><h2 id="decoder-compatibilities">Decoder compatibilities<a class="headerlink" href="#decoder-compatibilities" title="Permanent link">#</a></h2>
 <p>Not all encoders and decoders are compatible. Below we include some caveats.</p>
 <p>Some decoders expect pyramidal outputs, but some encoders do not produce such outputs (e.g. vanilla ViT models).
 In this case, the <a class="autorefs autorefs-internal" href="#terratorch.models.necks.InterpolateToPyramidal">InterpolateToPyramidal</a>, <a class="autorefs autorefs-internal" href="#terratorch.models.necks.MaxpoolToPyramidal">MaxpoolToPyramidal</a> and <a class="autorefs autorefs-internal" href="#terratorch.models.necks.LearnedInterpolateToPyramidal">LearnedInterpolateToPyramidal</a> necks may be particularly useful.</p>
-<h3 id="smp-decoders">SMP decoders</h3>
+<h3 id="smp-decoders">SMP decoders<a class="headerlink" href="#smp-decoders" title="Permanent link">#</a></h3>
 <p>Not all decoders are guaranteed to work with all encoders without additional necks.
 Please check smp documentation to understand the embedding spatial dimensions expected by each decoder.</p>
 <p>In particular, smp seems to assume the first feature in the passed feature list has the same spatial resolution
@@ -3095,7 +3096,7 @@ as the input, which may not always be true, and may break some decoders.</p>
 Adding the <a class="autorefs autorefs-internal" href="#terratorch.models.necks.AddBottleneckLayer">AddBottleneckLayer</a> neck will make this compatible.</p>
 <p>Some smp decoders require additional parameters, such as <code>decoder_channels</code>. These must be passed through the factory.
 In the case of <code>decoder_channels</code>, it would be passed as <code>decoder_decoder_channels</code> (the first <code>decoder_</code> routes the parameter to the decoder, where it is passed as <code>decoder_channels</code>).</p>
-<h3 id="mmsegmentation-decoders">MMSegmentation decoders</h3>
+<h3 id="mmsegmentation-decoders">MMSegmentation decoders<a class="headerlink" href="#mmsegmentation-decoders" title="Permanent link">#</a></h3>
 <p>MMSegmentation decoders are available through the BACKBONE_REGISTRY. </p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>

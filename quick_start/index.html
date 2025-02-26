@@ -71,6 +71,10 @@
                 </li>
               </ul>
               <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../glossary/">Glossary</a>
+                </li>
+              </ul>
+              <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../license/">License</a>
                 </li>
               </ul>
@@ -113,18 +117,18 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="quick-start">Quick start</h1>
-<h2 id="configuring-the-environment">Configuring the environment</h2>
-<h3 id="python">Python</h3>
+                <h1 id="quick-start">Quick start<a class="headerlink" href="#quick-start" title="Permanent link">#</a></h1>
+<h2 id="configuring-the-environment">Configuring the environment<a class="headerlink" href="#configuring-the-environment" title="Permanent link">#</a></h2>
+<h3 id="python">Python<a class="headerlink" href="#python" title="Permanent link">#</a></h3>
 <p>TerraTorch is currently tested for Python in <code>3.10 &lt;= Python &lt;= 3.12</code>. </p>
-<h3 id="gdal">GDAL</h3>
+<h3 id="gdal">GDAL<a class="headerlink" href="#gdal" title="Permanent link">#</a></h3>
 <p>GDAL is required  to read and write TIFF images. It is usually easy to install in Unix/Linux systems, but if it is not your case 
 we reccomend using a conda environment and installing it with <code>conda install -c conda-forge gdal</code>.</p>
-<h2 id="installing-terratorch">Installing TerraTorch</h2>
+<h2 id="installing-terratorch">Installing TerraTorch<a class="headerlink" href="#installing-terratorch" title="Permanent link">#</a></h2>
 <p>For a stable point-release, use <code>pip install terratorch</code>.
 If you prefer to get the most recent version of the main branch, install the library with <code>pip install git+https://github.com/IBM/terratorch.git</code>.</p>
 <p>To install as a developer (e.g. to extend the library) clone this repo, and run <code>pip install -e .</code>.</p>
-<h2 id="creating-backbones">Creating Backbones</h2>
+<h2 id="creating-backbones">Creating Backbones<a class="headerlink" href="#creating-backbones" title="Permanent link">#</a></h2>
 <p>You can interact with the library at several levels of abstraction. Each deeper level of abstraction trades off some amount of flexibility for ease of use and configuration.
 In the simplest case, we might only want access a backbone and code all the rest ourselves. In this case, we can simply use the library as a backbone factory:</p>
 <div class="language-python highlight"><span class="filename">Instantiating a prithvi backbone</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">terratorch</span> <span class="kn">import</span> <span class="n">BACKBONE_REGISTRY</span>
@@ -157,7 +161,7 @@ In the simplest case, we might only want access a backbone and code all the rest
 <p>Internally, terratorch maintains several registries for components such as backbones or decoders. The top-level <code>BACKBONE_REGISTRY</code> collects all of them.</p>
 <p>The name passed to <code>build</code> is used to find the appropriate model constructor, which will be the first model from the first registry found with that name.</p>
 <p>To explicitly determine the registry that will build the model, you may prepend a prefix such as <code>timm_</code> to the model name. In this case, the <code>timm</code> model registry will be exclusively searched for the model.</p>
-<h2 id="directly-creating-a-full-model">Directly creating a full model</h2>
+<h2 id="directly-creating-a-full-model">Directly creating a full model<a class="headerlink" href="#directly-creating-a-full-model" title="Permanent link">#</a></h2>
 <p>We also provide a model factory for a task specific model built on one a backbones:</p>
 <div class="language-python highlight"><span class="filename">Building a full model, with task specific decoder</span><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span> <span class="nn">terratorch</span> <span class="c1"># even though we don&#39;t use the import directly, we need it so that the models are available in the timm registry</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span> <span class="nn">terratorch.models</span> <span class="kn">import</span> <span class="n">EncoderDecoderFactory</span>
@@ -195,7 +199,7 @@ In the simplest case, we might only want access a backbone and code all the rest
 </span><span id="__span-1-34"><a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a><span class="o">.</span>
 </span><span id="__span-1-35"><a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="o">.</span>
 </span></code></pre></div>
-<h2 id="training-with-lightning-tasks">Training with Lightning Tasks</h2>
+<h2 id="training-with-lightning-tasks">Training with Lightning Tasks<a class="headerlink" href="#training-with-lightning-tasks" title="Permanent link">#</a></h2>
 <p>At the highest level of abstraction, you can directly obtain a LightningModule ready to be trained.</p>
 <p><div class="language-python highlight"><span class="filename">Building a full Pixel-Wise Regression task</span><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">model_args</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  <span class="n">backbone</span><span class="o">=</span><span class="s2">&quot;prithvi_eo_v2_300&quot;</span><span class="p">,</span>
