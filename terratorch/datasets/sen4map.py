@@ -1,18 +1,40 @@
 import numpy as np
 import h5py
+from torchgeo.datasets import NonGeoDataset
 
 import torch
 import torch.nn.functional as F
+from kornia.augmentation.container import VideoSequential, ImageSequential, AugmentationSequential
 from torch.utils.data import Dataset
 from terratorch.datasets.utils import HLSBands
 
 from torchvision.transforms.v2.functional import resize
 from torchvision.transforms.v2 import InterpolationMode
 
+
+
 import pickle
 
 
-class Sen4MapDatasetMonthlyComposites(Dataset):
+
+
+class Sen4MapDatasetMonthlyComposites(NonGeoDataset):
+    all_band_names = (
+        "BLUE",
+        "GREEN",
+        "RED",
+        "RED_EDGE_1",
+        "RED_EDGE_2",
+        "RED_EDGE_3",
+        "NIR_BROAD",
+        "NIR_NARROW",
+        "SWIR_1",
+        "SWIR_2",
+    )
+    
+    rgb_bands = ("RED", "GREEN", "BLUE")
+
+    BAND_SETS = {"all": all_band_names, "rgb": rgb_bands}
     #  This dictionary maps the LUCAS classes to Land-cover classes.
     land_cover_classification_map={'A10':0, 'A11':0, 'A12':0, 'A13':0, 
     'A20':0, 'A21':0, 'A30':0, 
@@ -106,11 +128,14 @@ class Sen4MapDatasetMonthlyComposites(Dataset):
         # we can call dataset with an index, eg. dataset[0]
         im = self.h5data[self.h5data_keys[index]]
         Image, Label = self.get_data(im)
+        
         Image = self.min_max_normalize(Image, [67.0, 122.0, 93.27, 158.5, 160.77, 174.27, 162.27, 149.0, 84.5, 66.27 ],
                                     [2089.0, 2598.45, 3214.5, 3620.45, 4033.61, 4613.0, 4825.45, 4945.72, 5140.84, 4414.45])
         
         Image = Image.clip(0,1)
         Label = torch.LongTensor(Label)
+        
+        
         if self.input_channels:
             Image = Image[self.input_channels, ...]
 
