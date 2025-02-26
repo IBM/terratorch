@@ -1,8 +1,7 @@
 # EncoderDecoderFactory
 
-## The Factory
-
-A special factory provided by terratorch is the [EncoderDecoderFactory][terratorch.models.encoder_decoder_factory.EncoderDecoderFactory].
+The [EncoderDecoderFactory][terratorch.models.encoder_decoder_factory.EncoderDecoderFactory] is the main class
+used to instantiate and compose models for general tasks. 
 
 This factory leverages the `BACKBONE_REGISTRY`, `DECODER_REGISTRY` and `NECK_REGISTRY` to compose models formed as encoder + decoder, with some optional glue in between provided by the necks.
 As most current models work this way, this is a particularly important factory, allowing for great flexibility in combining encoders and decoders from different sources.
@@ -92,9 +91,6 @@ Necks are `nn.Modules`, with an additional method `process_channel_list` which i
 ### :::terratorch.models.necks.AddBottleneckLayer
 
 ### :::terratorch.models.necks.LearnedInterpolateToPyramidal
-
-
-
 
 
 ## Decoders
