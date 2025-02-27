@@ -23,7 +23,7 @@ This library provides:
 
 ## Quick start
 
-    To get started, check out the [quick start guide](quick_start.md)
+To get started, check out the [quick start guide](quick_start.md)
 
 ## License
 TerraTorch is distributed under the terms of License Apache 2.0, see [here](license.md) for more details. 
