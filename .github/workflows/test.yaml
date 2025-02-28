@@ -6,14 +6,14 @@ on:
       - main
     paths-ignore:
       - 'docs/**'
-      - 'README.md'
+      - '*.md'
   pull_request:
     branches:
       - main
       - dev
     paths-ignore:
       - 'docs/**'
-      - 'README.md'
+      - '*.md'
 jobs:
   build:
     runs-on: ubuntu-latest
