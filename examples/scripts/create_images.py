@@ -27,7 +27,7 @@ SPATIAL_REFERENCE_SYSTEM_WKID = 4326
 
 for c in range(n_copies):
 
-    pad = 3#random.randint(1, pad_limit) 
+    pad = random.randint(1, pad_limit) 
     filename = os.path.split(input_file)[-1]
     output_file  = os.path.join(output_dir, filename.replace(".tif", f"_{c}.tif"))
     print(pad)
