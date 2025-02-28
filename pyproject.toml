@@ -30,12 +30,12 @@ authors = [
   { name = "Þorsteinn Elí Gíslason"}
 ]
 classifiers = [
-  "Development Status :: 2 - Pre-Alpha",
-  "Programming Language :: Python",
+#  "Development Status :: 2 - Pre-Alpha",
+#  "Programming Language :: Python",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
-  "Programming Language :: Python :: Implementation :: CPython",
+#  "Programming Language :: Python :: Implementation :: CPython",
 ]
 
 dependencies = [
@@ -94,7 +94,7 @@ peft = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/IBM/terratorch#readme"
+Documentation = "https://ibm.github.io/terratorch/"
 Issues = "https://github.com/IBM/terratorch/issues"
 Source = "https://github.com/IBM/terratorch"
 
