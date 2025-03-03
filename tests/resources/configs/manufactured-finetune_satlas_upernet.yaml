@@ -26,7 +26,7 @@ trainer:
   enable_checkpointing: true
   default_root_dir: tests/
 data:
-  class_path: GenericNonGeoPixelwiseRegressionDataModule
+  class_path: GenericNonGeoSegmentationDataModule
   init_args:
     batch_size: 2
     num_workers: 4
@@ -90,6 +90,7 @@ data:
     - 1067.641
     no_label_replace: -1
     no_data_replace: 0
+    num_classes: 2
 model:
   class_path: terratorch.tasks.SemanticSegmentationTask
   init_args:
