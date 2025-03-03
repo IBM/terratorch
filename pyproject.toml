@@ -43,7 +43,7 @@ dependencies = [
   "torchvision",
   "rioxarray",
   "albumentations==2.0.5",
-  "albucore==0.0.16",
+  "albucore==0.0.23",
   "rasterio",
   "torchmetrics",
   "geopandas",
