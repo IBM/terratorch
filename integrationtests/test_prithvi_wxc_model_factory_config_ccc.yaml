@@ -48,15 +48,15 @@ data:
   # Data transformations
   # Initial crop before any other processing
   crop_lat: [0, 1]
-  # crop_lon: [0, 0]
+  #crop_lon: [0, 0]
   # coarsening of target -- applied after crop
   input_size_lat: 60 # 6x coarsening
   input_size_lon: 96 # 6x coarsening
   apply_smoothen: True
-  data_path_surface: /home/romeokienzler/Downloads/merra-2
-  data_path_vertical: /home/romeokienzler/Downloads/merra-2
-  climatology_path_surface: /home/romeokienzler/Downloads/climatology
-  climatology_path_vertical: /home/romeokienzler/Downloads/climatology
+  data_path_surface: /dccstor/wfm/shared/datasets/training/merra-2_v1/merra-2
+  data_path_vertical: /dccstor/wfm/shared/datasets/training/merra-2_v1/merra-2
+  climatology_path_surface: /dccstor/wfm/shared/datasets/training/merra-2_v1/climatology
+  climatology_path_vertical: /dccstor/wfm/shared/datasets/training/merra-2_v1/climatology
 
 model:
 
@@ -85,10 +85,10 @@ model:
   encoder_decoder_kernel_size_per_stage: [[3], [3]] # Optional, default = 3 for conv_tanspose [[3], [2]]
   encoder_decoder_scale_per_stage: [[2], [3]] # First list determines before/after backbone
   encoder_decoder_conv_channels: 128
-  input_scalers_surface_path: /home/romeokienzler/Downloads/climatology/musigma_surface.nc
-  input_scalers_vertical_path: /home/romeokienzler/Downloads/climatology/musigma_vertical.nc
-  output_scalers_surface_path: /home/romeokienzler/Downloads/climatology/anomaly_variance_surface.nc
-  output_scalers_vertical_path: /home/romeokienzler/Downloads/climatology/anomaly_variance_vertical.nc
+  input_scalers_surface_path: /dccstor/wfm/shared/datasets/training/merra-2_v1/climatology/musigma_surface.nc
+  input_scalers_vertical_path: /dccstor/wfm/shared/datasets/training/merra-2_v1/climatology/musigma_vertical.nc
+  output_scalers_surface_path: /dccstor/wfm/shared/datasets/training/merra-2_v1/climatology/anomaly_variance_surface.nc
+  output_scalers_vertical_path: /dccstor/wfm/shared/datasets/training/merra-2_v1/climatology/anomaly_variance_vertical.nc
 
 
 

@@ -18,6 +18,8 @@ import lightning.pytorch as pl
 from terratorch.datamodules.era5 import ERA5DataModule
 from terratorch.tasks.wxc_task import WxCTask
 from typing import Any
+from terratorch.datamodules.merra2_downscale import Merra2DownscaleNonGeoDataModule
+from granitewxc.utils.data import _get_transforms
 
 
 def setup_function():
@@ -256,7 +258,65 @@ def test_wxc_downscaling_pincer_task():
 
     task = WxCTask('WxCModelFactory', model_args=model_args, mode='train')
 
+def test_wxc_downscaling_pincer_predict():
+    model_args = {
+        "backbone":  "prithviwxc",
+        "aux_decoders": "downscaler",
+        "in_channels": 1280,
+        "input_size_time": 1,
+        "n_lats_px": 64,
+        "n_lons_px": 128,
+        "in_channels_static": 3,
+        "input_scalers_mu": torch.tensor([0] * 1280),
+        "input_scalers_sigma": torch.tensor([1] * 1280),
+        "input_scalers_epsilon": 0,
+        "static_input_scalers_mu": torch.tensor([0] * 3),
+        "static_input_scalers_sigma": torch.tensor([1] * 3),
+        "static_input_scalers_epsilon": 0,
+        "output_scalers": torch.tensor([0] * 1280),
+        "patch_size_px": [2, 2],
+        "mask_unit_size_px": [8, 16],
+        "mask_ratio_inputs": 0.5,
+        "embed_dim": 2560,
+        "n_blocks_encoder": 12,
+        "n_blocks_decoder": 2,
+        "mlp_multiplier": 4,
+        "n_heads": 16,
+        "dropout": 0.0,
+        "drop_path": 0.05,
+        "parameter_dropout": 0.0,
+        "residual": "none",
+        "masking_mode": "both",
+        "positional_encoding": "absolute",
+        "config_path": "./integrationtests/test_prithvi_wxc_model_factory_config_ccc.yaml",
+        "checkpoint_path": "pytorch_model.bin",
+        "wxc_auxiliary_data_path": "/dccstor/wfm/shared/datasets/training/merra-2_v1/",
+    }
 
+
+    task = WxCTask('WxCModelFactory', model_args=model_args, mode='train')
+
+    config = get_config("./integrationtests/test_prithvi_wxc_model_factory_config_ccc.yaml")
+    dm = Merra2DownscaleNonGeoDataModule(
+        time_range=('2020-01-01T00:00:00', '2020-01-01T23:59:59'),
+        data_path_surface = config.data.data_path_surface,
+        data_path_vertical = config.data.data_path_vertical,
+        climatology_path_surface = config.data.climatology_path_surface,
+        climatology_path_vertical = config.data.climatology_path_vertical,
+        input_surface_vars = config.data.input_surface_vars,
+        input_static_surface_vars = config.data.input_static_surface_vars,
+        input_vertical_vars = config.data.input_vertical_vars,
+        input_levels = config.data.input_levels,
+        n_input_timestamps = config.data.n_input_timestamps,
+        output_vars=config.data.output_vars,
+        transforms=_get_transforms(config),
+    )
+    dm.setup('predict')
+
+    trainer = Trainer(
+        max_epochs=1,
+    )
+    results = trainer.predict(model=task, datamodule=dm)
 
 def test_wxc_unet_pincer_train():
     os.environ['MASTER_ADDR'] = 'localhost'
