@@ -20,6 +20,8 @@ from terratorch.datasets import (GenericMultimodalDataset, GenericMultimodalSegm
 from terratorch.datamodules.generic_pixel_wise_data_module import Normalize
 from terratorch.io.file import load_from_file_or_attribute
 
+from .utils import check_dataset_stackability
+
 logger = logging.getLogger("terratorch")
 
 def collate_chunk_dicts(batch_list):
@@ -204,6 +206,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         sample_replace: bool = False,
         channel_position: int = -3,
         concat_bands: bool = False,
+        check_stackability: bool = True,
         **kwargs: Any,
     ) -> None:
         """Constructor
@@ -308,7 +311,9 @@ class GenericMultiModalDataModule(NonGeoDataModule):
             concat_bands (bool): Concatenate all image modalities along the band dimension into a single "image", so
                 that it can be processed by single-modal models. Concatenate in the order of provided modalities.
                 Works with image modalities only. Does not work with allow_missing_modalities. Defaults to False.
+            check_stackability (bool): Check if all the files in the dataset has the same size and can be stacked.
         """
+
         if task == "segmentation":
             dataset_class = GenericMultimodalSegmentationDataset
         elif task == "regression":
@@ -364,6 +369,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.reduce_zero_label = reduce_zero_label
         self.channel_position = channel_position
         self.concat_bands = concat_bands
+        self.check_stackability = check_stackability
 
         if isinstance(train_transform, dict):
             self.train_transform = {m: wrap_in_compose_is_list(train_transform[m]) if m in train_transform else None
@@ -526,6 +532,11 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         """
         dataset = self._valid_attribute(f"{split}_dataset", "dataset")
         batch_size = self._valid_attribute(f"{split}_batch_size", "batch_size")
+
+        if self.check_stackability:
+            print("Checking stackability.")
+            batch_size = check_dataset_stackability(dataset, batch_size)
+
         if self.sample_num_modalities:
             # Custom batch sampler for sampling modalities per batch
             batch_sampler = MultiModalBatchSampler(

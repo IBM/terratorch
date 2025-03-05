@@ -86,7 +86,7 @@ model:
     model_args:
       backbone: prithvi_eo_v2_300
       backbone_pretrained: false
-      backbone_ckpt_path: examples/Prithvi_100M.pt
+      backbone_ckpt_path: examples/Prithvi_EO_V2_300M.pt
       backbone_drop_path: 0.1
       backbone_bands:
         - BLUE

@@ -7,7 +7,7 @@ include = ["terratorch*"]
 
 [project]
 name = "terratorch"
-version = "0.99.7"
+version = "0.99.8"
 description = "TerraTorch - A model training toolkit for geospatial tasks"
 license = { "text" = "Apache License, Version 2.0" }
 readme = "README.md"
@@ -17,7 +17,17 @@ authors = [
   { name = "Carlos Gomes", email = "carlos.gomes@ibm.com" },
   { name = "Joao Lucas de Sousa Almeida", email = "joao.lucas.sousa.almeida@ibm.com"},
   { name = "Romeo Kienzler"},
-  { name = "Benedikt Blumenstiel"}
+  { name = "Benedikt Blumenstiel"},
+  { name = "Francesc Martí Escofet"},
+  { name = "Paolo Fraccaro"},
+  { name = "Pedro Henrique Conrado"},
+  { name = "Jaione Tirapu Azpiroz"},
+  { name = "Daniela Szwarcman"},
+  { name = "Bianca Zadrozny"},
+  { name = "Þorsteinn Elí Gíslason"},
+  { name = "Raunak Bhansali"},
+  { name = "Takao Moriyama"},
+  { name = "Þorsteinn Elí Gíslason"}
 ]
 classifiers = [
   "Development Status :: 2 - Pre-Alpha",
@@ -32,7 +42,7 @@ dependencies = [
   "torch",
   "torchvision",
   "rioxarray",
-  "albumentations==1.4.10",
+  "albumentations==1.4.0",
   "albucore==0.0.16",
   "rasterio",
   "torchmetrics",
@@ -45,14 +55,13 @@ dependencies = [
   "segmentation-models-pytorch",
   "jsonargparse",
   "pytest",
+  #"torchgeo @ git+https://github.com/microsoft/torchgeo.git@fedf99375535f801565856cd774bfa9e5a251d55",
+  "torchgeo",
+  "einops"
 ]
+
 
 [project.optional-dependencies]
-torchgeo = [
-  #"torchgeo @ git+https://github.com/microsoft/torchgeo.git@fedf99375535f801565856cd774bfa9e5a251d55",
-  "torchgeo"
-]
-
 dev = [
   "black",
   "mkdocs-material",

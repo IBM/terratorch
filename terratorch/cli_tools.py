@@ -64,6 +64,8 @@ from terratorch.tasks import (
 
 logger = logging.getLogger("terratorch")
 
+from terratorch.utils import remove_unexpected_prefix
+
 def flatten(list_of_lists):
     return list(itertools.chain.from_iterable(list_of_lists))
 
@@ -80,6 +82,11 @@ def is_one_band(img):
 
 
 def write_tiff(img_wrt, filename, metadata):
+
+    # Adapting the number of bands to be compatible with the 
+    # output dimensions.
+    count = img_wrt.shape[0]
+    metadata['count'] = count
 
     with rasterio.open(filename, "w", **metadata) as dest:
         if is_one_band(img_wrt):
@@ -215,7 +222,12 @@ def clean_config_for_deployment_and_dump(config: dict[str, Any]):
     ## Model
     # set pretrained to false
     if "model_args" in deploy_config["model"]["init_args"]:
-        deploy_config["model"]["init_args"]["model_args"]["pretrained"] = False
+        # for the new prithvi EO v2 models, alter the backbone_pretrained value only.
+        if "pretrained" in deploy_config["model"]["init_args"]["model_args"]:
+            deploy_config["model"]["init_args"]["model_args"]["pretrained"] = False
+        elif "backbone_pretrained" in deploy_config["model"]["init_args"]["model_args"]:
+            deploy_config["model"]["init_args"]["model_args"]["backbone_pretrained"] = False
+    
 
     return yaml.safe_dump(deploy_config)
 
@@ -486,6 +498,9 @@ class LightningInferenceModel:
             weights = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
             if "state_dict" in weights:
                 weights = weights["state_dict"]
+            # It removes a residual prefix (related to timm) from older
+            # checkpoints.
+            weights = remove_unexpected_prefix(weights)
             weights = {k.replace("model.", ""): v for k, v in weights.items() if k.startswith("model.")}
             self.model.model.load_state_dict(weights)
 

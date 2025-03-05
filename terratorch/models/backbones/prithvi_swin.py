@@ -97,6 +97,21 @@ def weights_are_swin_implementation(state_dict: dict[str, torch.Tensor]):
             return True
     return False
 
+# Identifying when a prefix is being used in the checkpoints
+# it will identify it. 
+def identify_prefix(state_dict, model):
+
+    state_dict_ = model.state_dict()
+
+    prefix = list(state_dict.keys())[0].replace(list(state_dict_.keys())[0], "")
+
+    return prefix 
+
+# Replacing "_" with "." when necessary.
+def adapt_prefix(key):
+    if key.startswith("stages_"):
+        key = key.replace("stages_", "stages.")
+    return key 
 
 def checkpoint_filter_fn(state_dict: dict[str, torch.Tensor], model: torch.nn.Module, pretrained_bands, model_bands):
     """convert patch embedding weight from manual patchify + linear proj to conv"""
@@ -134,9 +149,27 @@ def checkpoint_filter_fn(state_dict: dict[str, torch.Tensor], model: torch.nn.Mo
                 state_dict[k] = v
 
     relative_position_bias_table_keys = [k for k in state_dict.keys() if "relative_position_bias_table" in k]
+    # Sometimes the checkpoints can contain an unexpected prefix that must be
+    # removed. 
+    prefix = identify_prefix(state_dict, model)
+
     for table_key in relative_position_bias_table_keys:
+
+        # The checkpoints can sometimes contain unexpected prefixes.
+        # TODO Guarantee that it will not happen in the future.
+        if prefix:
+            table_key_ = table_key.replace(prefix, "")
+        else:
+            table_key_  = table_key
+
+        # In an unexpected behavior, the prefix can sometimes contain
+        # "_" or ".". We are enforcing ".". 
+        # TODO Standardize it. 
+        table_key_ = adapt_prefix(table_key_)
+
         table_pretrained = state_dict[table_key]
-        table_current = model.state_dict()[table_key]
+
+        table_current = model.state_dict()[table_key_]
         L1, nH1 = table_pretrained.size()
         L2, nH2 = table_current.size()
         if nH1 != nH2:
@@ -190,6 +223,7 @@ def _create_swin_mmseg_transformer(
     def checkpoint_filter_wrapper_fn(state_dict, model):
         return checkpoint_filter_fn(state_dict, model, pretrained_bands, model_bands)
 
+    # TODO Totally remove the usage of timm for Swin in the future.
     # When the pretrained configuration is not available in HF, we shift to 
     # pretrained=False
     try:
