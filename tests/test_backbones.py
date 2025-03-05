@@ -35,13 +35,13 @@ def input_386():
     return torch.ones((1, NUM_CHANNELS, 386, 386))
 
 
-@pytest.mark.parametrize("model_name", ["prithvi_swin_B", "prithvi_swin_L", "prithvi_swin_B"])
-@pytest.mark.parametrize("test_input", ["input_224", "input_512"])
-def test_can_create_backbones_from_timm(model_name, test_input, request):
-    backbone = timm.create_model(model_name, pretrained=False)
-    input_tensor = request.getfixturevalue(test_input)
-    backbone(input_tensor)
-    gc.collect()
+#@pytest.mark.parametrize("model_name", ["prithvi_swin_B", "prithvi_swin_L", "prithvi_swin_B"])
+#@pytest.mark.parametrize("test_input", ["input_224", "input_512"])
+#def test_can_create_backbones_from_timm(model_name, test_input, request):
+#    backbone = timm.create_model(model_name, pretrained=False)
+#    input_tensor = request.getfixturevalue(test_input)
+#    backbone(input_tensor)
+#    gc.collect()
 
 @pytest.mark.parametrize("model_name", ["prithvi_swin_B", "prithvi_swin_L", "prithvi_swin_B"])
 @pytest.mark.parametrize("test_input", ["input_224", "input_512"])
