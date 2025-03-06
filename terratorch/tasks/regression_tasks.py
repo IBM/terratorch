@@ -365,7 +365,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
             model_output: ModelOutput = self(x, **rest)
         except RuntimeError:
             logger.info("\n The input sample could not run in a full format. Using tiled inference.")
-            looger.info("Notice thaat the tiled inference WON'T produce the exactly same result as the full inference.")
+            looger.info("Notice that the tiled inference WON'T produce the exactly same result as the full inference.")
             if self.tiled_inference_parameters:
                 y_hat: Tensor = tiled_inference(
                     model_forward,
