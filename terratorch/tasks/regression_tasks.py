@@ -363,7 +363,8 @@ class PixelwiseRegressionTask(TerraTorchTask):
         # the tiled inference is automatically invoked.
         try:
             model_output: ModelOutput = self(x, **rest)
-        except Exception:
+        except RuntimeError:
+            logger.info("\n The input sample could not run in a full format. Using tiled inference.")
             if self.tiled_inference_parameters:
                 y_hat: Tensor = tiled_inference(
                     model_forward,
@@ -372,7 +373,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
                     self.tiled_inference_parameters,
                     **rest,
                 )
-                model_output = ModelOutput(mask=y_hat)
+                model_output = ModelOutput(output=y_hat)
             else:
                 raise Exception("You need to define a configuration for the tiled inference.")
 
