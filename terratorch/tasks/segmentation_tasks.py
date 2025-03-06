@@ -18,6 +18,7 @@ from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
 from terratorch.tasks.tiled_inference import TiledInferenceParameters, tiled_inference
 from terratorch.tasks.base_task import TerraTorchTask
+from terratorch.models.model import ModelOutput
 
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
 
@@ -266,7 +267,27 @@ class SemanticSegmentationTask(TerraTorchTask):
 
         rest = {k: batch[k] for k in other_keys}
 
-        model_output: ModelOutput = self(x, **rest)
+
+        def model_forward(x,  **kwargs):
+            return self(x, **kwargs).output
+
+        # When the input sample cannot be fit on memory for some reason
+        # the tiled inference is automatically invoked.
+        try:
+            model_output: ModelOutput = self(x, **rest)
+        except Exception:
+            if self.tiled_inference_parameters:
+                y_hat: Tensor = tiled_inference(
+                    model_forward,
+                    x,
+                    self.hparams["model_args"]["num_classes"],
+                    self.tiled_inference_parameters,
+                    **rest,
+                )
+                model_output = ModelOutput(mask=y_hat)
+            else:
+                raise Exception("You need to define a configuration for the tiled inference.")
+
         if dataloader_idx >= len(self.test_loss_handler):
             msg = "You are returning more than one test dataloader but not defining enough test_dataloaders_names."
             raise ValueError(msg)
