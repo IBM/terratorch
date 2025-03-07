@@ -141,12 +141,7 @@ class Registry(Set):
         """Build and return the component.
         Use prefixes ending with _ to forward to a specific source
         """
-        try:
-            return self._registry[name](*constructor_args, **constructor_kwargs)
-        except KeyError as ke:
-            for key in self._registry.keys():
-                logger.debug(f'Registered registry {key}')
-            raise ValueError(f"Class '{name}' is not registered.") from ke
+        return self._registry[name](*constructor_args, **constructor_kwargs)
 
     def __iter__(self):
         return iter(self._registry)
