@@ -3,6 +3,9 @@ from collections import OrderedDict
 from collections.abc import Callable, Mapping, Set
 from contextlib import suppress
 from reprlib import recursive_repr as _recursive_repr
+import logging
+
+logger = logging.getLogger(__name__)
 
 class BuildableRegistry(typing.Protocol):
     def __iter__(self): ...
@@ -138,7 +141,12 @@ class Registry(Set):
         """Build and return the component.
         Use prefixes ending with _ to forward to a specific source
         """
-        return self._registry[name](*constructor_args, **constructor_kwargs)
+        try:
+            return self._registry[name](*constructor_args, **constructor_kwargs)
+        except KeyError as ke:
+            for key in self._registry.keys():
+                logger.debug(f'Registered registry {key}')
+            raise ValueError(f"Class '{name}' is not registered.") from ke
 
     def __iter__(self):
         return iter(self._registry)
