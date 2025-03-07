@@ -315,7 +315,8 @@ class StudioDeploySaveConfigCallback(SaveConfigCallback):
         # broadcast so that all ranks are in sync on future calls to .setup()
         self.already_saved = trainer.strategy.broadcast(self.already_saved)
         # Copying config file to log dir
-        shutil.copyfile(self.config_path_original, self.config_path_new)
+        if os.path.abspath(self.config_path_original) != os.path.abspath(self.config_path_new):
+            shutil.copyfile(self.config_path_original, self.config_path_new)
 
 class StateDictAwareModelCheckpoint(ModelCheckpoint):
     # necessary as we wish to have one model checkpoint with only state dict and one with standard lightning checkpoints
