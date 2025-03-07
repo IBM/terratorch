@@ -384,12 +384,12 @@ class PixelwiseRegressionTask(TerraTorchTask):
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
 
-        def model_forward(x):
+        def model_forward(x, **kwargs):
             return self(x).output
 
         if self.tiled_inference_parameters:
             # TODO: tiled inference does not work with additional input data (**rest)
-            y_hat: Tensor = tiled_inference(model_forward, x, 1, self.tiled_inference_parameters)
+            y_hat: Tensor = tiled_inference(model_forward, x, 1, self.tiled_inference_parameters, **rest)
         else:
             y_hat: Tensor = self(x, **rest).output
         return y_hat, file_names
