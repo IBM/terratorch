@@ -21,8 +21,7 @@ from torchgeo.datasets import NonGeoDataset
 
 
 class ForestNetNonGeo(NonGeoDataset):
-    """NonGeo dataset implementation for ForestNet."""
-
+    """NonGeo dataset implementation for [ForestNet](https://huggingface.co/datasets/ibm-nasa-geospatial/ForestNet)."""
 
     all_band_names = (
         "RED", "GREEN", "BLUE", "NIR", "SWIR_1", "SWIR_2"

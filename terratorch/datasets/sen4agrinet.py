@@ -45,7 +45,7 @@ class Sen4AgriNet(NonGeoDataset):
         seed: int = 42,
     ):
         """
-        Pytorch Dataset class to load samples from the Sen4AgriNet dataset, supporting
+        Pytorch Dataset class to load samples from the [Sen4AgriNet](https://github.com/Orion-AI-Lab/S4A) dataset, supporting
         multiple scenarios for splitting the data.
 
         Args:

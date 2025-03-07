@@ -19,7 +19,7 @@ from torchgeo.datasets import NonGeoDataset
 
 
 class CarbonFluxNonGeo(NonGeoDataset):
-    """Dataset for Carbon Flux regression from HLS images and MERRA data."""
+    """Dataset for [Carbon Flux](https://huggingface.co/datasets/ibm-nasa-geospatial/hls_merra2_gppFlux) regression from HLS images and MERRA data."""
 
     all_band_names = (
         "BLUE", "GREEN", "RED", "NIR", "SWIR_1", "SWIR_2",

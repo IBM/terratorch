@@ -13,6 +13,15 @@ from terratorch.datasets.utils import to_tensor
 
 
 class OpenEarthMapNonGeo(NonGeoDataset):
+    """
+    [OpenEarthMapNonGeo](https://open-earth-map.org/) Dataset for non-georeferenced imagery.
+
+    This dataset class handles non-georeferenced image data from the OpenEarthMap dataset.
+    It supports configurable band sets and transformations, and performs cropping operations
+    to ensure that the images conform to the required input dimensions. The dataset is split
+    into "train", "test", and "val" subsets based on the provided split parameter.
+    """
+
     
     all_band_names = ("BLUE","GREEN","RED")
 
@@ -26,6 +35,24 @@ class OpenEarthMapNonGeo(NonGeoDataset):
                  split="train",
                  crop_size: int = 256,
                  random_crop: bool = True) -> None:
+        """
+        Initialize a new instance of the OpenEarthMapNonGeo dataset.
+
+        Args:
+            data_root (str): The root directory containing the dataset files.
+            bands (Sequence[str], optional): A list of band names to be used. Default is BAND_SETS["all"].
+            transform (A.Compose or None, optional): A transformation pipeline to be applied to the data.
+                If None, a default transform converting the data to a tensor is applied.
+            split (str, optional): The dataset split to use ("train", "test", or "val"). Default is "train".
+            crop_size (int, optional): The size (in pixels) of the crop to apply to images. Must be greater than 0.
+                Default is 256.
+            random_crop (bool, optional): If True, performs a random crop; otherwise, performs a center crop.
+                Default is True.
+
+        Raises:
+            Exception: If the provided split is not one of "train", "test", or "val".
+            AssertionError: If crop_size is not greater than 0.
+        """
         super().__init__()
         if split not in ["train", "test", "val"]:
             msg = "Split must be one of train, test, val."

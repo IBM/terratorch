@@ -20,7 +20,7 @@ from terratorch.datasets.utils import (
 
 
 class MNzCattleNonGeo(NonGeoDataset):
-    """NonGeo dataset implementation for M-NZ-Cattle."""
+    """NonGeo dataset implementation for [M-NZ-Cattle](https://github.com/ServiceNow/geo-bench?tab=readme-ov-file)."""
     all_band_names = ("BLUE", "GREEN", "RED")
 
     rgb_bands = ("RED", "GREEN", "BLUE")

@@ -22,7 +22,7 @@ from terratorch.datasets.utils import clip_image, default_transform, filter_vali
 
 
 class MultiTemporalCropClassification(NonGeoDataset):
-    """NonGeo dataset implementation for multi-temporal crop classification."""
+    """NonGeo dataset implementation for [multi-temporal crop classification](https://huggingface.co/datasets/ibm-nasa-geospatial/multi-temporal-crop-classification)."""
 
     all_band_names = (
         "BLUE",

@@ -61,7 +61,7 @@ STDS = {
 }
 
 class BioMasstersNonGeoDataModule(NonGeoDataModule):
-    """NonGeo datamodule implementation for BioMassters."""
+    """NonGeo LightningDataModule implementation for BioMassters datamodule."""
 
     default_metadata_filename = "The_BioMassters_-_features_metadata.csv.csv"
 
@@ -88,6 +88,35 @@ class BioMasstersNonGeoDataModule(NonGeoDataModule):
         use_four_frames: bool = False,
         **kwargs: Any,
     ) -> None:
+        """
+        Initializes the DataModule for the non-geospatial BioMassters datamodule.
+
+        Args:
+            data_root (str): Root directory containing the dataset.
+            batch_size (int, optional): Batch size for DataLoaders. Defaults to 4.
+            num_workers (int, optional): Number of workers for data loading. Defaults to 0.
+            bands (dict[str, Sequence[str]] | Sequence[str], optional): Band configuration; either a dict mapping sensors to bands or a list for the first sensor.
+                Defaults to BioMasstersNonGeo.all_band_names
+            train_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for training data.
+            val_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for validation data.
+            test_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for testing data.
+            predict_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for prediction data.
+            aug (AugmentationSequential, optional): Augmentation or normalization to apply. Defaults to normalization if not provided.
+            drop_last (bool, optional): Whether to drop the last incomplete batch. Defaults to True.
+            sensors (Sequence[str], optional): List of sensors to use (e.g., ["S1", "S2"]). Defaults to ["S1", "S2"].
+            as_time_series (bool, optional): Whether to treat data as a time series. Defaults to False.
+            metadata_filename (str, optional): Metadata filename. Defaults to "The_BioMassters_-_features_metadata.csv.csv".
+            max_cloud_percentage (float | None, optional): Maximum allowed cloud percentage. Defaults to None.
+            max_red_mean (float | None, optional): Maximum allowed red band mean. Defaults to None.
+            include_corrupt (bool, optional): Whether to include corrupt data. Defaults to True.
+            subset (float, optional): Fraction of the dataset to use. Defaults to 1.
+            seed (int, optional): Random seed for reproducibility. Defaults to 42.
+            use_four_frames (bool, optional): Whether to use a four frames configuration. Defaults to False.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            None.
+        """
         super().__init__(BioMasstersNonGeo, batch_size, num_workers, **kwargs)
         self.data_root = data_root
         self.sensors = sensors
@@ -124,6 +153,11 @@ class BioMasstersNonGeoDataModule(NonGeoDataModule):
         self.use_four_frames = use_four_frames
 
     def setup(self, stage: str) -> None:
+        """Set up datasets.
+
+        Args:
+            stage: Either fit, validate, test, or predict.
+        """
         if stage in ["fit"]:
             self.train_dataset = self.dataset_class(
                 split="train",

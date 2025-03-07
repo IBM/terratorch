@@ -14,6 +14,10 @@ from terratorch.datasets.utils import pad_dates_numpy, pad_numpy
 
 
 class PASTIS(NonGeoDataset):
+    """"
+        Pytorch Dataset class to load samples from the [PASTIS](https://github.com/VSainteuf/pastis-benchmark) dataset,
+        for semantic and panoptic segmentation.
+    """
     def __init__(
         self,
         data_root,
@@ -29,8 +33,6 @@ class PASTIS(NonGeoDataset):
         satellites=["S2"],  # noqa: B006
     ):
         """
-        Pytorch Dataset class to load samples from the PASTIS dataset, for semantic and
-        panoptic segmentation.
 
         Args:
             data_root (str): Path to the dataset.
