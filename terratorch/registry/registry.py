@@ -3,6 +3,9 @@ from collections import OrderedDict
 from collections.abc import Callable, Mapping, Set
 from contextlib import suppress
 from reprlib import recursive_repr as _recursive_repr
+import logging
+
+logger = logging.getLogger(__name__)
 
 class BuildableRegistry(typing.Protocol):
     def __iter__(self): ...
