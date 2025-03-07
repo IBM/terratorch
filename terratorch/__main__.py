@@ -11,7 +11,9 @@ from typing import List, Any
 
 def main():
     
-    if sys.argv[1] in ["hpo", "repeat"]:
+    if sys.argv[1] in ["iterate"]:
+        print("Running terratorch-iterate...")
+        del sys.argv[1]
         parser = ArgumentParser()
 
         parser.add_argument('--defaults', type=Defaults)  # to ignore model
