@@ -17,7 +17,7 @@ from terratorch.datasets.utils import (
 
 
 class MEuroSATNonGeo(NonGeoDataset):
-    """NonGeo dataset implementation for M-EuroSAT."""
+    """NonGeo dataset implementation for [M-EuroSAT](https://github.com/ServiceNow/geo-bench?tab=readme-ov-file)."""
     all_band_names = (
         "COASTAL_AEROSOL",
         "BLUE",

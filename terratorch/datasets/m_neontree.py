@@ -18,7 +18,7 @@ from terratorch.datasets.utils import (
 
 
 class MNeonTreeNonGeo(NonGeoDataset):
-    """NonGeo dataset implementation for M-NeonTree."""
+    """NonGeo dataset implementation for [M-NeonTree](https://github.com/ServiceNow/geo-bench?tab=readme-ov-file)."""
     all_band_names = ("BLUE", "CANOPY_HEIGHT_MODEL", "GREEN", "NEON", "RED")
 
     rgb_bands = ("RED", "GREEN", "BLUE")

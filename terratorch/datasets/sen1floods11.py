@@ -22,7 +22,7 @@ from terratorch.datasets.utils import clip_image, default_transform, filter_vali
 
 
 class Sen1Floods11NonGeo(NonGeoDataset):
-    """NonGeo dataset implementation for sen1floods11."""
+    """NonGeo dataset implementation for [sen1floods11](https://github.com/cloudtostreet/Sen1Floods11)."""
 
     all_band_names = (
             "COASTAL_AEROSOL",
@@ -66,8 +66,7 @@ class Sen1Floods11NonGeo(NonGeoDataset):
             split (str): one of 'train', 'val' or 'test'.
             bands (list[str]): Bands that should be output by the dataset. Defaults to all bands.
             transform (A.Compose | None): Albumentations transform to be applied.
-                Should end with ToTensorV2(). If used through the corresponding data module,
-                should not include normalization. Defaults to None, which applies ToTensorV2().
+                Should end with ToTensorV2(). Defaults to None, which applies ToTensorV2().
             constant_scale (float): Factor to multiply image values by. Defaults to 0.0001.
             no_data_replace (float | None): Replace nan values in input images with this value.
                 If None, does no replacement. Defaults to 0.

@@ -15,8 +15,7 @@ from torchgeo.datasets import NonGeoDataset
 
 
 class Landslide4SenseNonGeo(NonGeoDataset):
-    """NonGeo dataset implementation for Landslide4Sense."""
-
+    """NonGeo dataset implementation for [Landslide4Sense](https://huggingface.co/datasets/ibm-nasa-geospatial/Landslide4sense)."""
     all_band_names = (
         "COASTAL AEROSOL",
         "BLUE",

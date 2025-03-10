@@ -8,6 +8,8 @@ from torchgeo.datamodules import NonGeoDataModule
 
 
 class Sen4AgriNetDataModule(NonGeoDataModule):
+    """NonGeo LightningDataModule implementation for Sen4AgriNet."""
+
     def __init__(
         self,
         bands: list[str] | None = None,
@@ -25,6 +27,28 @@ class Sen4AgriNetDataModule(NonGeoDataModule):
         linear_encoder: dict = None,
         **kwargs: Any,
     ) -> None:
+        """
+        Initializes the Sen4AgriNetDataModule for the Sen4AgriNet dataset.
+
+        Args:
+            bands (list[str] | None, optional): List of bands to use. Defaults to None.
+            batch_size (int, optional): Batch size for DataLoaders. Defaults to 8.
+            num_workers (int, optional): Number of workers for data loading. Defaults to 0.
+            data_root (str, optional): Root directory of the dataset. Defaults to "./".
+            train_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for training data.
+            val_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for validation data.
+            test_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for test data.
+            predict_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for prediction data.
+            seed (int, optional): Random seed for reproducibility. Defaults to 42.
+            scenario (str): Defines the splitting scenario to use. Options are:
+                - 'random': Random split of the data.
+                - 'spatial': Split by geographical regions (Catalonia and France).
+                - 'spatio-temporal': Split by region and year (France 2019 and Catalonia 2020).
+            requires_norm (bool, optional): Whether normalization is required. Defaults to True.
+            binary_labels (bool, optional): Whether to use binary labels. Defaults to False.
+            linear_encoder (dict, optional): Mapping for label encoding. Defaults to None.
+            **kwargs: Additional keyword arguments.
+        """
         super().__init__(
             Sen4AgriNet,
             batch_size=batch_size,
@@ -45,6 +69,11 @@ class Sen4AgriNetDataModule(NonGeoDataModule):
         self.kwargs = kwargs
 
     def setup(self, stage: str) -> None:
+        """Set up datasets.
+
+        Args:
+            stage: Either fit, validate, test, or predict.
+        """
         if stage in ["fit"]:
             self.train_dataset = Sen4AgriNet(
                 split="train",

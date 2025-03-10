@@ -21,6 +21,8 @@ STDS = {
 }
 
 class OpenEarthMapNonGeoDataModule(NonGeoDataModule):
+    """NonGeo LightningDataModule implementation for Open Earth Map."""
+
     def __init__(
         self, 
         batch_size: int = 8, 
@@ -33,6 +35,20 @@ class OpenEarthMapNonGeoDataModule(NonGeoDataModule):
         aug: AugmentationSequential = None,
         **kwargs: Any
     ) -> None:
+        """
+        Initializes the OpenEarthMapNonGeoDataModule for the Open Earth Map dataset.
+
+        Args:
+            batch_size (int, optional): Batch size for DataLoaders. Defaults to 8.
+            num_workers (int, optional): Number of workers for data loading. Defaults to 0.
+            data_root (str, optional): Root directory of the dataset. Defaults to "./".
+            train_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for training data.
+            val_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for validation data.
+            test_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for test data.
+            predict_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for prediction data.
+            aug (AugmentationSequential, optional): Augmentation pipeline; if None, defaults to normalization using computed means and stds.
+            **kwargs: Additional keyword arguments. Can include 'bands' (list[str]) to specify the bands; defaults to OpenEarthMapNonGeo.all_band_names if not provided.
+        """
         super().__init__(OpenEarthMapNonGeo, batch_size, num_workers, **kwargs)
 
         bands = kwargs.get("bands", OpenEarthMapNonGeo.all_band_names)
@@ -46,6 +62,11 @@ class OpenEarthMapNonGeoDataModule(NonGeoDataModule):
         self.aug = AugmentationSequential(K.Normalize(self.means, self.stds), data_keys=["image"]) if aug is None else aug
 
     def setup(self, stage: str) -> None:
+        """Set up datasets.
+
+        Args:
+            stage: Either fit, validate, test, or predict.
+        """
         if stage in ["fit"]:
             self.train_dataset = self.dataset_class(  
                 split="train", data_root=self.data_root, transform=self.train_transform, **self.kwargs
