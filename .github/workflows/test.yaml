@@ -39,5 +39,5 @@ jobs:
           pytest -s --cov=terratorch tests
         # Add this
       - name: Update coverage badge
-        uses: ibm/coverage-badge-action@main
+        uses: actions/coverage-badge-action@main
 
