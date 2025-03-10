@@ -1,5 +1,6 @@
 
 <img src="https://github.com/user-attachments/assets/f8c9586f-6220-4a53-9669-2aee3300b492" alt="TerraTorch"  width="400"/>
++ [![cov](https://ibm.github.io/terratorch/badges/coverage.svg)](https://github.com/ibm/terratorch/actions)
 
 ## Overview
 TerraTorch is a library based on [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/) and the [TorchGeo](https://github.com/microsoft/torchgeo) domain library

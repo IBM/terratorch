@@ -28,6 +28,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install pytest-cov
           pip install -e .[test]
           pip install git+https://github.com/NASA-IMPACT/Prithvi-WxC.git
           pip install git+https://github.com/IBM/granite-wxc.git
@@ -35,6 +36,6 @@ jobs:
         run: pip list
       - name: Test with pytest
         run: |
-          pytest -s tests
+          pytest -s --cov=terratorch tests
 
 
