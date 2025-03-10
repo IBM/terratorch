@@ -53,10 +53,10 @@ data:
   input_size_lat: 60 # 6x coarsening 
   input_size_lon: 96 # 6x coarsening 
   apply_smoothen: True
-  data_path_surface: /home/romeokienzler/Downloads/merra-2
-  data_path_vertical: /home/romeokienzler/Downloads/merra-2
-  climatology_path_surface: /home/romeokienzler/Downloads/climatology
-  climatology_path_vertical: /home/romeokienzler/Downloads/climatology
+  data_path_surface: /path/to/merra-2
+  data_path_vertical: /path/to/merra-2
+  climatology_path_surface: /path/to/climatology
+  climatology_path_vertical: /path/to/climatology
 
 model:
     # Platform independent config
@@ -86,10 +86,10 @@ model:
     encoder_decoder_conv_channels: 128
     freeze_backbone: True
     freeze_decoder: False
-    input_scalers_surface_path: /home/romeokienzler/Downloads/climatology/musigma_surface.nc
-    input_scalers_vertical_path: /home/romeokienzler/Downloads/climatology/musigma_vertical.nc
-    output_scalers_surface_path: /home/romeokienzler/Downloads/climatology/anomaly_variance_surface.nc
-    output_scalers_vertical_path: /home/romeokienzler/Downloads/climatology/anomaly_variance_vertical.nc
+    input_scalers_surface_path: /path/to/climatology/musigma_surface.nc
+    input_scalers_vertical_path: /path/to/climatology/musigma_vertical.nc
+    output_scalers_surface_path: /path/to/climatology/anomaly_variance_surface.nc
+    output_scalers_vertical_path: /path/to/climatology/anomaly_variance_vertical.nc
 
 
 
