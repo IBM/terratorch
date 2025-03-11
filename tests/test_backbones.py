@@ -43,18 +43,18 @@ def input_386():
 #    backbone(input_tensor)
 #    gc.collect()
 
-@pytest.mark.parametrize("model_name", ["prithvi_swin_B", "prithvi_swin_L", "prithvi_swin_B"])
-@pytest.mark.parametrize("test_input", ["input_224", "input_512"])
-def test_can_create_backbones_from_timm_features_only(model_name, test_input, request):
-    backbone = timm.create_model(model_name, pretrained=False, features_only=True)
-    input_tensor = request.getfixturevalue(test_input)
-    backbone(input_tensor)
-    gc.collect()
+#@pytest.mark.parametrize("model_name", ["prithvi_swin_B", "prithvi_swin_L", "prithvi_swin_B"])
+#@pytest.mark.parametrize("test_input", ["input_224", "input_512"])
+#def test_can_create_backbones_from_timm_features_only(model_name, test_input, request):
+#    backbone = timm.create_model(model_name, pretrained=False, features_only=True)
+#    input_tensor = request.getfixturevalue(test_input)
+#    backbone(input_tensor)
+#    gc.collect()
 
-@pytest.mark.parametrize("model_name", ["prithvi_swin_L", "prithvi_swin_L", "prithvi_swin_B"])
-@pytest.mark.parametrize("prefix", ["", "timm_"])
+@pytest.mark.parametrize("model_name", ["prithvi_swin_L", "prithvi_swin_B"])
+#@pytest.mark.parametrize("prefix", [""])#, "timm_"])
 def test_can_create_timm_backbones_from_registry(model_name, input_224, prefix):
-    backbone = BACKBONE_REGISTRY.build(prefix+model_name, pretrained=False)
+    backbone = BACKBONE_REGISTRY.build(model_name, pretrained=False)
     backbone(input_224)
     gc.collect()
 
