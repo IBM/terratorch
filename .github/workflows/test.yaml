@@ -42,6 +42,6 @@ jobs:
           pytest -s --cov=terratorch tests
           coverage-badge -o assets/coverage_badge.svg
       - name: Update coverage badge
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v3
         with:
           path: ./assets
