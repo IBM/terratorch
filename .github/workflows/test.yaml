@@ -34,9 +34,11 @@ jobs:
           pip install git+https://github.com/IBM/granite-wxc.git
       - name: List pip dependencies
         run: pip list
-      - name: Test with pytest
+      - name: Create directory for temporary outputs
         run: |
           mkdir assets
+      - name: Test with pytest
+        run: |
           pytest -s --cov=terratorch tests
           coverage-badge -o assets/coverage_badge.svg
       - name: Update coverage badge
