@@ -10,12 +10,13 @@ from collections import OrderedDict
 import torch
 from timm.models import SwinTransformer
 from timm.models._builder import build_model_with_cfg
-from timm.models._registry import generate_default_cfgs, register_model
+from timm.models._registry import generate_default_cfgs
 
 from terratorch.datasets.utils import HLSBands
 from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
 from terratorch.models.backbones.swin_encoder_decoder import MMSegSwinTransformer
 from terratorch.datasets.utils import generate_bands_intervals
+from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
 
 logger = logging.getLogger(__name__)
 
@@ -261,8 +262,7 @@ def _create_swin_mmseg_transformer(
     model.prepare_features_for_image_model = prepare_features_for_image_model
     return model
 
-
-@register_model
+@TERRATORCH_BACKBONE_REGISTRY.register
 def prithvi_swin_B(
     pretrained: bool = False,  # noqa: FBT002, FBT001
     pretrained_bands: list[HLSBands] | None = None,
@@ -293,7 +293,7 @@ def prithvi_swin_B(
     return transformer
 
 
-@register_model
+@TERRATORCH_BACKBONE_REGISTRY.register
 def prithvi_swin_L(
     pretrained: bool = False,  # noqa: FBT002, FBT001
     pretrained_bands: list[HLSBands] | None = None,
