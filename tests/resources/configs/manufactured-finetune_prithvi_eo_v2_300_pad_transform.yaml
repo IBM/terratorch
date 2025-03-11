@@ -20,20 +20,7 @@ trainer:
       init_args:
         monitor: val/loss
         patience: 100
-    - class_path: StateDictAwareModelCheckpoint
-      init_args:
-        filename: "{epoch}"
-        monitor: "val/loss"
-        every_n_epochs: 2
-        verbose: true
-    - class_path: StateDictAwareModelCheckpoint
-      init_args:
-        filename: "{epoch}_state_dict"
-        save_weights_only: true
-        monitor: "val/loss"
-        every_n_epochs: 2
-        verbose: true
-  max_epochs: 4
+  max_epochs: 1
   check_val_every_n_epoch: 1
   log_every_n_steps: 20
   enable_checkpointing: true
@@ -44,17 +31,19 @@ data:
     batch_size: 2
     num_workers: 4
     train_transform:
-      #- class_path: albumentations.HorizontalFlip
-      #  init_args:
-      #    p: 0.5      
-      #- class_path: albumentations.Rotate
-      #  init_args:
-      #    limit: 30
-      #    border_mode: 0 # cv2.BORDER_CONSTANT
-      #    value: 0
-      #    # mask_value: 1
-      #    p: 0.5
       - class_path: ToTensorV2
+      - class_path: terratorch.datasets.transforms.Padding
+        init_args:
+          input_shape:
+            - 224
+            - 224
+    val_transform:
+      - class_path: ToTensorV2
+      - class_path: terratorch.datasets.transforms.Padding
+        init_args:
+          input_shape:
+            - 224
+            - 224
     dataset_bands:
       - 0
       - BLUE
@@ -79,12 +68,12 @@ data:
       - 1
       - 0
     check_stackability: false
-    train_data_root: tests/resources/inputs
-    train_label_data_root: tests/resources/inputs
-    val_data_root: tests/resources/inputs
-    val_label_data_root: tests/resources/inputs
-    test_data_root: tests/resources/inputs
-    test_label_data_root: tests/resources/inputs 
+    train_data_root: tests/resources/inputs_nonuniform
+    train_label_data_root: tests/resources/inputs_nonuniform
+    val_data_root: tests/resources/inputs_nonuniform
+    val_label_data_root: tests/resources/inputs_nonuniform
+    test_data_root: tests/resources/inputs_nonuniform
+    test_label_data_root: tests/resources/inputs_nonuniform
     img_grep: "regression*input*.tif"
     label_grep: "regression*label*.tif"
     means:

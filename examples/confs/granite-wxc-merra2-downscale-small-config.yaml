@@ -97,10 +97,10 @@ data:
     input_size_lon: 96 # 6x coarsening 
     apply_smoothen: True
   dict_kwargs:
-    data_path_surface: /home/jalmeida/Projetos/terratorch/examples/scripts/merra-2/ 
-    data_path_vertical: /home/jalmeida/Projetos/terratorch/examples/scripts/merra-2/ 
-    climatology_path_surface: /home/jalmeida/Projetos/terratorch/examples/scripts/climatology/ 
-    climatology_path_vertical: /home/jalmeida/Projetos/terratorch/examples/scripts/climatology/ 
+    data_path_surface: /path/experiment/Projetos/terratorch/examples/scripts/merra-2/ 
+    data_path_vertical: /path/experiment/Projetos/terratorch/examples/scripts/merra-2/ 
+    climatology_path_surface: /path/experiment/Projetos/terratorch/examples/scripts/climatology/ 
+    climatology_path_vertical: /path/experiment/Projetos/terratorch/examples/scripts/climatology/ 
     time_range:
       - '2020-01-01'
       - '2020-01-02'
@@ -129,10 +129,10 @@ model:
         output_vars:
           - T2M # near surface temperature
         type: merra2
-        input_scalers_surface_path: /home/jalmeida/Projetos/terratorch/examples/scripts/climatology/musigma_surface.nc
-        input_scalers_vertical_path: /home/jalmeida/Projetos/terratorch/examples/scripts/climatology/musigma_vertical.nc
-        output_scalers_surface_path: /home/jalmeida/Projetos/terratorch/examples/scripts/climatology/anomaly_variance_surface.nc
-        output_scalers_vertical_path: /home/jalmeida/Projetos/terratorch/examples/scripts/climatology/anomaly_variance_vertical.nc
+        input_scalers_surface_path: /path/experiment/Projetos/terratorch/examples/scripts/climatology/musigma_surface.nc
+        input_scalers_vertical_path: /path/experiment/Projetos/terratorch/examples/scripts/climatology/musigma_vertical.nc
+        output_scalers_surface_path: /path/experiment/Projetos/terratorch/examples/scripts/climatology/anomaly_variance_surface.nc
+        output_scalers_vertical_path: /path/experiment/Projetos/terratorch/examples/scripts/climatology/anomaly_variance_vertical.nc
         input_levels: [34.0, 39.0, 41.0, 43.0, 44.0, 45.0, 48.0, 53.0, 56.0, 63.0, 68.0, 72.0]
         downscaling_patch_size: [2, 2]
         n_input_timestamps: 2
@@ -147,10 +147,10 @@ model:
         input_size_lon: 96 # 6x coarsening 
         freeze_backbone: True
         freeze_decoder: False
-        data_path_surface: /home/jalmeida/Projetos/terratorch/examples/scripts/merra-2/ 
-        data_path_vertical: /home/jalmeida/Projetos/terratorch/examples/scripts/merra-2/ 
-        climatology_path_surface: /home/jalmeida/Projetos/terratorch/examples/scripts/climatology/ 
-        climatology_path_vertical: /home/jalmeida/Projetos/terratorch/examples/scripts/climatology/ 
+        data_path_surface: /path/experiment/Projetos/terratorch/examples/scripts/merra-2/ 
+        data_path_vertical: /path/experiment/Projetos/terratorch/examples/scripts/merra-2/ 
+        climatology_path_surface: /path/experiment/Projetos/terratorch/examples/scripts/climatology/ 
+        climatology_path_vertical: /path/experiment/Projetos/terratorch/examples/scripts/climatology/ 
     model_config:
       num_epochs: 200   
       limit_steps_train: 250 

@@ -1,6 +1,7 @@
 # Copyright contributors to the Terratorch project
 
 import torch
+import torch.nn.functional as F
 from albumentations import BasicTransform, Compose, ImageOnlyTransform
 from einops import rearrange
 import albumentations as A
@@ -24,6 +25,28 @@ def default_non_image_transform(array):
         return torch.from_numpy(array)
     else:
         return array
+
+class Padding(ImageOnlyTransform):
+    """Padding to adjust (slight) discrepancies between input images"""
+
+    def __init__(self, input_shape: list=None):
+        super().__init__(True, 1)
+        self.input_shape = input_shape
+
+    def apply(self, img, **params):
+
+        shape = img.shape[-2:]
+        pad_values_ = [j - i for i,j in zip(shape, self.input_shape)]
+
+        if all([i%2==0 for i in pad_values_]):
+            pad_values = sum([[int(j/2), int(j/2)] for j in  pad_values_], [])
+        else:
+            pad_values = sum([[0, j] for j in  pad_values_], [])
+
+        return F.pad(img, pad_values)
+
+    def get_transform_init_args_names(self):
+        return ()
 
 class FlattenTemporalIntoChannels(ImageOnlyTransform):
     """

@@ -1,7 +1,7 @@
 # lightning.pytorch==2.1.1
 seed_everything: 42
 trainer:
-  accelerator: cpu
+  accelerator: auto
   strategy: auto
   devices: auto
   num_nodes: 1
@@ -20,26 +20,13 @@ trainer:
       init_args:
         monitor: val/loss
         patience: 100
-    - class_path: StateDictAwareModelCheckpoint
-      init_args:
-        filename: "{epoch}"
-        monitor: "val/loss"
-        every_n_epochs: 2
-        verbose: true
-    - class_path: StateDictAwareModelCheckpoint
-      init_args:
-        filename: "{epoch}_state_dict"
-        save_weights_only: true
-        monitor: "val/loss"
-        every_n_epochs: 2
-        verbose: true
-  max_epochs: 4
+  max_epochs: 1
   check_val_every_n_epoch: 1
   log_every_n_steps: 20
   enable_checkpointing: true
   default_root_dir: tests/
 data:
-  class_path: GenericNonGeoPixelwiseRegressionDataModule
+  class_path: GenericNonGeoSegmentationDataModule
   init_args:
     batch_size: 2
     num_workers: 4
@@ -85,8 +72,8 @@ data:
     val_label_data_root: tests/resources/inputs
     test_data_root: tests/resources/inputs
     test_label_data_root: tests/resources/inputs 
-    img_grep: "regression*input*.tif"
-    label_grep: "regression*label*.tif"
+    img_grep: "segmentation*input*.tif"
+    label_grep: "segmentation*label*.tif"
     means:
     - 547.36707
     - 898.5121
@@ -103,61 +90,56 @@ data:
     - 1067.641
     no_label_replace: -1
     no_data_replace: 0
-
+    num_classes: 2
 model:
-  class_path: terratorch.tasks.PixelwiseRegressionTask
+  class_path: terratorch.tasks.SemanticSegmentationTask
   init_args:
     model_args:
       decoder: UperNetDecoder
-      pretrained: false
-      backbone: prithvi_eo_v2_300
-      # backbone_pretrained_cfg_overlay:
-      #   file: tests/prithvi_vit_300.pt
-      backbone_drop_path_rate: 0.3
-      backbone_patch_size: 16
-      # backbone_window_size: 8
-      decoder_channels: 64
-      num_frames: 1
-      in_channels: 6
-      bands:
-        - BLUE
-        - GREEN
-        - RED
-        - NIR_NARROW
-        - SWIR_1
-        - SWIR_2
-      head_dropout: 0.5708022831486758
-      head_final_act: torch.nn.ReLU
-      head_learned_upscale_layers: 2
-    loss: rmse
-    #aux_heads:
-    #  - name: aux_head
-    #    decoder: IdentityDecoder
-    #    decoder_args:
-    #      decoder_out_index: 2
-    #      head_dropout: 0,5
-    #      head_channel_list:
-    #        - 64
-    #      head_final_act: torch.nn.ReLU
-    #aux_loss:
-    #  aux_head: 0.4
+      backbone_pretrained: True
+      backbone: satlas_swin_b_sentinel2_si_ms
+      # backbone: ssl4eol_resnet18_landsat_oli_tirs_toa_moco
+      # backbone_pretrain_img_size: 512
+      # decoder_scale_modules: True
+      # decoder_in_channels: 1024
+      decoder_channels: 256
+      # backbone_in_channels: 6
+      backbone_model_bands:
+      - BLUE
+      - GREEN
+      - RED
+      - NIR_NARROW
+      - SWIR_1
+      - SWIR_2
+      backbone_out_indices:
+      - 1
+      - 3
+      - 5
+      - 7
+      # num_frames: 1
+      num_classes: 2
+      head_dropout: 0.1
+      head_channel_list:
+      - 256
+      necks:
+        - name: ReshapeTokensToImage
+    loss: ce
+      #class_weights:
+      #- 0.55
+      #- 0.45
+      #- 11.106234096692113
+      #- 0.7220430107526882
+      #- 0.6870916961826052
+      #- 0.47476477946375156
     ignore_index: -1
     freeze_backbone: true
     freeze_decoder: false
-    model_factory: PrithviModelFactory
-
-    # uncomment this block for tiled inference
-    # tiled_inference_parameters:
-    #   h_crop: 224
-    #   h_stride: 192
-    #   w_crop: 224
-    #   w_stride: 192
-    #   average_patches: true
+    model_factory: EncoderDecoderFactory
 optimizer:
   class_path: torch.optim.AdamW
   init_args:
-    lr: 0.00013524680528283027
-    weight_decay: 0.047782217873995426
+    lr: 1.5e-5
+    weight_decay: 0.05
 lr_scheduler:
   class_path: ReduceLROnPlateau
   init_args:

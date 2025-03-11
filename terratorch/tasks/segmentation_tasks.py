@@ -344,18 +344,16 @@ class SemanticSegmentationTask(TerraTorchTask):
 
         rest = {k: batch[k] for k in other_keys}
 
-        model_output: ModelOutput = self(x, **rest)
-
-        def model_forward(x):
-            return self(x).output
+        def model_forward(x,  **kwargs):
+            return self(x, **kwargs).output
 
         if self.tiled_inference_parameters:
             y_hat: Tensor = tiled_inference(
-                # TODO: tiled inference does not work with additional input data (**rest)
                 model_forward,
                 x,
                 self.hparams["model_args"]["num_classes"],
                 self.tiled_inference_parameters,
+                **rest,
             )
         else:
             y_hat: Tensor = self(x, **rest).output

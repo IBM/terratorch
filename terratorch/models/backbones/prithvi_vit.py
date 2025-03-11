@@ -219,7 +219,7 @@ def _create_prithvi(
             if loaded_keys.missing_keys:
                 logger.warning(f"Missing keys in ckpt_path {ckpt_path}: {loaded_keys.missing_keys}")
             if loaded_keys.unexpected_keys:
-                logger.warning(f"Missing keys in ckpt_path {ckpt_path}: {loaded_keys.missing_keys}")
+                logger.warning(f"Unexpected keys in ckpt_path {ckpt_path}: {loaded_keys.unexpected_keys}")
         else:
             assert variant in pretrained_weights, (f"No pre-trained model found for variant {variant} "
                                                    f"(pretrained models: {pretrained_weights.keys()})")
