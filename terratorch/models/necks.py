@@ -141,6 +141,18 @@ class ReshapeTokensToImage(Neck):
         self.remove_cls_token = remove_cls_token
         self.effective_time_dim = effective_time_dim
 
+    def collapse_dims(self, x):
+        """
+        When the encoder output has more than 3 dimensions, is necessary to 
+        reshape it. 
+        """
+        shape = x.shape
+        batch = x.shape[0]
+        e = x.shape[-1]
+        collapsed_dim = np.prod(x.shape[1:-1])
+
+        return x.reshape(batch, collapsed_dim, e)
+
     def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
         out = []
         for x in features:
@@ -148,9 +160,11 @@ class ReshapeTokensToImage(Neck):
                 x_no_token = x[:, 1:, :]
             else:
                 x_no_token = x
+            x_no_token = self.collapse_dims(x_no_token)
             number_of_tokens = x_no_token.shape[1]
             tokens_per_timestep = number_of_tokens // self.effective_time_dim
             h = int(np.sqrt(tokens_per_timestep))
+
             encoded = rearrange(
                 x_no_token,
                 "batch (t h w) e -> batch (t e) h w",
