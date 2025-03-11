@@ -4,11 +4,18 @@ on:
   push:
     branches:
       - main
-  
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'tests/resources/**'
   pull_request:
     branches:
       - main
       - dev
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'tests/resources/**'
 jobs:
   build:
     runs-on: ubuntu-latest
