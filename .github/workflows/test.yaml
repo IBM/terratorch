@@ -39,7 +39,7 @@ jobs:
           mkdir assets
           pytest -s --cov=terratorch tests
           coverage-badge -o assets/coverage_badge.svg
-      - name: Update coverage badge
-        uses: actions/upload-pages-artifact@v1
-        path:
-          publish_dir: ./assets
+          #- name: Update coverage badge
+          #uses: actions/upload-pages-artifact@v1
+          #path:
+          #publish_dir: ./assets
