@@ -73,7 +73,7 @@ Out[24]:
 
 ## Necks
 
-Necks are the glue between encoder and decoder. They can perform operations such as selecting elements from the output of the encoder ([SelectIndices][terratorch.models.necks.SelectIndices]), reshaping the outputs of ViTs so they are compatible with CNNs ([ReshapeTokensToImage][terratorch.models.necks.ReshapeTokensToImage]), amongst others.
+Necks are the connectors between encoder and decoder. They can perform operations such as selecting elements from the output of the encoder ([SelectIndices][terratorch.models.necks.SelectIndices]), reshaping the outputs of ViTs so they are compatible with CNNs ([ReshapeTokensToImage][terratorch.models.necks.ReshapeTokensToImage]), amongst others.
 
 Necks are `nn.Modules`, with an additional method `process_channel_list` which informs the [EncoderDecoderFactory][terratorch.models.encoder_decoder_factory.EncoderDecoderFactory] about how it will alter the channel list provided by `encoder.out_channels`.
 
@@ -107,7 +107,7 @@ It's forward method should accept a list of embeddings.
 Most decoders require a final head to be added for a specific task (e.g. semantic segmentation vs pixel wise regression).
 
 Those registries producing decoders that dont require a head must expose the attribute `includes_head=True` so that a head is not added.
-Decoders passed as `nn.Modules` which dont require a head must expose the same attribute themselves.
+Decoders passed as `nn.Modules` which do not require a head must expose the same attribute themselves.
 
 ## :::terratorch.models.heads.classification_head.ClassificationHead
 
