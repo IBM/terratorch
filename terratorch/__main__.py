@@ -2,17 +2,25 @@
 
 """Command-line interface to TerraTorch."""
 
+import logging
+from pathlib import Path
+import uuid
 from jsonargparse import ArgumentParser
 from terratorch.cli_tools import build_lightning_cli
 import sys
-from benchmark.benchmark_types import Defaults, Task
-from benchmark.backbone_benchmark import benchmark_backbone, rerun_best_from_backbone
 from typing import List, Any
+try:
+    from benchmark.benchmark_types import Defaults, Task
+    from benchmark.backbone_benchmark import benchmark_backbone, rerun_best_from_backbone
+    from benchmark.utils import get_logger
+    TERRATORCH_ITERATE_INSTALLED = True
+
+except ImportError:
+    TERRATORCH_ITERATE_INSTALLED = False
 
 def main():
     
-    if sys.argv[1] in ["iterate"]:
-        print("Running terratorch-iterate...")
+    if TERRATORCH_ITERATE_INSTALLED and sys.argv[1] == "iterate":
         del sys.argv[1]
         parser = ArgumentParser()
 
@@ -26,17 +34,25 @@ def main():
         parser.add_argument('--n_trials', type=int)  # to ignore model
         parser.add_argument('--run_repetitions', type=int)  # to ignore model
         parser.add_argument('--tasks', type=list[Task])
+        parser.add_argument("--parent_run_id", type=str)
+        parser.add_argument("--output_path", type=str)
+        parser.add_argument("--logger", type=str)
         parser.add_argument("--config", action="config")
         parser.add_argument("--hpo", help="optimize hyperparameters", action="store_true")
         parser.add_argument("--repeat", help="repeat best experiments", action="store_true")
 
         args = parser.parse_args()
-        print(args)
         paths: List[Any] = args.config
         path = paths[0]
-        print(f"args={args} path={path}")
         repeat = args.repeat
+        assert isinstance(repeat, bool), f"Error! {repeat=} is not a bool"
         hpo = args.hpo
+        assert isinstance(hpo, bool), f"Error! {hpo=} is not a bool"
+
+        assert (
+            hpo is True or repeat is True
+        ), f"Error! either {repeat=} or {hpo=} must be True"
+
         config = parser.parse_path(path)
 
         config_init = parser.instantiate_classes(config)
@@ -66,8 +82,35 @@ def main():
         n_trials = config_init.n_trials
         assert isinstance(n_trials, int) and n_trials > 0, f"Error! {n_trials=} is invalid"
         run_repetitions = config_init.run_repetitions
+
+        parent_run_id = config_init.parent_run_id
+        assert isinstance(parent_run_id, str), f"Error! {parent_run_id=} is invalid"
+
+        output = config_init.output_path
+        if output is None:
+            storage_uri_path = Path(storage_uri)
+            assert (
+                storage_uri_path.exists() and storage_uri_path.is_dir()
+            ), f"Error! Unable to create new output_path based on storage_uri_path because the latter does not exist: {storage_uri_path}"
+            unique_id = uuid.uuid4().hex
+            output_path = storage_uri_path.parents[0] / f"{unique_id}_repeated_exp"
+            output_path.mkdir(parents=True, exist_ok=True)
+            output = str(output_path)
+
+        logger_path = config_init.logger
+        if logger_path is None:
+            storage_uri_path = Path(storage_uri)
+
+            logger = get_logger(log_folder=f"{str(storage_uri_path.parents[0])}/job_logs")
+        else:
+            logging.config.fileConfig(fname=logger_path, disable_existing_loggers=False)
+            logger = logging.getLogger("terratorch-iterate")
         if repeat and not hpo:
+            logger.info("Rerun best experiments...")
             rerun_best_from_backbone(
+                logger=logger,
+                parent_run_id=parent_run_id,
+                output_path=str(output_path),
                 defaults=defaults,
                 tasks=tasks,
                 experiment_name=experiment_name,
@@ -92,7 +135,6 @@ def main():
                 run_repetitions=run_repetitions,
             )
     else:
-        print("run terratorch")
         _ = build_lightning_cli()
 
 
