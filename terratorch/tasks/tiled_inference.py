@@ -46,6 +46,7 @@ def tiled_inference(
     input_batch: torch.Tensor,
     out_channels: int,
     inference_parameters: TiledInferenceParameters,
+    **kwargs
 ) -> torch.Tensor:
     """
     Like divide an image into (potentially) overlapping tiles and perform inference on them.
@@ -163,7 +164,7 @@ def tiled_inference(
             end = min(len(coordinates_and_inputs), start + process_batch_size)
             batch = coordinates_and_inputs[start:end]
             tensor_input = torch.stack([b.input_data for b in batch], dim=0)
-            output = model_forward(tensor_input)
+            output = model_forward(tensor_input, **kwargs)
             output = [output[i] for i in range(len(batch))]
             for batch_input, predicted in zip(batch, output, strict=True):
                 if batch_input.output_crop is not None:
