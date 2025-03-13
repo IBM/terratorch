@@ -97,30 +97,30 @@ def write_tiff(img_wrt, filename, metadata):
     return filename
 
 def add_default_checkpointing_config(config):
-
-    subcommand = config["subcommand"]
-    enable_checkpointing = config[subcommand + ".trainer.enable_checkpointing"]
-    callbacks = config[subcommand + ".trainer.callbacks"]
-    check_callbacks = [op for op in callbacks if "ModelCheckpoint" in op.class_path]
-
-    if len(check_callbacks) > 0:
-        there_is_checkpointing = True
-    else:
-        there_is_checkpointing = False
-
-    if enable_checkpointing:
-        if not there_is_checkpointing:
-            logger.info("Enabling ModelCheckpoint since the user defined enable_checkpointing=True.")
-
-            config["ModelCheckpoint"] = StateDictAwareModelCheckpoint
-            config["ModelCheckpoint.filename"] = "{epoch}"
-            config["ModelCheckpoint.monitor"] = "val/loss"
-            config["StateDictModelCheckpoint"] = StateDictAwareModelCheckpoint
-            config["StateDictModelCheckpoint.filename"] = "{epoch}_state_dict"
-            config["StateDictModelCheckpoint.save_weights_only"] = True
-            config["StateDictModelCheckpoint.monitor"] = "val/loss"
+    subcommand = config.get("subcommand", None)
+    if subcommand is not None:
+        enable_checkpointing = config[subcommand + ".trainer.enable_checkpointing"]
+        callbacks = config[subcommand + ".trainer.callbacks"]
+        check_callbacks = [op for op in callbacks if "ModelCheckpoint" in op.class_path]
+    
+        if len(check_callbacks) > 0:
+            there_is_checkpointing = True
         else:
-            logger.info("No extra checkpoint config will be added, since the user already defined it in the callbacks.")
+            there_is_checkpointing = False
+    
+        if enable_checkpointing:
+            if not there_is_checkpointing:
+                logger.info("Enabling ModelCheckpoint since the user defined enable_checkpointing=True.")
+    
+                config["ModelCheckpoint"] = StateDictAwareModelCheckpoint
+                config["ModelCheckpoint.filename"] = "{epoch}"
+                config["ModelCheckpoint.monitor"] = "val/loss"
+                config["StateDictModelCheckpoint"] = StateDictAwareModelCheckpoint
+                config["StateDictModelCheckpoint.filename"] = "{epoch}_state_dict"
+                config["StateDictModelCheckpoint.save_weights_only"] = True
+                config["StateDictModelCheckpoint.monitor"] = "val/loss"
+            else:
+                logger.info("No extra checkpoint config will be added, since the user already defined it in the callbacks.")
 
     return config 
 
