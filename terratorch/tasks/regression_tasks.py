@@ -123,10 +123,7 @@ class IgnoreIndexMetricWrapper(WrapperMetric):
 class PixelwiseRegressionTask(TerraTorchTask):
     """Pixelwise Regression Task that accepts models from a range of sources.
 
-    This class is analog in functionality to
-    [PixelwiseRegressionTask]
-    (https://torchgeo.readthedocs.io/en/stable/api/trainers.html#torchgeo.trainers.PixelwiseRegressionTask)
-    defined by torchgeo.
+    This class is analog in functionality to PixelwiseRegressionTask defined by torchgeo.
     However, it has some important differences:
         - Accepts the specification of a model factory
         - Logs metrics per class

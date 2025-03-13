@@ -88,7 +88,7 @@ class EncoderDecoderFactory(ModelFactory):
         `backbone_`, `decoder_` and `head_` respectively.
 
         Args:
-            task (str): Task to be performed. Currently supports "segmentation" and "regression".
+            task (str): Task to be performed. Currently supports "segmentation", "regression" and "classification".
             backbone (str, nn.Module): Backbone to be used. If a string, will look for such models in the different
                 registries supported (internal terratorch registry, timm, ...). If a torch nn.Module, will use it
                 directly. The backbone should have and `out_channels` attribute and its `forward` should return a list[Tensor].

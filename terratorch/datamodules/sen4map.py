@@ -8,6 +8,8 @@ from terratorch.datasets import Sen4MapDatasetMonthlyComposites
 
 
 class Sen4MapLucasDataModule(pl.LightningDataModule):
+    """NonGeo LightningDataModule implementation for Sen4map."""
+
     def __init__(
             self, 
             batch_size,
@@ -23,7 +25,36 @@ class Sen4MapLucasDataModule(pl.LightningDataModule):
             val_hdf5_keys_path = None,
             **kwargs
             ):
-        
+        """
+        Initializes the Sen4MapLucasDataModule for handling Sen4Map monthly composites.
+
+        Args:
+            batch_size (int): Batch size for DataLoaders.
+            num_workers (int): Number of worker processes for data loading.
+            prefetch_factor (int, optional): Number of samples to prefetch per worker. Defaults to 0.
+            train_hdf5_path (str, optional): Path to the training HDF5 file.
+            train_hdf5_keys_path (str, optional): Path to the training HDF5 keys file.
+            test_hdf5_path (str, optional): Path to the testing HDF5 file.
+            test_hdf5_keys_path (str, optional): Path to the testing HDF5 keys file.
+            val_hdf5_path (str, optional): Path to the validation HDF5 file.
+            val_hdf5_keys_path (str, optional): Path to the validation HDF5 keys file.
+            train_hdf5_keys_save_path (str, optional): (from kwargs) Path to save generated train keys.
+            test_hdf5_keys_save_path (str, optional): (from kwargs) Path to save generated test keys.
+            val_hdf5_keys_save_path (str, optional): (from kwargs) Path to save generated validation keys.
+            shuffle (bool, optional): Global shuffle flag.
+            train_shuffle (bool, optional): Shuffle flag for training data; defaults to global shuffle if unset.
+            val_shuffle (bool, optional): Shuffle flag for validation data.
+            test_shuffle (bool, optional): Shuffle flag for test data.
+            train_data_fraction (float, optional): Fraction of training data to use. Defaults to 1.0.
+            val_data_fraction (float, optional): Fraction of validation data to use. Defaults to 1.0.
+            test_data_fraction (float, optional): Fraction of test data to use. Defaults to 1.0.
+            all_hdf5_data_path (str, optional): General HDF5 data path for all splits. If provided, overrides specific paths.
+            resize (bool, optional): Whether to resize images. Defaults to False.
+            resize_to (int or tuple, optional): Target size for resizing images.
+            resize_interpolation (str, optional): Interpolation mode for resizing ('bilinear', 'bicubic', etc.).
+            resize_antialiasing (bool, optional): Whether to apply antialiasing during resizing. Defaults to True.
+            **kwargs: Additional keyword arguments.
+        """
         self.prepare_data_per_node = False
         self._log_hyperparams = None
         self.allow_zero_length_dataloader_with_multiple_devices = False
@@ -103,6 +134,11 @@ class Sen4MapLucasDataModule(pl.LightningDataModule):
             return keys[:int(fraction*len(keys))]
 
     def setup(self, stage: str):
+        """Set up datasets.
+
+        Args:
+            stage: Either fit, test.
+        """
         if stage == "fit":
             train_keys = self._load_hdf5_keys_from_path(self.train_hdf5_keys_path, fraction=self.train_data_fraction)
             val_keys = self._load_hdf5_keys_from_path(self.val_hdf5_keys_path, fraction=self.val_data_fraction)

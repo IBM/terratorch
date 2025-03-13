@@ -32,7 +32,7 @@ def to_segmentation_prediction(y: ModelOutput) -> Tensor:
 class SemanticSegmentationTask(TerraTorchTask):
     """Semantic Segmentation Task that accepts models from a range of sources.
 
-    This class is analog in functionality to class:SemanticSegmentationTask defined by torchgeo.
+    This class is analog in functionality to class SemanticSegmentationTask defined by torchgeo.
     However, it has some important differences:
         - Accepts the specification of a model factory
         - Logs metrics per class
@@ -71,7 +71,6 @@ class SemanticSegmentationTask(TerraTorchTask):
         """Constructor
 
         Args:
-
             Defaults to None.
             model_args (Dict): Arguments passed to the model factory.
             model_factory (str, optional): ModelFactory class to be used to instantiate the model.
