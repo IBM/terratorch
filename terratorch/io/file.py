@@ -1,8 +1,11 @@
 import os
+import logging
 import torch
 import importlib 
 from torch import nn
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 def open_generic_torch_model(model: type | str = None,
                              model_kwargs: dict = None,
@@ -26,7 +29,7 @@ def open_generic_torch_model(model: type | str = None,
 
 def load_torch_weights(model:nn.Module=None, save_dir: str = None, name: str = None, device: str = None) -> None:
 
-    print(f"Trying to load for {device}")
+    logger.info(f"Trying to load for {device}")
 
     try: # If 'model' was instantiated outside this function, the dictionary of weights will be loaded.
         if device != None:

@@ -62,7 +62,9 @@ from terratorch.tasks import (
     SemanticSegmentationTask,  # noqa: F401
 )
 
-logger = logging.getLogger("terratorch")
+from terratorch.utils import get_logger
+
+logger = get_logger()
 
 from terratorch.utils import remove_unexpected_prefix
 
@@ -436,6 +438,7 @@ class MyLightningCLI(LightningCLI):
         else:
             custom_modules_path = os.getenv("TERRATORCH_CUSTOM_MODULE_PATH", None)
 
+        logger.debug(f"Import custom modules from {custom_modules_path}")
         import_custom_modules(custom_modules_path)
 
     @staticmethod
@@ -471,7 +474,6 @@ def build_lightning_cli(
                 UserWarning,
                 stacklevel=1,
             )
-
     return MyLightningCLI(
         model_class=BaseTask,
         subclass_mode_model=True,
@@ -511,6 +513,7 @@ class LightningInferenceModel:
         self.model = model
         self.datamodule = datamodule
         if checkpoint_path:
+            logger.info(f"Loading weights from local checkpoint: {checkpoint_path}")
             weights = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
             if "state_dict" in weights:
                 weights = weights["state_dict"]

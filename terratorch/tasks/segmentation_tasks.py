@@ -18,11 +18,11 @@ from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
 from terratorch.tasks.tiled_inference import TiledInferenceParameters, tiled_inference
 from terratorch.tasks.base_task import TerraTorchTask
+from terratorch.utils import get_logger
 
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
 
-logger = logging.getLogger("terratorch")
-
+logger = get_logger()
 
 def to_segmentation_prediction(y: ModelOutput) -> Tensor:
     y_hat = y.output
@@ -147,6 +147,9 @@ class SemanticSegmentationTask(TerraTorchTask):
             self.select_classes = lambda y: y.argmax(dim=1) 
         else:
             self.select_classes = lambda y: y
+
+        logger.info(f"Instantiating a class {self.__class__}")
+        logger.debug(f"Using hparams: {self.hparams}")
 
     def configure_losses(self) -> None:
         """Initialize the loss criterion.

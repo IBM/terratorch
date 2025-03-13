@@ -9,9 +9,10 @@ from terratorch.models.backbones.select_patch_embed_weights import select_patch_
 from terratorch.datasets.utils import generate_bands_intervals
 from terratorch.models.backbones.prithvi_mae import PrithviViT, PrithviMAE
 from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
+from terratorch.utils import get_logger
 from huggingface_hub import hf_hub_download
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 PRETRAINED_BANDS = [
     HLSBands.BLUE,
