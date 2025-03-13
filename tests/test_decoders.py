@@ -17,7 +17,7 @@ def test_aspphead():
     dilations = (1, 6, 12, 18)
     in_channels = 6
     channels = 10
-    decoder = ASPPSegmentationHead(dilations=dilations, in_channels=in_channels, channels=channels, num_classes=2)
+    decoder = ASPPSegmentationHead([16, 32, 64, 128], dilations=dilations, in_channels=in_channels, channels=channels, num_classes=2)
 
     image = [torch.from_numpy(np.random.rand(2, 6, 224, 224).astype("float32"))]
 

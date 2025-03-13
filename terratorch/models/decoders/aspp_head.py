@@ -219,7 +219,8 @@ class ASPPSegmentationHead(ASPPHead):
             Default: (1, 6, 12, 18).
     """
 
-    def __init__(self, dilations:list | tuple =(1, 6, 12, 18), 
+    def __init__(self, channel_list,
+                 dilations:list | tuple =(1, 6, 12, 18), 
                  in_channels:int=None, 
                  channels:int=None,
                  num_classes:int=2,
@@ -273,7 +274,8 @@ class ASPPRegressionHead(ASPPHead):
             Default: (1, 6, 12, 18).
     """
 
-    def __init__(self, dilations:list | tuple =(1, 6, 12, 18), 
+    def __init__(self, channel_list,
+                 dilations:list | tuple =(1, 6, 12, 18), 
                  in_channels:int=None, 
                  channels:int=None,
                  out_channels:int=1,
