@@ -24,7 +24,7 @@ def setup_and_cleanup(model_name):
         shutil.rmtree(os.path.join("tests", "all_ecos_random"))
 
 @pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_eo_v2_300", "prithvi_swin_B", "prithvi_swin_L", "prithvi_eo_v2_600"])
-@pytest.mark.parametrize("case", ["fit", "test", "validate"])
+@pytest.mark.parametrize("case", ["fit", "test", "validate", "compute_statistics"])
 def test_finetune_multiple_backbones(model_name, case):
     command_list = [case, "-c", f"tests/resources/configs/manufactured-finetune_{model_name}.yaml"]
     _ = build_lightning_cli(command_list)

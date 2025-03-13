@@ -96,6 +96,33 @@ def write_tiff(img_wrt, filename, metadata):
             dest.write(img_wrt[i, :, :], i + 1)
     return filename
 
+def add_default_checkpointing_config(config):
+
+    subcommand = config["subcommand"]
+    enable_checkpointing = config[subcommand + ".trainer.enable_checkpointing"]
+    callbacks = config[subcommand + ".trainer.callbacks"]
+    check_callbacks = [op for op in callbacks if "ModelCheckpoint" in op.class_path]
+
+    if len(check_callbacks) > 0:
+        there_is_checkpointing = True
+    else:
+        there_is_checkpointing = False
+
+    if enable_checkpointing:
+        if not there_is_checkpointing:
+            logger.info("Enabling ModelCheckpoint since the user defined enable_checkpointing=True.")
+
+            config["ModelCheckpoint"] = StateDictAwareModelCheckpoint
+            config["ModelCheckpoint.filename"] = "{epoch}"
+            config["ModelCheckpoint.monitor"] = "val/loss"
+            config["StateDictModelCheckpoint"] = StateDictAwareModelCheckpoint
+            config["StateDictModelCheckpoint.filename"] = "{epoch}_state_dict"
+            config["StateDictModelCheckpoint.save_weights_only"] = True
+            config["StateDictModelCheckpoint.monitor"] = "val/loss"
+        else:
+            logger.info("No extra checkpoint config will be added, since the user already defined it in the callbacks.")
+
+    return config 
 
 def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16"):
     mask, metadata = open_tiff(input_file_name)
@@ -227,7 +254,6 @@ def clean_config_for_deployment_and_dump(config: dict[str, Any]):
             deploy_config["model"]["init_args"]["model_args"]["pretrained"] = False
         elif "backbone_pretrained" in deploy_config["model"]["init_args"]["model_args"]:
             deploy_config["model"]["init_args"]["model_args"]["backbone_pretrained"] = False
-    
 
     return yaml.safe_dump(deploy_config)
 
@@ -316,8 +342,9 @@ class StudioDeploySaveConfigCallback(SaveConfigCallback):
 
         # broadcast so that all ranks are in sync on future calls to .setup()
         self.already_saved = trainer.strategy.broadcast(self.already_saved)
-        # Copying config file to log dir
-        shutil.copyfile(self.config_path_original, self.config_path_new)
+        # Copying config file to log dir only if they are different files
+        if os.path.abspath(self.config_path_original) != os.path.abspath(self.config_path_new):
+            shutil.copyfile(self.config_path_original, self.config_path_new)
 
 class StateDictAwareModelCheckpoint(ModelCheckpoint):
     # necessary as we wish to have one model checkpoint with only state dict and one with standard lightning checkpoints
@@ -375,23 +402,12 @@ class MyLightningCLI(LightningCLI):
         parser.add_argument("--deploy_config_file", type=bool, default=True)
         parser.add_argument("--custom_modules_path", type=str, default=None)
 
-        # parser.set_defaults({"trainer.enable_checkpointing": False})
-
-        parser.add_lightning_class_args(StateDictAwareModelCheckpoint, "ModelCheckpoint")
-        parser.set_defaults({"ModelCheckpoint.filename": "{epoch}", "ModelCheckpoint.monitor": "val/loss"})
-
-        parser.add_lightning_class_args(StateDictAwareModelCheckpoint, "StateDictModelCheckpoint")
-        parser.set_defaults(
-            {
-                "StateDictModelCheckpoint.filename": "{epoch}_state_dict",
-                "StateDictModelCheckpoint.save_weights_only": True,
-                "StateDictModelCheckpoint.monitor": "val/loss",
-            }
-        )
-
-        parser.link_arguments("ModelCheckpoint.dirpath", "StateDictModelCheckpoint.dirpath")
-
     def instantiate_classes(self) -> None:
+
+        # Adding default configuration for checkpoint saving when 
+        # enable_checkpointing is True and no checkpointing is included as
+        # callback. 
+        self.config = add_default_checkpointing_config(self.config)
 
         super().instantiate_classes()
         # get the predict_output_dir. Depending on the value of run, it may be in the subcommand

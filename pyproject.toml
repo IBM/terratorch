@@ -7,7 +7,7 @@ include = ["terratorch*"]
 
 [project]
 name = "terratorch"
-version = "0.99.8"
+version = "0.99.9"
 description = "TerraTorch - A model training toolkit for geospatial tasks"
 license = { "text" = "Apache License, Version 2.0" }
 readme = "README.md"
@@ -30,19 +30,19 @@ authors = [
   { name = "Þorsteinn Elí Gíslason"}
 ]
 classifiers = [
-  "Development Status :: 2 - Pre-Alpha",
-  "Programming Language :: Python",
+#  "Development Status :: 2 - Pre-Alpha",
+#  "Programming Language :: Python",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
-  "Programming Language :: Python :: Implementation :: CPython",
+#  "Programming Language :: Python :: Implementation :: CPython",
 ]
 
 dependencies = [
   "torch",
   "torchvision",
   "rioxarray",
-  "albumentations==1.4.0",
+  "albumentations==1.4.6",
   "albucore==0.0.16",
   "rasterio",
   "torchmetrics",
@@ -57,7 +57,8 @@ dependencies = [
   "pytest",
   #"torchgeo @ git+https://github.com/microsoft/torchgeo.git@fedf99375535f801565856cd774bfa9e5a251d55",
   "torchgeo",
-  "einops"
+  "einops",
+  "timm>=1.0.15"
 ]
 
 
@@ -68,9 +69,11 @@ dev = [
   "mkdocstrings[python]",
   "mike" # for building docs with versions
 ]
+
 test = [
-  "coverage",
-  "pytest"
+  "pytest",
+  "pytest-coverage",
+  "coverage-badge"
 ]
 
 mmseg = [
@@ -85,16 +88,17 @@ wxc = [
   "granitewxc"
 ]
 
-#geobench = [
-#  "geobench @ git+https://github.com/fmartiescofet/geo-bench.git" # pull from fork until depenedencies for geobench are relaxed
-#]
+visualize = [
+  "torchview",
+  "graphiviz"
+]
 
 peft = [
   "peft"
 ]
 
 [project.urls]
-Documentation = "https://github.com/IBM/terratorch#readme"
+Documentation = "https://ibm.github.io/terratorch/"
 Issues = "https://github.com/IBM/terratorch/issues"
 Source = "https://github.com/IBM/terratorch"
 

@@ -19,6 +19,10 @@ from terratorch.datasets.utils import pad_numpy, to_tensor
 MAX_TEMPORAL_IMAGE_SIZE = (192, 192)
 
 class OpenSentinelMap(NonGeoDataset):
+    """
+        Pytorch Dataset class to load samples from the [OpenSentinelMap](https://visionsystemsinc.github.io/open-sentinel-map/) dataset, supporting
+        multiple bands and temporal sampling strategies.
+    """
     def __init__(
         self,
         data_root: str,
@@ -32,8 +36,6 @@ class OpenSentinelMap(NonGeoDataset):
         pick_random_pair: bool = True,  # noqa: FBT002, FBT001
     ) -> None:
         """
-        Pytorch Dataset class to load samples from the OpenSentinelMap dataset, supporting
-        multiple bands and temporal sampling strategies.
 
         Args:
             data_root (str): Path to the root directory of the dataset.

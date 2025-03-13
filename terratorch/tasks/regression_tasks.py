@@ -123,10 +123,7 @@ class IgnoreIndexMetricWrapper(WrapperMetric):
 class PixelwiseRegressionTask(TerraTorchTask):
     """Pixelwise Regression Task that accepts models from a range of sources.
 
-    This class is analog in functionality to
-    [PixelwiseRegressionTask]
-    (https://torchgeo.readthedocs.io/en/stable/api/trainers.html#torchgeo.trainers.PixelwiseRegressionTask)
-    defined by torchgeo.
+    This class is analog in functionality to PixelwiseRegressionTask defined by torchgeo.
     However, it has some important differences:
         - Accepts the specification of a model factory
         - Logs metrics per class
@@ -384,12 +381,12 @@ class PixelwiseRegressionTask(TerraTorchTask):
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
 
-        def model_forward(x):
+        def model_forward(x, **kwargs):
             return self(x).output
 
         if self.tiled_inference_parameters:
             # TODO: tiled inference does not work with additional input data (**rest)
-            y_hat: Tensor = tiled_inference(model_forward, x, 1, self.tiled_inference_parameters)
+            y_hat: Tensor = tiled_inference(model_forward, x, 1, self.tiled_inference_parameters, **rest)
         else:
             y_hat: Tensor = self(x, **rest).output
         return y_hat, file_names
