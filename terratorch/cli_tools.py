@@ -129,7 +129,7 @@ def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16"):
     mask = np.where(mask == metadata["nodata"], 1, 0)
     mask = np.max(mask, axis=0)
     result = np.where(mask == 1, -1, prediction.detach().cpu())
-    print(result.shape)
+
     ##### Save file to disk
     metadata["count"] = 1
     metadata["dtype"] = dtype
