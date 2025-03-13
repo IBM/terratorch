@@ -69,9 +69,11 @@ dev = [
   "mkdocstrings[python]",
   "mike" # for building docs with versions
 ]
+
 test = [
-  "coverage",
-  "pytest"
+  "pytest",
+  "pytest-coverage",
+  "coverage-badge"
 ]
 
 mmseg = [
