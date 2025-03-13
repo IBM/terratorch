@@ -19,20 +19,25 @@ except ImportError:
     TERRATORCH_ITERATE_INSTALLED = False
 
 def main():
-    
-    if TERRATORCH_ITERATE_INSTALLED and sys.argv[1] == "iterate":
+    # if user run "terratorch iterate" and terratorch-iterate has not been installed
+    if not TERRATORCH_ITERATE_INSTALLED and sys.argv[1] == "iterate":
+        print("Error! terratorch-iterate has not been installed. If you want to install it, run pip install git+https://github.com/IBM/terratorch-iterate")
+    # if user run "terratorch iterate" and terratorch-iterate has been installed
+    elif TERRATORCH_ITERATE_INSTALLED and sys.argv[1] == "iterate":
+        # delete iterate argument
         del sys.argv[1]
+        # specify all arguments
         parser = ArgumentParser()
 
-        parser.add_argument('--defaults', type=Defaults)  # to ignore model
-        parser.add_argument('--optimization_space', type=dict)  # to ignore model
-        parser.add_argument('--experiment_name', type=str)  # to ignore model
-        parser.add_argument('--run_name', type=str)  # to ignore model
-        parser.add_argument('--save_models', type=bool)  # to ignore model
-        parser.add_argument('--storage_uri', type=str)  # to ignore model
-        parser.add_argument('--ray_storage_path', type=str)  # to ignore model
-        parser.add_argument('--n_trials', type=int)  # to ignore model
-        parser.add_argument('--run_repetitions', type=int)  # to ignore model
+        parser.add_argument('--defaults', type=Defaults)  
+        parser.add_argument('--optimization_space', type=dict)  
+        parser.add_argument('--experiment_name', type=str)  
+        parser.add_argument('--run_name', type=str)  
+        parser.add_argument('--save_models', type=bool)  
+        parser.add_argument('--storage_uri', type=str)  
+        parser.add_argument('--ray_storage_path', type=str)  
+        parser.add_argument('--n_trials', type=int)  
+        parser.add_argument('--run_repetitions', type=int)  
         parser.add_argument('--tasks', type=list[Task])
         parser.add_argument("--parent_run_id", type=str)
         parser.add_argument("--output_path", type=str)
@@ -68,7 +73,6 @@ def main():
             assert isinstance(t, Task), f"Error! {t=} is not a Task"
         defaults = config_init.defaults
         assert isinstance(defaults, Defaults), f"Error! {defaults=} is not a Defaults"
-        # defaults.trainer_args["max_epochs"] = 5
         storage_uri = config_init.storage_uri
         assert isinstance(storage_uri, str), f"Error! {storage_uri=} is not a str"
 
