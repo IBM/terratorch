@@ -16,4 +16,5 @@ jobs:
         pip install mkdocs mkdocstrings[python] 
     - name: Uploading documentation
       run: |
+        ls
         mkdocs gh-deploy
