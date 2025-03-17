@@ -24,6 +24,16 @@ While generic datasets offer a quick start for common data structures, many proj
 
 For additional examples on fine-tuning a TerraTorch model using these components, please refer to the [Prithvi EO Examples](https://github.com/NASA-IMPACT/Prithvi-EO-2.0) repository.
 
+## Data curation
+Generally speaking, all the datamodules work by collecting sets of files and concatenating them into batches
+with a size determined by the user. TerraTorch automatically checks the dimensionality of the files in order
+to guarantee that they are stackable, otherwise a stackability error will be raised. If you are sure that your
+data files are in the proper format and do not want to
+check for stackability, define `check_stackability: false` in the field `data` of your yaml file. If you are using
+the script interface, you just need to pass it as argument to your dataloader class. Alternatively, if you
+want to fix discrepancies related to dimensionality in your input files at the data loading stage, you can add a
+pad correction pipeline, as seen in the example `tests/resources/configs/manufactured-finetune_prithvi_eo_v2_300_pad_transform.yaml`. 
+
 ## Using Datasets already implemented in TorchGeo
 
 Using existing TorchGeo DataModules is very easy! Just plug them in!
