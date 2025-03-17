@@ -30,6 +30,7 @@ nav:
   - Examples: examples.md 
   - Glossary: glossary.md
   - License: license.md
+  - Contributing: contributing.md
   - Components:
     - Architecture Overview: architecture.md
     - Tasks: tasks.md
@@ -37,7 +38,6 @@ nav:
     - Data: data.md
     - Registries: registry.md
     - EncoderDecoderFactory: encoder_decoder_factory.md
-    - Contributing: contributing.md
     #- FAQ: faq.md
 
 markdown_extensions:
