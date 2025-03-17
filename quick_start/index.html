@@ -92,6 +92,8 @@
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="../encoder_decoder_factory/">EncoderDecoderFactory</a>
                   </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../contributing/">Contributing</a>
+                  </li>
               </ul>
       </div>
     </div>
@@ -319,6 +321,10 @@ Alternatively, all the process can be summarized in configuration files written 
 <p>For inference, execute:
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>terratorch<span class="w"> </span>predict<span class="w"> </span>-c<span class="w"> </span>&lt;path_to_config_file&gt;<span class="w"> </span>--ckpt_path&lt;path_to_checkpoint&gt;<span class="w"> </span>--predict_output_dir<span class="w"> </span>&lt;path_to_output_dir&gt;<span class="w"> </span>--data.init_args.predict_data_root<span class="w"> </span>&lt;path_to_input_dir&gt;<span class="w"> </span>--data.init_args.predict_dataset_bands<span class="w"> </span>&lt;all<span class="w"> </span>bands<span class="w"> </span><span class="k">in</span><span class="w"> </span>the<span class="w"> </span>predicted<span class="w"> </span>dataset,<span class="w"> </span>e.g.<span class="w"> </span><span class="o">[</span>BLUE,GREEN,RED,NIR_NARROW,SWIR_1,SWIR_2,0<span class="o">]</span>&gt;
 </span></code></pre></div></p>
+<p><strong>Experimental feature</strong>: Users that want to optimize hyperparameters or repeat best experiment might be interest in in terratorch-iterate, a terratorch's plugin. For instance, to run terratorch-iterate to optimize hyperparameters, one can run: 
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>terratorch<span class="w"> </span>iterate<span class="w"> </span>--hpo<span class="w"> </span>--config<span class="w"> </span>&lt;path_to_config_file&gt;<span class="w"> </span>
+</span></code></pre></div>
+Please see how to install terratorch-iterate on this <a href="https://github.com/IBM/terratorch-iterate?tab=readme-ov-file#installation">link</a> and how to use it on this <a href="https://github.com/IBM/terratorch-iterate?tab=readme-ov-file#usage">link</a>.</p>
               
             </div>
           </div><footer>
