@@ -1,17 +1,9 @@
 name: terratorch tuning toolkit
 
 on: 
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - 'docs/**'
-      - '*.md'
-      - 'tests/resources/**'
   pull_request:
     branches:
       - main
-      - dev
     paths-ignore:
       - 'docs/**'
       - '*.md'
@@ -38,6 +30,9 @@ jobs:
           pip install -e .[wxc,test]
       - name: List pip dependencies
         run: pip list
+      - name: Merge with main
+        run: | 
+          git pull origin main
       - name: Test with pytest
         run: |
           pytest -s --cov=terratorch -v --cov-report term-missing tests
