@@ -2,10 +2,10 @@ name: terratorch documentation
 on: 
   push:
     branches:
-      - improve/docs
+      - "improve/docs"
   pull_request:
     branches:
-      - improve/docs
+      - "improve/docs"
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,7 +18,7 @@ jobs:
         pip install mkdocs mkdocstrings[python] 
     - name: Listing
       run: |
-        ls
+        git branch
     - name: Uploading documentation
       run: |
         mkdocs gh-deploy
