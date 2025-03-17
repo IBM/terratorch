@@ -30,7 +30,7 @@ nav:
   - Examples: examples.md 
   - Glossary: glossary.md
   - License: license.md
-  - Contributing: contributing.md
+  - Contribution Guidelines: contributing.md
   - Components:
     - Architecture Overview: architecture.md
     - Tasks: tasks.md
