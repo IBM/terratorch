@@ -230,3 +230,9 @@ For inference, execute:
 ```sh
 terratorch predict -c <path_to_config_file> --ckpt_path<path_to_checkpoint> --predict_output_dir <path_to_output_dir> --data.init_args.predict_data_root <path_to_input_dir> --data.init_args.predict_dataset_bands <all bands in the predicted dataset, e.g. [BLUE,GREEN,RED,NIR_NARROW,SWIR_1,SWIR_2,0]>
 ```
+
+**Experimental feature**: Users that want to optimize hyperparameters or repeat best experiment might be interest in in terratorch-iterate, a terratorch's plugin. For instance, to run terratorch-iterate to optimize hyperparameters, one can run: 
+```sh
+terratorch iterate --hpo --config <path_to_config_file> 
+```
+Please see how to install terratorch-iterate on this [link](https://github.com/IBM/terratorch-iterate?tab=readme-ov-file#installation) and how to use it on this [link](https://github.com/IBM/terratorch-iterate?tab=readme-ov-file#usage).

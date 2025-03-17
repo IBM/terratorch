@@ -5,6 +5,7 @@ import torch
 import torch.nn.functional as F
 from einops import rearrange
 from torch import nn
+import math
 
 from terratorch.registry import NECK_REGISTRY, TERRATORCH_NECK_REGISTRY
 
@@ -163,7 +164,7 @@ class ReshapeTokensToImage(Neck):
             x_no_token = self.collapse_dims(x_no_token)
             number_of_tokens = x_no_token.shape[1]
             tokens_per_timestep = number_of_tokens // self.effective_time_dim
-            h = int(np.sqrt(tokens_per_timestep))
+            h = int(math.sqrt(tokens_per_timestep))
 
             encoded = rearrange(
                 x_no_token,
