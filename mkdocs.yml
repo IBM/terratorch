@@ -36,6 +36,7 @@ nav:
     - Data: data.md
     - Registries: registry.md
     - EncoderDecoderFactory: encoder_decoder_factory.md
+    - Contributing: contributing.md
     #- FAQ: faq.md
 
 markdown_extensions:
