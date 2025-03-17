@@ -90,7 +90,7 @@ wxc = [
 
 visualize = [
   "torchview",
-  "graphiviz"
+  "graphviz"
 ]
 
 peft = [
