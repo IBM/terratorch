@@ -12,7 +12,13 @@ trainer:
     - class_path: LearningRateMonitor
       init_args:
         logging_interval: epoch
-  max_epochs: 100
+    - class_path: ModelCheckpoint
+      init_args:
+          dirpath: output/multicrop/checkpoints
+          mode: max
+          monitor: val/Multiclass_Jaccard_Index
+          filename: best-{epoch:02d}
+  max_epochs: 1
   log_every_n_steps: 5
   default_root_dir: output/multicrop/
 

@@ -18,7 +18,7 @@ trainer:
           mode: max
           monitor: val/Multiclass_Jaccard_Index
           filename: best-{epoch:02d}
-  max_epochs: 100
+  max_epochs: 1
   log_every_n_steps: 5
   default_root_dir: output/burnscars/
 
@@ -79,7 +79,7 @@ model:
   init_args:
     model_factory: EncoderDecoderFactory
     model_args:
-      backbone: prithvi_eo_v2_300_tl
+      backbone: prithvi_eo_v2_300
       backbone_pretrained: true
       backbone_img_size: 512
       backbone_coords_encoding: []
