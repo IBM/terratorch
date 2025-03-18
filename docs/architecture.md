@@ -16,6 +16,8 @@ Initial reading for a full understanding of the platform includes:
 - Familiarity with [TorchGeo](https://torchgeo.readthedocs.io/en/stable/)
 - Familiarity with [LightningCLI](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.cli.LightningCLI.html#lightning.pytorch.cli.LightningCLI)
 
+![TerraTorch's workflow](figs/scheme_version_1.png)
+
 ## Tasks
 
 Tasks are the main coordinators for training and inference for specific tasks. They are LightningModules that contain a model and abstract away all the logic for training steps, metric computation and inference.
