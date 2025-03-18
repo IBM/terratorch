@@ -154,6 +154,7 @@ Together with this, we provide the <a class="autorefs autorefs-internal" href=".
 <li>Familiarity with <a href="https://torchgeo.readthedocs.io/en/stable/">TorchGeo</a></li>
 <li>Familiarity with <a href="https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.cli.LightningCLI.html#lightning.pytorch.cli.LightningCLI">LightningCLI</a></li>
 </ul>
+<p><img alt="TerraTorch's workflow" src="../figs/scheme_version_1.png" /></p>
 <h2 id="tasks">Tasks<a class="headerlink" href="#tasks" title="Permanent link">#</a></h2>
 <p>Tasks are the main coordinators for training and inference for specific tasks. They are LightningModules that contain a model and abstract away all the logic for training steps, metric computation and inference.</p>
 <p>One of the most important design decisions was delegating the model construction to a model factory. This has a few advantages:</p>
