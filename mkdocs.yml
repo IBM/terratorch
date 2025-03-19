@@ -6,8 +6,13 @@ theme:
     text: Roboto
   palette:
     # Palette toggle for light mode
-    scheme: default
-    primary: white
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+      primary: white
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
   features:
     - content.code.copy
     - content.code.select
@@ -23,6 +28,8 @@ theme:
     - navigation.footer
     - navigation.indexes
     - navigation.instant
+    - navigation.expand
+    - navigation.path
     # - navigation.instant.prefetch
     # - navigation.instant.progress
     # - navigation.prune
