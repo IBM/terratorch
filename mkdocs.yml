@@ -74,7 +74,7 @@ nav:
     - Registries: registry.md
     - EncoderDecoderFactory: encoder_decoder_factory.md
     #- FAQ: faq.md
-
+  - Changelog: changelog.md
 markdown_extensions:
   - toc:
       permalink: "#"
