@@ -18,7 +18,7 @@ from terratorch.datasets.utils import (
 
 
 class MSACropTypeNonGeo(NonGeoDataset):
-    """NonGeo dataset implementation for M-SA-Crop-Type."""
+    """NonGeo dataset implementation for [M-SA-Crop-Type](https://github.com/ServiceNow/geo-bench?tab=readme-ov-file)."""
     all_band_names = (
         "COASTAL_AEROSOL",
         "BLUE",

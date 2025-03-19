@@ -20,7 +20,7 @@ from terratorch.datasets.utils import (
 
 
 class MBeninSmallHolderCashewsNonGeo(NonGeoDataset):
-    """NonGeo dataset implementation for M-BeninSmallHolderCashews."""
+    """NonGeo dataset implementation for [M-BeninSmallHolderCashews](https://github.com/ServiceNow/geo-bench?tab=readme-ov-file)."""
     all_band_names = (
         "COASTAL_AEROSOL",
         "BLUE",

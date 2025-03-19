@@ -33,7 +33,7 @@ def to_segmentation_prediction(y: ModelOutput) -> Tensor:
 class SemanticSegmentationTask(TerraTorchTask):
     """Semantic Segmentation Task that accepts models from a range of sources.
 
-    This class is analog in functionality to class:SemanticSegmentationTask defined by torchgeo.
+    This class is analog in functionality to class SemanticSegmentationTask defined by torchgeo.
     However, it has some important differences:
         - Accepts the specification of a model factory
         - Logs metrics per class
@@ -72,7 +72,6 @@ class SemanticSegmentationTask(TerraTorchTask):
         """Constructor
 
         Args:
-
             Defaults to None.
             model_args (Dict): Arguments passed to the model factory.
             model_factory (str, optional): ModelFactory class to be used to instantiate the model.
@@ -244,7 +243,6 @@ class SemanticSegmentationTask(TerraTorchTask):
         other_keys = batch.keys() - {"image", "mask", "filename"}
 
         rest = {k: batch[k] for k in other_keys}
-
         model_output: ModelOutput = self(x, **rest)
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
@@ -266,7 +264,6 @@ class SemanticSegmentationTask(TerraTorchTask):
         other_keys = batch.keys() - {"image", "mask", "filename"}
 
         rest = {k: batch[k] for k in other_keys}
-
 
         def model_forward(x,  **kwargs):
             return self(x, **kwargs).output
@@ -315,7 +312,6 @@ class SemanticSegmentationTask(TerraTorchTask):
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
-
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat_hard = to_segmentation_prediction(model_output)
