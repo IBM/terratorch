@@ -27,6 +27,8 @@ STDS = {
 
 
 class MForestNetNonGeoDataModule(GeobenchDataModule):
+    """NonGeo LightningDataModule implementation for M-ForestNet dataset."""
+
     def __init__(
         self,
         batch_size: int = 8,
@@ -41,6 +43,22 @@ class MForestNetNonGeoDataModule(GeobenchDataModule):
         use_metadata: bool = False,  # noqa: FBT002, FBT001
         **kwargs: Any,
     ) -> None:
+        """
+        Initializes the MForestNetNonGeoDataModule for the MForestNetNonGeo dataset.
+
+        Args:
+            batch_size (int, optional): Batch size for DataLoaders. Defaults to 8.
+            num_workers (int, optional): Number of workers for data loading. Defaults to 0.
+            data_root (str, optional): Root directory of the dataset. Defaults to "./".
+            bands (Sequence[str] | None, optional): List of bands to use. Defaults to None.
+            train_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for training.
+            val_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for validation.
+            test_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for testing.
+            aug (AugmentationSequential, optional): Augmentation/normalization pipeline. Defaults to None.
+            partition (str, optional): Partition size. Defaults to "default".
+            use_metadata (bool): Whether to return metadata info.
+            **kwargs (Any): Additional keyword arguments.
+        """
         super().__init__(
             MForestNetNonGeo,
             MEANS,

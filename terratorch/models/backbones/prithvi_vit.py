@@ -182,7 +182,7 @@ def checkpoint_filter_fn_vit(
 
     state_dict = clean_dict
 
-    state_dict = select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands)
+    state_dict = select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands, encoder_only=True)
 
     return state_dict
 
@@ -218,7 +218,7 @@ def checkpoint_filter_fn_mae(
 
     state_dict = clean_dict
 
-    state_dict = select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands)
+    state_dict = select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands, encoder_only=False)
 
     return state_dict
 
@@ -332,11 +332,12 @@ def _create_prithvi(
             # Load model from checkpoint
             state_dict = torch.load(ckpt_path, map_location="cpu", weights_only=True)
             state_dict = checkpoint_filter_wrapper_fn(state_dict, model, pretrained_bands, model_bands)
+
             loaded_keys = model.load_state_dict(state_dict, strict=False)
             if loaded_keys.missing_keys:
                 logger.warning(f"Missing keys in ckpt_path {ckpt_path}: {loaded_keys.missing_keys}")
             if loaded_keys.unexpected_keys:
-                logger.warning(f"Missing keys in ckpt_path {ckpt_path}: {loaded_keys.missing_keys}")
+                logger.warning(f"Unexpected keys in ckpt_path {ckpt_path}: {loaded_keys.unexpected_keys}")
         else:
             assert variant in pretrained_weights, (
                 f"No pre-trained model found for variant {variant} (pretrained models: {pretrained_weights.keys()})"

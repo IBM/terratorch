@@ -1,0 +1,79 @@
+# lightning.pytorch==2.1.1
+seed_everything: 42
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: 16-mixed
+  logger: true
+  callbacks:
+    - class_path: RichProgressBar
+    - class_path: LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+  max_epochs: 100
+  log_every_n_steps: 5
+  default_root_dir: output/multicrop/
+
+data:
+  class_path: terratorch.datamodules.MultiTemporalCropClassificationDataModule
+  init_args:
+    batch_size: 8
+    num_workers: 2
+    data_root: multi-temporal-crop-classification-subset
+    expand_temporal_dimension: true
+    use_metadata: false
+    reduce_zero_label: true
+    train_transform:
+      - class_path: terratorch.datasets.transforms.FlattenTemporalIntoChannels
+      - class_path: albumentations.D4
+      - class_path: albumentations.pytorch.ToTensorV2
+      - class_path: terratorch.datasets.transforms.UnflattenTemporalFromChannels
+        init_args:
+          n_timesteps: 3
+
+
+model:
+  class_path: terratorch.tasks.SemanticSegmentationTask
+  init_args:
+    model_factory: EncoderDecoderFactory
+    model_args:
+      backbone: prithvi_eo_v2_300_tl
+      backbone_pretrained: true
+      backbone_num_frames: 3
+      backbone_coords_encoding: []
+      backbone_bands:
+        - BLUE
+        - GREEN
+        - RED
+        - NIR_NARROW
+        - SWIR_1
+        - SWIR_2
+      necks:
+        - name: SelectIndices
+          indices: [5, 11, 17, 23]
+        - name: ReshapeTokensToImage
+          effective_time_dim: 3
+        - name: LearnedInterpolateToPyramidal
+      decoder: UNetDecoder
+      decoder_channels: [512, 256, 128, 64]
+      head_dropout: 0.1
+      num_classes: 13
+    loss: ce
+    ignore_index: -1
+    freeze_backbone: false
+    freeze_decoder: false
+
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 1.e-4
+    weight_decay: 0.1
+lr_scheduler:
+  class_path: ReduceLROnPlateau
+  init_args:
+    monitor: val/loss
+    factor: 0.5
+    patience: 5
+

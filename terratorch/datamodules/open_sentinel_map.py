@@ -8,6 +8,8 @@ from terratorch.datasets import OpenSentinelMap
 
 
 class OpenSentinelMapDataModule(NonGeoDataModule):
+    """NonGeo LightningDataModule implementation for Open Sentinel Map."""
+
     def __init__(
         self,
         bands: list[str] | None = None,
@@ -23,6 +25,26 @@ class OpenSentinelMapDataModule(NonGeoDataModule):
         truncate_image: int | None = None,
         **kwargs: Any,
     ) -> None:
+        """
+        Initializes the OpenSentinelMapDataModule for the Open Sentinel Map dataset.
+
+        Args:
+            bands (list[str] | None, optional): List of bands to use. Defaults to None.
+            batch_size (int, optional): Batch size for DataLoaders. Defaults to 8.
+            num_workers (int, optional): Number of workers for data loading. Defaults to 0.
+            data_root (str, optional): Root directory of the dataset. Defaults to "./".
+            train_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for training data.
+            val_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for validation data.
+            test_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for testing data.
+            predict_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for prediction data.
+            spatial_interpolate_and_stack_temporally (bool, optional): If True, the bands are interpolated and concatenated over time.
+                Default is True.
+            pad_image (int | None, optional): Number of timesteps to pad the time dimension of the image.
+                If None, no padding is applied.
+            truncate_image (int | None, optional):  Number of timesteps to truncate the time dimension of the image.
+                If None, no truncation is performed.
+            **kwargs: Additional keyword arguments.
+        """
         super().__init__(
             OpenSentinelMap,
             batch_size=batch_size,
@@ -41,6 +63,11 @@ class OpenSentinelMapDataModule(NonGeoDataModule):
         self.kwargs = kwargs
 
     def setup(self, stage: str) -> None:
+        """Set up datasets.
+
+        Args:
+            stage: Either fit, validate, test, or predict.
+        """
         if stage in ["fit"]:
             self.train_dataset = OpenSentinelMap(
                 split="train",

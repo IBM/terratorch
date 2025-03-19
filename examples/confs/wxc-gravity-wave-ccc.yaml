@@ -31,8 +31,8 @@ trainer:
 data:
   class_path: terratorch.datamodules.era5.ERA5DataModule
   init_args:
-        train_data_path: /dccstor/terratorch/users/rkie/gitco/terratorch
-        valid_data_path: /dccstor/terratorch/users/rkie/gitco/terratorch
+        train_data_path: /path/terratorch/user/gitco/terratorch
+        valid_data_path: /path/terratorch/user/gitco/terratorch
         file_glob_pattern: "wxc_input_u_v_t_p_output_theta_uw_vw_*.nc"
 
 model:

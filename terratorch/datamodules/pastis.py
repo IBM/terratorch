@@ -8,6 +8,8 @@ from terratorch.datasets import PASTIS
 
 
 class PASTISDataModule(NonGeoDataModule):
+    """NonGeo LightningDataModule implementation for PASTIS."""
+
     def __init__(
         self,
         batch_size: int = 8,
@@ -21,6 +23,23 @@ class PASTISDataModule(NonGeoDataModule):
         predict_transform: A.Compose | None | list[A.BasicTransform] = None,
         **kwargs: Any,
     ) -> None:
+        """
+        Initializes the PASTISDataModule for the PASTIS dataset.
+
+        Args:
+            batch_size (int, optional): Batch size for DataLoaders. Defaults to 8.
+            num_workers (int, optional): Number of workers for data loading. Defaults to 0.
+            data_root (str, optional): Directory containing the dataset. Defaults to "./".
+            truncate_image (int, optional): Truncate the time dimension of the image to 
+                a specified number of timesteps. If None, no truncation is performed.
+            pad_image (int, optional): Pad the time dimension of the image to a specified 
+                number of timesteps. If None, no padding is applied.
+            train_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for training data.
+            val_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for validation data.
+            test_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for testing data.
+            predict_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for prediction data.
+            **kwargs: Additional keyword arguments.
+        """
         super().__init__(
             PASTIS,
             batch_size=batch_size,
@@ -37,6 +56,11 @@ class PASTISDataModule(NonGeoDataModule):
         self.kwargs = kwargs
 
     def setup(self, stage: str) -> None:
+        """Set up datasets.
+
+        Args:
+            stage: Either fit, validate, test, or predict.
+        """
         if stage in ["fit"]:
             self.train_dataset = PASTIS(
                 folds=[1, 2, 3],

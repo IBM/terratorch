@@ -21,7 +21,7 @@ from torchgeo.datasets.utils import percentile_normalization
 
 
 class BioMasstersNonGeo(BioMassters):
-    """BioMassters Dataset for Aboveground Biomass prediction.
+    """[BioMassters Dataset](https://huggingface.co/datasets/ibm-nasa-geospatial/BioMassters) for Aboveground Biomass prediction.
 
     Dataset intended for Aboveground Biomass (AGB) prediction
     over Finnish forests based on Sentinel 1 and 2 data with

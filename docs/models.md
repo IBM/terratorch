@@ -1,10 +1,10 @@
 # Models
 
-To interface with terratorch tasks correctly, models must conform to the [Model][terratorch.models.model.Model] ABC:
+To interface with terratorch tasks correctly, models must inherit from the [Model][terratorch.models.model.Model] parent class:
 
 ::: terratorch.models.model.Model
 
-and have a forward method which returns a [ModelOutput][terratorch.models.model.ModelOutput]:
+and have a forward method which returns an object [ModelOutput][terratorch.models.model.ModelOutput]:
 
 :::terratorch.models.model.ModelOutput
 
@@ -12,8 +12,7 @@ and have a forward method which returns a [ModelOutput][terratorch.models.model.
 ## Model Factories
 
 In order to be used by tasks, models must have a Model Factory which builds them.
-
-Factories must conform to the [ModelFactory][terratorch.models.model.ModelFactory] ABC:
+Factories must conform to the [ModelFactory][terratorch.models.model.ModelFactory] parent class. 
 
 ::: terratorch.models.model.ModelFactory
 
