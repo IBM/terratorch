@@ -351,7 +351,29 @@ class PixelwiseRegressionTask(TerraTorchTask):
         y = batch["mask"]
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
-        model_output: ModelOutput = self(x, **rest)
+
+        def model_forward(x,  **kwargs):
+            return self(x, **kwargs).output
+
+        # When the input sample cannot be fit on memory for some reason
+        # the tiled inference is automatically invoked.
+        try:
+            model_output: ModelOutput = self(x, **rest)
+        except RuntimeError:
+            logger.info("\n The input sample could not run in a full format. Using tiled inference.")
+            looger.info("Notice that the tiled inference WON'T produce the exactly same result as the full inference.")
+            if self.tiled_inference_parameters:
+                y_hat: Tensor = tiled_inference(
+                    model_forward,
+                    x,
+                    1,
+                    self.tiled_inference_parameters,
+                    **rest,
+                )
+                model_output = ModelOutput(output=y_hat)
+            else:
+                raise Exception("You need to define a configuration for the tiled inference.")
+
         if dataloader_idx >= len(self.test_loss_handler):
             msg = "You are returning more than one test dataloader but not defining enough test_dataloaders_names."
             raise ValueError(msg)
