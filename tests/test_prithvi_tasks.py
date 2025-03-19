@@ -110,7 +110,7 @@ def test_create_classification_task(backbone, decoder, loss, model_factory: str,
     gc.collect()
 
 
-@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "prithvi_eo_v2_300", "clay_v1_base"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder"])
 @pytest.mark.parametrize("vpt_n_tokens", [100, 500])
 @pytest.mark.parametrize("vpt_dropout", [0.1, 0.5])
@@ -127,6 +127,8 @@ def test_create_task_with_vpt(
         "backbone_vpt_dropout": vpt_dropout,
         "num_classes": NUM_CLASSES,
     }
+    if backbone == "clay_v1_base":
+        model_args["backbone_img_size"] = model_input.shape[-1]
 
     task = SemanticSegmentationTask(
         model_args,
@@ -137,10 +139,15 @@ def test_create_task_with_vpt(
 
     with torch.no_grad():
         assert task.model(model_input).output.shape == EXPECTED_SEGMENTATION_OUTPUT_SHAPE
-    
-    n_layers = len(task.model.encoder.blocks)
-    # count number of parameters
+
     n_params = sum(p.numel() for p in task.model.encoder.parameters() if p.requires_grad)
-    assert n_params == (n_layers * vpt_n_tokens * task.model.encoder.embed_dim)
+
+    if backbone == "clay_v1_base":
+        n_layers = 12
+        embedding_dim = 768
+    else:
+        n_layers = len(task.model.encoder.blocks)
+        embedding_dim = task.model.encoder.embed_dim
+    assert n_params == (n_layers * vpt_n_tokens * embedding_dim)
 
     gc.collect()

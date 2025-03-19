@@ -341,7 +341,6 @@ class PrithviViT(nn.Module):
             if self.vpt_n_tokens is None:
                 msg = "vpt_n_tokens must be provided when using VPT"
                 raise ValueError(msg)
-            
             self.vpt_prompt_embeddings = nn.ParameterList(
                 [nn.Parameter(torch.zeros(1, self.vpt_n_tokens, embed_dim)) for _ in range(depth)]
             )
@@ -369,7 +368,7 @@ class PrithviViT(nn.Module):
             # extracted from https://github.com/KMnP/vpt/blob/4410440ec1b489f24f66b9fad3d9b10ff3443567/src/models/vit_prompt/vit.py#L57
             val = np.sqrt(6.0 / float(3 * reduce(mul, self.patch_embed.patch_size[1:], 1) + self.embed_dim))
             for emb in self.vpt_prompt_embeddings:
-                nn.init.uniform_(emb.data, -val, val)
+                nn.init.uniform_(emb, -val, val)
 
     def random_masking(self, sequence, mask_ratio, noise=None):
         """
