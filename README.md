@@ -3,9 +3,10 @@
 
 [![huggingface](https://img.shields.io/badge/Hugging_Face-join-FFD21E?logo=huggingface)](https://huggingface.co/ibm-nasa-geospatial)
 [![pypi](https://badge.fury.io/py/terratorch.svg)](https://pypi.org/project/terratorch)
-[![tests](https://github.com/IBM/terratorch/actions/workflows/test.yaml/badge.svg)](https://github.com/ibm/terratorch/actions/workflows/tests.yaml)
+[![tests](https://github.com/IBM/terratorch/actions/workflows/test.yaml/badge.svg)](https://github.com/ibm/terratorch/actions/workflows/test.yaml)
 [![MkDocs](https://img.shields.io/badge/MkDocs-526CFE?logo=materialformkdocs&logoColor=fff)](https://ibm.github.io/terratorch/)
-![cov](assets/coverage-badge.svg)
+![cov](https://github.com/IBM/terratorch/raw/main/assets/coverage-badge.svg)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/terratorch.svg?label=PyPI%20downloads)](https://pypi.org/project/terratorch/)
 
 ## Overview
 TerraTorch is a library based on [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/) and the [TorchGeo](https://github.com/microsoft/torchgeo) domain library
