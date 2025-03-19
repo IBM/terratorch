@@ -1,0 +1,983 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://ibm.github.io/terratorch/changelog/">
+      
+      
+        <link rel="prev" href="../encoder_decoder_factory/">
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.4.14">
+    
+    
+      
+        <title>Changelog - TerraTorch</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.fad675c6.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.356b1318.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="indigo">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#changelog" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="TerraTorch" class="md-header__button md-logo" aria-label="TerraTorch" data-md-component="logo">
+      
+  <img src="https://github.com/user-attachments/assets/f8c9586f-6220-4a53-9669-2aee3300b492"" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            TerraTorch
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Changelog
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="indigo"  aria-label=""  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label=""  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12c0-2.42-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91 1.61 0 2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08Z"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/IBM/terratorch" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="TerraTorch" class="md-nav__button md-logo" aria-label="TerraTorch" data-md-component="logo">
+      
+  <img src="https://github.com/user-attachments/assets/f8c9586f-6220-4a53-9669-2aee3300b492"" alt="logo">
+
+    </a>
+    TerraTorch
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/IBM/terratorch" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Welcome to TerraTorch
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quick_start/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Examples
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../glossary/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Glossary
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../license/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    License
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contribution Guidelines
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Components
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Components
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Architecture Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tasks/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tasks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Data
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../registry/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Registries
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../encoder_decoder_factory/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    EncoderDecoderFactory
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Changelog
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Changelog
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0999post1" class="md-nav__link">
+    <span class="md-ellipsis">
+      0.99.9post1
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.99.9post1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#whats-changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      What's Changed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-contributors" class="md-nav__link">
+    <span class="md-ellipsis">
+      New Contributors
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0999" class="md-nav__link">
+    <span class="md-ellipsis">
+      0.99.9
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.99.9">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#whats-changed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      What's Changed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-contributors_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      New Contributors
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0998" class="md-nav__link">
+    <span class="md-ellipsis">
+      0.99.8
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.99.8">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#whats-changed_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      What's Changed
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-contributors_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      New Contributors
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0997" class="md-nav__link">
+    <span class="md-ellipsis">
+      0.99.7
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.99.7">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#whats-changed_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      What's Changed
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+    <a href="https://github.com/IBM/terratorch/edit/master/docs/changelog.md" title="Edit this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4v-2m10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1 2.1 2.1Z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">#</a></h1>
+<h2 id="0999post1">0.99.9post1<a class="headerlink" href="#0999post1" title="Permanent link">#</a></h2>
+<h3 id="whats-changed">What's Changed<a class="headerlink" href="#whats-changed" title="Permanent link">#</a></h3>
+<ul>
+<li>Changes data documentation by @PedroConrado in <a href="https://github.com/IBM/terratorch/pull/437)">https://github.com/IBM/terratorch/pull/437)</a></li>
+<li>Adding badges for the README by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/484">https://github.com/IBM/terratorch/pull/484</a></li>
+<li>Update WxCTutorialDownscaling.ipynb for terratorch 0.99.9 support by @romeokienzler in <a href="https://github.com/IBM/terratorch/pull/491">https://github.com/IBM/terratorch/pull/491</a></li>
+<li>Skipping automatic tests when the modifications are for documentation and other files outside the core.  by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/464">https://github.com/IBM/terratorch/pull/464</a></li>
+<li>add release scripts by @romeokienzler in <a href="https://github.com/IBM/terratorch/pull/489">https://github.com/IBM/terratorch/pull/489</a></li>
+<li>Badge for coverage by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/495">https://github.com/IBM/terratorch/pull/495</a></li>
+<li>Periodical synchronization between documentation from the working branch with <code>main</code> by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/482">https://github.com/IBM/terratorch/pull/482</a></li>
+<li>Basic support for visualizing models (as graphs) by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/459">https://github.com/IBM/terratorch/pull/459</a></li>
+<li>Improve/tests by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/498">https://github.com/IBM/terratorch/pull/498</a></li>
+<li>Updating the tests workflows to install granitewxc and prithviwxc from PyPI. by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/494">https://github.com/IBM/terratorch/pull/494</a></li>
+<li>Removing unnecessary module by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/502">https://github.com/IBM/terratorch/pull/502</a></li>
+<li>allow users to run iterate using terratorch command by @leotizzei in <a href="https://github.com/IBM/terratorch/pull/483">https://github.com/IBM/terratorch/pull/483</a></li>
+<li>Update cli_tools.py, make subcommand optional by @romeokienzler in <a href="https://github.com/IBM/terratorch/pull/501">https://github.com/IBM/terratorch/pull/501</a></li>
+<li>graph break fix by @kaoutar55 in <a href="https://github.com/IBM/terratorch/pull/509">https://github.com/IBM/terratorch/pull/509</a></li>
+</ul>
+<h3 id="new-contributors">New Contributors<a class="headerlink" href="#new-contributors" title="Permanent link">#</a></h3>
+<ul>
+<li>@leotizzei made their first contribution in <a href="https://github.com/IBM/terratorch/pull/483">https://github.com/IBM/terratorch/pull/483</a></li>
+<li>@kaoutar55 made their first contribution in <a href="https://github.com/IBM/terratorch/pull/509">https://github.com/IBM/terratorch/pull/509</a></li>
+</ul>
+<p><strong>Full Changelog</strong>: <a href="https://github.com/IBM/terratorch/compare/0.99.9...0.99.9post1">https://github.com/IBM/terratorch/compare/0.99.9...0.99.9post1</a></p>
+<h2 id="0999">0.99.9<a class="headerlink" href="#0999" title="Permanent link">#</a></h2>
+<h3 id="whats-changed_1">What's Changed<a class="headerlink" href="#whats-changed_1" title="Permanent link">#</a></h3>
+<ul>
+<li>unpin versions, update author list pyproject.toml by @romeokienzler in <a href="https://github.com/IBM/terratorch/pull/408">https://github.com/IBM/terratorch/pull/408</a></li>
+<li>Trying to solve issue with replicated input arguments during model (ViT) instantiation/loading by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/415">https://github.com/IBM/terratorch/pull/415</a></li>
+<li>fix-376 by @PedroConrado in <a href="https://github.com/IBM/terratorch/pull/412">https://github.com/IBM/terratorch/pull/412</a></li>
+<li>fix padding by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/397">https://github.com/IBM/terratorch/pull/397</a></li>
+<li>Allowing the segmentation task to output multiple class labels by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/393">https://github.com/IBM/terratorch/pull/393</a></li>
+<li>chore: Updated logic to update the new model versions value <code>backbone_pretrained</code> to <code>false</code>  by @WanjiruCate in <a href="https://github.com/IBM/terratorch/pull/418">https://github.com/IBM/terratorch/pull/418</a></li>
+<li>add requirements_dist.txt for pypi publishing by @romeokienzler in <a href="https://github.com/IBM/terratorch/pull/406">https://github.com/IBM/terratorch/pull/406</a></li>
+<li>add pin_requirements.py for release by @romeokienzler in <a href="https://github.com/IBM/terratorch/pull/405">https://github.com/IBM/terratorch/pull/405</a></li>
+<li>add requirements_test.txt needed for running tests by @romeokienzler in <a href="https://github.com/IBM/terratorch/pull/407">https://github.com/IBM/terratorch/pull/407</a></li>
+<li>multicrop HF version by @PedroConrado in <a href="https://github.com/IBM/terratorch/pull/419">https://github.com/IBM/terratorch/pull/419</a></li>
+<li>adds integration tests for datamodules by @PedroConrado in <a href="https://github.com/IBM/terratorch/pull/432">https://github.com/IBM/terratorch/pull/432</a></li>
+<li>Fix padding for decoders by @blumenstiel in <a href="https://github.com/IBM/terratorch/pull/439">https://github.com/IBM/terratorch/pull/439</a></li>
+<li>weights_only=True for all the occurences of torch.load by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/391">https://github.com/IBM/terratorch/pull/391</a></li>
+<li>Update CONTRIBUTING.md by @romeokienzler in <a href="https://github.com/IBM/terratorch/pull/446">https://github.com/IBM/terratorch/pull/446</a></li>
+<li>Invoking gc for all these tests by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/445">https://github.com/IBM/terratorch/pull/445</a></li>
+<li>fix model for backwards compatibility by @jaionet in <a href="https://github.com/IBM/terratorch/pull/443">https://github.com/IBM/terratorch/pull/443</a></li>
+<li>Adjusting the weights keys when necessary by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/417">https://github.com/IBM/terratorch/pull/417</a></li>
+<li>Updating README by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/434">https://github.com/IBM/terratorch/pull/434</a></li>
+<li>Pinning albumentations and updating eurosat by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/452">https://github.com/IBM/terratorch/pull/452</a></li>
+<li>Disabling stackability test when requested by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/451">https://github.com/IBM/terratorch/pull/451</a></li>
+<li>timm must be bounded in some way by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/477">https://github.com/IBM/terratorch/pull/477</a></li>
+<li>Fixing links and cleaning not necessary info by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/466">https://github.com/IBM/terratorch/pull/466</a></li>
+<li>pinning albumentations==1.4.6 by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/463">https://github.com/IBM/terratorch/pull/463</a></li>
+<li>Padding as input transform by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/461">https://github.com/IBM/terratorch/pull/461</a></li>
+<li>Removing hardcoded paths.  by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/458">https://github.com/IBM/terratorch/pull/458</a></li>
+<li>Fixing issues with <code>interpolate_pos_encoding</code> in prithvi by @daniszw in <a href="https://github.com/IBM/terratorch/pull/471">https://github.com/IBM/terratorch/pull/471</a></li>
+<li>ModelCheckpoint must be defined in the config dict, not during the parsing. by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/454">https://github.com/IBM/terratorch/pull/454</a></li>
+<li>Dealing with encoder outputs with dimension &gt; 3 when using the reshaper neck.  by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/468">https://github.com/IBM/terratorch/pull/468</a></li>
+<li>[WIP] fix 479 by @romeokienzler in <a href="https://github.com/IBM/terratorch/pull/480">https://github.com/IBM/terratorch/pull/480</a></li>
+<li>Removing unnecessary steps and passing extra arguments for tiled inference by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/469">https://github.com/IBM/terratorch/pull/469</a></li>
+<li>201 downscaling by @romeokienzler in <a href="https://github.com/IBM/terratorch/pull/472">https://github.com/IBM/terratorch/pull/472</a></li>
+</ul>
+<h3 id="new-contributors_1">New Contributors<a class="headerlink" href="#new-contributors_1" title="Permanent link">#</a></h3>
+<ul>
+<li>@WanjiruCate made their first contribution in <a href="https://github.com/IBM/terratorch/pull/418">https://github.com/IBM/terratorch/pull/418</a></li>
+<li>@daniszw made their first contribution in <a href="https://github.com/IBM/terratorch/pull/471">https://github.com/IBM/terratorch/pull/471</a></li>
+</ul>
+<p><strong>Full Changelog</strong>: <a href="https://github.com/IBM/terratorch/compare/0.99.8...0.99.9">https://github.com/IBM/terratorch/compare/0.99.8...0.99.9</a></p>
+<h2 id="0998">0.99.8<a class="headerlink" href="#0998" title="Permanent link">#</a></h2>
+<h3 id="whats-changed_2">What's Changed<a class="headerlink" href="#whats-changed_2" title="Permanent link">#</a></h3>
+<ul>
+<li>Improve/tests by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/300">https://github.com/IBM/terratorch/pull/300</a></li>
+<li>info not debug by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/306">https://github.com/IBM/terratorch/pull/306</a></li>
+<li>PRs send to <code>dev</code> also must be tested by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/308">https://github.com/IBM/terratorch/pull/308</a></li>
+<li>Base task for terratorch  by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/309">https://github.com/IBM/terratorch/pull/309</a></li>
+<li>Fixing by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/311">https://github.com/IBM/terratorch/pull/311</a></li>
+<li>Bump h5py from 3.10.0 to 3.12.1 by @dependabot in <a href="https://github.com/IBM/terratorch/pull/175">https://github.com/IBM/terratorch/pull/175</a></li>
+<li>Bump actions/checkout from 3 to 4 by @dependabot in <a href="https://github.com/IBM/terratorch/pull/34">https://github.com/IBM/terratorch/pull/34</a></li>
+<li>Bump actions/setup-python from 4 to 5 by @dependabot in <a href="https://github.com/IBM/terratorch/pull/35">https://github.com/IBM/terratorch/pull/35</a></li>
+<li>Fix timm pretrained error by @blumenstiel in <a href="https://github.com/IBM/terratorch/pull/318">https://github.com/IBM/terratorch/pull/318</a></li>
+<li>Remove fallback by error with pretrained weights by @blumenstiel in <a href="https://github.com/IBM/terratorch/pull/320">https://github.com/IBM/terratorch/pull/320</a></li>
+<li>Fix base task <code>on_test_epoch_end</code> by @fmartiescofet in <a href="https://github.com/IBM/terratorch/pull/319">https://github.com/IBM/terratorch/pull/319</a></li>
+<li>Testing finetuning for more Prithvi-2 backbones by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/322">https://github.com/IBM/terratorch/pull/322</a></li>
+<li>Update contribution_process.md by @romeokienzler in <a href="https://github.com/IBM/terratorch/pull/326">https://github.com/IBM/terratorch/pull/326</a></li>
+<li>[WIP] Add torchgeo models by @paolofraccaro in <a href="https://github.com/IBM/terratorch/pull/233">https://github.com/IBM/terratorch/pull/233</a></li>
+<li>quickfix select_patch_embed_weights.py by @romeokienzler in <a href="https://github.com/IBM/terratorch/pull/346">https://github.com/IBM/terratorch/pull/346</a></li>
+<li>Update README.md by @biancazadrozny in <a href="https://github.com/IBM/terratorch/pull/353">https://github.com/IBM/terratorch/pull/353</a></li>
+<li>increasing timeout for unit tests and fixing issues with tests by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/351">https://github.com/IBM/terratorch/pull/351</a></li>
+<li>Update README.md by @biancazadrozny in <a href="https://github.com/IBM/terratorch/pull/354">https://github.com/IBM/terratorch/pull/354</a></li>
+<li>[WIP] Yaml Schema generation added  by @jaionet in <a href="https://github.com/IBM/terratorch/pull/296">https://github.com/IBM/terratorch/pull/296</a></li>
+<li>Fix: Remove duplicated methods by @fmartiescofet in <a href="https://github.com/IBM/terratorch/pull/356">https://github.com/IBM/terratorch/pull/356</a></li>
+<li>Feat: Implement Terratorch UNet decoder by @fmartiescofet in <a href="https://github.com/IBM/terratorch/pull/357">https://github.com/IBM/terratorch/pull/357</a></li>
+<li>Add deprecation warning for <code>scale_modules</code> by @fmartiescofet in <a href="https://github.com/IBM/terratorch/pull/358">https://github.com/IBM/terratorch/pull/358</a></li>
+<li>adds predict to datamodules by @PedroConrado in <a href="https://github.com/IBM/terratorch/pull/337">https://github.com/IBM/terratorch/pull/337</a></li>
+<li>Info not debug by @fmartiescofet in <a href="https://github.com/IBM/terratorch/pull/360">https://github.com/IBM/terratorch/pull/360</a></li>
+<li>Improve/docs by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/324">https://github.com/IBM/terratorch/pull/324</a></li>
+<li>Fix timm config loading for prithvi by @blumenstiel in <a href="https://github.com/IBM/terratorch/pull/372">https://github.com/IBM/terratorch/pull/372</a></li>
+<li>201modularize wxc by @romeokienzler in <a href="https://github.com/IBM/terratorch/pull/328">https://github.com/IBM/terratorch/pull/328</a></li>
+<li>Feat: Implement option to have multiple learning rates by @fmartiescofet in <a href="https://github.com/IBM/terratorch/pull/329">https://github.com/IBM/terratorch/pull/329</a></li>
+<li>Testing the repository using the installation from pyproject for torchgeo models.  by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/365">https://github.com/IBM/terratorch/pull/365</a></li>
+<li>pinning jsonargparse by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/379">https://github.com/IBM/terratorch/pull/379</a></li>
+<li>Update branch by @blumenstiel in <a href="https://github.com/IBM/terratorch/pull/381">https://github.com/IBM/terratorch/pull/381</a></li>
+<li>Refactor prithvi by @blumenstiel in <a href="https://github.com/IBM/terratorch/pull/377">https://github.com/IBM/terratorch/pull/377</a></li>
+<li>add smoke.py and an integration tests folder getting picked up by the IBM Research GPU cluster atm by @romeokienzler in <a href="https://github.com/IBM/terratorch/pull/347">https://github.com/IBM/terratorch/pull/347</a></li>
+<li>add cli support for wxc gravity wave by @romeokienzler in <a href="https://github.com/IBM/terratorch/pull/380">https://github.com/IBM/terratorch/pull/380</a></li>
+<li>Feat: Implement multiple test dataloaders in all tasks by @fmartiescofet in <a href="https://github.com/IBM/terratorch/pull/330">https://github.com/IBM/terratorch/pull/330</a></li>
+<li>Feat: Add <code>compute_statistics</code> subcommand by @fmartiescofet in <a href="https://github.com/IBM/terratorch/pull/336">https://github.com/IBM/terratorch/pull/336</a></li>
+<li>Adding padding at the input when necessary by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/342">https://github.com/IBM/terratorch/pull/342</a></li>
+<li>Freeze/head/decoder by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/378">https://github.com/IBM/terratorch/pull/378</a></li>
+<li>consolidate requirements by @romeokienzler in <a href="https://github.com/IBM/terratorch/pull/389">https://github.com/IBM/terratorch/pull/389</a></li>
+<li>Unpin exact <code>jsonargparse</code> version by @fmartiescofet in <a href="https://github.com/IBM/terratorch/pull/394">https://github.com/IBM/terratorch/pull/394</a></li>
+<li>Fix prithvi by @blumenstiel in <a href="https://github.com/IBM/terratorch/pull/398">https://github.com/IBM/terratorch/pull/398</a></li>
+<li>Fix/pyproject by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/396">https://github.com/IBM/terratorch/pull/396</a></li>
+</ul>
+<h3 id="new-contributors_2">New Contributors<a class="headerlink" href="#new-contributors_2" title="Permanent link">#</a></h3>
+<ul>
+<li>@paolofraccaro made their first contribution in <a href="https://github.com/IBM/terratorch/pull/233">https://github.com/IBM/terratorch/pull/233</a></li>
+<li>@jaionet made their first contribution in <a href="https://github.com/IBM/terratorch/pull/296">https://github.com/IBM/terratorch/pull/296</a></li>
+</ul>
+<p><strong>Full Changelog</strong>: <a href="https://github.com/IBM/terratorch/compare/0.99.8rc1...0.99.8">https://github.com/IBM/terratorch/compare/0.99.8rc1...0.99.8</a></p>
+<h2 id="0997">0.99.7<a class="headerlink" href="#0997" title="Permanent link">#</a></h2>
+<h3 id="whats-changed_3">What's Changed<a class="headerlink" href="#whats-changed_3" title="Permanent link">#</a></h3>
+<ul>
+<li>Fix: Remove filter warnings in clay by @fmartiescofet in <a href="https://github.com/IBM/terratorch/pull/238">https://github.com/IBM/terratorch/pull/238</a></li>
+<li>fix 239 by @romeokienzler in <a href="https://github.com/IBM/terratorch/pull/240">https://github.com/IBM/terratorch/pull/240</a></li>
+<li>Refactor: Use fused attention for Clay by @fmartiescofet in <a href="https://github.com/IBM/terratorch/pull/248">https://github.com/IBM/terratorch/pull/248</a></li>
+<li>[WIP] fix 247 by @romeokienzler in <a href="https://github.com/IBM/terratorch/pull/250">https://github.com/IBM/terratorch/pull/250</a></li>
+<li>fixes typo at sen1floods11 dataset by @PedroConrado in <a href="https://github.com/IBM/terratorch/pull/254">https://github.com/IBM/terratorch/pull/254</a></li>
+<li>Fix/checkpoint by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/255">https://github.com/IBM/terratorch/pull/255</a></li>
+<li>Other ways to define custom modules. by @Joao-L-S-Almeida in <a href="https://github.com/IBM/terratorch/pull/251">https://github.com/IBM/terratorch/pull/251</a></li>
+</ul>
+<p><strong>Full Changelog</strong>: <a href="https://github.com/IBM/terratorch/compare/0.99.6...0.99.7">https://github.com/IBM/terratorch/compare/0.99.6...0.99.7</a></p>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../encoder_decoder_factory/" class="md-footer__link md-footer__link--prev" aria-label="Previous: EncoderDecoderFactory">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                EncoderDecoderFactory
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["content.code.copy", "content.code.select", "announce.dismiss", "content.action.edit", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.expand", "navigation.path", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow", "toc.integrate"], "search": "../assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.cd18aaf1.min.js"></script>
+      
+    
+  </body>
+</html>
