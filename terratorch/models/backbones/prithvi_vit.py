@@ -392,7 +392,7 @@ def prithvi_eo_tiny(
     **kwargs,
 ) -> PrithviViT | PrithviViTAdapter:
     return _create_prithvi(
-        "prithvi_eo_tiny", pretrained=pretrained, model_bands=bands, vit_adapter=vit_adapter, **kwargs
+        "prithvi_eo_tiny", pretrained=pretrained, vit_adapter=vit_adapter, **dict({"model_bands": bands}), **kwargs
     )
 
 
@@ -404,7 +404,7 @@ def prithvi_eo_v1_100(
     **kwargs,
 ) -> PrithviViT | PrithviViTAdapter:
     return _create_prithvi(
-        "prithvi_eo_v1_100", pretrained=pretrained, model_bands=bands, vit_adapter=vit_adapter, **kwargs
+        "prithvi_eo_v1_100", pretrained=pretrained, vit_adapter=vit_adapter, **dict({"model_bands": bands}), **kwargs
     )
 
 
@@ -416,7 +416,7 @@ def prithvi_eo_v2_300(
     **kwargs,
 ) -> PrithviViT | PrithviViTAdapter:
     return _create_prithvi(
-        "prithvi_eo_v2_300", pretrained=pretrained, model_bands=bands, vit_adapter=vit_adapter, **kwargs
+        "prithvi_eo_v2_300", pretrained=pretrained, vit_adapter=vit_adapter, **dict({"model_bands": bands}), **kwargs
     )
 
 
@@ -428,7 +428,7 @@ def prithvi_eo_v2_600(
     **kwargs,
 ) -> PrithviViT | PrithviViTAdapter:
     return _create_prithvi(
-        "prithvi_eo_v2_600", pretrained=pretrained, model_bands=bands, vit_adapter=vit_adapter, **kwargs
+        "prithvi_eo_v2_600", pretrained=pretrained, vit_adapter=vit_adapter, **dict({"model_bands": bands}), **kwargs
     )
 
 
@@ -440,7 +440,7 @@ def prithvi_eo_v2_300_tl(
     **kwargs,
 ) -> PrithviViT | PrithviViTAdapter:
     return _create_prithvi(
-        "prithvi_eo_v2_300_tl", pretrained=pretrained, model_bands=bands, vit_adapter=vit_adapter, **kwargs
+        "prithvi_eo_v2_300_tl", pretrained=pretrained, vit_adapter=vit_adapter, **dict({"model_bands": bands}), **kwargs
     )
 
 
@@ -452,7 +452,7 @@ def prithvi_eo_v2_600_tl(
     **kwargs,
 ) -> PrithviViT | PrithviViTAdapter:
     return _create_prithvi(
-        "prithvi_eo_v2_600_tl", pretrained=pretrained, model_bands=bands, vit_adapter=vit_adapter, **kwargs
+        "prithvi_eo_v2_600_tl", pretrained=pretrained, vit_adapter=vit_adapter, **dict({"model_bands": bands}), **kwargs
     )
 
 
@@ -470,7 +470,7 @@ def prithvi_vit_tiny(
         FutureWarning,
     )
 
-    return prithvi_eo_tiny(pretrained=pretrained, model_bands=bands, vit_adapter=vit_adapter, **kwargs)
+    return prithvi_eo_tiny(pretrained=pretrained, vit_adapter=vit_adapter, **dict({"model_bands": bands}), **kwargs)
 
 
 @TERRATORCH_BACKBONE_REGISTRY.register
@@ -486,7 +486,7 @@ def prithvi_vit_100(
         FutureWarning,
     )
 
-    return prithvi_eo_v1_100(pretrained=pretrained, model_bands=bands, vit_adapter=vit_adapter, **kwargs)
+    return prithvi_eo_v1_100(pretrained=pretrained, vit_adapter=vit_adapter, **dict({"model_bands": bands}), **kwargs)
 
 
 # TODO: Remove timm_ errors before version v1.0.
