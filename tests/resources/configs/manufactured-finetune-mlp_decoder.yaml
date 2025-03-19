@@ -96,7 +96,7 @@ model:
     model_args:
       decoder: MLPDecoder
       pretrained: false
-      backbone: prithvi_vit_100
+      backbone: prithvi_eo_v1_100
       decoder_activation: ReLU
       backbone_drop_path_rate: 0.3
       num_frames: 1
