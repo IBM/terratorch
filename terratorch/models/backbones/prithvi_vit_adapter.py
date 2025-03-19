@@ -160,7 +160,7 @@ class PrithviViTAdapter(PrithviViT):  # type: ignore
         if x.shape[2] != 1:
             msg = "Input tensor must have 1 frame"
             raise ValueError(msg)
-        t, h, w = x.shape[-3:]
+        sample_shape = x.shape[-3:]
 
         deform_inputs1, deform_inputs2 = deform_inputs(x.squeeze(2))
 
@@ -174,7 +174,7 @@ class PrithviViTAdapter(PrithviViT):  # type: ignore
         W = int(x.shape[-1] / self.patch_embed.patch_size[2])  # noqa: N806
         x = self.patch_embed(x)
         bs, n, dim = x.shape
-        pos_embed = self.interpolate_pos_encoding(t, h, w)
+        pos_embed = self.interpolate_pos_encoding((sample_shape[0], sample_shape[1], sample_shape[2]))
 
         # We don't have dropout in Prithvi
         # x = self.pos_drop(x + pos_embed)
