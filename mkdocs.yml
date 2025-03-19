@@ -18,7 +18,7 @@ theme:
     - content.code.select
     - announce.dismiss
     - content.action.edit
-    - content.action.view
+      #- content.action.view
     - content.code.annotate
     - content.code.copy
     - content.code.select
@@ -30,10 +30,10 @@ theme:
     - navigation.instant
     - navigation.expand
     - navigation.path
-    # - navigation.instant.prefetch
-    # - navigation.instant.progress
+    - navigation.instant.prefetch
+    - navigation.instant.progress
     # - navigation.prune
-    - navigation.sections
+    #- navigation.sections
       #- navigation.tabs
     # - navigation.tabs.sticky
     - navigation.top
@@ -42,6 +42,7 @@ theme:
     - search.share
     - search.suggest
     - toc.follow
+    - toc.integrate
   user_color_mode_toggle: true 
 plugins:
   - search 
@@ -55,7 +56,6 @@ plugins:
 extra:
   version:
     provider: mike
-
 site_url: https://ibm.github.io/terratorch/
 repo_url: https://github.com/IBM/terratorch
 nav:
@@ -78,6 +78,7 @@ nav:
 markdown_extensions:
   - toc:
       permalink: "#"
+      toc_depth: 6
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
@@ -87,3 +88,7 @@ markdown_extensions:
   - pymdownx.superfences
   - admonition
   - pymdownx.details
+
+extra_css:
+  - stylesheets/extra.css
+
