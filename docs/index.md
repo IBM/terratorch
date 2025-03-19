@@ -13,13 +13,13 @@ This library provides:
 - All the functionality in TorchGeo.
 - Easy access to Prithvi, timm and smp backbones.
 - Flexible trainers for Image Segmentation, Pixel Wise Regression and Classification (more in progress).
-    - Launching of fine-tuning tasks through powerful configuration files.
+- Launching of fine-tuning tasks through powerful configuration files.
 
-    A good starting place is familiarization with [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/), which this project is built on. 
-    [TorchGeo](https://torchgeo.readthedocs.io/en/stable/) is also an important complementary reference. 
+A good starting place is familiarization with [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/), which this project is built on. 
+[TorchGeo](https://torchgeo.readthedocs.io/en/stable/) is also an important complementary reference. 
 
-    Check out the [architecture overview](architecture.md) for a general description about how TerraTorch is
-    organized. 
+Check out the [architecture overview](architecture.md) for a general description about how TerraTorch is
+organized. 
 
 ## Quick start
 
