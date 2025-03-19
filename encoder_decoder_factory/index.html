@@ -1,197 +1,979 @@
-<!DOCTYPE html>
-<html class="writer-html5" lang="en" >
-<head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://ibm.github.io/terratorch/encoder_decoder_factory/" />
-      <link rel="shortcut icon" href="../img/favicon.ico" />
-    <title>EncoderDecoderFactory - TerraTorch</title>
-    <link rel="stylesheet" href="../css/theme.css" />
-    <link rel="stylesheet" href="../css/theme_extra.css" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
-        <link href="../assets/_mkdocstrings.css" rel="stylesheet" />
-    
-      <script>
-        // Current page data
-        var mkdocs_page_name = "EncoderDecoderFactory";
-        var mkdocs_page_input_path = "encoder_decoder_factory.md";
-        var mkdocs_page_url = "/terratorch/encoder_decoder_factory/";
-      </script>
-    
-    <!--[if lt IE 9]>
-      <script src="../js/html5shiv.min.js"></script>
-    <![endif]-->
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
-      <script>hljs.highlightAll();</script> 
-</head>
 
-<body class="wy-body-for-nav" role="document">
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://ibm.github.io/terratorch/encoder_decoder_factory/">
+      
+      
+        <link rel="prev" href="../registry/">
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.4.14">
+    
+    
+      
+        <title>EncoderDecoderFactory - TerraTorch</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.fad675c6.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.356b1318.min.css">
+      
+      
 
-  <div class="wy-grid-for-nav">
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
-    <div class="wy-side-scroll">
-      <div class="wy-side-nav-search">
-          <a href="..">
-          <img src="https://github.com/user-attachments/assets/f8c9586f-6220-4a53-9669-2aee3300b492"" class="logo" alt="Logo"/>
-        </a><div role="search">
-  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
-      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
-  </form>
-</div>
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="indigo">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#encoderdecoderfactory" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
       </div>
+    
+    
+      
 
-      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="..">Welcome to TerraTorch</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../quick_start/">Getting Started</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../examples/">Examples</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../glossary/">Glossary</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../license/">License</a>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="../contributing/">Contribution Guidelines</a>
-                </li>
-              </ul>
-              <p class="caption"><span class="caption-text">Components</span></p>
-              <ul class="current">
-                  <li class="toctree-l1"><a class="reference internal" href="../architecture/">Architecture Overview</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../tasks/">Tasks</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../models/">Models</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../data/">Data</a>
-                  </li>
-                  <li class="toctree-l1"><a class="reference internal" href="../registry/">Registries</a>
-                  </li>
-                  <li class="toctree-l1 current"><a class="reference internal current" href="#">EncoderDecoderFactory</a>
-    <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory">EncoderDecoderFactory</a>
-        <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory.build_model">build_model</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#terratorchmodelspixel_wise_modelpixelwisemodel">terratorch.models.pixel_wise_model.PixelWiseModel</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#terratorchmodelsscalar_output_modelscalaroutputmodel">terratorch.models.scalar_output_model.ScalarOutputModel</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#encoders">Encoders</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#necks">Necks</a>
-        <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#terratorch.models.necks.Neck">Neck</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#terratorch.models.necks.SelectIndices">SelectIndices</a>
-        <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#terratorch.models.necks.SelectIndices.__init__">__init__</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#terratorch.models.necks.PermuteDims">PermuteDims</a>
-        <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#terratorch.models.necks.PermuteDims.__init__">__init__</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#terratorch.models.necks.InterpolateToPyramidal">InterpolateToPyramidal</a>
-        <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#terratorch.models.necks.InterpolateToPyramidal.__init__">__init__</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#terratorch.models.necks.MaxpoolToPyramidal">MaxpoolToPyramidal</a>
-        <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#terratorch.models.necks.MaxpoolToPyramidal.__init__">__init__</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#terratorch.models.necks.ReshapeTokensToImage">ReshapeTokensToImage</a>
-        <ul>
-    <li class="toctree-l4"><a class="reference internal" href="#terratorch.models.necks.ReshapeTokensToImage.__init__">__init__</a>
-    </li>
-    <li class="toctree-l4"><a class="reference internal" href="#terratorch.models.necks.ReshapeTokensToImage.collapse_dims">collapse_dims</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#terratorch.models.necks.AddBottleneckLayer">AddBottleneckLayer</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#terratorch.models.necks.LearnedInterpolateToPyramidal">LearnedInterpolateToPyramidal</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#decoders">Decoders</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#heads">Heads</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#terratorch.models.heads.classification_head.ClassificationHead">ClassificationHead</a>
-        <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#terratorch.models.heads.classification_head.ClassificationHead.__init__">__init__</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#terratorch.models.heads.regression_head.RegressionHead">RegressionHead</a>
-        <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#terratorch.models.heads.regression_head.RegressionHead.__init__">__init__</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#terratorch.models.heads.segmentation_head.SegmentationHead">SegmentationHead</a>
-        <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#terratorch.models.heads.segmentation_head.SegmentationHead.__init__">__init__</a>
-    </li>
-        </ul>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#decoder-compatibilities">Decoder compatibilities</a>
-        <ul>
-    <li class="toctree-l3"><a class="reference internal" href="#smp-decoders">SMP decoders</a>
-    </li>
-    <li class="toctree-l3"><a class="reference internal" href="#mmsegmentation-decoders">MMSegmentation decoders</a>
-    </li>
-        </ul>
-    </li>
-    </ul>
-                  </li>
-              </ul>
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="TerraTorch" class="md-header__button md-logo" aria-label="TerraTorch" data-md-component="logo">
+      
+  <img src="https://github.com/user-attachments/assets/f8c9586f-6220-4a53-9669-2aee3300b492"" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            TerraTorch
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              EncoderDecoderFactory
+            
+          </span>
+        </div>
       </div>
     </div>
-    </nav>
-
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="..">TerraTorch</a>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="indigo"  aria-label=""  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label=""  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12c0-2.42-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
         
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91 1.61 0 2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08Z"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
       </nav>
-      <div class="wy-nav-content">
-        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
-  <ul class="wy-breadcrumbs">
-    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
-          <li class="breadcrumb-item">Components</li>
-      <li class="breadcrumb-item active">EncoderDecoderFactory</li>
-    <li class="wy-breadcrumbs-aside">
-          <a href="https://github.com/IBM/terratorch/edit/master/docs/encoder_decoder_factory.md" class="icon icon-github"> Edit on GitHub</a>
-    </li>
-  </ul>
-  <hr/>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-            <div class="section" itemprop="articleBody">
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/IBM/terratorch" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
               
-                <h1 id="encoderdecoderfactory">EncoderDecoderFactory<a class="headerlink" href="#encoderdecoderfactory" title="Permanent link">#</a></h1>
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="TerraTorch" class="md-nav__button md-logo" aria-label="TerraTorch" data-md-component="logo">
+      
+  <img src="https://github.com/user-attachments/assets/f8c9586f-6220-4a53-9669-2aee3300b492"" alt="logo">
+
+    </a>
+    TerraTorch
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/IBM/terratorch" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Welcome to TerraTorch
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quick_start/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Examples
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../glossary/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Glossary
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../license/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    License
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contribution Guidelines
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Components
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Components
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Architecture Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tasks/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tasks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Data
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../registry/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Registries
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    EncoderDecoderFactory
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    EncoderDecoderFactory
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory" class="md-nav__link">
+    <span class="md-ellipsis">
+      EncoderDecoderFactory
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="EncoderDecoderFactory">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory.build_model" class="md-nav__link">
+    <span class="md-ellipsis">
+      build_model
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terratorchmodelspixel_wise_modelpixelwisemodel" class="md-nav__link">
+    <span class="md-ellipsis">
+      terratorch.models.pixel_wise_model.PixelWiseModel
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terratorchmodelsscalar_output_modelscalaroutputmodel" class="md-nav__link">
+    <span class="md-ellipsis">
+      terratorch.models.scalar_output_model.ScalarOutputModel
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#encoders" class="md-nav__link">
+    <span class="md-ellipsis">
+      Encoders
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#necks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Necks
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Necks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#terratorch.models.necks.Neck" class="md-nav__link">
+    <span class="md-ellipsis">
+      Neck
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#terratorch.models.necks.SelectIndices" class="md-nav__link">
+    <span class="md-ellipsis">
+      SelectIndices
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SelectIndices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#terratorch.models.necks.SelectIndices.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __init__
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#terratorch.models.necks.PermuteDims" class="md-nav__link">
+    <span class="md-ellipsis">
+      PermuteDims
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="PermuteDims">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#terratorch.models.necks.PermuteDims.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __init__
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#terratorch.models.necks.InterpolateToPyramidal" class="md-nav__link">
+    <span class="md-ellipsis">
+      InterpolateToPyramidal
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="InterpolateToPyramidal">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#terratorch.models.necks.InterpolateToPyramidal.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __init__
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#terratorch.models.necks.MaxpoolToPyramidal" class="md-nav__link">
+    <span class="md-ellipsis">
+      MaxpoolToPyramidal
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MaxpoolToPyramidal">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#terratorch.models.necks.MaxpoolToPyramidal.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __init__
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#terratorch.models.necks.ReshapeTokensToImage" class="md-nav__link">
+    <span class="md-ellipsis">
+      ReshapeTokensToImage
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ReshapeTokensToImage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#terratorch.models.necks.ReshapeTokensToImage.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __init__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#terratorch.models.necks.ReshapeTokensToImage.collapse_dims" class="md-nav__link">
+    <span class="md-ellipsis">
+      collapse_dims
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#terratorch.models.necks.AddBottleneckLayer" class="md-nav__link">
+    <span class="md-ellipsis">
+      AddBottleneckLayer
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#terratorch.models.necks.LearnedInterpolateToPyramidal" class="md-nav__link">
+    <span class="md-ellipsis">
+      LearnedInterpolateToPyramidal
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decoders" class="md-nav__link">
+    <span class="md-ellipsis">
+      Decoders
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#heads" class="md-nav__link">
+    <span class="md-ellipsis">
+      Heads
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terratorch.models.heads.classification_head.ClassificationHead" class="md-nav__link">
+    <span class="md-ellipsis">
+      ClassificationHead
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ClassificationHead">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#terratorch.models.heads.classification_head.ClassificationHead.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __init__
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terratorch.models.heads.regression_head.RegressionHead" class="md-nav__link">
+    <span class="md-ellipsis">
+      RegressionHead
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="RegressionHead">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#terratorch.models.heads.regression_head.RegressionHead.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __init__
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terratorch.models.heads.segmentation_head.SegmentationHead" class="md-nav__link">
+    <span class="md-ellipsis">
+      SegmentationHead
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SegmentationHead">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#terratorch.models.heads.segmentation_head.SegmentationHead.__init__" class="md-nav__link">
+    <span class="md-ellipsis">
+      __init__
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decoder-compatibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      Decoder compatibilities
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Decoder compatibilities">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#smp-decoders" class="md-nav__link">
+    <span class="md-ellipsis">
+      SMP decoders
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mmsegmentation-decoders" class="md-nav__link">
+    <span class="md-ellipsis">
+      MMSegmentation decoders
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+    <a href="https://github.com/IBM/terratorch/edit/master/docs/encoder_decoder_factory.md" title="Edit this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4v-2m10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1 2.1 2.1Z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="encoderdecoderfactory">EncoderDecoderFactory<a class="headerlink" href="#encoderdecoderfactory" title="Permanent link">#</a></h1>
 <p><em>Check the <a href="../glossary/">Glossary</a> for more information about the terms used in this page.</em></p>
 <p>The <a class="autorefs autorefs-internal" href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory">EncoderDecoderFactory</a> is the main class
 used to instantiate and compose models for general tasks. </p>
@@ -549,38 +1331,59 @@ They must be instances of <a class="autorefs autorefs-internal" href="#terratorc
 <code>backbone_</code>, <code>decoder_</code> and <code>head_</code> respectively.</p>
 
 
-<table class="field-list">
-  <colgroup>
-    <col class="field-name" />
-    <col class="field-body" />
-  </colgroup>
-  <tbody valign="top">
-    <tr class="field">
-      <th class="field-name">Parameters:</th>
-      <td class="field-body">
-        <ul class="first simple">
-            <li>
-              <b><code>task</code></b>
-                  (<code>str</code>)
-              –
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>task</code>
+            </td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>Task to be performed. Currently supports "segmentation", "regression" and "classification".</p>
               </div>
-            </li>
-            <li>
-              <b><code>backbone</code></b>
-                  (<code>(str, <span title="torch.nn.Module">Module</span>)</code>)
-              –
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>backbone</code>
+            </td>
+            <td>
+                  <code>(str, <span title="torch.nn.Module">Module</span>)</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>Backbone to be used. If a string, will look for such models in the different
 registries supported (internal terratorch registry, timm, ...). If a torch nn.Module, will use it
 directly. The backbone should have and <code>out_channels</code> attribute and its <code>forward</code> should return a list[Tensor].</p>
               </div>
-            </li>
-            <li>
-              <b><code>decoder</code></b>
-                  (<code>Union[str, <span title="torch.nn.Module">Module</span>]</code>)
-              –
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>decoder</code>
+            </td>
+            <td>
+                  <code>Union[str, <span title="torch.nn.Module">Module</span>]</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>Decoder to be used for the segmentation model.
     If a string, will look for such decoders in the different
@@ -589,59 +1392,89 @@ directly. The backbone should have and <code>out_channels</code> attribute and i
     Pixel wise tasks will be concatenated with a Conv2d for the final convolution.
     Defaults to "FCNDecoder".</p>
               </div>
-            </li>
-            <li>
-              <b><code>num_classes</code></b>
-                  (<code>int</code>, default:
-                      <code>None</code>
-)
-              –
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>num_classes</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>Number of classes. None for regression tasks.</p>
               </div>
-            </li>
-            <li>
-              <b><code>necks</code></b>
-                  (<code>list[dict]</code>, default:
-                      <code>None</code>
-)
-              –
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>necks</code>
+            </td>
+            <td>
+                  <code>list[dict]</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>nn.Modules to be called in succession on encoder features
 before passing them to the decoder. Should be registered in the NECKS_REGISTRY registry.
 Expects each one to have a key "name" and subsequent keys for arguments, if any.
 Defaults to None, which applies the identity function.</p>
               </div>
-            </li>
-            <li>
-              <b><code>aux_decoders</code></b>
-                  (<code>list[<a class="autorefs autorefs-internal" title="terratorch.models.model.AuxiliaryHead" href="../models/#terratorch.models.model.AuxiliaryHead">AuxiliaryHead</a>] | None</code>, default:
-                      <code>None</code>
-)
-              –
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>aux_decoders</code>
+            </td>
+            <td>
+                  <code>list[<a class="autorefs autorefs-internal" title="terratorch.models.model.AuxiliaryHead" href="../models/#terratorch.models.model.AuxiliaryHead">AuxiliaryHead</a>] | None</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>List of AuxiliaryHead decoders to be added to the model.
 These decoders take the input from the encoder as well.</p>
               </div>
-            </li>
-            <li>
-              <b><code>rescale</code></b>
-                  (<code>bool</code>, default:
-                      <code>True</code>
-)
-              –
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>rescale</code>
+            </td>
+            <td>
+                  <code>bool</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>Whether to apply bilinear interpolation to rescale the model output if its size
 is different from the ground truth. Only applicable to pixel wise models
 (e.g. segmentation, pixel wise regression). Defaults to True.</p>
               </div>
-            </li>
-            <li>
-              <b><code>peft_config</code></b>
-                  (<code>dict</code>, default:
-                      <code>None</code>
-)
-              –
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>peft_config</code>
+            </td>
+            <td>
+                  <code>dict</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>Configuration options for using <a href="https://huggingface.co/docs/peft/index">PEFT</a>.
 The dictionary should have the following keys:</p>
@@ -654,35 +1487,37 @@ The dictionary should have the following keys:</p>
 <li>"peft_config_kwargs": Dictionary containing keyword arguments which will be passed to <a href="https://huggingface.co/docs/peft/package_reference/config#peft.PeftConfig">PeftConfig</a></li>
 </ul>
               </div>
-            </li>
-        </ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-<table class="field-list">
-  <colgroup>
-    <col class="field-name" />
-    <col class="field-body" />
-  </colgroup>
-  <tbody valign="top">
-    <tr class="field">
-      <th class="field-name">Returns:</th>
-      <td class="field-body">
-        <ul class="first simple">
-            <li>
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
                   <code><a class="autorefs autorefs-internal" title="terratorch.models.model.Model" href="../models/#terratorch.models.model.Model">Model</a></code>
-              –
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>nn.Module: Full model with encoder, decoder and head.</p>
               </div>
-            </li>
-        </ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
             <details class="quote">
               <summary>Source code in <code>terratorch/models/encoder_decoder_factory.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-73"> 73</a></span>
@@ -1199,29 +2034,36 @@ The forward method of any encoder should return a list of <code>torch.Tensor</co
         <p>Select indices from the embedding list</p>
 
 
-<table class="field-list">
-  <colgroup>
-    <col class="field-name" />
-    <col class="field-body" />
-  </colgroup>
-  <tbody valign="top">
-    <tr class="field">
-      <th class="field-name">Parameters:</th>
-      <td class="field-body">
-        <ul class="first simple">
-            <li>
-              <b><code>indices</code></b>
-                  (<code>list[int]</code>)
-              –
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>indices</code>
+            </td>
+            <td>
+                  <code>list[int]</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>list of indices to select.</p>
               </div>
-            </li>
-        </ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
             <details class="quote">
               <summary>Source code in <code>terratorch/models/necks.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-33">33</a></span>
@@ -1338,29 +2180,36 @@ The forward method of any encoder should return a list of <code>torch.Tensor</co
         <p>Permute dimensions of each element in the embedding list</p>
 
 
-<table class="field-list">
-  <colgroup>
-    <col class="field-name" />
-    <col class="field-body" />
-  </colgroup>
-  <tbody valign="top">
-    <tr class="field">
-      <th class="field-name">Parameters:</th>
-      <td class="field-body">
-        <ul class="first simple">
-            <li>
-              <b><code>new_order</code></b>
-                  (<code>list[int]</code>)
-              –
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>new_order</code>
+            </td>
+            <td>
+                  <code>list[int]</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>list of indices to be passed to tensor.permute()</p>
               </div>
-            </li>
-        </ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
             <details class="quote">
               <summary>Source code in <code>terratorch/models/necks.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-52">52</a></span>
@@ -1838,33 +2687,42 @@ Args:
         <p>Reshape output of transformer encoder so it can be passed to a conv net.</p>
 
 
-<table class="field-list">
-  <colgroup>
-    <col class="field-name" />
-    <col class="field-body" />
-  </colgroup>
-  <tbody valign="top">
-    <tr class="field">
-      <th class="field-name">Parameters:</th>
-      <td class="field-body">
-        <ul class="first simple">
-            <li>
-              <b><code>remove_cls_token</code></b>
-                  (<code>bool</code>, default:
-                      <code>True</code>
-)
-              –
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>remove_cls_token</code>
+            </td>
+            <td>
+                  <code>bool</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>Whether to remove the cls token from the first position.
 Defaults to True.</p>
               </div>
-            </li>
-            <li>
-              <b><code>effective_time_dim</code></b>
-                  (<code>int</code>, default:
-                      <code>1</code>
-)
-              –
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>effective_time_dim</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>The effective temporal dimension the transformer processes.
 For a ViT, his will be given by <code>num_frames // tubelet size</code>. This is used to determine
@@ -1878,12 +2736,14 @@ For example:
     The embedding produced by this model has an embedding size embed_dim * 3.
 Defaults to 1.</p>
               </div>
-            </li>
-        </ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
+            </td>
+            <td>
+                  <code>1</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
             <details class="quote">
               <summary>Source code in <code>terratorch/models/necks.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-123">123</a></span>
@@ -2347,68 +3207,101 @@ Decoders passed as <code>nn.Modules</code> which do not require a head must expo
         <p>Constructor</p>
 
 
-<table class="field-list">
-  <colgroup>
-    <col class="field-name" />
-    <col class="field-body" />
-  </colgroup>
-  <tbody valign="top">
-    <tr class="field">
-      <th class="field-name">Parameters:</th>
-      <td class="field-body">
-        <ul class="first simple">
-            <li>
-              <b><code>in_dim</code></b>
-                  (<code>int</code>)
-              –
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>in_dim</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>Input dimensionality</p>
               </div>
-            </li>
-            <li>
-              <b><code>num_classes</code></b>
-                  (<code>int</code>)
-              –
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>num_classes</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>Number of output classes</p>
               </div>
-            </li>
-            <li>
-              <b><code>dim_list</code></b>
-                  (<code>list[int] | None</code>, default:
-                      <code>None</code>
-)
-              –
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>dim_list</code>
+            </td>
+            <td>
+                  <code>list[int] | None</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>List with number of dimensions for each Linear
 layer to be created. Defaults to None.</p>
               </div>
-            </li>
-            <li>
-              <b><code>dropout</code></b>
-                  (<code>float</code>, default:
-                      <code>0</code>
-)
-              –
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>dropout</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>Dropout value to apply. Defaults to 0.</p>
               </div>
-            </li>
-            <li>
-              <b><code>linear_after_pool</code></b>
-                  (<code>bool</code>, default:
-                      <code>False</code>
-)
-              –
+            </td>
+            <td>
+                  <code>0</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>linear_after_pool</code>
+            </td>
+            <td>
+                  <code>bool</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>Apply pooling first, then apply the linear layer. Defaults to False</p>
               </div>
-            </li>
-        </ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
             <details class="quote">
               <summary>Source code in <code>terratorch/models/heads/classification_head.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-10">10</a></span>
@@ -2677,81 +3570,118 @@ layer to be created. Defaults to None.</p>
         <p>Constructor</p>
 
 
-<table class="field-list">
-  <colgroup>
-    <col class="field-name" />
-    <col class="field-body" />
-  </colgroup>
-  <tbody valign="top">
-    <tr class="field">
-      <th class="field-name">Parameters:</th>
-      <td class="field-body">
-        <ul class="first simple">
-            <li>
-              <b><code>in_channels</code></b>
-                  (<code>int</code>)
-              –
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>in_channels</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>Number of input channels</p>
               </div>
-            </li>
-            <li>
-              <b><code>final_act</code></b>
-                  (<code><span title="torch.nn.Module">Module</span> | None</code>, default:
-                      <code>None</code>
-)
-              –
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>final_act</code>
+            </td>
+            <td>
+                  <code><span title="torch.nn.Module">Module</span> | None</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>Final activation to be applied. Defaults to None.</p>
               </div>
-            </li>
-            <li>
-              <b><code>learned_upscale_layers</code></b>
-                  (<code>int</code>, default:
-                      <code>0</code>
-)
-              –
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>learned_upscale_layers</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>Number of Pixelshuffle layers to create. Each upscales 2x.
 Defaults to 0.</p>
               </div>
-            </li>
-            <li>
-              <b><code>channel_list</code></b>
-                  (<code>list[int] | None</code>, default:
-                      <code>None</code>
-)
-              –
+            </td>
+            <td>
+                  <code>0</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>channel_list</code>
+            </td>
+            <td>
+                  <code>list[int] | None</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>List with number of channels for each Conv
 layer to be created. Defaults to None.</p>
               </div>
-            </li>
-            <li>
-              <b><code>batch_norm</code></b>
-                  (<code>bool</code>, default:
-                      <code>True</code>
-)
-              –
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>batch_norm</code>
+            </td>
+            <td>
+                  <code>bool</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>Whether to apply batch norm. Defaults to True.</p>
               </div>
-            </li>
-            <li>
-              <b><code>dropout</code></b>
-                  (<code>float</code>, default:
-                      <code>0</code>
-)
-              –
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>dropout</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>Dropout value to apply. Defaults to 0.</p>
               </div>
-            </li>
-        </ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
+            </td>
+            <td>
+                  <code>0</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
             <details class="quote">
               <summary>Source code in <code>terratorch/models/heads/regression_head.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-26">26</a></span>
@@ -3020,58 +3950,85 @@ layer to be created. Defaults to None.</p>
         <p>Constructor</p>
 
 
-<table class="field-list">
-  <colgroup>
-    <col class="field-name" />
-    <col class="field-body" />
-  </colgroup>
-  <tbody valign="top">
-    <tr class="field">
-      <th class="field-name">Parameters:</th>
-      <td class="field-body">
-        <ul class="first simple">
-            <li>
-              <b><code>in_channels</code></b>
-                  (<code>int</code>)
-              –
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>in_channels</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>Number of input channels</p>
               </div>
-            </li>
-            <li>
-              <b><code>num_classes</code></b>
-                  (<code>int</code>)
-              –
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>num_classes</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>Number of output classes</p>
               </div>
-            </li>
-            <li>
-              <b><code>channel_list</code></b>
-                  (<code>list[int] | None</code>, default:
-                      <code>None</code>
-)
-              –
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>channel_list</code>
+            </td>
+            <td>
+                  <code>list[int] | None</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>List with number of channels for each Conv
 layer to be created. Defaults to None.</p>
               </div>
-            </li>
-            <li>
-              <b><code>dropout</code></b>
-                  (<code>float</code>, default:
-                      <code>0</code>
-)
-              –
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>dropout</code>
+            </td>
+            <td>
+                  <code>float</code>
+            </td>
+            <td>
               <div class="doc-md-description">
                 <p>Dropout value to apply. Defaults to 0.</p>
               </div>
-            </li>
-        </ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
+            </td>
+            <td>
+                  <code>0</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
             <details class="quote">
               <summary>Source code in <code>terratorch/models/heads/segmentation_head.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-9"> 9</a></span>
@@ -3190,52 +4147,83 @@ Install mmseg with:
 </div>
 <p>Some mmseg decoders require the parameter <code>in_index</code>, which performs the same function as the <code>SelectIndices</code> neck.
 For use for pixel wise regression, mmseg decoders should take <code>num_classes=1</code>.</p>
-              
+
+
+
+
+
+                
+              </article>
             </div>
-          </div><footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="../registry/" class="btn btn-neutral float-left" title="Registries"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-    </div>
-
-  <hr/>
-
-  <div role="contentinfo">
-    <!-- Copyright etc -->
-  </div>
-
-  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
-</footer>
           
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
         </div>
-      </div>
-
-    </section>
-
-  </div>
-
-  <div class="rst-versions" role="note" aria-label="Versions">
-  <span class="rst-current-version" data-toggle="rst-current-version">
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
     
-        <span>
-          <a href="https://github.com/IBM/terratorch" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
-        </span>
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../registry/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Registries">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Registries
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
     
-    
-      <span><a href="../registry/" style="color: #fcfcfc">&laquo; Previous</a></span>
-    
-    
-  </span>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
 </div>
-    <script src="../js/jquery-3.6.0.min.js"></script>
-    <script>var base_url = "..";</script>
-    <script src="../js/theme_extra.js"></script>
-    <script src="../js/theme.js"></script>
-      <script src="../search/main.js"></script>
-    <script>
-        jQuery(function () {
-            SphinxRtdTheme.Navigation.enable(true);
-        });
-    </script>
-
-</body>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["content.code.copy", "content.code.select", "announce.dismiss", "content.action.edit", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.expand", "navigation.path", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow", "toc.integrate"], "search": "../assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.cd18aaf1.min.js"></script>
+      
+    
+  </body>
 </html>
