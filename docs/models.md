@@ -76,7 +76,11 @@ Adding a new decoder can be done in the same way with the `TERRATORCH_DECODER_RE
     
     Besides `file`, you can also pass `url`, `hf_hub_id`, amongst others. Check timm's documentation for full details.
 
-:::terratorch.models.backbones.select_patch_embed_weights
+## Backbones
+
+### :::terratorch.models.backbones.swin_encoder_decoder
+### :::terratorch.models.backbones.prithvi_mae
+### :::terratorch.models.backbones.select_patch_embed_weights
 
 ## Decoders
 ### :::terratorch.models.decoders.fcn_decoder
