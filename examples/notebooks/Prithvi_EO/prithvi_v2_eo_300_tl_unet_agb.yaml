@@ -15,7 +15,7 @@ trainer:
     - class_path: ModelCheckpoint
       init_args:
           dirpath: output/agb/checkpoints
-          mode: max
+          mode: min
           monitor: val/RMSE
           filename: best-{epoch:02d}
   max_epochs: 1
