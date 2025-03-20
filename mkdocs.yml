@@ -18,7 +18,7 @@ theme:
     - content.code.select
     - announce.dismiss
     - content.action.edit
-      #- content.action.view
+    - content.action.view
     - content.code.annotate
     - content.code.copy
     - content.code.select
@@ -47,6 +47,10 @@ theme:
 plugins:
   - search 
   - autorefs
+  - tags:
+      tags_slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
   - mkdocstrings:
       handlers:
         python:
