@@ -61,12 +61,15 @@ class TerraTorchTask(BaseTask):
         def model_forward(x,  **kwargs):
             return self(x, **kwargs).output
 
+        # The kind of memory device we are considering 
         if torch.cuda.is_available():
             device = "GPU Memory"
         else:
             device = "RAM"
 
         if not self.tiled_inference_on_testing:
+            # When the user don't set the variable `tiled_inference_on_testing`
+            # as `True` in the config, we will try to use full inference.
             try:
                 model_output: ModelOutput = self(x, **rest)
             except (torch.OutOfMemoryError, MemoryError)  as e:
@@ -74,12 +77,18 @@ class TerraTorchTask(BaseTask):
 
         else:
             try:
+                # Even when `tiled_inference_on_testing` is `True`, we at least
+                # try to execute a full inference.
                 model_output: ModelOutput = self(x, **rest)
             except (torch.OutOfMemoryError, MemoryError) as e:
+                # We got a out of memory error, so, let's use tiled inference.
                 logger.info(f"\nThe full input sample could not be allocated on {device}. Trying to use tiled inference.")
                 logger.info("Notice that the tiled inference WON'T produce the exactly same result as the full inference.")
                 if self.tiled_inference_parameters:
-
+                    # Even when tiled inference is chosen and we have a config
+                    # define for it, we can have a memory issue when this
+                    # config isn't suitable. A bad choice for the tile sizes is
+                    # usually the cause for that.
                     try:
                         y_hat: Tensor = tiled_inference(
                             model_forward,
@@ -95,6 +104,10 @@ class TerraTorchTask(BaseTask):
                 else:
                     raise Exception("You need to define a configuration for the tiled inference.")
             else:
+                # The try-except constructor hiddens others possibilities of
+                # error different from (torch.OutOfMemoryError, MemoryError),
+                # so it's better to set `tiled_inference_on_testing` as `False`
+                # to directly print it. 
                 print("Inference failed for others reasons, not related to memory. Set `tiled_inference_on_testing` as `False` to see them.")
 
         return model_output
