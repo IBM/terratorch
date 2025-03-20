@@ -27,7 +27,7 @@ from terratorch.tasks.optimizer_factory import optimizer_factory
 import numpy as np
 from functools import partial
 import torch
-
+import pdb
 SUPPORTED_TASKS = ['object_detection']
 
 def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
@@ -88,8 +88,8 @@ class ObjectDetectionModelFactory(ModelFactory):
         framework_kwargs, kwargs = extract_prefix_keys(kwargs, "framework_")
         
         backbone = _get_backbone(backbone, **backbone_kwargs)
-        if 'in_channels' in backbone_kwargs.keys():
-            in_channels = backbone_kwargs['in_channels']
+        if 'in_channels' in kwargs.keys():
+            in_channels = kwargs['in_channels']
         else:
             in_channels = len(backbone_kwargs["model_bands"]) if "model_bands" in backbone_kwargs.keys() else len(backbone_kwargs["bands"])
 
