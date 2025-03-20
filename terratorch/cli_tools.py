@@ -56,6 +56,7 @@ from terratorch.tasks import (
     SemanticSegmentationTask,  # noqa: F401
 )
 
+import pdb
 logger = logging.getLogger("terratorch")
 
 def flatten(list_of_lists):
@@ -347,23 +348,28 @@ class StateDictAwareModelCheckpoint(ModelCheckpoint):
 
 class MyLightningCLI(LightningCLI):
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:
+        
         parser.add_argument("--predict_output_dir", default=None)
         parser.add_argument("--out_dtype", default="int16")
         parser.add_argument("--deploy_config_file", type=bool, default=True)
         parser.add_argument("--custom_modules_path", type=str, default=None)
 
         # parser.set_defaults({"trainer.enable_checkpointing": False})
-
+        # monitor = "val/loss"
+        monitor = "val_map"
+        mode = 'max'
+        
         parser.add_lightning_class_args(StateDictAwareModelCheckpoint, "ModelCheckpoint")
-        parser.set_defaults({"ModelCheckpoint.filename": "{epoch}", "ModelCheckpoint.monitor": "val/loss"})
+        parser.set_defaults({"ModelCheckpoint.filename": "{epoch}", "ModelCheckpoint.monitor": monitor, "ModelCheckpoint.mode": mode})
 
         parser.add_lightning_class_args(StateDictAwareModelCheckpoint, "StateDictModelCheckpoint")
         parser.set_defaults(
             {
                 "StateDictModelCheckpoint.filename": "{epoch}_state_dict",
                 "StateDictModelCheckpoint.save_weights_only": True,
-                "StateDictModelCheckpoint.monitor": "val/loss",
-            }
+                "StateDictModelCheckpoint.monitor": monitor,
+                "StateDictModelCheckpoint.mode": mode,
+             }
         )
 
         parser.link_arguments("ModelCheckpoint.dirpath", "StateDictModelCheckpoint.dirpath")

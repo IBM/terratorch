@@ -5,7 +5,7 @@ import torch
 from torch import nn
 
 from terratorch.registry import BACKBONE_REGISTRY
-
+import pdb
 
 class TimmBackboneWrapper(nn.Module):
     def __init__(self, timm_module: nn.Module) -> None:
@@ -16,6 +16,7 @@ class TimmBackboneWrapper(nn.Module):
 
     @property
     def out_channels(self):
+        
         return self._timm_module.feature_info.channels()
 
 
@@ -34,12 +35,18 @@ class TimmRegistry(Set):
         Use prefixes ending with _ to forward to a specific source
         """
         try:
+            # pdb.set_trace()
+            constructor_kwargs_new = constructor_kwargs.copy()
+            # if 'bands' in constructor_kwargs_new.keys():
+            #     del constructor_kwargs_new['bands']
+            # elif 'model_bands' in constructor_kwargs_new.keys():
+            #     del constructor_kwargs_new['model_bands']
             return TimmBackboneWrapper(
                 timm.create_model(
                     name,
                     *constructor_args,
                     features_only=features_only,
-                    **constructor_kwargs,
+                    **constructor_kwargs_new,
                 )
             )
         except RuntimeError as e:
