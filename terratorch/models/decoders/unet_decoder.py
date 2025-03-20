@@ -21,6 +21,9 @@ class UNetDecoder(nn.Module):
             use_batchnorm (bool, optional): Whether to use batchnorm. Defaults to True.
             attention_type (str | None, optional): Attention type to use. Defaults to None
         """
+        if len(embed_dim) != len(channels):
+            msg = "channels should have the same length as embed_dim"
+            raise ValueError(msg)
         super().__init__()
         self.decoder = UnetDecoder(
             encoder_channels=[embed_dim[0], *embed_dim],
