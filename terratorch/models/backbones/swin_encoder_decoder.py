@@ -635,8 +635,9 @@ class ShiftWindowMSA(nn.Module):
             windows: (num_windows*B, window_size, window_size, C)
             H (int): Height of image
             W (int): Width of image
+
         Returns:
-            x: (B, H, W, C)
+            tuple: (B, H, W, C)
         """
         window_size = self.window_size
         B = int(windows.shape[0] / (H * W / window_size / window_size))  # noqa: N806
@@ -648,8 +649,9 @@ class ShiftWindowMSA(nn.Module):
         """
         Args:
             x: (B, H, W, C)
+
         Returns:
-            windows: (num_windows*B, window_size, window_size, C)
+            tuple: (num_windows*B, window_size, window_size, C)
         """
         B, H, W, C = x.shape  # noqa: N806
         window_size = self.window_size
