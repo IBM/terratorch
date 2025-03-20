@@ -1640,17 +1640,17 @@ The forward method of any encoder should return a list of <code>torch.Tensor</co
 </span></code></pre></div>
 <h2 id="necks">Necks<a class="headerlink" href="#necks" title="Permanent link">#</a></h2>
 <p>Necks are the connectors between encoder and decoder. They can perform operations such as selecting elements from the output of the encoder (<a class="autorefs autorefs-internal" href="../necks/#terratorch.models.necks.SelectIndices">SelectIndices</a>), reshaping the outputs of ViTs so they are compatible with CNNs (<a class="autorefs autorefs-internal" href="../necks/#terratorch.models.necks.ReshapeTokensToImage">ReshapeTokensToImage</a>), amongst others.
-Necks are <code>nn.Modules</code>, with an additional method <code>process_channel_list</code> which informs the <a class="autorefs autorefs-internal" href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory">EncoderDecoderFactory</a> about how it will alter the channel list provided by <code>encoder.out_channels</code>. See a better description about necks <a href="docs/necks.md">here</a>.</p>
+Necks are <code>nn.Modules</code>, with an additional method <code>process_channel_list</code> which informs the <a class="autorefs autorefs-internal" href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory">EncoderDecoderFactory</a> about how it will alter the channel list provided by <code>encoder.out_channels</code>. See a better description about necks <a href="../necks/">here</a>.</p>
 <h2 id="decoders">Decoders<a class="headerlink" href="#decoders" title="Permanent link">#</a></h2>
 <p>To be a valid decoder, an object must be an <code>nn.Module</code> with an attribute <code>out_channels</code>, an <code>int</code> representing the channel dimension of the output.
 The first argument to its constructor will be a list of channel dimensions it should expect as input.
 It's forward method should accept a list of embeddings. To see a list of builtin decoders check the
-related <a href="docs/decoders.md">documentation</a>. </p>
+related <a href="../decoders/">documentation</a>. </p>
 <h2 id="heads">Heads<a class="headerlink" href="#heads" title="Permanent link">#</a></h2>
 <p>Most decoders require a final head to be added for a specific task (e.g. semantic segmentation vs pixel wise regression).
 Those registries producing decoders that dont require a head must expose the attribute <code>includes_head=True</code> so that a head is not added.
 Decoders passed as <code>nn.Modules</code> which do not require a head must expose the same attribute themselves. More
-about heads can be seen in its <a href="docs/heads.md">documentation</a>. </p>
+about heads can be seen in its <a href="../heads/">documentation</a>. </p>
 <h2 id="decoder-compatibilities">Decoder compatibilities<a class="headerlink" href="#decoder-compatibilities" title="Permanent link">#</a></h2>
 <p>Not all encoders and decoders are compatible. Below we include some caveats.
 Some decoders expect pyramidal outputs, but some encoders do not produce such outputs (e.g. vanilla ViT models).
