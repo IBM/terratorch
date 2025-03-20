@@ -4,11 +4,18 @@ on:
   push:
     branches:
       - main
-  
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'tests/resources/**'
   pull_request:
     branches:
       - main
       - dev
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'tests/resources/**'
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -28,38 +35,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements/required.txt -r requirements/test.txt -r requirements/optional.txt
-          pip install git+https://github.com/NASA-IMPACT/Prithvi-WxC.git
-          pip install git+https://github.com/IBM/granite-wxc.git
+          pip install -e .[wxc,test]
       - name: List pip dependencies
         run: pip list
       - name: Test with pytest
         run: |
-          pytest -s tests
+          pytest -s --cov=terratorch -v --cov-report term-missing tests
 
-#  build_weather:
-#    runs-on: ubuntu-latest
-#    strategy:
-#      matrix:
-#        python-version: ["3.11"]
-
-#    steps:
-#      - name: Clone repo
-#        uses: actions/checkout@v3
-#      - name: Set up Python ${{ matrix.python-version }}
-#        uses: actions/setup-python@v4
-#        with:
-#          python-version: ${{ matrix.python-version }}
-#          cache: 'pip'
-#      - name: Install dependencies
-#        run: |
-#          python -m pip install --upgrade pip
-#          pip install -r requirements/required.txt -r requirements/test.txt -r requirements/optional.txt
-#          pip install git+https://github.com/NASA-IMPACT/Prithvi-WxC.git
-#          pip install git+https://github.com/IBM/granite-wxc.git
-#      - name: List pip dependencies
-#        run: pip list
-#      - name: Test with pytest
-#        run: |
-#          pytest -s tests
 

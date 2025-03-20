@@ -32,7 +32,7 @@ trainer:
   default_root_dir: output/BurnScars
 
 data:
-  class_path: GenericNonGeoSegmentationDataModule
+  class_path: terratorch.datamodules.GenericNonGeoSegmentationDataModule
   init_args:
     batch_size: 4
     num_workers: 8

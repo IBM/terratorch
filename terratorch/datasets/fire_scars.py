@@ -24,7 +24,7 @@ from terratorch.datasets.utils import clip_image_percentile, default_transform, 
 
 
 class FireScarsNonGeo(NonGeoDataset):
-    """NonGeo dataset implementation for fire scars."""
+    """NonGeo dataset implementation for [fire scars](https://huggingface.co/datasets/ibm-nasa-geospatial/hls_burn_scars)."""
     all_band_names = (
         "BLUE",
         "GREEN",

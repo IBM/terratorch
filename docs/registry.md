@@ -13,27 +13,27 @@ To create the desired instance, registries expose a `build` method, which accept
 from terratorch import BACKBONE_REGISTRY
 
 # find available prithvi models
-print([model_name for model_name in BACKBONE_REGISTRY if "prithvi" in model_name])
->>> ['timm_prithvi_swin_B', 'timm_prithvi_swin_L', 'timm_prithvi_vit_100', 'timm_prithvi_vit_300', 'timm_prithvi_vit_tiny']
+print([model_name for model_name in BACKBONE_REGISTRY if "terratorch_prithvi" in model_name])
+>>> ['terratorch_prithvi_eo_tiny', 'terratorch_prithvi_eo_v1_100', 'terratorch_prithvi_eo_v2_300', 'terratorch_prithvi_eo_v2_600', 'terratorch_prithvi_eo_v2_300_tl', 'terratorch_prithvi_eo_v2_600_tl']
 
 # show all models with list(BACKBONE_REGISTRY)
 
 # check a model is in the registry
-"timm_prithvi_swin_B" in BACKBONE_REGISTRY
+"terratorch_prithvi_eo_v2_300" in BACKBONE_REGISTRY
 >>> True
 
 # without the prefix, all internal registries will be searched until the first match is found
-"prithvi_swin_B" in BACKBONE_REGISTRY
+"prithvi_eo_v1_100" in BACKBONE_REGISTRY
 >>> True
 
 # instantiate your desired model
-# the backbone registry prefix (in this case 'timm') is optional
-# in this case, the underlying registry is timm, so we can pass timm arguments to it
-model = BACKBONE_REGISTRY.build("prithvi_vit_100", num_frames=1, pretrained=True)
+# the backbone registry prefix (e.g. `terratorch` or `timm`) is optional
+# in this case, the underlying registry is terratorch.
+model = BACKBONE_REGISTRY.build("prithvi_eo_v1_100", pretrained=True)
 
-# instantiate your model with more options, for instance, passing weights of your own through timm
+# instantiate your model with more options, for instance, passing weights from your own file
 model = BACKBONE_REGISTRY.build(
-    "prithvi_vit_100", num_frames=1, pretrained=True, pretrained_cfg_overlay={"file": "<path to weights>"}
+    "prithvi_eo_v2_300", num_frames=1, ckpt_path='path/to/model.pt'
 )
 # Rest of your PyTorch / PyTorchLightning code
 

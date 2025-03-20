@@ -20,7 +20,7 @@ from terratorch.datasets.utils import (
 
 
 class MBrickKilnNonGeo(NonGeoDataset):
-    """NonGeo dataset implementation for M-BrickKiln."""
+    """NonGeo dataset implementation for [M-BrickKiln](https://github.com/ServiceNow/geo-bench?tab=readme-ov-file)."""
     all_band_names = (
         "COASTAL_AEROSOL",
         "BLUE",

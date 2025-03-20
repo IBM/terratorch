@@ -18,6 +18,7 @@ from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
 from terratorch.tasks.tiled_inference import TiledInferenceParameters, tiled_inference
 from terratorch.tasks.base_task import TerraTorchTask
+from terratorch.models.model import ModelOutput
 
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
 
@@ -32,7 +33,7 @@ def to_segmentation_prediction(y: ModelOutput) -> Tensor:
 class SemanticSegmentationTask(TerraTorchTask):
     """Semantic Segmentation Task that accepts models from a range of sources.
 
-    This class is analog in functionality to class:SemanticSegmentationTask defined by torchgeo.
+    This class is analog in functionality to class SemanticSegmentationTask defined by torchgeo.
     However, it has some important differences:
         - Accepts the specification of a model factory
         - Logs metrics per class
@@ -60,15 +61,17 @@ class SemanticSegmentationTask(TerraTorchTask):
         #
         freeze_backbone: bool = False,  # noqa: FBT001, FBT002
         freeze_decoder: bool = False,  # noqa: FBT002, FBT001
+        freeze_head: bool = False, 
         plot_on_val: bool | int = 10,
         class_names: list[str] | None = None,
         tiled_inference_parameters: TiledInferenceParameters = None,
         test_dataloaders_names: list[str] | None = None,
+        lr_overrides: dict[str, float] | None = None,
+        output_most_probable: bool = True,
     ) -> None:
         """Constructor
 
         Args:
-
             Defaults to None.
             model_args (Dict): Arguments passed to the model factory.
             model_factory (str, optional): ModelFactory class to be used to instantiate the model.
@@ -96,7 +99,8 @@ class SemanticSegmentationTask(TerraTorchTask):
             scheduler_hparams (dict | None): Parameters to be passed for instantiation of the scheduler.
                 Overriden by config / cli specification through LightningCLI.
             freeze_backbone (bool, optional): Whether to freeze the backbone. Defaults to False.
-            freeze_decoder (bool, optional): Whether to freeze the decoder and segmentation head. Defaults to False.
+            freeze_decoder (bool, optional): Whether to freeze the decoder. Defaults to False.
+            freeze_head (bool, optional): Whether to freeze the segmentation head. Defaults to False.
             plot_on_val (bool | int, optional): Whether to plot visualizations on validation.
             If true, log every epoch. Defaults to 10. If int, will plot every plot_on_val epochs.
             class_names (list[str] | None, optional): List of class names passed to metrics for better naming.
@@ -106,6 +110,11 @@ class SemanticSegmentationTask(TerraTorchTask):
             test_dataloaders_names (list[str] | None, optional): Names used to differentiate metrics when
                 multiple dataloaders are returned by test_dataloader in the datamodule. Defaults to None,
                 which assumes only one test dataloader is used.
+            lr_overrides (dict[str, float] | None, optional): Dictionary to override the default lr in specific
+                parameters. The key should be a substring of the parameter names (it will check the substring is
+                contained in the parameter name)and the value should be the new lr. Defaults to None.
+            output_most_probable (bool): A boolean to define if the output during the inference will be just
+                for the most probable class or if it will include all of them. 
         """
         self.tiled_inference_parameters = tiled_inference_parameters
         self.aux_loss = aux_loss
@@ -132,6 +141,12 @@ class SemanticSegmentationTask(TerraTorchTask):
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
         self.monitor = f"{self.val_metrics.prefix}loss"
         self.plot_on_val = int(plot_on_val)
+        self.output_most_probable = output_most_probable
+
+        if output_most_probable:
+            self.select_classes = lambda y: y.argmax(dim=1) 
+        else:
+            self.select_classes = lambda y: y
 
     def configure_losses(self) -> None:
         """Initialize the loss criterion.
@@ -228,7 +243,6 @@ class SemanticSegmentationTask(TerraTorchTask):
         other_keys = batch.keys() - {"image", "mask", "filename"}
 
         rest = {k: batch[k] for k in other_keys}
-
         model_output: ModelOutput = self(x, **rest)
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
@@ -251,7 +265,28 @@ class SemanticSegmentationTask(TerraTorchTask):
 
         rest = {k: batch[k] for k in other_keys}
 
-        model_output: ModelOutput = self(x, **rest)
+        def model_forward(x,  **kwargs):
+            return self(x, **kwargs).output
+
+        # When the input sample cannot be fit on memory for some reason
+        # the tiled inference is automatically invoked.
+        try:
+            model_output: ModelOutput = self(x, **rest)
+        except RuntimeError:
+            logger.info("\n The input sample could not run in a full format. Using tiled inference.")
+            looger.info("Notice that the tiled inference WON'T produce the exactly same result as the full inference.")
+            if self.tiled_inference_parameters:
+                y_hat: Tensor = tiled_inference(
+                    model_forward,
+                    x,
+                    self.hparams["model_args"]["num_classes"],
+                    self.tiled_inference_parameters,
+                    **rest,
+                )
+                model_output = ModelOutput(output=y_hat)
+            else:
+                raise Exception("You need to define a configuration for the tiled inference.")
+
         if dataloader_idx >= len(self.test_loss_handler):
             msg = "You are returning more than one test dataloader but not defining enough test_dataloaders_names."
             raise ValueError(msg)
@@ -263,11 +298,6 @@ class SemanticSegmentationTask(TerraTorchTask):
         )
         y_hat_hard = to_segmentation_prediction(model_output)
         self.test_metrics[dataloader_idx].update(y_hat_hard, y)
-
-    def on_test_epoch_end(self) -> None:
-        for metrics in self.test_metrics:
-            self.log_dict(metrics.compute(), sync_dist=True)
-            metrics.reset()
 
     def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         """Compute the validation loss and additional metrics.
@@ -282,7 +312,6 @@ class SemanticSegmentationTask(TerraTorchTask):
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
-
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat_hard = to_segmentation_prediction(model_output)
@@ -294,7 +323,7 @@ class SemanticSegmentationTask(TerraTorchTask):
                 batch["prediction"] = y_hat_hard
 
                 if isinstance(batch["image"], dict):
-                    if hasattr(datamodule, 'rgb_modality'):
+                    if hasattr(datamodule, "rgb_modality"):
                         # Generic multimodal dataset
                         batch["image"] = batch["image"][datamodule.rgb_modality]
                     else:
@@ -335,17 +364,20 @@ class SemanticSegmentationTask(TerraTorchTask):
 
         rest = {k: batch[k] for k in other_keys}
 
-        model_output: ModelOutput = self(x, **rest)
-
-        def model_forward(x):
-            return self(x).output
+        def model_forward(x,  **kwargs):
+            return self(x, **kwargs).output
 
         if self.tiled_inference_parameters:
             y_hat: Tensor = tiled_inference(
-                # TODO: tiled inference does not work with additional input data (**rest)
-                model_forward, x, self.hparams["model_args"]["num_classes"], self.tiled_inference_parameters
+                model_forward,
+                x,
+                self.hparams["model_args"]["num_classes"],
+                self.tiled_inference_parameters,
+                **rest,
             )
         else:
             y_hat: Tensor = self(x, **rest).output
-        y_hat = y_hat.argmax(dim=1)
+
+        y_hat = self.select_classes(y_hat)
+
         return y_hat, file_names

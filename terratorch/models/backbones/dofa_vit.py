@@ -61,7 +61,7 @@ class DOFAEncoderWrapper(nn.Module):
         self.wavelengths = wavelengths
 
         self.out_indices = out_indices if out_indices else [-1]
-        self.out_channels = [self.dofa_model.embed_dim] * len(self.out_indices)
+        self.out_channels = [self.dofa_model.patch_embed.embed_dim] * len(self.out_indices)
         
     def forward(self, x: List[torch.Tensor], **kwargs) -> torch.Tensor:
         
@@ -141,7 +141,7 @@ def load_dofa_weights(model: nn.Module, ckpt_data: str | None = None,  weights: 
             repo_id = ckpt_data.split("/resolve/")[0].replace("https://hf.co/", '')
             filename = ckpt_data.split("/")[-1]
             ckpt_data = huggingface_hub.hf_hub_download(repo_id=repo_id, filename=filename)
-        checkpoint_model = torch.load(ckpt_data, map_location="cpu")
+        checkpoint_model = torch.load(ckpt_data, map_location="cpu", weights_only=True)
 
         for k in ["head.weight", "head.bias"]:
                 if (

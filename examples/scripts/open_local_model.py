@@ -1,10 +1,10 @@
 from terratorch.io.file import open_generic_torch_model
-from models_mae_temporal import MaskedAutoencoderViT
+from terratorch.models.backbones.prithvi_mae import PrithviMAE
 from torch import nn
 
 # Path for a downloaded model
 model_weights_path = "./pretrain-vit-base-e199.pth"
-model_template = MaskedAutoencoderViT
+model_template = PrithviMAE
 
 model_kwargs = {
     'img_size': 224,

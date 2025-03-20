@@ -5,6 +5,7 @@ import torch
 import torch.nn.functional as F
 from einops import rearrange
 from torch import nn
+import math
 from torchvision.ops import FeaturePyramidNetwork
 
 from terratorch.registry import NECK_REGISTRY, TERRATORCH_NECK_REGISTRY
@@ -91,7 +92,6 @@ class InterpolateToPyramidal(Neck):
         return out
 
     def process_channel_list(self, channel_list: list[int]) -> list[int]:
-        # pdb.set_trace()
         return super().process_channel_list(channel_list)
 
 
@@ -146,17 +146,30 @@ class ReshapeTokensToImage(Neck):
         self.remove_cls_token = remove_cls_token
         self.effective_time_dim = effective_time_dim
 
+    def collapse_dims(self, x):
+        """
+        When the encoder output has more than 3 dimensions, is necessary to 
+        reshape it. 
+        """
+        shape = x.shape
+        batch = x.shape[0]
+        e = x.shape[-1]
+        collapsed_dim = np.prod(x.shape[1:-1])
+
+        return x.reshape(batch, collapsed_dim, e)
+
     def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
-        #pdb.set_trace()
         out = []
         for x in features:
             if self.remove_cls_token:
                 x_no_token = x[:, 1:, :]
             else:
                 x_no_token = x
+            x_no_token = self.collapse_dims(x_no_token)
             number_of_tokens = x_no_token.shape[1]
             tokens_per_timestep = number_of_tokens // self.effective_time_dim
-            h = int(np.sqrt(tokens_per_timestep))
+            h = int(math.sqrt(tokens_per_timestep))
+
             encoded = rearrange(
                 x_no_token,
                 "batch (t h w) e -> batch (t e) h w",
@@ -165,11 +178,9 @@ class ReshapeTokensToImage(Neck):
                 h=h,
             )
             out.append(encoded)
-        # pdb.set_trace()
         return out
 
     def process_channel_list(self, channel_list: list[int]) -> list[int]:
-        # pdb.set_trace()
         return super().process_channel_list(channel_list)
 
 @TERRATORCH_NECK_REGISTRY.register
@@ -220,46 +231,11 @@ class LearnedInterpolateToPyramidal(Neck):
         scaled_inputs.append(self.fpn2(features[1]))
         scaled_inputs.append(self.fpn3(features[2]))
         scaled_inputs.append(self.fpn4(features[3]))
-        # pdb.set_trace()
         return scaled_inputs
 
     def process_channel_list(self, channel_list: list[int]=None) -> list[int]:
-        # pdb.set_trace()
         return [channel_list[0] // 4, channel_list[1] // 2, channel_list[2], channel_list[3]]
 
-@TERRATORCH_NECK_REGISTRY.register
-class Transform(Neck):
-    """Use learned convolutions to transform the output of a non-pyramidal encoder into pyramidal ones
-
-    Always requires exactly 4 embeddings
-    """
-
-    def __init__(self, channel_list: list[int]):
-        super().__init__(channel_list)
-        if len(channel_list) != 4:
-            msg = "This class can only handle exactly 4 input embeddings"
-            raise Exception(msg)
-        self.fpn1 = nn.Sequential(
-            nn.ConvTranspose2d(channel_list[0], channel_list[0] // 2, 2, 2),
-            nn.BatchNorm2d(channel_list[0] // 2),
-            nn.GELU(),
-            nn.ConvTranspose2d(channel_list[0] // 2, channel_list[0] // 4, 2, 2),
-        )
-        self.fpn2 = nn.Sequential(nn.ConvTranspose2d(channel_list[1], channel_list[1] // 2, 2, 2))
-        self.fpn3 = nn.Sequential(nn.Identity())
-        self.fpn4 = nn.Sequential(nn.MaxPool2d(kernel_size=2, stride=2))
-        self.embedding_dim = [channel_list[0] // 4, channel_list[1] // 2, channel_list[2], channel_list[3]]
-
-    def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
-        scaled_inputs = []
-        scaled_inputs.append(self.fpn1(features[0]))
-        scaled_inputs.append(self.fpn2(features[1]))
-        scaled_inputs.append(self.fpn3(features[2]))
-        scaled_inputs.append(self.fpn4(features[3]))
-        return scaled_inputs
-
-    def process_channel_list(self, channel_list: list[int]) -> list[int]:
-        return [channel_list[0] // 4, channel_list[1] // 2, channel_list[2], channel_list[3]]
 
 @TERRATORCH_NECK_REGISTRY.register
 class FeaturePyramidNetworkNeck(Neck):

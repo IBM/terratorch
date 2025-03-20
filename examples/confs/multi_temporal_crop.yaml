@@ -90,7 +90,7 @@ model:
     model_args:
       decoder: FCNDecoder
       backbone_pretrained: true
-      backbone: prithvi_vit_100
+      backbone: prithvi_eo_v2_300
       backbone_in_channels: 6
       rescale: False
       backbone_bands:

@@ -1,4 +1,5 @@
 import os
+import torch
 import importlib 
 from torch import nn
 import numpy as np
@@ -22,6 +23,7 @@ def open_generic_torch_model(model: type | str = None,
 
     return load_torch_weights(model=model, save_dir=dirname, name=filename) 
 
+
 def load_torch_weights(model:nn.Module=None, save_dir: str = None, name: str = None, device: str = None) -> None:
 
     print(f"Trying to load for {device}")
@@ -30,28 +32,21 @@ def load_torch_weights(model:nn.Module=None, save_dir: str = None, name: str = N
         if device != None:
             model.load_state_dict(
                 torch.load(
-                    os.path.join(save_dir, name + ".pth"),
+                    os.path.join(save_dir, name),
                     map_location=torch.device(device),
+                    weights_only=True,
                 )
             )
         else:
-            #try:
-            #    path = os.path.join(save_dir, name)
-            #    checkpoint = torch.load(path, map_location='cpu')
-            #    model = checkpoint['model']
-            #    state_dict = model.state_dict()
-            #    msg = model.load_state_dict(model, strict=False)
-
-            #except Exception:         
-
-            model.load_state_dict(torch.load(os.path.join(save_dir, name)))
+            model.load_state_dict(torch.load(os.path.join(save_dir, name), map_location='cpu', weights_only=True))
 
     except Exception:
         print(
-            f"It was not possible to load from {os.path.join(save_dir, name + '.pth')}"
+            f"It was not possible to load from {os.path.join(save_dir, name)}"
         )
 
     return model
+
 
 def load_from_file_or_attribute(value: list[float]|str):
 

@@ -5,24 +5,20 @@ import torch
 from torch import nn
 
 from terratorch.registry import BACKBONE_REGISTRY
-import pdb
+from terratorch.utils import remove_unexpected_prefix
+
 
 class TimmBackboneWrapper(nn.Module):
     def __init__(self, timm_module: nn.Module) -> None:
         super().__init__()
-        self._timm_module = timm_module
+        self._modules.update(timm_module._modules)
+        self._out_channels = timm_module.feature_info.channels()
         # for backwards compatibility for times before necks
-        self.prepare_features_for_image_model = getattr(self._timm_module, "prepare_features_for_image_model", lambda x: x)
-
+        self.prepare_features_for_image_model = getattr(timm_module, "prepare_features_for_image_model", lambda x: x)
+        self.forward = timm_module.forward
     @property
     def out_channels(self):
-        
-        return self._timm_module.feature_info.channels()
-
-
-    def forward(self, *args, **kwargs) -> list[torch.Tensor]:
-        return self._timm_module(*args, **kwargs)
-
+        return self._out_channels
 
 class TimmRegistry(Set):
     """Registry wrapper for timm"""
@@ -35,18 +31,12 @@ class TimmRegistry(Set):
         Use prefixes ending with _ to forward to a specific source
         """
         try:
-            # pdb.set_trace()
-            constructor_kwargs_new = constructor_kwargs.copy()
-            # if 'bands' in constructor_kwargs_new.keys():
-            #     del constructor_kwargs_new['bands']
-            # elif 'model_bands' in constructor_kwargs_new.keys():
-            #     del constructor_kwargs_new['model_bands']
             return TimmBackboneWrapper(
                 timm.create_model(
                     name,
                     *constructor_args,
                     features_only=features_only,
-                    **constructor_kwargs_new,
+                    **constructor_kwargs,
                 )
             )
         except RuntimeError as e:

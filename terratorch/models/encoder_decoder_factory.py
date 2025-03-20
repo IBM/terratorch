@@ -1,8 +1,8 @@
 # Copyright contributors to the Terratorch project
 
-
+from typing import List
 import warnings
-
+import logging 
 from torch import nn
 
 from terratorch.models.model import (
@@ -65,6 +65,8 @@ def _check_all_args_used(kwargs):
         msg = f"arguments {kwargs} were passed but not used."
         raise ValueError(msg)
 
+def _get_argument_from_instance(model, name):
+    return getattr(model._timm_module.patch_embed, name)[-1]
 
 @MODEL_FACTORY_REGISTRY.register
 class EncoderDecoderFactory(ModelFactory):
@@ -73,6 +75,9 @@ class EncoderDecoderFactory(ModelFactory):
         task: str,
         backbone: str | nn.Module,
         decoder: str | nn.Module,
+        backbone_kwargs: dict | None = None,
+        decoder_kwargs: dict | None = None,
+        head_kwargs: dict | None = None,
         num_classes: int | None = None,
         necks: list[dict] | None = None,
         aux_decoders: list[AuxiliaryHead] | None = None,
@@ -86,7 +91,7 @@ class EncoderDecoderFactory(ModelFactory):
         `backbone_`, `decoder_` and `head_` respectively.
 
         Args:
-            task (str): Task to be performed. Currently supports "segmentation" and "regression".
+            task (str): Task to be performed. Currently supports "segmentation", "regression" and "classification".
             backbone (str, nn.Module): Backbone to be used. If a string, will look for such models in the different
                 registries supported (internal terratorch registry, timm, ...). If a torch nn.Module, will use it
                 directly. The backbone should have and `out_channels` attribute and its `forward` should return a list[Tensor].
@@ -96,6 +101,9 @@ class EncoderDecoderFactory(ModelFactory):
                     If an nn.Module, we expect it to expose a property `decoder.out_channels`.
                     Pixel wise tasks will be concatenated with a Conv2d for the final convolution.
                     Defaults to "FCNDecoder".
+            backbone_kwargs (dict, optional) : Arguments to be passed to instantiate the backbone.
+            decoder_kwargs (dict, optional) : Arguments to be passed to instantiate the decoder.
+            head_kwargs (dict, optional) : Arguments to be passed to the head network. 
             num_classes (int, optional): Number of classes. None for regression tasks.
             necks (list[dict]): nn.Modules to be called in succession on encoder features
                 before passing them to the decoder. Should be registered in the NECKS_REGISTRY registry.
@@ -125,8 +133,21 @@ class EncoderDecoderFactory(ModelFactory):
             msg = f"Task {task} not supported. Please choose one of {SUPPORTED_TASKS}"
             raise NotImplementedError(msg)
 
-        backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
+        if not backbone_kwargs:
+            backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
+
         backbone = _get_backbone(backbone, **backbone_kwargs)
+
+        # If patch size is not provided in the config or by the model, it might lead to errors due to irregular images.
+        patch_size = backbone_kwargs.get("patch_size", None)
+
+        if patch_size is None:
+            # Infer patch size from model by checking all backbone modules
+            for module in backbone.modules():
+                if hasattr(module, "patch_size"):
+                    patch_size = module.patch_size
+                    break
+        padding = backbone_kwargs.get("padding", "reflect")
 
         if peft_config is not None:
             if not backbone_kwargs.get("pretrained", False):
@@ -152,8 +173,11 @@ class EncoderDecoderFactory(ModelFactory):
         # for these, we pass the num_classes to them
         # others dont include a head
         # for those, we dont pass num_classes
-        decoder_kwargs, kwargs = extract_prefix_keys(kwargs, "decoder_")
-        head_kwargs, kwargs = extract_prefix_keys(kwargs, "head_")
+        if not decoder_kwargs:
+            decoder_kwargs, kwargs = extract_prefix_keys(kwargs, "decoder_")
+
+        if not head_kwargs:
+            head_kwargs, kwargs = extract_prefix_keys(kwargs, "head_")
 
         decoder, head_kwargs, decoder_includes_head = _get_decoder_and_head_kwargs(
             decoder, channel_list, decoder_kwargs, head_kwargs, num_classes=num_classes
@@ -166,6 +190,8 @@ class EncoderDecoderFactory(ModelFactory):
                 backbone,
                 decoder,
                 head_kwargs,
+                patch_size=patch_size,
+                padding=padding,
                 necks=neck_list,
                 decoder_includes_head=decoder_includes_head,
                 rescale=rescale,
@@ -191,6 +217,8 @@ class EncoderDecoderFactory(ModelFactory):
             backbone,
             decoder,
             head_kwargs,
+            patch_size=patch_size,
+            padding=padding,
             necks=neck_list,
             decoder_includes_head=decoder_includes_head,
             rescale=rescale,
@@ -203,6 +231,8 @@ def _build_appropriate_model(
     backbone: nn.Module,
     decoder: nn.Module,
     head_kwargs: dict,
+    patch_size: int | list | None,
+    padding: str,
     decoder_includes_head: bool = False,
     necks: list[Neck] | None = None,
     rescale: bool = True,  # noqa: FBT001, FBT002
@@ -218,6 +248,8 @@ def _build_appropriate_model(
             backbone,
             decoder,
             head_kwargs,
+            patch_size=patch_size,
+            padding=padding,
             decoder_includes_head=decoder_includes_head,
             neck=neck_module,
             rescale=rescale,
@@ -229,6 +261,8 @@ def _build_appropriate_model(
             backbone,
             decoder,
             head_kwargs,
+            patch_size=patch_size,
+            padding=padding,
             decoder_includes_head=decoder_includes_head,
             neck=neck_module,
             auxiliary_heads=auxiliary_heads,

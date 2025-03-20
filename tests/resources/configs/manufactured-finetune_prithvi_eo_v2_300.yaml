@@ -20,7 +20,20 @@ trainer:
       init_args:
         monitor: val/loss
         patience: 100
-  max_epochs: 2
+    - class_path: StateDictAwareModelCheckpoint
+      init_args:
+        filename: "{epoch}"
+        monitor: "val/loss"
+        every_n_epochs: 2
+        verbose: true
+    - class_path: StateDictAwareModelCheckpoint
+      init_args:
+        filename: "{epoch}_state_dict"
+        save_weights_only: true
+        monitor: "val/loss"
+        every_n_epochs: 2
+        verbose: true
+  max_epochs: 4
   check_val_every_n_epoch: 1
   log_every_n_steps: 20
   enable_checkpointing: true
@@ -65,6 +78,7 @@ data:
       - 2
       - 1
       - 0
+    check_stackability: false
     train_data_root: tests/resources/inputs
     train_label_data_root: tests/resources/inputs
     val_data_root: tests/resources/inputs
@@ -100,6 +114,7 @@ model:
       # backbone_pretrained_cfg_overlay:
       #   file: tests/prithvi_vit_300.pt
       backbone_drop_path_rate: 0.3
+      backbone_patch_size: 16
       # backbone_window_size: 8
       decoder_channels: 64
       num_frames: 1
