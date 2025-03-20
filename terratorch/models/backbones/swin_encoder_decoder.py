@@ -984,6 +984,9 @@ class MMSegSwinTransformer(nn.Module):
                 in_chans = downsample.out_channels
         self.stages = nn.Sequential(*stages)
         self.num_features = [int(embed_dim * 2**i) for i in range(self.num_layers)]
+
+        self.out_channels = [int(embed_dim * 2**i) for i in range(self.num_layers)]
+
         # Add a norm layer for each output
 
         self.head = ClassifierHead(
