@@ -80,7 +80,7 @@ Adding a new decoder can be done in the same way with the `TERRATORCH_DECODER_RE
 
 ### :::terratorch.models.backbones.swin_encoder_decoder
 ### :::terratorch.models.backbones.prithvi_mae
-### :::terratorch.models.backbones.select_patch_embed_weights
+### :::terratorch.models.backbones.unet
 
 ## Decoders
 ### :::terratorch.models.decoders.fcn_decoder
