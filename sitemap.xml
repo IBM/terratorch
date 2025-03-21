@@ -2,106 +2,106 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://ibm.github.io/terratorch/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/architecture/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/backbones/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/changelog/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/contributing/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/data/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/datamodules/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/datasets/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/decoders/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/encoder_decoder_factory/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/examples/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/extra_model_structures/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/generic_datamodules/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/generic_datasets/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/glossary/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/heads/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/license/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/loss/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/meta_models/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/model_factories/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/models/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/necks/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/quick_start/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/registry/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/tasks/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/transforms/</loc>
-         <lastmod>2025-03-20</lastmod>
+         <lastmod>2025-03-21</lastmod>
     </url>
 </urlset>
