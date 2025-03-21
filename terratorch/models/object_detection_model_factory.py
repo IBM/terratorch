@@ -212,7 +212,7 @@ class ObjectDetectionModelFactory(ModelFactory):
             )
 
         else:
-            raise ValueError(f"Model type '{model}' is not valid.")
+            raise ValueError(f"Framework type '{framework}' is not valid.")
 
         # some decoders already include a head
         # for these, we pass the num_classes to them
