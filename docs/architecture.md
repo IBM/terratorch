@@ -17,7 +17,8 @@ Initial reading for a full understanding of the platform includes:
 - Familiarity with [LightningCLI](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.cli.LightningCLI.html#lightning.pytorch.cli.LightningCLI)
 
 The scheme below illustrates the general TerraTorch's workflow for a CLI job. 
-![TerraTorch's workflow](figs/architecture.drawing.svg)
+![](figs/architecture_drawing.png#only-light)
+![](figs/architecture_drawing_inv.png#only-dark)
 
 ### Tasks
 

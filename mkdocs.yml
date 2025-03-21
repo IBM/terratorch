@@ -1,7 +1,7 @@
 site_name: TerraTorch
 theme:
   name: material #readthedocs
-  logo: figs/logo.png #https://github.com/user-attachments/assets/f8c9586f-6220-4a53-9669-2aee3300b492" 
+  logo: figs/logo_grey.png #https://github.com/user-attachments/assets/f8c9586f-6220-4a53-9669-2aee3300b492" 
   font:
     text: Roboto
   palette:
@@ -9,10 +9,11 @@ theme:
     - scheme: default
       toggle:
         icon: material/brightness-7
-      primary: white
+      primary: black #white
     - scheme: slate
       toggle:
         icon: material/brightness-4
+      primary: black
   features:
     - content.code.copy
     - content.code.select
