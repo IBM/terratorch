@@ -69,7 +69,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="indigo">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="indigo">
   
     
     
@@ -103,7 +103,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href=".." title="TerraTorch" class="md-header__button md-logo" aria-label="TerraTorch" data-md-component="logo">
       
-  <img src="../figs/logo.png" alt="logo">
+  <img src="../figs/logo_grey.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -133,7 +133,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="white" data-md-color-accent="indigo"  aria-label=""  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label=""  type="radio" name="__palette" id="__palette_1">
     
       <label class="md-header__button md-icon" title="" for="__palette_2" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
@@ -143,7 +143,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label=""  type="radio" name="__palette" id="__palette_2">
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label=""  type="radio" name="__palette" id="__palette_2">
     
       <label class="md-header__button md-icon" title="" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12c0-2.42-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
@@ -241,7 +241,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href=".." title="TerraTorch" class="md-nav__button md-logo" aria-label="TerraTorch" data-md-component="logo">
       
-  <img src="../figs/logo.png" alt="logo">
+  <img src="../figs/logo_grey.png" alt="logo">
 
     </a>
     TerraTorch
@@ -569,7 +569,8 @@ Together with this, we provide the <a class="autorefs autorefs-internal" href=".
 <li>Familiarity with <a href="https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.cli.LightningCLI.html#lightning.pytorch.cli.LightningCLI">LightningCLI</a></li>
 </ul>
 <p>The scheme below illustrates the general TerraTorch's workflow for a CLI job. 
-<img alt="TerraTorch's workflow" src="../figs/architecture.drawing.svg" /></p>
+<img alt="" src="../figs/architecture_drawing.png#only-light" />
+<img alt="" src="../figs/architecture_drawing_inv.png#only-dark" /></p>
 <h3 id="tasks">Tasks<a class="headerlink" href="#tasks" title="Permanent link">#</a></h3>
 <p>Tasks are the main coordinators for training and inference for specific tasks. They are LightningModules that contain a model and abstract away all the logic for training steps, metric computation and inference.</p>
 <p>One of the most important design decisions was delegating the model construction to a model factory. This has a few advantages:</p>
