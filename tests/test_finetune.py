@@ -70,3 +70,13 @@ def test_finetune_metrics_from_file(model_name):
 
     gc.collect()
 
+@pytest.mark.parametrize("model_name", ["prithvi_swin_B"])
+@pytest.mark.parametrize("case", ["fit", "test", "validate"])
+def test_finetune_segmentation_tiled(case, model_name):
+    command_list = [case, "-c", f"tests/resources/configs/manufactured-finetune_{model_name}_segmentation.yaml"]
+    _ = build_lightning_cli(command_list)
+
+    gc.collect()
+
+
+
