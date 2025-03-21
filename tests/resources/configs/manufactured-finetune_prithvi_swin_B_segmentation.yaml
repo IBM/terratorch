@@ -100,6 +100,7 @@ model:
       num_classes: 2
       head_dropout: 0.5708022831486758
     output_most_probable: false
+    tiled_inference_on_testing: true
     loss: ce
     #aux_heads:
     #  - name: aux_head
