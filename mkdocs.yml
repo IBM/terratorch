@@ -70,13 +70,13 @@ nav:
   - Glossary: glossary.md
   - License: license.md
   - Contribution Guidelines: contributing.md
-  - Components:
-    - Architecture Overview: architecture.md
-    - Tasks: tasks.md
-    - Models: models.md
-    - Data: data.md
-    - Registries: registry.md
-    - EncoderDecoderFactory: encoder_decoder_factory.md
+    #- Components:
+  - Architecture Overview: architecture.md
+    #- Tasks: tasks.md
+    #- Models: models.md
+    #- Data: data.md
+    #- Registries: registry.md
+    #- EncoderDecoderFactory: encoder_decoder_factory.md
     #- FAQ: faq.md
   - Changelog: changelog.md
 markdown_extensions:
