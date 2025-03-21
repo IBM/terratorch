@@ -68,6 +68,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         test_dataloaders_names: list[str] | None = None,
         lr_overrides: dict[str, float] | None = None,
         output_most_probable: bool = True,
+        tiled_inference_on_testing: bool = False,
     ) -> None:
         """Constructor
 
@@ -115,6 +116,8 @@ class SemanticSegmentationTask(TerraTorchTask):
                 contained in the parameter name)and the value should be the new lr. Defaults to None.
             output_most_probable (bool): A boolean to define if the output during the inference will be just
                 for the most probable class or if it will include all of them. 
+            tiled_inference_on_testing (bool): A boolean to the fine if tiled inference will be used when full inference 
+                fails during the test step. 
         """
         self.tiled_inference_parameters = tiled_inference_parameters
         self.aux_loss = aux_loss
@@ -128,7 +131,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         if model_factory and model is None:
             self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
 
-        super().__init__(task="segmentation")
+        super().__init__(task="segmentation", tiled_inference_on_testing=tiled_inference_on_testing)
 
         if model is not None:
             # Custom model
@@ -265,27 +268,7 @@ class SemanticSegmentationTask(TerraTorchTask):
 
         rest = {k: batch[k] for k in other_keys}
 
-        def model_forward(x,  **kwargs):
-            return self(x, **kwargs).output
-
-        # When the input sample cannot be fit on memory for some reason
-        # the tiled inference is automatically invoked.
-        try:
-            model_output: ModelOutput = self(x, **rest)
-        except RuntimeError:
-            logger.info("\n The input sample could not run in a full format. Using tiled inference.")
-            looger.info("Notice that the tiled inference WON'T produce the exactly same result as the full inference.")
-            if self.tiled_inference_parameters:
-                y_hat: Tensor = tiled_inference(
-                    model_forward,
-                    x,
-                    self.hparams["model_args"]["num_classes"],
-                    self.tiled_inference_parameters,
-                    **rest,
-                )
-                model_output = ModelOutput(output=y_hat)
-            else:
-                raise Exception("You need to define a configuration for the tiled inference.")
+        model_output = self.handle_full_or_tiled_inference(x, self.hparams["model_args"]["num_classes"], **rest)
 
         if dataloader_idx >= len(self.test_loss_handler):
             msg = "You are returning more than one test dataloader but not defining enough test_dataloaders_names."
