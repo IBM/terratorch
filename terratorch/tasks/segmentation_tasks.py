@@ -345,7 +345,7 @@ class SemanticSegmentationTask(TerraTorchTask):
 
         rest = {k: batch[k] for k in other_keys}
 
-        model_output: ModelOutput = self(x, **rest)
+        # model_output: ModelOutput = self(x, **rest)
 
         def model_forward(x):
             return self(x).output
