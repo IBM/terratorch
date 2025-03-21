@@ -1,5 +1,8 @@
 # Welcome to TerraTorch
+<!---
 <img src="https://github.com/user-attachments/assets/f8c9586f-6220-4a53-9669-2aee3300b492" alt="TerraTorch"  width="400"/>
+-->
+<img src="figs/logo.png" alt="TerraTorch"  width="400"/>
 
 ## Overview
 

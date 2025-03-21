@@ -38,7 +38,7 @@ Models are expected to be `torch.nn.Module` and implement the [Model][terratorch
 Additionally, the `forward()` method is expected to return an object of type [ModelOutput][terratorch.models.model.ModelOutput],
 containing the main head's output, as well as any additional auxiliary outputs.
 The names of these auxiliary heads are matched with the names of the provided auxiliary losses.
-The tasks currently deployed in TerraTorch are described [here](docs/tasks.md).  
+The tasks currently deployed in TerraTorch are described [here](tasks.md).  
 
 ### Models
 
