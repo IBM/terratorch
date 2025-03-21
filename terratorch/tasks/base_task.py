@@ -73,42 +73,29 @@ class TerraTorchTask(BaseTask):
             try:
                 model_output: ModelOutput = self(x, **rest)
             except (torch.OutOfMemoryError, MemoryError)  as e:
-                raise Exception("Inference on testing failed due to memory issues. Try to pass `tiled_inference_on_testing` as `True`, to use tiled inference for it.")
+                raise Exception(f"Inference on testing failed due to insufficient {device}. Try to pass `tiled_inference_on_testing` as `True`, to use tiled inference for it.")
 
         else:
-            try:
-                # Even when `tiled_inference_on_testing` is `True`, we at least
-                # try to execute a full inference.
-                model_output: ModelOutput = self(x, **rest)
-            except (torch.OutOfMemoryError, MemoryError) as e:
-                # We got a out of memory error, so, let's use tiled inference.
-                logger.info(f"\nThe full input sample could not be allocated on {device}. Trying to use tiled inference.")
-                logger.info("Notice that the tiled inference WON'T produce the exactly same result as the full inference.")
-                if self.tiled_inference_parameters:
-                    # Even when tiled inference is chosen and we have a config
-                    # define for it, we can have a memory issue when this
-                    # config isn't suitable. A bad choice for the tile sizes is
-                    # usually the cause for that.
-                    try:
-                        y_hat: Tensor = tiled_inference(
-                            model_forward,
-                            x,
-                            num_categories, 
-                            self.tiled_inference_parameters,
-                            **rest,
-                        )
-                        model_output = ModelOutput(output=y_hat)
-                    except (torch.OutOfMemoryError, MemoryError) as e:
-                        raise Exception("It seems your tiled inference configuration is insufficient. Try to reduce the tile sizes.")
-
-                else:
-                    raise Exception("You need to define a configuration for the tiled inference.")
+            logger.info("Running tiled inference.")
+            logger.info("Notice that the tiled inference WON'T produce the exactly same result as the full inference.")
+            if self.tiled_inference_parameters:
+                # Even when tiled inference is chosen and we have a config
+                # defined for it, we can have a memory issue when this
+                # config isn't suitable. A bad choice for the tile sizes is
+                # usually the cause for that.
+                try:
+                    y_hat: Tensor = tiled_inference(
+                        model_forward,
+                        x,
+                        num_categories, 
+                        self.tiled_inference_parameters,
+                        **rest,
+                    )
+                    model_output = ModelOutput(output=y_hat)
+                except (torch.OutOfMemoryError, MemoryError) as e:
+                    raise Exception("It seems your tiled inference configuration is insufficient. Try to reduce the tile sizes.")
             else:
-                # The try-except constructor hiddens others possibilities of
-                # error different from (torch.OutOfMemoryError, MemoryError),
-                # so it's better to set `tiled_inference_on_testing` as `False`
-                # to directly print it. 
-                print("Inference failed for others reasons, not related to memory. Set `tiled_inference_on_testing` as `False` to see them.")
+                raise Exception("You need to define a configuration for the tiled inference.")
 
         return model_output
 
