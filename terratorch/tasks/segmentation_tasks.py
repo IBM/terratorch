@@ -69,6 +69,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         lr_overrides: dict[str, float] | None = None,
         output_most_probable: bool = True,
         tiled_inference_on_testing: bool = False,
+        quantize_model: bool = False,
     ) -> None:
         """Constructor
 
@@ -118,6 +119,8 @@ class SemanticSegmentationTask(TerraTorchTask):
                 for the most probable class or if it will include all of them. 
             tiled_inference_on_testing (bool): A boolean to the fine if tiled inference will be used when full inference 
                 fails during the test step. 
+            quantize_model (bool): Qunatize the model during test/inference or
+                not. 
         """
         self.tiled_inference_parameters = tiled_inference_parameters
         self.aux_loss = aux_loss
@@ -131,7 +134,9 @@ class SemanticSegmentationTask(TerraTorchTask):
         if model_factory and model is None:
             self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
 
-        super().__init__(task="segmentation", tiled_inference_on_testing=tiled_inference_on_testing)
+        super().__init__(task="segmentation",
+                         tiled_inference_on_testing=tiled_inference_on_testing,
+                         quantize_model=quantize_model)
 
         if model is not None:
             # Custom model
@@ -268,6 +273,9 @@ class SemanticSegmentationTask(TerraTorchTask):
 
         rest = {k: batch[k] for k in other_keys}
 
+        if self.quantize_model:
+            self.perform_quantization()
+
         model_output = self.handle_full_or_tiled_inference(x, self.hparams["model_args"]["num_classes"], **rest)
 
         if dataloader_idx >= len(self.test_loss_handler):
@@ -346,6 +354,9 @@ class SemanticSegmentationTask(TerraTorchTask):
         other_keys = batch.keys() - {"image", "mask", "filename"}
 
         rest = {k: batch[k] for k in other_keys}
+
+        if self.quantize_model:
+            self.perform_quantization()
 
         def model_forward(x,  **kwargs):
             return self(x, **kwargs).output

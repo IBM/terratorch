@@ -156,6 +156,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
         test_dataloaders_names: list[str] | None = None,
         lr_overrides: dict[str, float] | None = None,
         tiled_inference_on_testing: bool = None,
+        quantize_model: bool =False,
     ) -> None:
         """Constructor
 
@@ -199,6 +200,8 @@ class PixelwiseRegressionTask(TerraTorchTask):
                 contained in the parameter name)and the value should be the new lr. Defaults to None.
             tiled_inference_on_testing (bool): A boolean to the fine if tiled inference will be used when full inference 
                 fails during the test step. 
+            quantize_model (bool): Qunatize the model during test/inference or
+                not. 
         """
 
         self.tiled_inference_parameters = tiled_inference_parameters
@@ -213,7 +216,9 @@ class PixelwiseRegressionTask(TerraTorchTask):
         if model_factory and model is None:
             self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
 
-        super().__init__(task="regression", tiled_inference_on_testing=tiled_inference_on_testing)
+        super().__init__(task="regression",
+                         tiled_inference_on_testing=tiled_inference_on_testing,
+                         quantize_model=quantize_model)
 
         if model:
             # Custom_model
@@ -356,6 +361,9 @@ class PixelwiseRegressionTask(TerraTorchTask):
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
 
+        if self.quantize_model:
+            self.perform_quantization()
+
         model_output = self.handle_full_or_tiled_inference(x, 1, **rest)
 
         if dataloader_idx >= len(self.test_loss_handler):
@@ -385,6 +393,9 @@ class PixelwiseRegressionTask(TerraTorchTask):
         file_names = batch["filename"] if "filename" in batch else None
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
+
+        if self.quantize_model:
+            self.perform_quantization()
 
         def model_forward(x, **kwargs):
             return self(x).output

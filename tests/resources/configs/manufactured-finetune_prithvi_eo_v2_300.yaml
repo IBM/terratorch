@@ -107,6 +107,7 @@ data:
 model:
   class_path: terratorch.tasks.PixelwiseRegressionTask
   init_args:
+    quantize_model: false #true
     model_args:
       decoder: UperNetDecoder
       pretrained: false

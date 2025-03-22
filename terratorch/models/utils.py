@@ -1,7 +1,8 @@
 import logging
-
-from torch import nn, Tensor
+import gc
 import torch 
+from torch import nn, Tensor
+from torch.quantization import quantize_dynamic 
 
 class DecoderNotFoundError(Exception):
     pass
@@ -53,3 +54,32 @@ def pad_images(imgs: Tensor, patch_size: int | list, padding: str) -> Tensor:
             for img in imgs  # Apply per image to avoid NotImplementedError from torch.nn.functional.pad
         ])
     return imgs
+
+def quantize_module(module):
+
+    quantized_module = quantize_dynamic(
+        module,
+        {torch.nn.Linear},
+        dtype=torch.qint8
+    )
+
+    gc.collect()
+
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+    return quantized_module
+
+def estimate_module_size(module):
+
+    param_size = 0
+    for param in module.parameters():
+        param_size += param.nelement() * param.element_size()
+    buffer_size = 0
+    for buffer in module.buffers():
+        buffer_size += buffer.nelement() * buffer.element_size()
+
+    size_mb = (param_size + buffer_size) / 1024**2
+    print('module size: {:.3f}MB'.format(size_mb))
+
+    return size_mb

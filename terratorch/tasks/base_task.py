@@ -9,6 +9,7 @@ from terratorch.models.model import Model
 from terratorch.tasks.optimizer_factory import optimizer_factory
 from terratorch.tasks.tiled_inference import tiled_inference
 from terratorch.models.model import ModelOutput
+from terratorch.models.utils import quantize_module, estimate_module_size
 
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
 logger = logging.getLogger("terratorch")
@@ -20,16 +21,26 @@ class TerraTorchTask(BaseTask):
     tasks implemented in terratorch
     """
 
-    def __init__(self, task: str | None = None, tiled_inference_on_testing: bool = False):
+    def __init__(self, task: str | None = None, tiled_inference_on_testing:
+                 bool = False, quantize_model: bool = False,
+                 ):
 
         self.task = task
         self.tiled_inference_on_testing = tiled_inference_on_testing
+        self.quantize_model = quantize_model
 
         super().__init__()
 
     # overwrite early stopping
     def configure_callbacks(self) -> list[Callback]:
         return []
+
+    def perform_quantization(self):
+
+        logger.info("Using quantization.")
+        estimate_module_size(self.model)
+        self.model = quantize_module(self.model) 
+        estimate_module_size(self.model)
 
     def configure_models(self) -> None:
         if not hasattr(self, "model_factory"):
@@ -41,6 +52,7 @@ class TerraTorchTask(BaseTask):
         self.model: Model = self.model_factory.build_model(
             self.task, aux_decoders=self.aux_heads, **self.hparams["model_args"]
         )
+
 
         if self.hparams["freeze_backbone"]:
             if self.hparams.get("peft_config", None) is not None:
