@@ -27,16 +27,16 @@ theme:
     - content.tabs.link
     - content.tooltips
     - navigation.footer
-    - navigation.indexes
+      #- navigation.indexes
     - navigation.instant
       #- navigation.expand
     - navigation.path
     - navigation.instant.prefetch
     - navigation.instant.progress
     # - navigation.prune
-    - navigation.sections
+    #- navigation.sections
     - navigation.tabs
-      #- navigation.tabs.sticky
+    - navigation.tabs.sticky
     - navigation.top
     - navigation.tracking
     - search.highlight
