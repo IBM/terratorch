@@ -36,7 +36,7 @@ theme:
     # - navigation.prune
     #- navigation.sections
     - navigation.tabs
-    - navigation.tabs.sticky
+      #- navigation.tabs.sticky
     - navigation.top
     - navigation.tracking
     - search.highlight
