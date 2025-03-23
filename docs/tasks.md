@@ -6,6 +6,12 @@ Tasks are best leveraged using config files, where they are specified in the `mo
 Below are the details of the tasks currently implemented in TerraTorch (Pixelwise Regression, Semantic Segmentation and Classification). 
 
 :::terratorch.tasks.segmentation_tasks.SemanticSegmentationTask
+    options:
+        show_source: false
 :::terratorch.tasks.regression_tasks.PixelwiseRegressionTask
+    options:
+        show_source: false
 :::terratorch.tasks.classification_tasks.ClassificationTask
+    options:
+        show_source: false
 

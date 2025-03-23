@@ -29,29 +29,26 @@ theme:
     - navigation.footer
     - navigation.indexes
     - navigation.instant
-    - navigation.expand
+      #- navigation.expand
     - navigation.path
     - navigation.instant.prefetch
     - navigation.instant.progress
     # - navigation.prune
-    #- navigation.sections
-      #- navigation.tabs
-    # - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.tabs
+      #- navigation.tabs.sticky
     - navigation.top
     - navigation.tracking
     - search.highlight
     - search.share
     - search.suggest
     - toc.follow
-    - toc.integrate
+      #- toc.integrate
   user_color_mode_toggle: true 
 plugins:
   - search 
   - autorefs
-  - tags:
-      tags_slugify: !!python/object/apply:pymdownx.slugs.slugify
-        kwds:
-          case: lower
+  - tags
   - mkdocstrings:
       handlers:
         python:
@@ -65,20 +62,24 @@ site_url: https://ibm.github.io/terratorch/
 repo_url: https://github.com/IBM/terratorch
 nav:
   - index.md
-  - Getting Started: quick_start.md
-  
-  - Examples: examples.md 
-  - Glossary: glossary.md
   - License: license.md
+  - Getting Started: quick_start.md
   - Contribution Guidelines: contributing.md
-    #- Components:
   - Architecture Overview: architecture.md
-    #- Tasks: tasks.md
-    #- Models: models.md
-    #- Data: data.md
-    #- Registries: registry.md
-    #- EncoderDecoderFactory: encoder_decoder_factory.md
-    #- FAQ: faq.md
+  - Components:
+    - Backbones: backbones.md
+    - Decoders: decoders.md
+    - Heads: heads.md
+    - Tasks: tasks.md
+    - Model Factories: model_factories.md
+    - Generic Datasets: generic_datasets.md
+    - Datasets: datasets.md
+    - Generic Datamodules: generic_datamodules.md
+    - Datamodules: datamodules.md
+    - Transforms: transforms.md
+  - Glossary: glossary.md
+  - Tutorials:
+    - tutorials/basic_inference_burn_scars.md 
   - Changelog: changelog.md
 markdown_extensions:
   - toc:
