@@ -104,4 +104,8 @@
          <loc>https://ibm.github.io/terratorch/tutorials/basic_inference_burn_scars/</loc>
          <lastmod>2025-03-24</lastmod>
     </url>
+    <url>
+         <loc>https://ibm.github.io/terratorch/tutorials/the_yaml_config/</loc>
+         <lastmod>2025-03-24</lastmod>
+    </url>
 </urlset>
