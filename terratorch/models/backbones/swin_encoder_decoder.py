@@ -7,7 +7,7 @@ This is because it offers a few advantages, namely being able to handle
 a dynamic input size through padding.
 
 Please note the original timm implementation can still be used as a backbone
-via timm.create_model("swin_..."). You can see the available models with 'timm.list_models("swin*")'
+via `timm.create_model("swin_...")`. You can see the available models with `timm.list_models("swin*")`. 
 """
 
 import collections
