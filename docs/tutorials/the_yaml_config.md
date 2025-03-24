@@ -1,16 +1,15 @@
 # The YAML configuration file: an overview 
 
 If you are using the command-line interface (CLI) to run jobs using TerraTorch, so you must became familiar with
-YAML, the format used to configure all the workflow inside the toolkit. Writing a YAML file is very similar to
-coding, although you are not direclty handling the classes and others structures defined inside a codebase,
-you need to know how they work, their input argments and their position inside the pipeline. In this way, we
+YAML, the format used to configure all the workflow within the toolkit. Writing a YAML file is very similar to
+coding, because even if you are not direclty handling the classes and others structures defined inside a codebase,
+you need to know how they work, their input argments and their position in the pipeline. In this way, we
 could call it a "low-code" task.
-The YAML file
-expected by TerraTorch is almost closed format, since there are a few fixed fields that must be filled with
-determined sets of classes, which makes easier for new users to get a pre-existing YAML file and adapt it to
+The YAML file used for TerraTorch has an almost closed format, since there are a few fixed fields that must be filled with
+limited sets of classes, which makes easier for new users to get a pre-existing YAML file and adapt it to
 their own purposes. 
  
-In the next sections, we describe each field of a YAML file used for Earth Observation models (EO). The example can be
+In the next sections, we describe each field of a YAML file used for Earth Observation Foundation Models (EOFM) and try to make it clearer for a new user. However, we will not go into detail, since the complementary documentation (Lightning, PyTorh, ...) must fill this gap. The example can be
 downloaded [here](config.yaml){:download="config.yaml"}. 
 
 ## Trainer
@@ -65,7 +64,7 @@ The `callbacks` field:
         monitor: val/loss
         patience: 100
 ```
-Represents a a list of operations that can be invoked with determined frequency. The user is free to add
+Represents a list of operations that can be invoked with determined frequency. The user is free to add
 others operations from Lightning or custom ones. In the current config we are basically defining: a progress
 bar to be printed during the model training/validation and a learning rate monitor, determined to call early-stopping when the model shows
 signals of overfitting. 
