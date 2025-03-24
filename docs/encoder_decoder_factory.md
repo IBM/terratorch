@@ -19,6 +19,8 @@ They must be instances of [Neck][terratorch.models.necks.Neck], which is a subcl
 The [EncoderDecoderFactory][terratorch.models.encoder_decoder_factory.EncoderDecoderFactory] returns a [PixelWiseModel][terratorch.models.pixel_wise_model.PixelWiseModel] or a [ScalarOutputModel][terratorch.models.scalar_output_model.ScalarOutputModel] depending on the task.
 
 ### :::terratorch.models.encoder_decoder_factory.EncoderDecoderFactory
+    options:
+        show_source: false
 
 ## Encoders
 
