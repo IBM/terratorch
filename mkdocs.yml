@@ -79,9 +79,11 @@ nav:
     - Transforms: transforms.md
   - Glossary: glossary.md
   - Tutorials:
+    - tutorials/the_yaml_config.md
     - tutorials/basic_inference_burn_scars.md 
   - Changelog: changelog.md
 markdown_extensions:
+  - attr_list
   - toc:
       permalink: "#"
       toc_depth: 6
