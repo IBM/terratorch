@@ -69,6 +69,7 @@ nav:
   - Components:
     - Backbones: backbones.md
     - Decoders: decoders.md
+    - Necks: necks.md
     - Heads: heads.md
     - Tasks: tasks.md
     - Model Factories: model_factories.md
