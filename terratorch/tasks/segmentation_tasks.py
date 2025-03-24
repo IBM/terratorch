@@ -137,6 +137,8 @@ class SemanticSegmentationTask(TerraTorchTask):
         super().__init__(task="segmentation",
                          tiled_inference_on_testing=tiled_inference_on_testing,
                          quantize_model=quantize_model)
+        if self.quantize_model:
+            self.perform_quantization()
 
         if model is not None:
             # Custom model
@@ -273,8 +275,8 @@ class SemanticSegmentationTask(TerraTorchTask):
 
         rest = {k: batch[k] for k in other_keys}
 
-        if self.quantize_model:
-            self.perform_quantization()
+        #if self.quantize_model:
+        #    self.perform_quantization()
 
         model_output = self.handle_full_or_tiled_inference(x, self.hparams["model_args"]["num_classes"], **rest)
 
@@ -355,8 +357,6 @@ class SemanticSegmentationTask(TerraTorchTask):
 
         rest = {k: batch[k] for k in other_keys}
 
-        if self.quantize_model:
-            self.perform_quantization()
 
         def model_forward(x,  **kwargs):
             return self(x, **kwargs).output

@@ -40,6 +40,7 @@ class TerraTorchTask(BaseTask):
         logger.info("Using quantization.")
         estimate_module_size(self.model)
         self.model = quantize_module(self.model) 
+
         estimate_module_size(self.model)
 
     def configure_models(self) -> None:

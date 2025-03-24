@@ -3,6 +3,7 @@ import gc
 import torch 
 from torch import nn, Tensor
 from torch.quantization import quantize_dynamic 
+from torchao.quantization.quant_api import quantize_, int8_dynamic_activation_int8_weight, int8_weight_only
 
 class DecoderNotFoundError(Exception):
     pass
@@ -57,18 +58,15 @@ def pad_images(imgs: Tensor, patch_size: int | list, padding: str) -> Tensor:
 
 def quantize_module(module):
 
-    quantized_module = quantize_dynamic(
-        module,
-        {torch.nn.Linear},
-        dtype=torch.qint8
-    )
+    def filter_fn(module: nn.Module, fqn: str) -> bool:
+            return isinstance(module, nn.Linear)
 
+    quantize_(module.encoder, int8_dynamic_activation_int8_weight())
     gc.collect()
 
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
-
-    return quantized_module
+    return module 
 
 def estimate_module_size(module):
 
