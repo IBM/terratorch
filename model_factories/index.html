@@ -616,6 +616,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../necks/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Necks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../heads/" class="md-nav__link">
         
   
@@ -2722,7 +2743,7 @@ as auxiliary decoders or modified encoders.</p>
 
 
 <h3 id="terratorch.models.encoder_decoder_factory.EncoderDecoderFactory.build_model" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">build_model</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">backbone</span><span class="p">,</span> <span class="n">decoder</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">necks</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">aux_decoders</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rescale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">peft_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">build_model</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">backbone</span><span class="p">,</span> <span class="n">decoder</span><span class="p">,</span> <span class="n">backbone_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">decoder_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">head_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">necks</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">aux_decoders</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rescale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">peft_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
 <a href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory.build_model" class="headerlink" title="Permanent link">#</a></h3>
 
@@ -2798,6 +2819,54 @@ directly. The backbone should have and <code>out_channels</code> attribute and i
             </td>
             <td>
                 <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>backbone_kwargs</code>
+            </td>
+            <td>
+                  <code>dict, optional) </code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Arguments to be passed to instantiate the backbone.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>decoder_kwargs</code>
+            </td>
+            <td>
+                  <code>dict, optional) </code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Arguments to be passed to instantiate the decoder.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>head_kwargs</code>
+            </td>
+            <td>
+                  <code>dict, optional) </code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Arguments to be passed to the head network. </p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -2931,6 +3000,17 @@ The dictionary should have the following keys:</p>
 
     </div>
 
+</div>
+
+  <hr>
+<div class="md-source-file">
+  <small>
+    
+      Last update:
+      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="March 23, 2025 15:14:21">March 23, 2025</span>
+      
+    
+  </small>
 </div>
 
 

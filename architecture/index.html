@@ -717,6 +717,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../necks/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Necks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../heads/" class="md-nav__link">
         
   
@@ -1177,7 +1198,7 @@ and <a class="autorefs autorefs-internal" href="../meta_models/#terratorch.model
 and return <a class="autorefs autorefs-internal" href="../extra_model_structures/#terratorch.models.model.ModelOutput">ModelOutput</a> in their forward method, they can take on any structure.</p>
 <p>See the <a href="../meta_models/">models documentation</a> for more details about the core models ScalarOutputModel and
 PixelWiseModel. For details about backbones (encoders) see the <a href="../backbones/">backbones documentation</a>, the
-same for <a href="../decoders/">decoders</a> and <a href="../heads/">heads</a>.  </p>
+same for <a href="../necks/">necks</a>, <a href="../decoders/">decoders</a> and <a href="../heads/">heads</a>.  </p>
 <h3 id="model-factories">Model Factories<a class="headerlink" href="#model-factories" title="Permanent link">#</a></h3>
 <p>A model factory is a class desgined to search a model in the register and properly instantiate it. TerraTorch
 has a few types of model factories for different situations, as models which require specific wrappers and
@@ -1195,6 +1216,17 @@ With that in mind, we dive deeper into it <a href="../encoder_decoder_factory/">
 <p>Models are saved using the PyTorch format, which basically serializes the model weights using pickle
 and store them into a binary file. </p>
 <p><A future feature would be the possibility to save models in ONNX format, and export them that way. This would bring all the benefits of onnx.></p>
+
+  <hr>
+<div class="md-source-file">
+  <small>
+    
+      Last update:
+      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="March 24, 2025 23:44:22">March 24, 2025</span>
+      
+    
+  </small>
+</div>
 
 
 

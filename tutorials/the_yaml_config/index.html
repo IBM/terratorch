@@ -614,6 +614,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../../necks/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Necks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../heads/" class="md-nav__link">
         
   
@@ -1084,15 +1105,14 @@
 
 <h1 id="the-yaml-configuration-file-an-overview">The YAML configuration file: an overview<a class="headerlink" href="#the-yaml-configuration-file-an-overview" title="Permanent link">#</a></h1>
 <p>If you are using the command-line interface (CLI) to run jobs using TerraTorch, so you must became familiar with
-YAML, the format used to configure all the workflow inside the toolkit. Writing a YAML file is very similar to
-coding, although you are not direclty handling the classes and others structures defined inside a codebase,
-you need to know how they work, their input argments and their position inside the pipeline. In this way, we
+YAML, the format used to configure all the workflow within the toolkit. Writing a YAML file is very similar to
+coding, because even if you are not direclty handling the classes and others structures defined inside a codebase,
+you need to know how they work, their input argments and their position in the pipeline. In this way, we
 could call it a "low-code" task.
-The YAML file
-expected by TerraTorch is almost closed format, since there are a few fixed fields that must be filled with
-determined sets of classes, which makes easier for new users to get a pre-existing YAML file and adapt it to
+The YAML file used for TerraTorch has an almost closed format, since there are a few fixed fields that must be filled with
+limited sets of classes, which makes easier for new users to get a pre-existing YAML file and adapt it to
 their own purposes. </p>
-<p>In the next sections, we describe each field of a YAML file used for Earth Observation models (EO). The example can be
+<p>In the next sections, we describe each field of a YAML file used for Earth Observation Foundation Models (EOFM) and try to make it clearer for a new user. However, we will not go into detail, since the complementary documentation (Lightning, PyTorh, ...) must fill this gap. The example can be
 downloaded <a download="config.yaml" href="../config.yaml">here</a>. </p>
 <h2 id="trainer">Trainer<a class="headerlink" href="#trainer" title="Permanent link">#</a></h2>
 <p>In the section called <code>trainer</code> are defined all the arguments that must be directly sent to the Lightning
@@ -1140,7 +1160,7 @@ about logging</a> for a more complete description. </p>
 </span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>        monitor: val/loss
 </span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>        patience: 100
 </span></code></pre></div>
-Represents a a list of operations that can be invoked with determined frequency. The user is free to add
+Represents a list of operations that can be invoked with determined frequency. The user is free to add
 others operations from Lightning or custom ones. In the current config we are basically defining: a progress
 bar to be printed during the model training/validation and a learning rate monitor, determined to call early-stopping when the model shows
 signals of overfitting. 
@@ -1164,7 +1184,7 @@ The rest of the arguments are:
 <p>In this section, we start direclty handling TerraTorch's built-in structures. The field <code>data</code> is expected to
 receive a <a href="../../generic_datamodules/">generic datamodule</a> or any other datamodule compatible with <a href="https://lightning.ai/docs/pytorch/stable/data/datamodule.html">Lightning
 Datamodules</a>, as those defined
-in our <a href="../../datamodules/">collection of datamodule</a>. </p>
+in our <a href="../../datamodules/">collection of datamodules</a>. </p>
 <p>In the beginning of the field we have:
 <div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>data:
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>  class_path: GenericNonGeoPixelwiseRegressionDataModule
@@ -1236,6 +1256,17 @@ are mostly self-explanatory for users already familiar with machine learning:</p
 </span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>    monitor: val/loss
 </span></code></pre></div>
 Check the <a href="https://pytorch.org/docs/stable/optim.html">PyTorch documentation about optimization</a> to understand them more deeply. </p>
+
+  <hr>
+<div class="md-source-file">
+  <small>
+    
+      Last update:
+      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="March 25, 2025 00:35:30">March 25, 2025</span>
+      
+    
+  </small>
+</div>
 
 
 
