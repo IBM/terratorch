@@ -19,9 +19,14 @@
 TerraTorch is a library based on [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/) and the [TorchGeo](https://github.com/microsoft/torchgeo) domain library
 for geospatial data. 
 
-<!---
-(Watch the latest recording on YouTube:  Earth observation foundation models with Prithvi-EO-2.0 and TerraTorch: [![](https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=CB3FKtmuPI8))
--->
+<hr>
+<a href="https://www.youtube.com/watch?v=CB3FKtmuPI8">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/4/42/YouTube_icon_%282013-2017%29.png" alt="YouTube" width="20">
+  Watch the latest recording on YouTube: Earth observation foundation models with Prithvi-EO-2.0 and TerraTorch
+  <img src="https://upload.wikimedia.org/wikipedia/commons/4/42/YouTube_icon_%282013-2017%29.png" alt="YouTube" width="20">
+</a>
+<hr>
+
 
 TerraTorch’s main purpose is to provide a flexible fine-tuning framework for Geospatial Foundation Models, which can be interacted with at different abstraction levels. The library provides:
 
