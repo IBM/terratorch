@@ -55,6 +55,9 @@ plugins:
           paths: [src] # search packages in the src folde
           options:
             show_root_heading: true
+  - git-revision-date-localized:
+      type: date
+
 extra:
   version:
     provider: mike
@@ -69,6 +72,7 @@ nav:
   - Components:
     - Backbones: backbones.md
     - Decoders: decoders.md
+    - Necks: necks.md
     - Heads: heads.md
     - Tasks: tasks.md
     - Model Factories: model_factories.md

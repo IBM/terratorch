@@ -53,7 +53,7 @@ and return [ModelOutput][terratorch.models.model.ModelOutput] in their forward m
 
 See the [models documentation](meta_models.md) for more details about the core models ScalarOutputModel and
 PixelWiseModel. For details about backbones (encoders) see the [backbones documentation](backbones.md), the
-same for [decoders](decoders.md) and [heads](heads.md).  
+same for [necks](necks.md), [decoders](decoders.md) and [heads](heads.md).  
 
 ### Model Factories
 
