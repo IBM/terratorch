@@ -55,6 +55,9 @@ plugins:
           paths: [src] # search packages in the src folde
           options:
             show_root_heading: true
+  - git-revision-date-localized:
+      type: date
+
 extra:
   version:
     provider: mike

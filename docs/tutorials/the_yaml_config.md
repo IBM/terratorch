@@ -90,7 +90,7 @@ The rest of the arguments are:
 In this section, we start direclty handling TerraTorch's built-in structures. The field `data` is expected to
 receive a [generic datamodule](../generic_datamodules.md) or any other datamodule compatible with [Lightning
 Datamodules](https://lightning.ai/docs/pytorch/stable/data/datamodule.html), as those defined
-in our [collection of datamodule](../datamodules.md). 
+in our [collection of datamodules](../datamodules.md). 
 
 In the beginning of the field we have:
 ```
