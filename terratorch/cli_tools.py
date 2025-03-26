@@ -85,8 +85,9 @@ def write_tiff(img_wrt, filename, metadata):
 
     # Adapting the number of bands to be compatible with the 
     # output dimensions.
-    count = img_wrt.shape[0]
-    metadata['count'] = count
+    if not is_one_band(img_wrt):
+        count = img_wrt.shape[0]
+        metadata['count'] = count
 
     with rasterio.open(filename, "w", **metadata) as dest:
         if is_one_band(img_wrt):
