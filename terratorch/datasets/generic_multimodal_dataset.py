@@ -1,4 +1,5 @@
-# Copyright contributors to the Terratorch project
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
 
 """Module containing generic dataset classes"""
 
