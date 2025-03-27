@@ -89,3 +89,13 @@ A simple hint for any contributor. If you want to meet the GitHub DCO checks, ju
 git commit -s -m <message>
 ```
 It will sign the commit with your ID and the check will be met. 
+
+## License
+
+This project is primarily licensed under the **Apache License 2.0**. 
+
+However, some files contain code licensed under the **MIT License**. These files are explicitly listed in [`MIT_FILES.txt`](./MIT_FILES.txt).
+
+By contributing to this repository, you agree that your contributions will be licensed under the Apache 2.0 License unless otherwise stated.
+
+For more details, see the [LICENSE](./LICENSE) file.
