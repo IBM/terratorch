@@ -81,7 +81,8 @@ class TemporalWrapper(nn.Module):
             for i, feature_map in enumerate(feat):
                 if len(features_per_map) <= i:
                     features_per_map.append([])  # Create list for each feature map
-
+                    
+                feature_map = feature_map[0] if isinstance(feature_map, tuple) else feature_map
                 features_per_map[i].append(feature_map)  # Store feature map at time t
 
         # Stack features along the temporal dimension
