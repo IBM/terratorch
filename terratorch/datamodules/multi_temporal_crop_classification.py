@@ -48,6 +48,7 @@ class MultiTemporalCropClassificationDataModule(NonGeoDataModule):
         expand_temporal_dimension: bool = True,
         reduce_zero_label: bool = True,
         use_metadata: bool = False,
+        metadata_file_name: str = "chips_df.csv",
         **kwargs: Any,
     ) -> None:
         """
@@ -89,6 +90,7 @@ class MultiTemporalCropClassificationDataModule(NonGeoDataModule):
         self.expand_temporal_dimension = expand_temporal_dimension
         self.reduce_zero_label = reduce_zero_label
         self.use_metadata = use_metadata
+        self.metadata_file_name = metadata_file_name
 
     def setup(self, stage: str) -> None:
         """Set up datasets.
@@ -107,6 +109,7 @@ class MultiTemporalCropClassificationDataModule(NonGeoDataModule):
                 expand_temporal_dimension = self.expand_temporal_dimension,
                 reduce_zero_label = self.reduce_zero_label,
                 use_metadata=self.use_metadata,
+                metadata_file_name=self.metadata_file_name,
             )
         if stage in ["fit", "validate"]:
             self.val_dataset = self.dataset_class(
@@ -119,6 +122,7 @@ class MultiTemporalCropClassificationDataModule(NonGeoDataModule):
                 expand_temporal_dimension = self.expand_temporal_dimension,
                 reduce_zero_label = self.reduce_zero_label,
                 use_metadata=self.use_metadata,
+                metadata_file_name=self.metadata_file_name,
             )
         if stage in ["test"]:
             self.test_dataset = self.dataset_class(
@@ -131,6 +135,7 @@ class MultiTemporalCropClassificationDataModule(NonGeoDataModule):
                 expand_temporal_dimension = self.expand_temporal_dimension,
                 reduce_zero_label = self.reduce_zero_label,
                 use_metadata=self.use_metadata,
+                metadata_file_name=self.metadata_file_name,
             )
         if stage in ["predict"]:
             self.predict_dataset = self.dataset_class(
@@ -143,6 +148,7 @@ class MultiTemporalCropClassificationDataModule(NonGeoDataModule):
                 expand_temporal_dimension = self.expand_temporal_dimension,
                 reduce_zero_label = self.reduce_zero_label,
                 use_metadata=self.use_metadata,
+                metadata_file_name=self.metadata_file_name,
             )
 
     def _dataloader_factory(self, split: str) -> DataLoader[dict[str, Tensor]]:

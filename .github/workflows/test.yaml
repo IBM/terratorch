@@ -8,14 +8,17 @@ on:
       - 'docs/**'
       - '*.md'
       - 'tests/resources/**'
+      - '**/*.svg'
+      - '**/*.png'
   pull_request:
     branches:
       - main
-      - dev
     paths-ignore:
       - 'docs/**'
       - '*.md'
       - 'tests/resources/**'
+      - '**/*.svg'
+      - '**/*.png'
 jobs:
   build:
     runs-on: ubuntu-latest
