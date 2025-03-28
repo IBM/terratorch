@@ -9,7 +9,7 @@ The YAML file used for TerraTorch has an almost closed format, since there are a
 limited sets of classes, which makes easier for new users to get a pre-existing YAML file and adapt it to
 their own purposes. 
  
-In the next sections, we describe each field of a YAML file used for Earth Observation Foundation Models (EOFM) and try to make it clearer for a new user. However, we will not go into detail, since the complementary documentation (Lightning, PyTorh, ...) must fill this gap. The example can be
+In the next sections, we describe each field of a YAML file used for Earth Observation Foundation Models (EOFM) and try to make it clearer for a new user. However, we will not go into detail, since the complementary documentation (Lightning, PyTorch, ...) must fill this gap. The example can be
 downloaded [here](config.yaml){:download="config.yaml"}. 
 
 ## Trainer
