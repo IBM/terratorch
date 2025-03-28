@@ -1,5 +1,6 @@
 # Welcome to TerraTorch
-<img src="https://github.com/user-attachments/assets/f8c9586f-6220-4a53-9669-2aee3300b492" alt="TerraTorch"  width="400"/>
+<img src="figs/logo.png#only-light" alt="TerraTorch"  width="400"/>
+<img src="figs/logo_grey.png#only-dark" alt="TerraTorch"  width="400"/>
 
 ## Overview
 
@@ -13,13 +14,13 @@ This library provides:
 - All the functionality in TorchGeo.
 - Easy access to Prithvi, timm and smp backbones.
 - Flexible trainers for Image Segmentation, Pixel Wise Regression and Classification (more in progress).
-    - Launching of fine-tuning tasks through powerful configuration files.
+- Launching of fine-tuning tasks through powerful configuration files.
 
-    A good starting place is familiarization with [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/), which this project is built on. 
-    [TorchGeo](https://torchgeo.readthedocs.io/en/stable/) is also an important complementary reference. 
+A good starting place is familiarization with [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/), which this project is built on. 
+[TorchGeo](https://torchgeo.readthedocs.io/en/stable/) is also an important complementary reference. 
 
-    Check out the [architecture overview](architecture.md) for a general description about how TerraTorch is
-    organized. 
+Check out the [architecture overview](architecture.md) for a general description about how TerraTorch is
+organized. 
 
 ## Quick start
 

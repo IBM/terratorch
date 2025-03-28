@@ -222,9 +222,10 @@ class TemporalEncoder(nn.Module):
 
     def forward(self, temporal_coords: torch.Tensor, tokens_per_frame: int | None = None):
         """
-        temporal_coords: year and day-of-year info with shape (B, T, 2).
-        tokens_per_frame: number of tokens for each frame in the sample. If provided, embeddings will be
-            repeated over T dimension, and final shape is (B, T*tokens_per_frame, embed_dim).
+        Args:
+            temporal_coords: year and day-of-year info with shape (B, T, 2).
+            tokens_per_frame: number of tokens for each frame in the sample. If provided, embeddings will be
+                repeated over T dimension, and final shape is (B, T*tokens_per_frame, embed_dim).
         """
         shape = temporal_coords.shape[:2] + (-1,)  # B, T, -1
 

@@ -8,6 +8,13 @@
   <center><img style="display: block; margin-left: auto; margin-right: auto"; src="https://github.com/user-attachments/assets/f7c9586f-6220-4a53-9669-2aee3300b492" alt="TerraTorch"  width="400"/></center>
 </picture>
 
+<!--
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/figs/logo_inv.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/figs/logo.png">
+</picture>
+-->
+
 [![huggingface](https://img.shields.io/badge/Hugging_Face-join-FFD21E?logo=huggingface)](https://huggingface.co/ibm-nasa-geospatial)
 [![pypi](https://badge.fury.io/py/terratorch.svg)](https://pypi.org/project/terratorch)
 [![tests](https://github.com/IBM/terratorch/actions/workflows/test.yaml/badge.svg)](https://github.com/ibm/terratorch/actions/workflows/test.yaml)

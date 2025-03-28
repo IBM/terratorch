@@ -112,7 +112,7 @@ class Registry(Set):
     In addition, it can instantiate models with the build method.
 
     Add constructors to the registry by annotating them with @registry.register.
-
+    ```
     >>> registry = Registry()
     >>> @registry.register
     ... def model(*args, **kwargs):
@@ -120,6 +120,7 @@ class Registry(Set):
     >>> "model" in registry
     True
     >>> model_instance = registry.build("model")
+    ```
     """
 
     def __init__(self, **elements) -> None:

@@ -12,7 +12,7 @@ we reccomend using a conda environment and installing it with `conda install -c 
 For a stable point-release, use `pip install terratorch`.
 If you prefer to get the most recent version of the main branch, install the library with `pip install git+https://github.com/IBM/terratorch.git`.
 
-To install as a developer (e.g. to extend the library) clone this repo, and run `pip install -e .`.
+To install as a developer (e.g. to extend the library) clone this repo, and run `pip install -e .` .
 
 ## Creating Backbones
 

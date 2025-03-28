@@ -72,7 +72,7 @@ class UNet(nn.Module):
     Notice:
         The input image size should be divisible by the whole downsample rate
         of the encoder. More detail of the whole downsample rate can be found
-        in UNet._check_input_divisible.
+        in `UNet._check_input_divisible`.
     """
 
     def __init__(self,

@@ -119,8 +119,9 @@ class PixelWiseModel(Model, SegmentationModel):
         else:
             # for backwards compatibility, if this is defined in the encoder, use it
             prepare = getattr(self.encoder, "prepare_features_for_image_model", lambda x: x)
-
+        print(f"neck: {self.neck}")
         features = prepare(features)
+        print([f.shape for f in features])
         decoder_output = self.decoder([f.clone() for f in features])
         mask = self.head(decoder_output)
         if self.rescale and mask.shape[-2:] != input_size:
