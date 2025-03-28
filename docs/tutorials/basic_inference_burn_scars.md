@@ -1,4 +1,4 @@
-# Performing an inference task with TerraTorch: the Burn Scars test case
+# Performing an inference task with TerraTorch CLI: the Burn Scars test case
 
 ## Step 1: Download the test case from HuggingFace
 We will use the burn scars identification test case, in which we are interested in estimating the area

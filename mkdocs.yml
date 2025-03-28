@@ -85,6 +85,7 @@ nav:
   - Tutorials:
     - tutorials/the_yaml_config.md
     - tutorials/basic_inference_burn_scars.md 
+    - tutorials/burn_scars_inference_simplified.md
   - Changelog: changelog.md
 markdown_extensions:
   - attr_list
