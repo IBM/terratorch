@@ -39,27 +39,26 @@ classifiers = [
 ]
 
 dependencies = [
-  "torch==2.6.0",
-  "torchvision==0.21.0",
-  "rioxarray==0.18.2",
+  "torch",
+  "torchvision",
+  "rioxarray",
   "albumentations==1.4.6",
   "albucore==0.0.16",
-  "rasterio==1.4.3",
-  "torchmetrics==1.6.2",
-  "geopandas==1.0.1",
-  "lightly==1.5.19",
+  "rasterio",
+  "torchmetrics",
+  "geopandas",
+  "lightly",
   "jsonargparse<=4.35.0",
-  "h5py==3.13.0",
-  "mlflow==2.20.3",
-  "lightning==2.5.0.post0",
+  "h5py",
+  "mlflow",
+  "lightning",
   "segmentation-models-pytorch",
-  "jsonargparse==4.35.0",
-  "pytest==8.3.5",
-  "torchgeo==0.6.2",
-  "einops==0.8.1",
+  "jsonargparse",
+  "pytest",
+  "torchgeo",
+  "einops",
   "timm>=1.0.15"
 ]
-
 
 [project.optional-dependencies]
 dev = [
