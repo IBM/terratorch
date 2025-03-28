@@ -62,6 +62,8 @@ class WxCModelFactory(ModelFactory):
             logger.debug(kwargs)
             if 'skip_connection' in kwargs.keys():
                 skip_connection = kwargs.pop('skip_connection')
+            else:
+                skip_connection = True
             if 'wxc_auxiliary_data_path' in kwargs.keys():
                 wxc_auxiliary_data_path = kwargs.pop('wxc_auxiliary_data_path')
             if 'config_path' in kwargs.keys():
