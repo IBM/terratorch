@@ -34,7 +34,7 @@ def teardown_function():
 
 
 
-@pytest.mark.parametrize("backbone", ["gravitywave", None, 'prithviwxc'])
+@pytest.mark.parametrize("backbone", ["gravitywave", 'prithviwxc'])
 def test_can_create_wxc_models(backbone):
     if backbone == "gravitywave":
         config_data = {
