@@ -85,8 +85,9 @@ def write_tiff(img_wrt, filename, metadata):
 
     # Adapting the number of bands to be compatible with the 
     # output dimensions.
-    count = img_wrt.shape[0]
-    metadata['count'] = count
+    if not is_one_band(img_wrt):
+        count = img_wrt.shape[0]
+        metadata['count'] = count
 
     with rasterio.open(filename, "w", **metadata) as dest:
         if is_one_band(img_wrt):
@@ -357,6 +358,7 @@ class StateDictAwareModelCheckpoint(ModelCheckpoint):
         verbose: bool = False,
         save_last: bool | None = None,
         save_top_k: int = 1,
+        save_best_only: bool = False,
         mode: str = "min",
         save_weights_only: bool = False,
         auto_insert_metric_name: bool = True,
@@ -366,6 +368,9 @@ class StateDictAwareModelCheckpoint(ModelCheckpoint):
         save_on_train_epoch_end: bool | None = None,
         enable_version_counter: bool = True,
     ):
+        if save_best_only:
+            save_top_k = 1
+
         super().__init__(
             dirpath,
             filename,

@@ -18,6 +18,7 @@ from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
 from terratorch.tasks.tiled_inference import TiledInferenceParameters, tiled_inference
 from terratorch.tasks.base_task import TerraTorchTask
+from terratorch.models.model import ModelOutput
 
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
 
@@ -67,6 +68,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         test_dataloaders_names: list[str] | None = None,
         lr_overrides: dict[str, float] | None = None,
         output_most_probable: bool = True,
+        tiled_inference_on_testing: bool = False,
     ) -> None:
         """Constructor
 
@@ -114,6 +116,8 @@ class SemanticSegmentationTask(TerraTorchTask):
                 contained in the parameter name)and the value should be the new lr. Defaults to None.
             output_most_probable (bool): A boolean to define if the output during the inference will be just
                 for the most probable class or if it will include all of them. 
+            tiled_inference_on_testing (bool): A boolean to the fine if tiled inference will be used when full inference 
+                fails during the test step. 
         """
         self.tiled_inference_parameters = tiled_inference_parameters
         self.aux_loss = aux_loss
@@ -127,7 +131,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         if model_factory and model is None:
             self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
 
-        super().__init__(task="segmentation")
+        super().__init__(task="segmentation", tiled_inference_on_testing=tiled_inference_on_testing)
 
         if model is not None:
             # Custom model
@@ -263,7 +267,9 @@ class SemanticSegmentationTask(TerraTorchTask):
         other_keys = batch.keys() - {"image", "mask", "filename"}
 
         rest = {k: batch[k] for k in other_keys}
-        model_output: ModelOutput = self(x, **rest)
+
+        model_output = self.handle_full_or_tiled_inference(x, self.hparams["model_args"]["num_classes"], **rest)
+
         if dataloader_idx >= len(self.test_loss_handler):
             msg = "You are returning more than one test dataloader but not defining enough test_dataloaders_names."
             raise ValueError(msg)

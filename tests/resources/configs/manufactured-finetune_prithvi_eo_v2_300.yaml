@@ -1,7 +1,7 @@
 # lightning.pytorch==2.1.1
 seed_everything: 42
 trainer:
-  accelerator: cpu
+  accelerator: auto
   strategy: auto
   devices: auto
   num_nodes: 1
@@ -26,6 +26,7 @@ trainer:
         monitor: "val/loss"
         every_n_epochs: 2
         verbose: true
+        save_top_k: 1
     - class_path: StateDictAwareModelCheckpoint
       init_args:
         filename: "{epoch}_state_dict"
@@ -33,7 +34,8 @@ trainer:
         monitor: "val/loss"
         every_n_epochs: 2
         verbose: true
-  max_epochs: 4
+        save_top_k: 1
+  max_epochs: 10
   check_val_every_n_epoch: 1
   log_every_n_steps: 20
   enable_checkpointing: true

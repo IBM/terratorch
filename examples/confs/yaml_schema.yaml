@@ -1,4 +1,5 @@
 seed_everything: int(required=True)
+subcommand: enum('fit','validate','test','predict','compute_statistics',required=False)
 trainer: include('trainer', required=False)
 data: include('data', required=True)
 model: include('model', required=True)
@@ -8,14 +9,14 @@ lr_scheduler: include('lr_scheduler', required=False)
 ---
 # parameters for field 'trainer':
 trainer: 
-  accelerator: enum('auto', 'None', 'gpu', 'tpu', 'cuda', 'cpu', 'hpu', 'mps', 'tpu', 'xla', required=True) #/Users/jaionetirapuazpiroz/anaconda3/envs/terratorch4dev/lib/python3.11/site-packages/lightning/pytorch/trainer/connectors/accelerator_connector.py line 139
-  strategy: enum('auto', 'ddp', 'ddp_spawn', 'deepspeed', 'hpu_parallel', 'hpu_single', 'single_device',  'fsdp', 'xla', 'single_xla', 'strategy', required=False)  # https://lightning.ai/docs/pytorch/stable/extensions/strategy.html  ; from /Users/jaionetirapuazpiroz/anaconda3/envs/terratorch4dev/lib/python3.11/site-packages/lightning/pytorch/strategies 
+  accelerator: enum('auto', 'None', 'gpu', 'tpu', 'cuda', 'cpu', 'hpu', 'mps', 'tpu', 'xla', required=True)
+  strategy: enum('auto', 'ddp', 'ddp_spawn', 'deepspeed', 'hpu_parallel', 'hpu_single', 'single_device',  'fsdp', 'xla', 'single_xla', 'strategy', required=False)  
   devices: any(enum('auto'), int(min=-1), required=False)
   num_nodes: int(min=1, required=False)
   precision: enum(64, '64', '64-true', 32, '32' , '32-true', 16, '16', '16-mixed','bf16', 'bf16-mixed', required=False)
   logger: any(bool(), include('logger'), required=True)
-  callbacks: list(include('callbackslist'), required=False) #https://lightning.ai/docs/pytorch/stable/extensions/callbacks.html
-  # fast_dev_run: any(bool(), int(min=1), required=False)  #/Users/jaionetirapuazpiroz/anaconda3/envs/terratorch4dev/lib/python3.11/site-packages/lightning/pytorch/trainer/trainer.py
+  callbacks: list(include('callbackslist'), required=False) 
+  fast_dev_run: any(bool(), int(min=1), required=False)  
   max_epochs: any(enum('None'), int(min=-1), required=False)
   min_epochs: any(enum('None'), int(min=0), required=False)
   max_steps: int(min=-1, required=False)
@@ -72,14 +73,17 @@ data:
 init_args_data:
   batch_size: int(required=False)
   num_workers: int(required=False)
-  dataset_bands: list(str(), required=False)
+  dataset_bands: list(any(str(),int()),required=False)
   output_bands: list(str(), required=False)
   constant_scale: num(required=False) 
   rgb_indices: list(int(),required=False)
   reduce_zero_label: bool(required=False)
   expand_temporal_dimension: bool(required=False)
   train_transform: list(include('train_transform'), required=False)
+  test_transform: list(include('train_transform'), required=False)
+  val_transform: list(include('train_transform'), required=False)
   transforms: list(include('train_transform'), required=False)
+  transforms_fn: any(enum('granitewxc.utils.data._get_transforms'),str(), required=False)
   cls: str(required=False) 
   no_data_replace: int(required=False)
   no_label_replace: int(min=-1, required=False)
@@ -97,23 +101,39 @@ init_args_data:
   means: list(num(),required=False)
   stds: list(num(),required=False)
   num_classes: int(required=False)
+  check_stackability: bool(required=False)
+  input_surface_vars: list(any(str(),int()),required=False)
+  input_static_surface_vars: list(any(str(),int()),required=False)
+  input_vertical_vars: list(any(str(),int()),required=False)
+  input_levels: list(any(num(),str(),int()),required=False)
+  output_vars: list(any(str(),int()),required=False)
+  n_input_timestamps: int(required=False)
+  crop_lat: list(any(num(),int()),required=False)
+  crop_lon: list(any(num(),int()),required=False)
+  input_size_lat: int(required=False)  
+  input_size_lon: int(required=False) 
+  apply_smoothen: bool(required=False)
 
 train_transform:
-  class_path: enum('albumentations.RandomCrop', 'albumentations.HorizontalFlip', 'ToTensorV2', 'FlattenTemporalIntoChannels', 'albumentations.Flip', 'UnflattenTemporalFromChannels', 'albumentations.augmentations.geometric.resize.Resize', required=False)
+  class_path: enum('albumentations.RandomCrop', 'albumentations.HorizontalFlip', 'ToTensorV2', 'FlattenTemporalIntoChannels', 'albumentations.Flip', 'UnflattenTemporalFromChannels', 'albumentations.augmentations.geometric.resize.Resize', 'albumentations.D4', 'albumentations.Resize','terratorch.datasets.transforms.Padding', 'albumentations.CenterCrop', required=False)
   init_args: include('init_args_traintransform', required=False)
-
 
 init_args_traintransform:
   height: int(required=False)
   width: int(required=False)
   p: num(required=False)
   n_timesteps: int(required=False)
-
+  input_shape: list(int(), required=False)
+  
 dict_kwargs:
   root: str(required=False)
   download: bool(required=False)
   bands: list(str(), required=False)
-
+  data_path_surface: str(required=False)
+  data_path_vertical: str(required=False) 
+  climatology_path_surface: str(required=False)
+  climatology_path_vertical: str(required=False)
+  time_range: list(str(), required=False)
 
 
 # parameters for field 'model':
@@ -125,9 +145,11 @@ init_args_model:
   model_args: include('model_args',required=False)
   loss: any(enum('ce', 'jaccard', 'focal'), str(), required=False)
   aux_loss: any(enum('None'), include('aux_loss'), required=False)
+  aux_heads: list(include('aux_heads'),required=False)
   class_weights: any(enum('None'), list(num()), required=False)
   ignore_index: any(enum('None'), int(), required=False)
   lr: num(required=False) 
+  lr_overrides: include('lr_overrides', required=False)
   optimizer: any(enum('None', 'torch.optim.Adam', 'torch.optim.AdamW'), str(), required=False)
   optimizer_hparams: any(enum('None'), include('optimizer_hparams'), required=False)
   scheduler: any(enum('None', 'ReduceLROnPlateau', 'LRScheduler', 'LambdaLR'), str(), required=False)  # https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
@@ -138,6 +160,8 @@ init_args_model:
   class_names: any(enum('None'),list(str()),required=False)
   model_factory: any(enum('PrithviModelFactory', 'TimmModelFactory', 'SMPModelFactory'), str(), required=False)
   tiled_inference_parameters: any(enum('None'), include('tiled_inference_parameters'), required=False)
+  model_config: include('model_config',required=False)
+  extra_kwargs: include('extra_kwargs',required=False)
 
 
 model_args:
@@ -147,29 +171,130 @@ model_args:
   model: str(required=False)
   backbone: str(required=False)
   backbone_pretrained: bool(required=False)
+  backbone_ckpt_path: str(required=False)
+  backbone_pretrain_img_size: int(required=False)
   backbone_in_channels: int(required=False)
+  backbone_drop_path: num(required=False)
+  backbone_patch_size: int(required=False)
+  backbone_drop_path_rate: num(required=False)
+  backbone_num_frames: int(required=False)
   rescale: bool(required=False)
-  decoder_channels: int(required=False)
+  decoder_channels: any(list(int()),int(), required=False)
   bands: list(any(str(),int()),required=False)
+  backbone_bands: list(any(str(),int()),required=False)
+  backbone_model_bands: list(any(str(),int()),required=False)
+  backbone_out_indices: list(any(str(),int()),required=False)
+  backbone_img_size: any(list(int()),int(), required=False)
   num_frames: int(required=False)
   num_classes: int(required=False)
   head_dropout: num(required=False)
+  head_final_act: enum('torch.nn.ReLU', required=False)
+  head_learned_upscale_layers: int(required=False)
   decoder_num_convs: int(required=False)
   head_channel_list: list(int(), required=False)
   head_dim_list: list(int(), required=False)
+  necks: list(include('necks'), required=False)
+  token_size: any(list(int()),int(), required=False)
+  drop_path: num(required=False)
+  mlp_multiplier: int(required=False)
+  checkpoint_path: str(required=False)
+  dropout_rate: num(required=False)
+  residual_connection: bool(required=False)
+  embed_dim: any(list(int()),int(), required=False)
+  n_blocks_encoder: int(required=False)
+  n_heads: int(required=False)
+  mask_unit_size: any(list(int()),int(), required=False)
+  num_static_channels: int(required=False)
+
+lr_overrides: 
+  encoder: num(required=False) 
 
 aux_loss:
   aux_head: num(required=False)
+
+aux_heads:
+  name: str(required=False)
+  decoder: any(enum('FCNDecoder', 'IdentityDecoder'), str(), required=False)
+  decoder_args: include('decoder_args',required=False)
+
+decoder_args:
+  decoder_channels: int(required=False)
+  decoder_in_index: num(required=False)
+  decoder_num_convs: int(required=False)
+  head_dropout: num(required=False)
+
+
+model_config:
+  num_epochs: int(required=False)  
+  limit_steps_train: int(required=False)
+  limit_steps_valid: int(required=False)
+  batch_size: int(required=False) 
+  learning_rate: num(required=False)
+  min_lr: num(required=False) 
+  dl_num_workers: int(required=False)
+  dl_prefetch_size: int(required=False)
+  path_experiment: str(required=False)
+  warm_up_steps: int(required=False) 
+  mask_ratio_inputs: num(required=False)
+  mask_ratio_targets: num(required=False)   # Accepted values: temporal, climate, none
+  job_id: str(required=False)
+  num_static_channels: int(required=False) 
+  embed_dim: int(required=False) 
+  token_size: any(list(int()),int(), required=False)
+  n_blocks_encoder: int(required=False) 
+  mlp_multiplier: int(required=False) 
+  n_heads: int(required=False) 
+  dropout_rate: num(required=False)
+  drop_path: num(required=False)
+  residual: bool(required=False)
+  model_config: include('model_config',required=False)
+  data_config: include('data_config',required=False)
+
+data_config: 
+  surface_vars: any(list(any(str(),int())),str(),int(),required=False)
+  static_surface_vars: any(list(any(str(),int())),str(),int(),required=False)
+  vertical_vars: any(list(any(str(),int())),str(),int(),required=False)
+
+extra_kwargs:
+  encoder_decoder_kernel_size_per_stage: list(list(int()),required=False)  #[[3], [3]] # Optional, default = 3 for conv_tanspose [[3], [2]]
+  output_vars: list(any(str(),int()),required=False)
+  type: str(required=False)
+  input_scalers_surface_path: str(required=False)
+  input_scalers_vertical_path: str(required=False)
+  output_scalers_surface_path: str(required=False)
+  output_scalers_vertical_path: str(required=False)
+  input_levels: list(num(),required=False) 
+  downscaling_patch_size: list(num(),required=False) 
+  n_input_timestamps: int(required=False)
+  downscaling_embed_dim: int(required=False)
+  encoder_decoder_conv_channels: int(required=False)
+  encoder_decoder_scale_per_stage: list(list(int()),required=False) #[[2], [3]] # First list determines before/after backbone
+  encoder_decoder_upsampling_mode: enum('nearest', 'bilinear', 'pixel_shuffle', 'conv_transpose', required=False)
+  encoder_shift: bool(required=False)
+  drop_path: num(required=False)
+  encoder_decoder_type: enum('conv', 'transformer', required=False) 
+  input_size_lat: int(required=False) # 6x coarsening 
+  input_size_lon: int(required=False) # 6x coarsening 
+  freeze_backbone: bool(required=False)
+  freeze_decoder: bool(required=False)
+  data_path_surface: str(required=False)
+  data_path_vertical: str(required=False)
+  climatology_path_surface: str(required=False)
+  climatology_path_vertical: str(required=False)
+  residual: str(required=False)
+
+
 
 
 optimizer_hparams: 
   lr: num(required=False)
   weight_decay: num(required=False)
   
-scheduler_hparams:  #https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.ReduceLROnPlateau.html#torch.optim.lr_scheduler.ReduceLROnPlateau
+scheduler_hparams:  
   mode: enum('min', 'max', required=False)
   factor: num(required=False)
   patience: int(required=False)
+  monitor: enum('val/loss', required=False)
 
 tiled_inference_parameters: 
   h_crop: int(required=False)
@@ -178,8 +303,9 @@ tiled_inference_parameters:
   w_stride: int(required=False)
   average_patches: bool(required=False)
 
-
-
+necks:
+  name: enum('SelectIndices', 'ReshapeTokensToImage', 'LearnedInterpolateToPyramidal', required=False) 
+  indices: list(int(), required=False)
 
 
 # parameters for field 'optimizer':
@@ -199,3 +325,5 @@ lr_scheduler:
 init_args_scheduler: 
   monitor: str(required=False)
   T_max: int(required=False)
+  factor: num(required=False)
+  patience: int(required=False)
