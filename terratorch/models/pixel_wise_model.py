@@ -77,7 +77,10 @@ class PixelWiseModel(Model, SegmentationModel):
         self.padding = padding
 
     def freeze_encoder(self):
-        freeze_module(self.encoder)
+        if hasattr(self.encoder, "freeze"):
+            self.encoder.freeze()
+        else:
+            freeze_module(self.encoder)
 
     def freeze_decoder(self):
         freeze_module(self.decoder)
