@@ -2,7 +2,7 @@
 
 from typing import List
 import warnings
-import logging 
+import logging
 from torch import nn
 
 from terratorch.models.model import (
@@ -47,7 +47,14 @@ def _get_decoder_and_head_kwargs(
 
     # if its not an nn module, check if the class includes a head
     # depending on that, pass num classes to either head kwrags or decoder
-    decoder_includes_head = DECODER_REGISTRY.find_registry(decoder).includes_head
+    try:
+        decoder_includes_head = DECODER_REGISTRY.find_class(decoder).includes_head
+    except AttributeError as _:
+        msg = (
+            f"Decoder {decoder} does not have an `includes_head` attribute. Falling back to the value of the registry."
+        )
+        logging.warning(msg)
+        decoder_includes_head = DECODER_REGISTRY.find_registry(decoder).includes_head
     if num_classes is not None:
         if decoder_includes_head:
             decoder_kwargs["num_classes"] = num_classes
@@ -65,8 +72,10 @@ def _check_all_args_used(kwargs):
         msg = f"arguments {kwargs} were passed but not used."
         raise ValueError(msg)
 
+
 def _get_argument_from_instance(model, name):
     return getattr(model._timm_module.patch_embed, name)[-1]
+
 
 @MODEL_FACTORY_REGISTRY.register
 class EncoderDecoderFactory(ModelFactory):

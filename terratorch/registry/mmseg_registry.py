@@ -89,6 +89,13 @@ class MMSegRegistry(Set):
     def __str__(self):
         return f"Mmseg registry with {len(self)} registered backbones"
 
+    def __getitem__(self, name):
+        try:
+            return getattr(self.mmseg_reg, name)
+        except AttributeError as e:
+            msg = f"Decoder {name} not found"
+            raise KeyError(msg) from e
+
 
 if importlib.util.find_spec("mmseg"):
     MMSEG_DECODER_REGISTRY = MMSegRegistry()

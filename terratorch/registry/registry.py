@@ -50,6 +50,14 @@ class MultiSourceRegistry(Mapping[str, T], typing.Generic[T]):
         msg = f"Model {name} not found in any registry"
         raise KeyError(msg)
 
+    def find_class(self, name: str) -> type:
+        parsed_prefix = self._parse_prefix(name)
+        registry = self.find_registry(name)
+        if parsed_prefix:
+            prefix, name_without_prefix = parsed_prefix
+            return registry[name_without_prefix]
+        return registry[name]
+
     def build(self, name: str, *constructor_args, **constructor_kwargs):
         parsed_prefix = self._parse_prefix(name)
         if parsed_prefix:
@@ -146,8 +154,8 @@ class Registry(Set):
     def __iter__(self):
         return iter(self._registry)
 
-    # def __getitem__(self, key):
-    #     return self._registry[key]
+    def __getitem__(self, key):
+        return self._registry[key]
 
     def __len__(self):
         return len(self._registry)

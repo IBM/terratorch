@@ -118,12 +118,12 @@ class SMPRegistry(Set):
     def __contains__(self, key):
         return key in self.smp_decoders
 
-    # def __getitem__(self, name):
-    #     try:
-    #         return getattr(smp, name)
-    #     except AttributeError as e:
-    #         msg = f"Decoder {name} not found"
-    #         raise KeyError(msg) from e
+    def __getitem__(self, name):
+        try:
+            return getattr(smp, name)
+        except AttributeError as e:
+            msg = f"Decoder {name} not found"
+            raise KeyError(msg) from e
 
     def __repr__(self):
         return f"{self.__class__.__name__}()"
