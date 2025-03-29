@@ -56,7 +56,6 @@ class MultiTemporalCropClassification(NonGeoDataset):
     num_classes = 13
     time_steps = 3
     splits = {"train": "training", "val": "validation"}  # Only train and val splits available
-    metadata_file_name = "chips_df.csv"
     col_name = "chip_id"
     date_columns = ["first_img_date", "middle_img_date", "last_img_date"]
 
@@ -71,6 +70,7 @@ class MultiTemporalCropClassification(NonGeoDataset):
         expand_temporal_dimension: bool = True,
         reduce_zero_label: bool = True,
         use_metadata: bool = False,
+        metadata_file_name: str = "chips_df.csv",
     ) -> None:
         """Constructor
 
@@ -130,6 +130,7 @@ class MultiTemporalCropClassification(NonGeoDataset):
         self.expand_temporal_dimension = expand_temporal_dimension
         self.use_metadata = use_metadata
         self.metadata = None
+        self.metadata_file_name = metadata_file_name
         if self.use_metadata:
             metadata_file = self.data_root / self.metadata_file_name
             self.metadata = pd.read_csv(metadata_file)
@@ -156,7 +157,7 @@ class MultiTemporalCropClassification(NonGeoDataset):
         temporal_coords = []
         for col in self.date_columns:
             date_str = row[col]
-            date = pd.to_datetime(date_str, format="%Y-%m-%d")
+            date = pd.to_datetime(date_str, infer_datetime_format=True)
             temporal_coords.append([date.year, date.dayofyear - 1])
 
         return torch.tensor(temporal_coords, dtype=torch.float32)
