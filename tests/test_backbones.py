@@ -6,6 +6,7 @@ import torch
 import gc 
 from terratorch.models.backbones import scalemae
 from terratorch.registry import BACKBONE_REGISTRY
+import terratorch.models.backbones.torchgeo_vit as torchgeo_vit
 
 NUM_CHANNELS = 6
 NUM_FRAMES = 4
@@ -34,6 +35,8 @@ def input_non_divisible():
 def input_386():
     return torch.ones((1, NUM_CHANNELS, 386, 386))
 
+def torchgeo_vit_backbones():
+    return [i for i in dir(torchgeo_vit) if "_vit_small" in i ]
 
 @pytest.mark.parametrize("model_name", ["prithvi_swin_B", "prithvi_swin_L", "prithvi_swin_B"])
 @pytest.mark.parametrize("test_input", ["input_224", "input_512"])
@@ -65,6 +68,11 @@ def test_can_create_backbones_from_registry(model_name, input_224):
     backbone(input_224)
     gc.collect()
 
+@pytest.mark.parametrize("model_name", torchgeo_vit_backbones())
+def test_can_create_backbones_from_registry_torchgeo_vit(model_name, input_224):
+    backbone = BACKBONE_REGISTRY.build(model_name, model_bands=[0,1,2,3,4,5], pretrained=False)
+    backbone(input_224)
+    gc.collect()
 
 @pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
 def test_vit_models_accept_multitemporal(model_name, input_224_multitemporal):

@@ -139,8 +139,8 @@ class WxCModelFactory(ModelFactory):
                     config.model.output_scalers_surface_path = os.path.join(wxc_auxiliary_data_path, 'climatology/anomaly_variance_surface.nc')
                     config.model.output_scalers_vertical_path = os.path.join(wxc_auxiliary_data_path, 'climatology/anomaly_variance_vertical.nc')
                     backbone = get_backbone(config)
-                except ImportError:
-                    raise('granite wxc downscaling not installed')
+                except ImportError as e:
+                    print(f"Module not found: {e.name}. Please install granitewxc using pip install granitewxc")
                 dsp = get_downscaling_pincer(config, backbone)
                 if checkpoint_path:
                     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
