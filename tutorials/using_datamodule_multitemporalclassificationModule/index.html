@@ -8,13 +8,13 @@
       
       
       
-        <link rel="canonical" href="https://ibm.github.io/terratorch/tutorials/basic_inference_burn_scars/">
+        <link rel="canonical" href="https://ibm.github.io/terratorch/tutorials/using_datamodule_multitemporalclassificationModule/">
       
       
-        <link rel="prev" href="../the_yaml_config/">
+        <link rel="prev" href="../burn_scars_inference_simplified/">
       
       
-        <link rel="next" href="../burn_scars_inference_simplified/">
+        <link rel="next" href="../../changelog/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -22,7 +22,7 @@
     
     
       
-        <title>Performing an inference task with TerraTorch CLI: the Burn Scars test case - TerraTorch</title>
+        <title>Using a dedicated datamodule to perform inference: the crop classification example. - TerraTorch</title>
       
     
     
@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#performing-an-inference-task-with-terratorch-cli-the-burn-scars-test-case" class="md-skip">
+        <a href="#using-a-dedicated-datamodule-to-perform-inference-the-crop-classification-example" class="md-skip">
           Skip to content
         </a>
       
@@ -118,7 +118,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Performing an inference task with TerraTorch CLI: the Burn Scars test case
+              Using a dedicated datamodule to perform inference: the crop classification example.
             
           </span>
         </div>
@@ -890,30 +890,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Performing an inference task with TerraTorch CLI: the Burn Scars test case
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../basic_inference_burn_scars/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -922,68 +902,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#step-1-download-the-test-case-from-huggingface" class="md-nav__link">
-    <span class="md-ellipsis">
-      Step 1: Download the test case from HuggingFace
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-2-run-the-default-inference-case" class="md-nav__link">
-    <span class="md-ellipsis">
-      Step 2: Run the default inference case
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Step 2: Run the default inference case">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#input-image-rgb-components" class="md-nav__link">
-    <span class="md-ellipsis">
-      Input image (RGB components)
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#predicted-mask" class="md-nav__link">
-    <span class="md-ellipsis">
-      Predicted mask
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1014,10 +932,30 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../using_datamodule_multitemporalclassificationModule/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Using a dedicated datamodule to perform inference: the crop classification example.
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -1026,6 +964,89 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#to-run-this-example-the-following-packages-are-necessary" class="md-nav__link">
+    <span class="md-ellipsis">
+      To run this example, the following packages are necessary.
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#instantiating-the-corresponding-datamodule" class="md-nav__link">
+    <span class="md-ellipsis">
+      Instantiating the corresponding datamodule.
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#visualizing-a-few-samples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Visualizing a few samples.
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#downloading-the-best-pretrained-checkpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      Downloading the best pretrained checkpoint.
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#instantiating-the-lightning-trainer" class="md-nav__link">
+    <span class="md-ellipsis">
+      Instantiating the Lightning Trainer.
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#instantiating-the-task-to-handle-the-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Instantiating the task to handle the model.
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#predicting-for-some-samples-in-the-prediction-dataset" class="md-nav__link">
+    <span class="md-ellipsis">
+      Predicting for some samples in the prediction dataset.
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1085,44 +1106,65 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#step-1-download-the-test-case-from-huggingface" class="md-nav__link">
+  <a href="#to-run-this-example-the-following-packages-are-necessary" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 1: Download the test case from HuggingFace
+      To run this example, the following packages are necessary.
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-2-run-the-default-inference-case" class="md-nav__link">
+  <a href="#instantiating-the-corresponding-datamodule" class="md-nav__link">
     <span class="md-ellipsis">
-      Step 2: Run the default inference case
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Step 2: Run the default inference case">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#input-image-rgb-components" class="md-nav__link">
-    <span class="md-ellipsis">
-      Input image (RGB components)
+      Instantiating the corresponding datamodule.
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#predicted-mask" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#visualizing-a-few-samples" class="md-nav__link">
     <span class="md-ellipsis">
-      Predicted mask
+      Visualizing a few samples.
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#downloading-the-best-pretrained-checkpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      Downloading the best pretrained checkpoint.
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#instantiating-the-lightning-trainer" class="md-nav__link">
+    <span class="md-ellipsis">
+      Instantiating the Lightning Trainer.
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#instantiating-the-task-to-handle-the-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      Instantiating the task to handle the model.
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#predicting-for-some-samples-in-the-prediction-dataset" class="md-nav__link">
+    <span class="md-ellipsis">
+      Predicting for some samples in the prediction dataset.
+    </span>
+  </a>
   
 </li>
       
@@ -1141,7 +1183,7 @@
                   
 
   
-    <a href="https://github.com/IBM/terratorch/edit/master/docs/tutorials/basic_inference_burn_scars.md" title="Edit this page" class="md-content__button md-icon">
+    <a href="https://github.com/IBM/terratorch/edit/master/docs/tutorials/using_datamodule_multitemporalclassificationModule.md" title="Edit this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4v-2m10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1 2.1 2.1Z"/></svg>
     </a>
@@ -1150,71 +1192,166 @@
     
       
     
-    <a href="https://github.com/IBM/terratorch/raw/master/docs/tutorials/basic_inference_burn_scars.md" title="View source of this page" class="md-content__button md-icon">
+    <a href="https://github.com/IBM/terratorch/raw/master/docs/tutorials/using_datamodule_multitemporalclassificationModule.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.15 8.15 0 0 1-1.23-2Z"/></svg>
     </a>
   
 
 
-<h1 id="performing-an-inference-task-with-terratorch-cli-the-burn-scars-test-case">Performing an inference task with TerraTorch CLI: the Burn Scars test case<a class="headerlink" href="#performing-an-inference-task-with-terratorch-cli-the-burn-scars-test-case" title="Permanent link">#</a></h1>
-<h2 id="step-1-download-the-test-case-from-huggingface">Step 1: Download the test case from HuggingFace<a class="headerlink" href="#step-1-download-the-test-case-from-huggingface" title="Permanent link">#</a></h2>
-<p>We will use the burn scars identification test case, in which we are interested in estimating the area
-affected by wildfires using a finetuned model (Prithvi-EO backbone + CNN decoder). To download the complete
-example, do:
-<div class="language-sh highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://huggingface.co/ibm-nasa-geospatial/Prithvi-EO-2.0-300M-BurnScars/
-</span></code></pre></div></p>
-<h2 id="step-2-run-the-default-inference-case">Step 2: Run the default inference case<a class="headerlink" href="#step-2-run-the-default-inference-case" title="Permanent link">#</a></h2>
-<p>The example you downloaded already contains some sample images to be used as input, so you just need to go to
-the local repository and create a directory to save the outputs:
-<div class="language-sh highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">cd</span><span class="w"> </span>Prithvi-EO-2.0-300M-BurnScars
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>mkdir<span class="w"> </span>outputs
+<h1 id="using-a-dedicated-datamodule-to-perform-inference-the-crop-classification-example">Using a dedicated datamodule to perform inference: the crop classification example.<a class="headerlink" href="#using-a-dedicated-datamodule-to-perform-inference-the-crop-classification-example" title="Permanent link">#</a></h1>
+<h3 id="to-run-this-example-the-following-packages-are-necessary">To run this example, the following packages are necessary.<a class="headerlink" href="#to-run-this-example-the-following-packages-are-necessary" title="Permanent link">#</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="err">!</span><span class="n">pip</span> <span class="n">install</span> <span class="n">terratorch</span> <span class="n">gdown</span> <span class="n">tensorboard</span> <span class="o">&gt;&amp;</span> <span class="n">install</span><span class="o">.</span><span class="n">log</span>
 </span></code></pre></div>
-and to execute a command line like:
-<div class="language-sh highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>terratorch<span class="w"> </span>predict<span class="w"> </span>-c<span class="w"> </span>burn_scars_config.yaml<span class="w"> </span>--predict_output_dir<span class="w"> </span>outputs/<span class="w"> </span>--data.init_args.predict_data_root<span class="w"> </span>examples/<span class="w"> </span>--ckpt_path<span class="w"> </span>Prithvi_EO_V2_300M_BurnScars.pt
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span> <span class="nn">os</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">import</span> <span class="nn">sys</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">import</span> <span class="nn">torch</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="kn">import</span> <span class="nn">gdown</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="kn">import</span> <span class="nn">terratorch</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="kn">import</span> <span class="nn">albumentations</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="kn">import</span> <span class="nn">lightning.pytorch</span> <span class="k">as</span> <span class="nn">pl</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="kn">from</span> <span class="nn">terratorch.datamodules</span> <span class="kn">import</span> <span class="n">MultiTemporalCropClassificationDataModule</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="kn">import</span> <span class="nn">warnings</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="c1">### Downloading a random subset of the required dataset (~1 GB).</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="err">```</span><span class="n">python</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="s1">&#39;multi-temporal-crop-classification-subset.tar.gz&#39;</span><span class="p">):</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="err">!</span><span class="n">gdown</span> <span class="mi">1</span><span class="n">LL6thkuKA0kVyMI39PxgsrJ1FJJDV7</span><span class="o">-</span><span class="n">u</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="s1">&#39;multi-temporal-crop-classification-subset/&#39;</span><span class="p">):</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>    <span class="err">!</span><span class="n">tar</span> <span class="o">-</span><span class="n">xzvf</span> <span class="n">multi</span><span class="o">-</span><span class="n">temporal</span><span class="o">-</span><span class="n">crop</span><span class="o">-</span><span class="n">classification</span><span class="o">-</span><span class="n">subset</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="n">dataset_path</span> <span class="o">=</span> <span class="s2">&quot;multi-temporal-crop-classification-subset&quot;</span>
 </span></code></pre></div>
-You will see the outputs being saved in the <code>outputs</code> directory. </p>
-<h3 id="input-image-rgb-components">Input image (RGB components)<a class="headerlink" href="#input-image-rgb-components" title="Permanent link">#</a></h3>
-<p><img alt="" src="../figs/input.png" /></p>
-<h3 id="predicted-mask">Predicted mask<a class="headerlink" href="#predicted-mask" title="Permanent link">#</a></h3>
-<p><img alt="" src="../figs/mask.png" />}</p>
-<h1 id="more-examples">More examples<a class="headerlink" href="#more-examples" title="Permanent link">#</a></h1>
-<p>For some examples of training using the existing tasks, check out the following pages on our github repo:</p>
-<h2 id="from-config-files">From config files<a class="headerlink" href="#from-config-files" title="Permanent link">#</a></h2>
-<p>Under <code>examples/confs</code></p>
-<ul>
-<li>
-<p>Flood Segmentation with ViT: <code>sen1floods11_vit.yaml</code></p>
-</li>
-<li>
-<p>Flood Segmentation with ViT and an SMP head: <code>sen1floods11_vit_smp.yaml</code></p>
-</li>
-<li>
-<p>Flood Segmentation with ViT and an MMSeg head: <code>sen1floods11_vit_mmseg.yaml</code></p>
-</li>
-<li>
-<p>Multitemporal Crop Segmentation: <code>multitemporal_crop.yaml</code></p>
-</li>
-<li>
-<p>Burn Scar Segmentation: <code>burn_scars.yaml</code></p>
-</li>
-<li>
-<p>Scene Classification: <code>eurosat.yaml</code></p>
-</li>
-</ul>
-<p>External examples available in <a href="https://github.com/NASA-IMPACT/Prithvi-EO-2.0">Prithvi-EO-2.0</a></p>
-<ul>
-<li><a href="https://github.com/NASA-IMPACT/Prithvi-EO-2.0/tree/main/examples/carbon_flux">Carbon Flux</a></li>
-<li><a href="https://github.com/NASA-IMPACT/Prithvi-EO-2.0/blob/main/examples/example_landslide4sense.ipynb">Landslide</a></li>
-<li><a href="https://github.com/NASA-IMPACT/Prithvi-EO-2.0/blob/main/examples/example_multitemporalcrop.ipynb">Multitemporal Crop</a></li>
-</ul>
+<h3 id="instantiating-the-corresponding-datamodule">Instantiating the corresponding datamodule.<a class="headerlink" href="#instantiating-the-corresponding-datamodule" title="Permanent link">#</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">datamodule</span> <span class="o">=</span> <span class="n">MultiTemporalCropClassificationDataModule</span><span class="p">(</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">batch_size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">num_workers</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">data_root</span><span class="o">=</span><span class="n">dataset_path</span><span class="p">,</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">train_transform</span><span class="o">=</span><span class="p">[</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>        <span class="n">terratorch</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">FlattenTemporalIntoChannels</span><span class="p">(),</span>  <span class="c1"># Required for temporal data</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>        <span class="n">albumentations</span><span class="o">.</span><span class="n">D4</span><span class="p">(),</span> <span class="c1"># Random flips and rotation</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>        <span class="n">albumentations</span><span class="o">.</span><span class="n">pytorch</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">ToTensorV2</span><span class="p">(),</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>        <span class="n">terratorch</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">UnflattenTemporalFromChannels</span><span class="p">(</span><span class="n">n_timesteps</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    <span class="p">],</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    <span class="n">val_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># Using ToTensor() by default</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    <span class="n">test_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>    <span class="n">expand_temporal_dimension</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>    <span class="n">use_metadata</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="c1"># The crop dataset has metadata for location and time</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>    <span class="n">reduce_zero_label</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="p">)</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="c1"># Setup train and val datasets</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="n">datamodule</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="s2">&quot;predict&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<h3 id="visualizing-a-few-samples">Visualizing a few samples.<a class="headerlink" href="#visualizing-a-few-samples" title="Permanent link">#</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="n">datamodule</span><span class="o">.</span><span class="n">predict_dataset</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">datamodule</span><span class="o">.</span><span class="n">predict_dataset</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+</span></code></pre></div>
+<p><img alt="png" src="../using_datamodule_multitemporalclassificationModule_files/using_datamodule_multitemporalclassificationModule_9_0.png" /></p>
+<p><img alt="png" src="../using_datamodule_multitemporalclassificationModule_files/using_datamodule_multitemporalclassificationModule_9_1.png" /></p>
+<p><img alt="png" src="../using_datamodule_multitemporalclassificationModule_files/using_datamodule_multitemporalclassificationModule_9_2.png" /></p>
+<p><img alt="png" src="../using_datamodule_multitemporalclassificationModule_files/using_datamodule_multitemporalclassificationModule_9_3.png" /></p>
+<p><img alt="png" src="../using_datamodule_multitemporalclassificationModule_files/using_datamodule_multitemporalclassificationModule_9_4.png" /></p>
+<h3 id="downloading-the-best-pretrained-checkpoint">Downloading the best pretrained checkpoint.<a class="headerlink" href="#downloading-the-best-pretrained-checkpoint" title="Permanent link">#</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">best_ckpt_100_epoch_path</span> <span class="o">=</span> <span class="s2">&quot;multicrop_best-epoch=76.ckpt&quot;</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">best_ckpt_100_epoch_path</span><span class="p">):</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">gdown</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="s2">&quot;https://drive.google.com/uc?id=1o1Hzd4yyiKyYdzfotQlEOeGTjsM8cHSw&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<h3 id="instantiating-the-lightning-trainer">Instantiating the Lightning Trainer.<a class="headerlink" href="#instantiating-the-lightning-trainer" title="Permanent link">#</a></h3>
+<p>```python
+checkpoint_callback = pl.callbacks.ModelCheckpoint(
+    dirpath="output/multicrop/checkpoints/",
+    mode="max",
+    monitor="val/Multiclass_Jaccard_Index", # Variable to monitor
+    filename="best-{epoch:02d}",
+)
+trainer = pl.Trainer(
+    accelerator="auto",
+    strategy="auto",
+    devices=1, # Lightning multi-gpu often fails in notebooks
+    precision='bf16-mixed',  # Speed up training
+    num_nodes=1,
+    logger=True, # Uses TensorBoard by default
+    max_epochs=1, # For demos
+    log_every_n_steps=5,
+    enable_checkpointing=True,
+    callbacks=[checkpoint_callback, pl.callbacks.RichProgressBar()],
+    default_root_dir="output/multicrop",
+)</p>
+<h3 id="instantiating-the-task-to-handle-the-model">Instantiating the task to handle the model.<a class="headerlink" href="#instantiating-the-task-to-handle-the-model" title="Permanent link">#</a></h3>
+<p>```python
+model = terratorch.tasks.SemanticSegmentationTask(
+    model_factory="EncoderDecoderFactory",
+    model_args={
+        # Backbone
+        "backbone": "prithvi_eo_v2_300", 
+        "backbone_pretrained": True,
+        "backbone_num_frames": 3,
+        "backbone_bands": ["BLUE", "GREEN", "RED", "NIR_NARROW", "SWIR_1", "SWIR_2"],
+        "backbone_coords_encoding": [], # use ["time", "location"] for time and location metadata</p>
+<div class="language-text highlight"><pre><span></span><code>    # Necks 
+    &quot;necks&quot;: [
+        {
+            &quot;name&quot;: &quot;SelectIndices&quot;,
+            &quot;indices&quot;: [5, 11, 17, 23] 
+        },
+        {
+            &quot;name&quot;: &quot;ReshapeTokensToImage&quot;,
+            &quot;effective_time_dim&quot;: 3
+        },
+        {&quot;name&quot;: &quot;LearnedInterpolateToPyramidal&quot;},            
+    ],
+
+    # Decoder
+    &quot;decoder&quot;: &quot;UNetDecoder&quot;,
+    &quot;decoder_channels&quot;: [512, 256, 128, 64],
+
+    # Head
+    &quot;head_dropout&quot;: 0.1,
+    &quot;num_classes&quot;: 13,
+},
+
+loss=&quot;ce&quot;,
+lr=1e-4,
+optimizer=&quot;AdamW&quot;,
+ignore_index=-1,
+freeze_backbone=True,  
+freeze_decoder=False,
+plot_on_val=True,
+</code></pre></div>
+<p>)</p>
+<h3 id="predicting-for-some-samples-in-the-prediction-dataset">Predicting for some samples in the prediction dataset.<a class="headerlink" href="#predicting-for-some-samples-in-the-prediction-dataset" title="Permanent link">#</a></h3>
+<p>```python
+preds = trainer.predict(model, datamodule=datamodule, ckpt_path=best_ckpt_100_epoch_path)</p>
+<h1 id="get-data">get data<a class="headerlink" href="#get-data" title="Permanent link">#</a></h1>
+<p>data_loader = trainer.predict_dataloaders
+batch = next(iter(data_loader))</p>
+<p>BATCH_SIZE = 8
+for i in range(BATCH_SIZE):</p>
+<div class="language-text highlight"><pre><span></span><code>sample = {key: batch[key][i] for key in batch}
+sample[&quot;prediction&quot;] = preds[0][0][i].cpu().numpy()
+
+datamodule.predict_dataset.plot(sample)
+</code></pre></div>
+<p><img alt="png" src="../using_datamodule_multitemporalclassificationModule_files/using_datamodule_multitemporalclassificationModule_17_2.png" /></p>
+<p><img alt="png" src="../using_datamodule_multitemporalclassificationModule_files/using_datamodule_multitemporalclassificationModule_17_3.png" /></p>
+<p><img alt="png" src="../using_datamodule_multitemporalclassificationModule_files/using_datamodule_multitemporalclassificationModule_17_4.png" /></p>
+<p><img alt="png" src="../using_datamodule_multitemporalclassificationModule_files/using_datamodule_multitemporalclassificationModule_17_5.png" /></p>
+<p><img alt="png" src="../using_datamodule_multitemporalclassificationModule_files/using_datamodule_multitemporalclassificationModule_17_6.png" /></p>
+<p><img alt="png" src="../using_datamodule_multitemporalclassificationModule_files/using_datamodule_multitemporalclassificationModule_17_7.png" /></p>
+<p><img alt="png" src="../using_datamodule_multitemporalclassificationModule_files/using_datamodule_multitemporalclassificationModule_17_8.png" /></p>
+<p><img alt="png" src="../using_datamodule_multitemporalclassificationModule_files/using_datamodule_multitemporalclassificationModule_17_9.png" /></p>
 
   <hr>
 <div class="md-source-file">
   <small>
     
       Last update:
-      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="March 28, 2025 19:02:06">March 28, 2025</span>
+      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="March 31, 2025 19:20:46">March 31, 2025</span>
       
     
   </small>
@@ -1248,7 +1385,7 @@ You will see the outputs being saved in the <code>outputs</code> directory. </p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../the_yaml_config/" class="md-footer__link md-footer__link--prev" aria-label="Previous: The YAML configuration file: an overview">
+          <a href="../burn_scars_inference_simplified/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Performing a simple inference task using the TerraTorch&#39;s script interface.">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
@@ -1258,20 +1395,20 @@ You will see the outputs being saved in the <code>outputs</code> directory. </p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                The YAML configuration file: an overview
+                Performing a simple inference task using the TerraTorch's script interface.
               </div>
             </div>
           </a>
         
         
           
-          <a href="../burn_scars_inference_simplified/" class="md-footer__link md-footer__link--next" aria-label="Next: Performing a simple inference task using the TerraTorch&#39;s script interface.">
+          <a href="../../changelog/" class="md-footer__link md-footer__link--next" aria-label="Next: Changelog">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Performing a simple inference task using the TerraTorch's script interface.
+                Changelog
               </div>
             </div>
             <div class="md-footer__button md-icon">
