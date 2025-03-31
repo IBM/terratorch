@@ -19,15 +19,8 @@ import lightning.pytorch as pl
 import matplotlib.pyplot as plt
 from terratorch.datamodules import MultiTemporalCropClassificationDataModule
 import warnings
-warnings.filterwarnings('ignore')
-```
-
-    /home/jalmeida/.pyenv/versions/3.12.7/envs/sbsr/lib/python3.12/site-packages/tqdm/auto.py:21: TqdmWarning: IProgress not found. Please update jupyter and ipywidgets. See https://ipywidgets.readthedocs.io/en/stable/user_install.html
-      from .autonotebook import tqdm as notebook_tqdm
-
 
 ### Downloading a random subset of the required dataset (~1 GB).
-
 
 ```python
 if not os.path.isfile('multi-temporal-crop-classification-subset.tar.gz'):
@@ -135,35 +128,25 @@ trainer = pl.Trainer(
     callbacks=[checkpoint_callback, pl.callbacks.RichProgressBar()],
     default_root_dir="output/multicrop",
 )
-```
-
-    Using bfloat16 Automatic Mixed Precision (AMP)
-    GPU available: True (cuda), used: True
-    TPU available: False, using: 0 TPU cores
-    HPU available: False, using: 0 HPUs
-
 
 ### Instantiating the task to handle the model.
-
 
 ```python
 model = terratorch.tasks.SemanticSegmentationTask(
     model_factory="EncoderDecoderFactory",
     model_args={
         # Backbone
-        "backbone": "prithvi_eo_v2_300", # Model can be either prithvi_eo_v1_100, prithvi_eo_v2_300, prithvi_eo_v2_300_tl, prithvi_eo_v2_600, prithvi_eo_v2_600_tl
+        "backbone": "prithvi_eo_v2_300", 
         "backbone_pretrained": True,
         "backbone_num_frames": 3,
         "backbone_bands": ["BLUE", "GREEN", "RED", "NIR_NARROW", "SWIR_1", "SWIR_2"],
         "backbone_coords_encoding": [], # use ["time", "location"] for time and location metadata
-        
+
         # Necks 
         "necks": [
             {
                 "name": "SelectIndices",
-                # "indices": [2, 5, 8, 11] # indices for prithvi_eo_v1_100
-                "indices": [5, 11, 17, 23] # indices for prithvi_eo_v2_300
-                # "indices": [7, 15, 23, 31] # indices for prithvi_eo_v2_600
+                "indices": [5, 11, 17, 23] 
             },
             {
                 "name": "ReshapeTokensToImage",
@@ -185,20 +168,11 @@ model = terratorch.tasks.SemanticSegmentationTask(
     lr=1e-4,
     optimizer="AdamW",
     ignore_index=-1,
-    freeze_backbone=True,  # Speeds up fine-tuning
+    freeze_backbone=True,  
     freeze_decoder=False,
     plot_on_val=True,
     
 )
-```
-
-    INFO:root:Loaded weights for HLSBands.BLUE in position 0 of patch embed
-    INFO:root:Loaded weights for HLSBands.GREEN in position 1 of patch embed
-    INFO:root:Loaded weights for HLSBands.RED in position 2 of patch embed
-    INFO:root:Loaded weights for HLSBands.NIR_NARROW in position 3 of patch embed
-    INFO:root:Loaded weights for HLSBands.SWIR_1 in position 4 of patch embed
-    INFO:root:Loaded weights for HLSBands.SWIR_2 in position 5 of patch embed
-
 
 ### Predicting for some samples in the prediction dataset.
 
@@ -209,7 +183,6 @@ preds = trainer.predict(model, datamodule=datamodule, ckpt_path=best_ckpt_100_ep
 data_loader = trainer.predict_dataloaders
 batch = next(iter(data_loader))
 
-# plot
 BATCH_SIZE = 8
 for i in range(BATCH_SIZE):
 
@@ -217,19 +190,6 @@ for i in range(BATCH_SIZE):
     sample["prediction"] = preds[0][0][i].cpu().numpy()
 
     datamodule.predict_dataset.plot(sample)
-```
-
-    You are using a CUDA device ('NVIDIA RTX A4500 Laptop GPU') that has Tensor Cores. To properly utilize them, you should set `torch.set_float32_matmul_precision('medium' | 'high')` which will trade-off precision for performance. For more details, read https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
-    Restoring states from the checkpoint path at multicrop_best-epoch=76.ckpt
-    LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
-    Loaded model weights from the checkpoint at multicrop_best-epoch=76.ckpt
-
-
-
-<pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
-
-
-
 
     
 ![png](using_datamodule_multitemporalclassificationModule_files/using_datamodule_multitemporalclassificationModule_17_2.png)
@@ -270,7 +230,6 @@ for i in range(BATCH_SIZE):
     
 ![png](using_datamodule_multitemporalclassificationModule_files/using_datamodule_multitemporalclassificationModule_17_8.png)
     
-
 
 
     
