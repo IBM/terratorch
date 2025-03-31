@@ -398,7 +398,7 @@ def test_create_model_with_lora(backbone, task, expected, decoder, model_factory
 
     if task == "segmentation":
         model_args["num_classes"] = NUM_CLASSES
-    if decoder in ["UperNetDecoder", "UNetDecoder"] and backbone.startswith("prithvi_eo"):
+    if decoder in ["UperNetDecoder", "UNetDecoder"]:
         model_args["necks"] = VIT_UPERNET_NECK
     if decoder == "UNetDecoder":
         model_args["decoder_channels"] = [256, 128, 64, 32]
