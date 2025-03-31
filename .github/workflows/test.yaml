@@ -10,6 +10,7 @@ on:
       - 'tests/resources/**'
       - '**/*.svg'
       - '**/*.png'
+      - '**/*.txt'
   pull_request:
     branches:
       - main
@@ -19,6 +20,7 @@ on:
       - 'tests/resources/**'
       - '**/*.svg'
       - '**/*.png'
+      - '**/*.txt'
 jobs:
   build:
     runs-on: ubuntu-latest
