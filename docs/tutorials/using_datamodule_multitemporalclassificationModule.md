@@ -19,6 +19,7 @@ import lightning.pytorch as pl
 import matplotlib.pyplot as plt
 from terratorch.datamodules import MultiTemporalCropClassificationDataModule
 import warnings
+```
 
 ### Downloading a random subset of the required dataset (~1 GB).
 
@@ -128,6 +129,7 @@ trainer = pl.Trainer(
     callbacks=[checkpoint_callback, pl.callbacks.RichProgressBar()],
     default_root_dir="output/multicrop",
 )
+```
 
 ### Instantiating the task to handle the model.
 
@@ -173,6 +175,7 @@ model = terratorch.tasks.SemanticSegmentationTask(
     plot_on_val=True,
     
 )
+```
 
 ### Predicting for some samples in the prediction dataset.
 
@@ -190,6 +193,7 @@ for i in range(BATCH_SIZE):
     sample["prediction"] = preds[0][0][i].cpu().numpy()
 
     datamodule.predict_dataset.plot(sample)
+```
 
     
 ![png](using_datamodule_multitemporalclassificationModule_files/using_datamodule_multitemporalclassificationModule_17_2.png)
