@@ -406,6 +406,22 @@ def test_create_model_with_lora(backbone, task, expected, decoder, model_factory
     model = model_factory.build_model(**model_args)
     model.eval()
 
+    encoder_trainable_params = 0
+    for param in model.encoder.parameters():
+        if param.requires_grad:
+            encoder_trainable_params += param.numel()
+
+    if backbone == "clay_v1_base":
+        num_layers = 12
+        embed_dim = 768
+        linear_in_out = 768 * 4
+    else:
+        num_layers = len(model.encoder.blocks)
+        embed_dim = model.encoder.embed_dim
+        linear_in_out = model.encoder.blocks[0].mlp.fc1.out_features
+    r = LORA_CONFIG[backbone.split("_")[0]]["peft_config_kwargs"]["r"]
+    assert encoder_trainable_params == num_layers * (2 * embed_dim * r * 2 + 2 * linear_in_out * r + 2 * embed_dim * r)
+
     with torch.no_grad():
         assert model(model_input).output.shape == expected
 
