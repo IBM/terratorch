@@ -990,6 +990,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#downloading-a-random-subset-of-the-required-dataset-1-gb" class="md-nav__link">
+    <span class="md-ellipsis">
+      Downloading a random subset of the required dataset (~1 GB).
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#instantiating-the-corresponding-datamodule" class="md-nav__link">
     <span class="md-ellipsis">
       Instantiating the corresponding datamodule.
@@ -1115,6 +1124,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#downloading-a-random-subset-of-the-required-dataset-1-gb" class="md-nav__link">
+    <span class="md-ellipsis">
+      Downloading a random subset of the required dataset (~1 GB).
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#instantiating-the-corresponding-datamodule" class="md-nav__link">
     <span class="md-ellipsis">
       Instantiating the corresponding datamodule.
@@ -1213,42 +1231,40 @@
 </span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 </span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="kn">from</span> <span class="nn">terratorch.datamodules</span> <span class="kn">import</span> <span class="n">MultiTemporalCropClassificationDataModule</span>
 </span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="kn">import</span> <span class="nn">warnings</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="c1">### Downloading a random subset of the required dataset (~1 GB).</span>
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="err">```</span><span class="n">python</span>
-</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="s1">&#39;multi-temporal-crop-classification-subset.tar.gz&#39;</span><span class="p">):</span>
-</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="err">!</span><span class="n">gdown</span> <span class="mi">1</span><span class="n">LL6thkuKA0kVyMI39PxgsrJ1FJJDV7</span><span class="o">-</span><span class="n">u</span>
-</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>
-</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="s1">&#39;multi-temporal-crop-classification-subset/&#39;</span><span class="p">):</span>
-</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>    <span class="err">!</span><span class="n">tar</span> <span class="o">-</span><span class="n">xzvf</span> <span class="n">multi</span><span class="o">-</span><span class="n">temporal</span><span class="o">-</span><span class="n">crop</span><span class="o">-</span><span class="n">classification</span><span class="o">-</span><span class="n">subset</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
-</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>
-</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="n">dataset_path</span> <span class="o">=</span> <span class="s2">&quot;multi-temporal-crop-classification-subset&quot;</span>
+</span></code></pre></div>
+<h3 id="downloading-a-random-subset-of-the-required-dataset-1-gb">Downloading a random subset of the required dataset (~1 GB).<a class="headerlink" href="#downloading-a-random-subset-of-the-required-dataset-1-gb" title="Permanent link">#</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="s1">&#39;multi-temporal-crop-classification-subset.tar.gz&#39;</span><span class="p">):</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="err">!</span><span class="n">gdown</span> <span class="mi">1</span><span class="n">LL6thkuKA0kVyMI39PxgsrJ1FJJDV7</span><span class="o">-</span><span class="n">u</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="s1">&#39;multi-temporal-crop-classification-subset/&#39;</span><span class="p">):</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="err">!</span><span class="n">tar</span> <span class="o">-</span><span class="n">xzvf</span> <span class="n">multi</span><span class="o">-</span><span class="n">temporal</span><span class="o">-</span><span class="n">crop</span><span class="o">-</span><span class="n">classification</span><span class="o">-</span><span class="n">subset</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">dataset_path</span> <span class="o">=</span> <span class="s2">&quot;multi-temporal-crop-classification-subset&quot;</span>
 </span></code></pre></div>
 <h3 id="instantiating-the-corresponding-datamodule">Instantiating the corresponding datamodule.<a class="headerlink" href="#instantiating-the-corresponding-datamodule" title="Permanent link">#</a></h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">datamodule</span> <span class="o">=</span> <span class="n">MultiTemporalCropClassificationDataModule</span><span class="p">(</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">batch_size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">num_workers</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">data_root</span><span class="o">=</span><span class="n">dataset_path</span><span class="p">,</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">train_transform</span><span class="o">=</span><span class="p">[</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>        <span class="n">terratorch</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">FlattenTemporalIntoChannels</span><span class="p">(),</span>  <span class="c1"># Required for temporal data</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>        <span class="n">albumentations</span><span class="o">.</span><span class="n">D4</span><span class="p">(),</span> <span class="c1"># Random flips and rotation</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>        <span class="n">albumentations</span><span class="o">.</span><span class="n">pytorch</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">ToTensorV2</span><span class="p">(),</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>        <span class="n">terratorch</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">UnflattenTemporalFromChannels</span><span class="p">(</span><span class="n">n_timesteps</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    <span class="p">],</span>
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    <span class="n">val_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># Using ToTensor() by default</span>
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    <span class="n">test_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>    <span class="n">expand_temporal_dimension</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>    <span class="n">use_metadata</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="c1"># The crop dataset has metadata for location and time</span>
-</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>    <span class="n">reduce_zero_label</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="p">)</span>
-</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>
-</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="c1"># Setup train and val datasets</span>
-</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="n">datamodule</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="s2">&quot;predict&quot;</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">datamodule</span> <span class="o">=</span> <span class="n">MultiTemporalCropClassificationDataModule</span><span class="p">(</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="n">batch_size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">num_workers</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="n">data_root</span><span class="o">=</span><span class="n">dataset_path</span><span class="p">,</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="n">train_transform</span><span class="o">=</span><span class="p">[</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>        <span class="n">terratorch</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">FlattenTemporalIntoChannels</span><span class="p">(),</span>  <span class="c1"># Required for temporal data</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>        <span class="n">albumentations</span><span class="o">.</span><span class="n">D4</span><span class="p">(),</span> <span class="c1"># Random flips and rotation</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>        <span class="n">albumentations</span><span class="o">.</span><span class="n">pytorch</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">ToTensorV2</span><span class="p">(),</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>        <span class="n">terratorch</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">transforms</span><span class="o">.</span><span class="n">UnflattenTemporalFromChannels</span><span class="p">(</span><span class="n">n_timesteps</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="p">],</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="n">val_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>  <span class="c1"># Using ToTensor() by default</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>    <span class="n">test_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>    <span class="n">expand_temporal_dimension</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>    <span class="n">use_metadata</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="c1"># The crop dataset has metadata for location and time</span>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>    <span class="n">reduce_zero_label</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="p">)</span>
+</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>
+</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="c1"># Setup train and val datasets</span>
+</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="n">datamodule</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="s2">&quot;predict&quot;</span><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="visualizing-a-few-samples">Visualizing a few samples.<a class="headerlink" href="#visualizing-a-few-samples" title="Permanent link">#</a></h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="n">datamodule</span><span class="o">.</span><span class="n">predict_dataset</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">datamodule</span><span class="o">.</span><span class="n">predict_dataset</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="n">datamodule</span><span class="o">.</span><span class="n">predict_dataset</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">datamodule</span><span class="o">.</span><span class="n">predict_dataset</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 </span></code></pre></div>
 <p><img alt="png" src="../using_datamodule_multitemporalclassificationModule_files/using_datamodule_multitemporalclassificationModule_9_0.png" /></p>
 <p><img alt="png" src="../using_datamodule_multitemporalclassificationModule_files/using_datamodule_multitemporalclassificationModule_9_1.png" /></p>
@@ -1256,87 +1272,89 @@
 <p><img alt="png" src="../using_datamodule_multitemporalclassificationModule_files/using_datamodule_multitemporalclassificationModule_9_3.png" /></p>
 <p><img alt="png" src="../using_datamodule_multitemporalclassificationModule_files/using_datamodule_multitemporalclassificationModule_9_4.png" /></p>
 <h3 id="downloading-the-best-pretrained-checkpoint">Downloading the best pretrained checkpoint.<a class="headerlink" href="#downloading-the-best-pretrained-checkpoint" title="Permanent link">#</a></h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">best_ckpt_100_epoch_path</span> <span class="o">=</span> <span class="s2">&quot;multicrop_best-epoch=76.ckpt&quot;</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">best_ckpt_100_epoch_path</span><span class="p">):</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">gdown</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="s2">&quot;https://drive.google.com/uc?id=1o1Hzd4yyiKyYdzfotQlEOeGTjsM8cHSw&quot;</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">best_ckpt_100_epoch_path</span> <span class="o">=</span> <span class="s2">&quot;multicrop_best-epoch=76.ckpt&quot;</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">best_ckpt_100_epoch_path</span><span class="p">):</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="n">gdown</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="s2">&quot;https://drive.google.com/uc?id=1o1Hzd4yyiKyYdzfotQlEOeGTjsM8cHSw&quot;</span><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="instantiating-the-lightning-trainer">Instantiating the Lightning Trainer.<a class="headerlink" href="#instantiating-the-lightning-trainer" title="Permanent link">#</a></h3>
-<p>```python
-checkpoint_callback = pl.callbacks.ModelCheckpoint(
-    dirpath="output/multicrop/checkpoints/",
-    mode="max",
-    monitor="val/Multiclass_Jaccard_Index", # Variable to monitor
-    filename="best-{epoch:02d}",
-)
-trainer = pl.Trainer(
-    accelerator="auto",
-    strategy="auto",
-    devices=1, # Lightning multi-gpu often fails in notebooks
-    precision='bf16-mixed',  # Speed up training
-    num_nodes=1,
-    logger=True, # Uses TensorBoard by default
-    max_epochs=1, # For demos
-    log_every_n_steps=5,
-    enable_checkpointing=True,
-    callbacks=[checkpoint_callback, pl.callbacks.RichProgressBar()],
-    default_root_dir="output/multicrop",
-)</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">checkpoint_callback</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">callbacks</span><span class="o">.</span><span class="n">ModelCheckpoint</span><span class="p">(</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    <span class="n">dirpath</span><span class="o">=</span><span class="s2">&quot;output/multicrop/checkpoints/&quot;</span><span class="p">,</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;max&quot;</span><span class="p">,</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="n">monitor</span><span class="o">=</span><span class="s2">&quot;val/Multiclass_Jaccard_Index&quot;</span><span class="p">,</span> <span class="c1"># Variable to monitor</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;best-</span><span class="si">{epoch:02d}</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="p">)</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="n">trainer</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">Trainer</span><span class="p">(</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>    <span class="n">accelerator</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>    <span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>    <span class="n">devices</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="c1"># Lightning multi-gpu often fails in notebooks</span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>    <span class="n">precision</span><span class="o">=</span><span class="s1">&#39;bf16-mixed&#39;</span><span class="p">,</span>  <span class="c1"># Speed up training</span>
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>    <span class="n">num_nodes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>    <span class="n">logger</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="c1"># Uses TensorBoard by default</span>
+</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>    <span class="n">max_epochs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="c1"># For demos</span>
+</span><span id="__span-6-15"><a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>    <span class="n">log_every_n_steps</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+</span><span id="__span-6-16"><a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>    <span class="n">enable_checkpointing</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-6-17"><a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>    <span class="n">callbacks</span><span class="o">=</span><span class="p">[</span><span class="n">checkpoint_callback</span><span class="p">,</span> <span class="n">pl</span><span class="o">.</span><span class="n">callbacks</span><span class="o">.</span><span class="n">RichProgressBar</span><span class="p">()],</span>
+</span><span id="__span-6-18"><a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>    <span class="n">default_root_dir</span><span class="o">=</span><span class="s2">&quot;output/multicrop&quot;</span><span class="p">,</span>
+</span><span id="__span-6-19"><a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a><span class="p">)</span>
+</span></code></pre></div>
 <h3 id="instantiating-the-task-to-handle-the-model">Instantiating the task to handle the model.<a class="headerlink" href="#instantiating-the-task-to-handle-the-model" title="Permanent link">#</a></h3>
-<p>```python
-model = terratorch.tasks.SemanticSegmentationTask(
-    model_factory="EncoderDecoderFactory",
-    model_args={
-        # Backbone
-        "backbone": "prithvi_eo_v2_300", 
-        "backbone_pretrained": True,
-        "backbone_num_frames": 3,
-        "backbone_bands": ["BLUE", "GREEN", "RED", "NIR_NARROW", "SWIR_1", "SWIR_2"],
-        "backbone_coords_encoding": [], # use ["time", "location"] for time and location metadata</p>
-<div class="language-text highlight"><pre><span></span><code>    # Necks 
-    &quot;necks&quot;: [
-        {
-            &quot;name&quot;: &quot;SelectIndices&quot;,
-            &quot;indices&quot;: [5, 11, 17, 23] 
-        },
-        {
-            &quot;name&quot;: &quot;ReshapeTokensToImage&quot;,
-            &quot;effective_time_dim&quot;: 3
-        },
-        {&quot;name&quot;: &quot;LearnedInterpolateToPyramidal&quot;},            
-    ],
-
-    # Decoder
-    &quot;decoder&quot;: &quot;UNetDecoder&quot;,
-    &quot;decoder_channels&quot;: [512, 256, 128, 64],
-
-    # Head
-    &quot;head_dropout&quot;: 0.1,
-    &quot;num_classes&quot;: 13,
-},
-
-loss=&quot;ce&quot;,
-lr=1e-4,
-optimizer=&quot;AdamW&quot;,
-ignore_index=-1,
-freeze_backbone=True,  
-freeze_decoder=False,
-plot_on_val=True,
-</code></pre></div>
-<p>)</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">terratorch</span><span class="o">.</span><span class="n">tasks</span><span class="o">.</span><span class="n">SemanticSegmentationTask</span><span class="p">(</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    <span class="n">model_factory</span><span class="o">=</span><span class="s2">&quot;EncoderDecoderFactory&quot;</span><span class="p">,</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    <span class="n">model_args</span><span class="o">=</span><span class="p">{</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>        <span class="c1"># Backbone</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>        <span class="s2">&quot;backbone&quot;</span><span class="p">:</span> <span class="s2">&quot;prithvi_eo_v2_300&quot;</span><span class="p">,</span> 
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>        <span class="s2">&quot;backbone_pretrained&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>        <span class="s2">&quot;backbone_num_frames&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>        <span class="s2">&quot;backbone_bands&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;BLUE&quot;</span><span class="p">,</span> <span class="s2">&quot;GREEN&quot;</span><span class="p">,</span> <span class="s2">&quot;RED&quot;</span><span class="p">,</span> <span class="s2">&quot;NIR_NARROW&quot;</span><span class="p">,</span> <span class="s2">&quot;SWIR_1&quot;</span><span class="p">,</span> <span class="s2">&quot;SWIR_2&quot;</span><span class="p">],</span>
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>        <span class="s2">&quot;backbone_coords_encoding&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="c1"># use [&quot;time&quot;, &quot;location&quot;] for time and location metadata</span>
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>        <span class="c1"># Necks </span>
+</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>        <span class="s2">&quot;necks&quot;</span><span class="p">:</span> <span class="p">[</span>
+</span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>            <span class="p">{</span>
+</span><span id="__span-7-14"><a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;SelectIndices&quot;</span><span class="p">,</span>
+</span><span id="__span-7-15"><a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>                <span class="s2">&quot;indices&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">17</span><span class="p">,</span> <span class="mi">23</span><span class="p">]</span> 
+</span><span id="__span-7-16"><a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>            <span class="p">},</span>
+</span><span id="__span-7-17"><a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>            <span class="p">{</span>
+</span><span id="__span-7-18"><a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;ReshapeTokensToImage&quot;</span><span class="p">,</span>
+</span><span id="__span-7-19"><a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a>                <span class="s2">&quot;effective_time_dim&quot;</span><span class="p">:</span> <span class="mi">3</span>
+</span><span id="__span-7-20"><a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a>            <span class="p">},</span>
+</span><span id="__span-7-21"><a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a>            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;LearnedInterpolateToPyramidal&quot;</span><span class="p">},</span>            
+</span><span id="__span-7-22"><a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a>        <span class="p">],</span>
+</span><span id="__span-7-23"><a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a>
+</span><span id="__span-7-24"><a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a>        <span class="c1"># Decoder</span>
+</span><span id="__span-7-25"><a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a>        <span class="s2">&quot;decoder&quot;</span><span class="p">:</span> <span class="s2">&quot;UNetDecoder&quot;</span><span class="p">,</span>
+</span><span id="__span-7-26"><a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a>        <span class="s2">&quot;decoder_channels&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">512</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">64</span><span class="p">],</span>
+</span><span id="__span-7-27"><a id="__codelineno-7-27" name="__codelineno-7-27" href="#__codelineno-7-27"></a>
+</span><span id="__span-7-28"><a id="__codelineno-7-28" name="__codelineno-7-28" href="#__codelineno-7-28"></a>        <span class="c1"># Head</span>
+</span><span id="__span-7-29"><a id="__codelineno-7-29" name="__codelineno-7-29" href="#__codelineno-7-29"></a>        <span class="s2">&quot;head_dropout&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+</span><span id="__span-7-30"><a id="__codelineno-7-30" name="__codelineno-7-30" href="#__codelineno-7-30"></a>        <span class="s2">&quot;num_classes&quot;</span><span class="p">:</span> <span class="mi">13</span><span class="p">,</span>
+</span><span id="__span-7-31"><a id="__codelineno-7-31" name="__codelineno-7-31" href="#__codelineno-7-31"></a>    <span class="p">},</span>
+</span><span id="__span-7-32"><a id="__codelineno-7-32" name="__codelineno-7-32" href="#__codelineno-7-32"></a>
+</span><span id="__span-7-33"><a id="__codelineno-7-33" name="__codelineno-7-33" href="#__codelineno-7-33"></a>    <span class="n">loss</span><span class="o">=</span><span class="s2">&quot;ce&quot;</span><span class="p">,</span>
+</span><span id="__span-7-34"><a id="__codelineno-7-34" name="__codelineno-7-34" href="#__codelineno-7-34"></a>    <span class="n">lr</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span>
+</span><span id="__span-7-35"><a id="__codelineno-7-35" name="__codelineno-7-35" href="#__codelineno-7-35"></a>    <span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;AdamW&quot;</span><span class="p">,</span>
+</span><span id="__span-7-36"><a id="__codelineno-7-36" name="__codelineno-7-36" href="#__codelineno-7-36"></a>    <span class="n">ignore_index</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+</span><span id="__span-7-37"><a id="__codelineno-7-37" name="__codelineno-7-37" href="#__codelineno-7-37"></a>    <span class="n">freeze_backbone</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  
+</span><span id="__span-7-38"><a id="__codelineno-7-38" name="__codelineno-7-38" href="#__codelineno-7-38"></a>    <span class="n">freeze_decoder</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+</span><span id="__span-7-39"><a id="__codelineno-7-39" name="__codelineno-7-39" href="#__codelineno-7-39"></a>    <span class="n">plot_on_val</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-7-40"><a id="__codelineno-7-40" name="__codelineno-7-40" href="#__codelineno-7-40"></a>
+</span><span id="__span-7-41"><a id="__codelineno-7-41" name="__codelineno-7-41" href="#__codelineno-7-41"></a><span class="p">)</span>
+</span></code></pre></div>
 <h3 id="predicting-for-some-samples-in-the-prediction-dataset">Predicting for some samples in the prediction dataset.<a class="headerlink" href="#predicting-for-some-samples-in-the-prediction-dataset" title="Permanent link">#</a></h3>
-<p>```python
-preds = trainer.predict(model, datamodule=datamodule, ckpt_path=best_ckpt_100_epoch_path)</p>
-<h1 id="get-data">get data<a class="headerlink" href="#get-data" title="Permanent link">#</a></h1>
-<p>data_loader = trainer.predict_dataloaders
-batch = next(iter(data_loader))</p>
-<p>BATCH_SIZE = 8
-for i in range(BATCH_SIZE):</p>
-<div class="language-text highlight"><pre><span></span><code>sample = {key: batch[key][i] for key in batch}
-sample[&quot;prediction&quot;] = preds[0][0][i].cpu().numpy()
-
-datamodule.predict_dataset.plot(sample)
-</code></pre></div>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">preds</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">datamodule</span><span class="o">=</span><span class="n">datamodule</span><span class="p">,</span> <span class="n">ckpt_path</span><span class="o">=</span><span class="n">best_ckpt_100_epoch_path</span><span class="p">)</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="c1"># get data </span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="n">data_loader</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">predict_dataloaders</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">batch</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">data_loader</span><span class="p">))</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="n">BATCH_SIZE</span> <span class="o">=</span> <span class="mi">8</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">BATCH_SIZE</span><span class="p">):</span>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>    <span class="n">sample</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">batch</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">}</span>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>    <span class="n">sample</span><span class="p">[</span><span class="s2">&quot;prediction&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">preds</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>
+</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>    <span class="n">datamodule</span><span class="o">.</span><span class="n">predict_dataset</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
+</span></code></pre></div>
 <p><img alt="png" src="../using_datamodule_multitemporalclassificationModule_files/using_datamodule_multitemporalclassificationModule_17_2.png" /></p>
 <p><img alt="png" src="../using_datamodule_multitemporalclassificationModule_files/using_datamodule_multitemporalclassificationModule_17_3.png" /></p>
 <p><img alt="png" src="../using_datamodule_multitemporalclassificationModule_files/using_datamodule_multitemporalclassificationModule_17_4.png" /></p>
@@ -1351,7 +1369,7 @@ datamodule.predict_dataset.plot(sample)
   <small>
     
       Last update:
-      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="March 31, 2025 19:20:46">March 31, 2025</span>
+      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="March 31, 2025 19:23:38">March 31, 2025</span>
       
     
   </small>
