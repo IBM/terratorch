@@ -87,6 +87,7 @@ nav:
     - tutorials/basic_inference_burn_scars.md 
     - tutorials/burn_scars_inference_simplified.md
     - tutorials/using_datamodule_multitemporalclassificationModule.md
+    - tutorials/burn_scars_finetuning.md
   - Changelog: changelog.md
 markdown_extensions:
   - attr_list
