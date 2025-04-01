@@ -92,8 +92,10 @@ def test_create_classification_model_no_in_channels(backbone, model_factory: Enc
 
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
-@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder"])
+@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder", "LinearDecoder"])
 def test_create_pixelwise_model(backbone, task, expected, decoder, model_factory: EncoderDecoderFactory, model_input):
+    if decoder == "LinearDecoder" and task == "regression":
+        pytest.skip("LinearDecoder is not supported for regression tasks")
     model_args = {
         "task": task,
         "backbone": backbone,
@@ -108,6 +110,9 @@ def test_create_pixelwise_model(backbone, task, expected, decoder, model_factory
         model_args["necks"] = VIT_UPERNET_NECK
     if decoder == "UNetDecoder":
         model_args["decoder_channels"] = [256, 128, 64, 32]
+    if decoder == "LinearDecoder":
+        model_args["decoder_upsampling_size"] = 16
+        model_args["rescale"] = False
 
     model = model_factory.build_model(**model_args)
     model.eval()
@@ -265,10 +270,12 @@ def test_create_model_with_mmseg_uperhead_decoder(
 
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
-@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder"])
+@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder", "LinearDecoder"])
 def test_create_pixelwise_model_no_in_channels(
     backbone, task, expected, decoder, model_factory: EncoderDecoderFactory, model_input
 ):
+    if decoder == "LinearDecoder" and task == "regression":
+        pytest.skip("LinearDecoder is not supported for regression tasks")
     model_args = {
         "task": task,
         "backbone": backbone,
@@ -283,6 +290,9 @@ def test_create_pixelwise_model_no_in_channels(
         model_args["necks"] = VIT_UPERNET_NECK
     if decoder == "UNetDecoder":
         model_args["decoder_channels"] = [256, 128, 64, 32]
+    if decoder == "LinearDecoder":
+        model_args["decoder_upsampling_size"] = 16
+        model_args["rescale"] = False
 
     model = model_factory.build_model(**model_args)
     model.eval()
@@ -333,10 +343,12 @@ def test_create_pixelwise_model_with_aux_heads(
 
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
-@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder"])
+@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder", "LinearDecoder"])
 def test_create_pixelwise_model_with_extra_bands(
     backbone, task, expected, decoder, model_factory: EncoderDecoderFactory
 ):
+    if decoder == "LinearDecoder" and task == "regression":
+        pytest.skip("LinearDecoder is not supported for regression tasks")
     model_args = {
         "task": task,
         "backbone": backbone,
@@ -352,6 +364,9 @@ def test_create_pixelwise_model_with_extra_bands(
         model_args["necks"] = VIT_UPERNET_NECK
     if decoder == "UNetDecoder":
         model_args["decoder_channels"] = [256, 128, 64, 32]
+    if decoder == "LinearDecoder":
+        model_args["decoder_upsampling_size"] = 16
+        model_args["rescale"] = False
     model = model_factory.build_model(**model_args)
     model.eval()
     model_input = torch.ones((1, NUM_CHANNELS + 1, 224, 224))
