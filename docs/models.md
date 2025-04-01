@@ -1,20 +1,12 @@
 # Models
 
-To interface with terratorch tasks correctly, models must inherit from the [Model][terratorch.models.model.Model] parent class:
-
-::: terratorch.models.model.Model
-
+To interface with terratorch tasks correctly, models must inherit from the [Model][terratorch.models.model.Model] parent class
 and have a forward method which returns an object [ModelOutput][terratorch.models.model.ModelOutput]:
-
-:::terratorch.models.model.ModelOutput
-
 
 ## Model Factories
 
 In order to be used by tasks, models must have a Model Factory which builds them.
 Factories must conform to the [ModelFactory][terratorch.models.model.ModelFactory] parent class. 
-
-::: terratorch.models.model.ModelFactory
 
 You most likely do not need to implement your own model factory, unless you are wrapping another library which generates full models.
 
@@ -75,28 +67,6 @@ Adding a new decoder can be done in the same way with the `TERRATORCH_DECODER_RE
     E.g. to pass a local path, you can pass the parameter `backbone_pretrained_cfg_overlay = {"file": "<local_path>"}` to the model factory.
     
     Besides `file`, you can also pass `url`, `hf_hub_id`, amongst others. Check timm's documentation for full details.
-
-:::terratorch.models.backbones.select_patch_embed_weights
-
-## Decoders
-### :::terratorch.models.decoders.fcn_decoder
-### :::terratorch.models.decoders.identity_decoder
-### :::terratorch.models.decoders.upernet_decoder
-
-## Heads
-### :::terratorch.models.heads.regression_head
-### :::terratorch.models.heads.segmentation_head
-### :::terratorch.models.heads.classification_head
-
-## Auxiliary Heads
-### :::terratorch.models.model.AuxiliaryHead
-
-## Model Output
-### :::terratorch.models.model.ModelOutput
-
-## Model Factory
-### :::terratorch.models.PrithviModelFactory
-### :::terratorch.models.SMPModelFactory
 
 # Adding new model types
 Adding new model types is as simple as creating a new factory that produces models. See for instance the example below for a potential `SMPModelFactory`

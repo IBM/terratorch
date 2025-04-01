@@ -124,6 +124,7 @@ class PixelWiseModel(Model, SegmentationModel):
             prepare = getattr(self.encoder, "prepare_features_for_image_model", lambda x: x)
 
         features = prepare(features)
+
         decoder_output = self.decoder([f.clone() for f in features])
         mask = self.head(decoder_output)
         if self.rescale and mask.shape[-2:] != input_size:
