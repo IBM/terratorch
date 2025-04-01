@@ -52,3 +52,9 @@ MkDocs, a framework which relies on Markdown in order to create webpages as this
 * Add your modifications and open a PR to `improve/docs`. It is recommended to add the label `documentation` to your PR. 
 * The PR will be reviewed and approved if it is considered relevant by the maintainers. 
 
+## Contributing by reporting issues
+
+The users also can contribute by reporting issues they observed during their experiments. When reporting an issue, provide the more details as possible about the problem, as the configuration of your system,
+the terminal output and even the files required to reproduce it. To
+illustrate it, take a
+look on an example of [a good issue](https://github.com/IBM/terratorch/issues/506). 
