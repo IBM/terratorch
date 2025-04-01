@@ -49,6 +49,7 @@ class WxCModelFactory(ModelFactory):
         aux_decoders: str,
         checkpoint_path:str=None,
         backbone_weights: str = None,
+        model_args = None,
         **kwargs,
     ) -> Model:
         if backbone == 'prithviwxc':
@@ -148,6 +149,35 @@ class WxCModelFactory(ModelFactory):
                 return dsp
             return WxCModuleWrapper(backbone)
 
+        elif backbone == 'ECCC-downscaling':
+            try:
+                if model_args.model.unet:
+                    from eccc_downscaling.models.model import get_finetune_model_UNET
+                    module = get_finetune_model_UNET(model_args)
+                else:
+                    from eccc_downscaling.models.model import get_finetune_model
+                    module = get_finetune_model(model_args)
+
+                if checkpoint_path:
+                    weights_path = model_args.path_model_weights
+                    weights = torch.load(weights_path)['model']
+                    try:
+                        module.load_state_dict(weights)
+                    except Exception as e:
+                        # remove the module prefix from the weights (for models trained with DDP)
+                        weights = {key.replace('model.module.', ''): value for key, value in weights.items()}
+                        module.load_state_dict(weights)
+
+                if model_args.path_backbone_weights:
+                    module.load_pretrained_backbone(
+                        weights_path = model_args.path_backbone_weights,
+                        sel_prefix=model_args.backbone_prefix,
+                        freeze = model_args.backbone_freeze,
+                    )
+
+                return WxCModuleWrapper(module)
+            except ImportError:
+                print('ECCC downscaling not installed')
 
         # starting from there only for backwards compatibility, deprecated
         if backbone == 'gravitywave':
