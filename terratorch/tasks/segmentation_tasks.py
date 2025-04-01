@@ -369,10 +369,4 @@ class SemanticSegmentationTask(TerraTorchTask):
 
         y_hat_ = self.select_classes(y_hat)
 
-        # Whe we have two values as output, we are saving 
-        # prediction and probabilities 
-        if self.output_on_inference == "both":
-            file_names_prob = [ff.replace(".tif", "_prob.tif") for ff in file_names]
-            file_names = [file_names, file_names_prob]
-
         return y_hat_, file_names
