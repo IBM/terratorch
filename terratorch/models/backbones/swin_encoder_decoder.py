@@ -7,7 +7,7 @@ This is because it offers a few advantages, namely being able to handle
 a dynamic input size through padding.
 
 Please note the original timm implementation can still be used as a backbone
-via timm.create_model("swin_..."). You can see the available models with 'timm.list_models("swin*")'
+via `timm.create_model("swin_...")`. You can see the available models with `timm.list_models("swin*")`. 
 """
 
 import collections
@@ -208,7 +208,7 @@ class PatchMerging(nn.Module):
 
 
 class AdaptivePadding(nn.Module):
-    """Applies padding to input (if needed) so that input can get fully covered
+    r"""Applies padding to input (if needed) so that input can get fully covered
     by filter you specified. It support two modes "same" and "corner". The
     "same" mode is same with "SAME" padding mode in TensorFlow, pad zero around
     input. The "corner"  mode would pad zero to bottom right.
@@ -222,6 +222,7 @@ class AdaptivePadding(nn.Module):
             would pad zero to bottom right, and "same" mode would
             pad zero around input. Default: "corner".
     Example:
+    ```
         >>> import torch
         >>> kernel_size = 16
         >>> stride = 16
@@ -237,6 +238,7 @@ class AdaptivePadding(nn.Module):
         >>> input = torch.rand(1, 1, 16, 17)
         >>> out = adap_pad(input)
         >>> assert (out.shape[2], out.shape[3]) == (16, 32)
+    ```
     """
 
     def __init__(self, kernel_size=1, stride=1, dilation=1, padding="corner", mode="constant"):
@@ -462,7 +464,6 @@ class WindowMSA(nn.Module):
     def forward(self, x, mask=None):
         """
         Args:
-
             x (tensor): input features with shape of (num_windows*B, N, C)
             mask (tensor | None, Optional): mask with shape of (num_windows,
                 Wh*Ww, Wh*Ww), value should be between (-inf, 0].
@@ -634,8 +635,9 @@ class ShiftWindowMSA(nn.Module):
             windows: (num_windows*B, window_size, window_size, C)
             H (int): Height of image
             W (int): Width of image
+
         Returns:
-            x: (B, H, W, C)
+            tuple: (B, H, W, C)
         """
         window_size = self.window_size
         B = int(windows.shape[0] / (H * W / window_size / window_size))  # noqa: N806
@@ -647,8 +649,9 @@ class ShiftWindowMSA(nn.Module):
         """
         Args:
             x: (B, H, W, C)
+
         Returns:
-            windows: (num_windows*B, window_size, window_size, C)
+            tuple: (num_windows*B, window_size, window_size, C)
         """
         B, H, W, C = x.shape  # noqa: N806
         window_size = self.window_size
@@ -659,7 +662,7 @@ class ShiftWindowMSA(nn.Module):
 
 
 class SwinBlock(nn.Module):
-    """ "
+    """ 
     Args:
         embed_dim (int): The feature dimension.
         num_heads (int): Parallel attention heads.
@@ -838,51 +841,6 @@ class SwinBlockSequence(nn.Module):
 
 
 class MMSegSwinTransformer(nn.Module):
-    """MMSeg Swin Transformer backbone.
-
-    This backbone is the implementation of `Swin Transformer:
-    Hierarchical Vision Transformer using Shifted
-    Windows <https://arxiv.org/abs/2103.14030>`_.
-    Inspiration from https://github.com/microsoft/Swin-Transformer.
-
-    Args:
-        pretrain_img_size (int | tuple[int]): The size of input image when
-            pretrain. Defaults: 224.
-        in_chans (int): The num of input channels.
-            Defaults: 3.
-        embed_dim (int): The feature dimension. Default: 96.
-        patch_size (int | tuple[int]): Patch size. Default: 4.
-        window_size (int): Window size. Default: 7.
-        mlp_ratio (int | float): Ratio of mlp hidden dim to embedding dim.
-            Default: 4.
-        depths (tuple[int]): Depths of each Swin Transformer stage.
-            Default: (2, 2, 6, 2).
-        num_heads (tuple[int]): Parallel attention heads of each Swin
-            Transformer stage. Default: (3, 6, 12, 24).
-        strides (tuple[int]): The patch merging or patch embedding stride of
-            each Swin Transformer stage. (In swin, we set kernel size equal to
-            stride.) Default: (4, 2, 2, 2).
-        out_indices (tuple[int]): Output from which stages.
-            Default: (0, 1, 2, 3).
-        qkv_bias (bool, optional): If True, add a learnable bias to query, key,
-            value. Default: True
-        qk_scale (float | None, optional): Override default qk scale of
-            head_dim ** -0.5 if set. Default: None.
-        patch_norm (bool): If add a norm layer for patch embed and patch
-            merging. Default: True.
-        drop_rate (float): Dropout rate. Defaults: 0.
-        attn_drop_rate (float): Attention dropout rate. Default: 0.
-        drop_path_rate (float): Stochastic depth rate. Defaults: 0.1.
-        act_layer (dict): activation layer.
-            Default: nn.GELU.
-        norm_layer (dict): normalization layer at
-            output of backone. Defaults: nn.LayerNorm.
-        with_cp (bool, optional): Use checkpoint or not. Using checkpoint
-            will save some memory while slowing down the training speed.
-            Default: False.
-        frozen_stages (int): Stages to be frozen (stop grad and set eval mode).
-            -1 means not freezing any parameters.
-    """
 
     def __init__(
         self,
@@ -908,6 +866,52 @@ class MMSegSwinTransformer(nn.Module):
         with_cp=False,  # noqa: FBT002
         frozen_stages=-1,
     ):
+        """MMSeg Swin Transformer backbone.
+
+        This backbone is the implementation of `Swin Transformer:
+        Hierarchical Vision Transformer using Shifted
+        Windows <https://arxiv.org/abs/2103.14030>`_.
+        Inspiration from https://github.com/microsoft/Swin-Transformer.
+
+        Args:
+            pretrain_img_size (int | tuple[int]): The size of input image when
+                pretrain. Defaults: 224.
+            in_chans (int): The num of input channels.
+                Defaults: 3.
+            embed_dim (int): The feature dimension. Default: 96.
+            patch_size (int | tuple[int]): Patch size. Default: 4.
+            window_size (int): Window size. Default: 7.
+            mlp_ratio (int | float): Ratio of mlp hidden dim to embedding dim.
+                Default: 4.
+            depths (tuple[int]): Depths of each Swin Transformer stage.
+                Default: (2, 2, 6, 2).
+            num_heads (tuple[int]): Parallel attention heads of each Swin
+                Transformer stage. Default: (3, 6, 12, 24).
+            strides (tuple[int]): The patch merging or patch embedding stride of
+                each Swin Transformer stage. (In swin, we set kernel size equal to
+                stride.) Default: (4, 2, 2, 2).
+            out_indices (tuple[int]): Output from which stages.
+                Default: (0, 1, 2, 3).
+            qkv_bias (bool, optional): If True, add a learnable bias to query, key,
+                value. Default: True
+            qk_scale (float | None, optional): Override default qk scale of
+                head_dim ** -0.5 if set. Default: None.
+            patch_norm (bool): If add a norm layer for patch embed and patch
+                merging. Default: True.
+            drop_rate (float): Dropout rate. Defaults: 0.
+            attn_drop_rate (float): Attention dropout rate. Default: 0.
+            drop_path_rate (float): Stochastic depth rate. Defaults: 0.1.
+            act_layer (dict): activation layer.
+                Default: nn.GELU.
+            norm_layer (dict): normalization layer at
+                output of backone. Defaults: nn.LayerNorm.
+            with_cp (bool, optional): Use checkpoint or not. Using checkpoint
+                will save some memory while slowing down the training speed.
+                Default: False.
+            frozen_stages (int): Stages to be frozen (stop grad and set eval mode).
+                -1 means not freezing any parameters.
+        """
+
         self.frozen_stages = frozen_stages
         self.output_fmt = "NHWC"
         if isinstance(pretrain_img_size, int):

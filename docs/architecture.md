@@ -16,7 +16,11 @@ Initial reading for a full understanding of the platform includes:
 - Familiarity with [TorchGeo](https://torchgeo.readthedocs.io/en/stable/)
 - Familiarity with [LightningCLI](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.cli.LightningCLI.html#lightning.pytorch.cli.LightningCLI)
 
-## Tasks
+The scheme below illustrates the general TerraTorch's workflow for a CLI job. 
+![](figs/architecture_drawing.png#only-light)
+![](figs/architecture_drawing_inv.png#only-dark)
+
+### Tasks
 
 Tasks are the main coordinators for training and inference for specific tasks. They are LightningModules that contain a model and abstract away all the logic for training steps, metric computation and inference.
 
@@ -32,31 +36,46 @@ Models are expected to be `torch.nn.Module` and implement the [Model][terratorch
 - `freeze_decoder()`
 - `forward()`
 
-Additionally, the `forward()` method is expected to return an object of type [ModelOutput][terratorch.models.model.ModelOutput], containing the main head's output, as well as any additional auxiliary outputs. The names of these auxiliary heads are matched with the names of the provided auxiliary losses.
+Additionally, the `forward()` method is expected to return an object of type [ModelOutput][terratorch.models.model.ModelOutput],
+containing the main head's output, as well as any additional auxiliary outputs.
+The names of these auxiliary heads are matched with the names of the provided auxiliary losses.
+The tasks currently deployed in TerraTorch are described [here](tasks.md).  
 
 ### Models
 
-Models constructed by the [EncoderDecoderFactory][terratorch.models.encoder_decoder_factory.EncoderDecoderFactory] have an internal structure explicitly divided into backbones, necks, decoders and heads. This structure is provided by the [PixelWiseModel][terratorch.models.pixel_wise_model.PixelWiseModel] and [ScalarOutputModel][terratorch.models.scalar_output_model.ScalarOutputModel] classes.
+Models constructed by the [EncoderDecoderFactory][terratorch.models.encoder_decoder_factory.EncoderDecoderFactory]
+have an internal structure explicitly divided into backbones, necks, decoders and heads.
+This structure is provided by the [PixelWiseModel][terratorch.models.pixel_wise_model.PixelWiseModel]
+and [ScalarOutputModel][terratorch.models.scalar_output_model.ScalarOutputModel] classes.
 
-However, as long as models implement the [Model][terratorch.models.model.Model] interface, and return [ModelOutput][terratorch.models.model.ModelOutput] in their forward method, they can take on any structure.
+However, as long as models implement the [Model][terratorch.models.model.Model] interface,
+and return [ModelOutput][terratorch.models.model.ModelOutput] in their forward method, they can take on any structure.
 
-#### :::terratorch.models.pixel_wise_model.PixelWiseModel
-#### :::terratorch.models.scalar_output_model.ScalarOutputModel
+See the [models documentation](meta_models.md) for more details about the core models ScalarOutputModel and
+PixelWiseModel. For details about backbones (encoders) see the [backbones documentation](backbones.md), the
+same for [necks](necks.md), [decoders](decoders.md) and [heads](heads.md).  
 
+### Model Factories
+
+A model factory is a class desgined to search a model in the register and properly instantiate it. TerraTorch
+has a few types of model factories for different situations, as models which require specific wrappers and
+processing.
+
+See the [models factories documentation](model_factories.md) for a better explanation about it. 
 
 ### EncoderDecoderFactory
 
-We expect this factory to be widely employed by users. With that in mind, we dive deeper into it [here](encoder_decoder_factory.md).
+However, as we have tried as much as possible to avoid the limitless replication of model factories dedicate to very specific models by
+concentrating efforts on the EncoderDecoderFactory, which intends to be more general-purpose.
+With that in mind, we dive deeper into it [here](encoder_decoder_factory.md).
 
 ### Loss
-For convenience, we provide a loss handler that can be used to compute the full loss (from the main head and auxiliary heads as well).
+For convenience, we provide a [loss handler](loss.md) that can be used to compute the full loss (from the main head and auxiliary heads as well).
 
-:::terratorch.tasks.loss_handler
-
-## Generic datasets / datamodules
+### Generic datasets / datamodules
 Refer to the section on [data](data.md)
 
-## Exporting models
+### Exporting models
 Models are saved using the PyTorch format, which basically serializes the model weights using pickle
 and store them into a binary file. 
 
