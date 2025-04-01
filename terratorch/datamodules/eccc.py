@@ -30,7 +30,6 @@ class ECCCDataModule(pl.LightningDataModule):
             downsample_factor=config.data.downsample_factor,
             n_random_windows=config.data.n_random_windows,
             crop_factor=config.data.crop_factor,
-            type_training=config.type_training,
         )
 
     def prepare_data(self):
@@ -44,7 +43,7 @@ class ECCCDataModule(pl.LightningDataModule):
             )
         if stage == "test":
             self.test_dataset = EcccHrdpsGdpsDataset(
-                json_file_path=self.config.data.data_test_index, **self.ds_kwargs
+                json_file_path=self.config.data.data_test_index, **self.ds_kwargs, test=True
             )
         if stage == "val":
             self.valid_dataset = EcccHrdpsGdpsDataset(
@@ -52,7 +51,7 @@ class ECCCDataModule(pl.LightningDataModule):
             )
         if stage == "predict":
             self.predict_dataset = EcccHrdpsGdpsDataset(
-                json_file_path=self.config.data.data_test_index, **self.ds_kwargs
+                json_file_path=self.config.data.data_test_index, **self.ds_kwargs, test=True
             )
 
     def train_dataloader(self) -> DataLoader:
