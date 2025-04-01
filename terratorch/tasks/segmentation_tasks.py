@@ -67,7 +67,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         tiled_inference_parameters: TiledInferenceParameters = None,
         test_dataloaders_names: list[str] | None = None,
         lr_overrides: dict[str, float] | None = None,
-        output_most_probable: bool = True,
+        output_on_inference: str = "prediction",
         tiled_inference_on_testing: bool = False,
     ) -> None:
         """Constructor
@@ -114,8 +114,9 @@ class SemanticSegmentationTask(TerraTorchTask):
             lr_overrides (dict[str, float] | None, optional): Dictionary to override the default lr in specific
                 parameters. The key should be a substring of the parameter names (it will check the substring is
                 contained in the parameter name)and the value should be the new lr. Defaults to None.
-            output_most_probable (bool): A boolean to define if the output during the inference will be just
-                for the most probable class or if it will include all of them. 
+            output_on_inference (str): A string defining the kind of output to be saved to file during the inference, it can be "prediction",
+            to save just the most probable class, "probabilities", to save probabilities for all the classes or "both", to save both the 
+            kinds of outputs to dedicated files. 
             tiled_inference_on_testing (bool): A boolean to the fine if tiled inference will be used when full inference 
                 fails during the test step. 
         """
@@ -144,12 +145,17 @@ class SemanticSegmentationTask(TerraTorchTask):
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
         self.monitor = f"{self.val_metrics.prefix}loss"
         self.plot_on_val = int(plot_on_val)
-        self.output_most_probable = output_most_probable
+        self.output_on_inference = output_on_inference
 
-        if output_most_probable:
+        if output_on_inference == "prediction":
             self.select_classes = lambda y: y.argmax(dim=1) 
-        else:
+        elif output_on_inference == "probabilities":
             self.select_classes = lambda y: y
+        elif output_on_inference == "both":
+            self.select_classes = lambda y: (y.argmax(dim=1), y)
+        else:
+            raise ValueError(f"Invalid value for output_on_inference as {output_on_inference},\
+                             it must be `prediction`, `probabilities` or `both`")
 
     def configure_losses(self) -> None:
         """Initialize the loss criterion.
@@ -360,7 +366,7 @@ class SemanticSegmentationTask(TerraTorchTask):
             )
         else:
             y_hat: Tensor = self(x, **rest).output
-
+        print(self.select_classes)
         y_hat = self.select_classes(y_hat)
-
+        print(file_names)
         return y_hat, file_names
