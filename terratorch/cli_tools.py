@@ -202,9 +202,26 @@ class CustomWriter(BasePredictionWriter):
             filename_batch = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
             torch.save(prediction, os.path.join(output_dir, f"{filename_batch}.pt"))
         elif isinstance(prediction, tuple):
-            pred_batch, filename_batch = prediction
+
+            pred_batch_, filename_batch_ = prediction
+
+            if isinstance(pred_batch_, tuple) and isinstance(filename_batch_, tuple):
+                print("we are here.")
+                pred_batch, pred_batch_prob = pred_batch_
+                filename_batch, filename_batch_prob = filename_batch_
+                outputting_probabilities = True
+            else:
+                pred_batch = pred_batch_
+                filename_batch = filename_batch_
+                outputting_probabilities = False
+
             for prediction, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
                 save_prediction(prediction, file_name, output_dir, dtype=trainer.out_dtype)
+
+            if outputting_probabilities:
+                for prediction, file_name in zip(torch.unbind(pred_batch_prob, dim=0), filename_batch_prob, strict=False):
+                    save_prediction(prediction, file_name, output_dir, dtype=trainer.out_dtype)
+
         else:
             raise TypeError(f"Unknown type for prediction{type(prediction)}")
 

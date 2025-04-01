@@ -99,7 +99,7 @@ model:
       num_frames: 1
       num_classes: 2
       head_dropout: 0.5708022831486758
-    output_most_probable: false
+    output_on_inference: both
     tiled_inference_on_testing: true
     loss: ce
     #aux_heads:
