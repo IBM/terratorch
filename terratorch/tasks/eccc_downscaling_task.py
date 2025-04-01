@@ -50,7 +50,7 @@ class ECCCTask(BaseTask):
     
     def configure_models(self):
         self.model = self.model_factory.build_model(
-            backbone='ECCC-downscaling', 
+            backbone='prithvi-eccc-downscaling', 
             aux_decoders=None, 
             model_args=self.model_args, 
             checkpoint_path=self.model_args.path_model_weights
@@ -97,7 +97,7 @@ class CheckpointCallback(Callback):
     def on_train_epoch_end(self, trainer, pl_module): 
         epoch = trainer.current_epoch
 
-        if epoch % self.save_every_n_epochs == 0:
+        if epoch % self.save_every_n_epochs == 0 and epoch > 0:
             train_loss = trainer.callback_metrics.get("train_loss", None) 
             curr_val_loss = trainer.callback_metrics.get("val_loss", None)  
             optimizer = trainer.optimizers[0]

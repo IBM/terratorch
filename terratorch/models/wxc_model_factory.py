@@ -49,7 +49,6 @@ class WxCModelFactory(ModelFactory):
         aux_decoders: str,
         checkpoint_path:str=None,
         backbone_weights: str = None,
-        model_args = None,
         **kwargs,
     ) -> Model:
         if backbone == 'prithviwxc':
@@ -149,8 +148,9 @@ class WxCModelFactory(ModelFactory):
                 return dsp
             return WxCModuleWrapper(backbone)
 
-        elif backbone == 'ECCC-downscaling':
+        elif backbone == 'prithvi-eccc-downscaling':
             try:
+                model_args = kwargs['model_args']
                 if model_args.model.unet:
                     from eccc_downscaling.models.model import get_finetune_model_UNET
                     module = get_finetune_model_UNET(model_args)
