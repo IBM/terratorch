@@ -71,7 +71,8 @@ dev = [
 test = [
   "pytest",
   "pytest-coverage",
-  "coverage-badge"
+  "coverage-badge",
+  "peft>=0.15.0"
 ]
 
 mmseg = [
@@ -92,7 +93,7 @@ visualize = [
 ]
 
 peft = [
-  "peft"
+  "peft>=0.15.0"
 ]
 
 [project.urls]
