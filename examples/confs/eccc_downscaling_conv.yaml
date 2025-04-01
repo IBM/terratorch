@@ -1,0 +1,63 @@
+data:
+  type: eccc
+  data_training_index: ./experiments/indices/index_example.json
+  data_val_index: ./experiments/indices/index_example.json
+  data_test_index: ./experiments/indices/index_example.json
+  static_data_index: ./experiments/indices/staticDataIndex.json
+  input_surface_vars: [TT, UUWE, VVSN]
+  input_static_surface_vars: [ME, MG, Z0]
+  vertical_pres_vars: [GZ_pressure_levels, HU_pressure_levels, TT_pressure_levels,
+    UUWE_pressure_levels, VVSN_pressure_levels, WW_pressure_levels]
+  vertical_level1_vars: [GZ_model_levels, HU_model_levels, TT_model_levels, WW_model_levels]
+  vertical_level2_vars: [UUWE_model_levels, VVSN_model_levels]
+  other: [NT, P0, PC, PR, TM, H]
+  input_level_pres: [500.0, 700.0, 850.0, 925.0, 1000.0]
+  input_level1: [0.989269, 0.99501, 0.99875]
+  input_level2: [0.986026, 0.992524, 0.997502]
+  output_vars: [UUWE, VVSN]
+  n_input_timestamps: 1
+  downsample_factor: 8
+  n_random_windows: 16
+  crop_factor: 256
+model:
+  input_mu: ./experiments/scalers/input_mu.pt
+  input_sigma: ./experiments/scalers/input_sigma.pt
+  input_static_mu: ./experiments/scalers/input_static_mu.pt
+  input_static_sigma: ./experiments/scalers/input_static_sigma.pt
+  target_mu: ./experiments/scalers/target_mu.pt
+  target_sigma: ./experiments/scalers/target_sigma.pt
+  target_static_mu: ./experiments/scalers/target_static_mu.pt
+  target_static_sigma: ./experiments/scalers/target_static_sigma.pt
+  embed_dim: 1024
+  n_blocks_encoder: 8
+  mlp_multiplier: 4
+  n_heads: 16
+  dropout_rate: 0.0
+  drop_path: 0.0
+  residual: none
+  num_static_channels: 7
+  downscaling_patch_size: [3, 3]
+  downscaling_embed_dim: 512
+  encoder_decoder_type: conv
+  encoder_decoder_upsampling_mode: pixel_shuffle
+  encoder_decoder_kernel_size_per_stage: [[3], [3, 3]]
+  encoder_decoder_scale_per_stage: [[2], [2, 2]]
+  encoder_decoder_conv_channels: 128
+  residual_connection: true
+  unet: false
+batch_size: 1
+num_epochs: 5
+dl_num_workers: 1
+dl_prefetch_size: 1
+learning_rate: 1.0e-05
+limit_steps_train: 832
+limit_steps_valid: 20
+min_lr: 1.0e-06
+mask_unit_size: [2, 2]
+path_experiment: ./experiments
+path_backbone_weights: ./experiments/pretrained/prithvi.wxc.2300m.v1.pt
+path_model_weights: ./experiments/pretrained/best_rmse_CONV.pt
+backbone_use: true
+backbone_freeze: false
+backbone_prefix: encoder.
+strict_matching: false
