@@ -1,46 +1,99 @@
 site_name: TerraTorch
 theme:
-  name: readthedocs #material
+  name: material #readthedocs
+  logo: figs/logo_grey.png #https://github.com/user-attachments/assets/f8c9586f-6220-4a53-9669-2aee3300b492" 
+  font:
+    text: Roboto
   palette:
-    scheme: slate
+    # Palette toggle for light mode
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+      primary: black #white
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+      primary: black
   features:
     - content.code.copy
     - content.code.select
+    - announce.dismiss
+    - content.action.edit
+    - content.action.view
+    - content.code.annotate
+    - content.code.copy
+    - content.code.select
+    - content.footnote.tooltips
+    - content.tabs.link
+    - content.tooltips
+    - navigation.footer
+      #- navigation.indexes
+    - navigation.instant
+      #- navigation.expand
+    - navigation.path
+    - navigation.instant.prefetch
+    - navigation.instant.progress
+    # - navigation.prune
+    #- navigation.sections
     - navigation.tabs
+      #- navigation.tabs.sticky
+    - navigation.top
+    - navigation.tracking
+    - search.highlight
+    - search.share
+    - search.suggest
+    - toc.follow
+      #- toc.integrate
+  user_color_mode_toggle: true 
 plugins:
   - search 
   - autorefs
+  - tags
   - mkdocstrings:
       handlers:
         python:
           paths: [src] # search packages in the src folde
           options:
             show_root_heading: true
-              #extra:
-              #  version:
-              #    provider: mike
+  - git-revision-date-localized:
+      type: date
 
+extra:
+  version:
+    provider: mike
 site_url: https://ibm.github.io/terratorch/
 repo_url: https://github.com/IBM/terratorch
 nav:
   - index.md
-  - Getting Started: quick_start.md
-  
-  - Examples: examples.md 
-  - Glossary: glossary.md
   - License: license.md
+  - Getting Started: quick_start.md
+  - Contribution Guidelines: contributing.md
+  - Architecture Overview: architecture.md
   - Components:
-    - Architecture Overview: architecture.md
+    - Backbones: backbones.md
+    - Decoders: decoders.md
+    - Necks: necks.md
+    - Heads: heads.md
     - Tasks: tasks.md
-    - Models: models.md
-    - Data: data.md
-    - Registries: registry.md
-    - EncoderDecoderFactory: encoder_decoder_factory.md
-    #- FAQ: faq.md
-
+    - Model Factories: model_factories.md
+    - Generic Datasets: generic_datasets.md
+    - Datasets: datasets.md
+    - Generic Datamodules: generic_datamodules.md
+    - Datamodules: datamodules.md
+    - Transforms: transforms.md
+  - Glossary: glossary.md
+  - Tutorials:
+    - tutorials/the_yaml_config.md
+    - tutorials/basic_inference_burn_scars.md 
+    - tutorials/burn_scars_inference_simplified.md
+    - tutorials/using_datamodule_multitemporalclassificationModule.md
+    - tutorials/burn_scars_finetuning.md
+  - Changelog: changelog.md
 markdown_extensions:
+  - attr_list
   - toc:
       permalink: "#"
+      toc_depth: 6
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
@@ -50,3 +103,7 @@ markdown_extensions:
   - pymdownx.superfences
   - admonition
   - pymdownx.details
+
+extra_css:
+  - stylesheets/extra.css
+

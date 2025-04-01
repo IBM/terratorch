@@ -1,4 +1,4 @@
-# Performing an inference task with TerraTorch
+# Performing an inference task with TerraTorch CLI: the Burn Scars test case
 
 ## Step 1: Download the test case from HuggingFace
 We will use the burn scars identification test case, in which we are interested in estimating the area
@@ -8,7 +8,7 @@ example, do:
 git clone https://huggingface.co/ibm-nasa-geospatial/Prithvi-EO-2.0-300M-BurnScars/
 ```
 ## Step 2: Run the default inference case
-The example you download already contains some sample images to be used as input, so you just need to go to
+The example you downloaded already contains some sample images to be used as input, so you just need to go to
 the local repository and create a directory to save the outputs:
 ```sh
 cd Prithvi-EO-2.0-300M-BurnScars

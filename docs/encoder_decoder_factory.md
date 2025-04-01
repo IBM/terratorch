@@ -19,9 +19,8 @@ They must be instances of [Neck][terratorch.models.necks.Neck], which is a subcl
 The [EncoderDecoderFactory][terratorch.models.encoder_decoder_factory.EncoderDecoderFactory] returns a [PixelWiseModel][terratorch.models.pixel_wise_model.PixelWiseModel] or a [ScalarOutputModel][terratorch.models.scalar_output_model.ScalarOutputModel] depending on the task.
 
 ### :::terratorch.models.encoder_decoder_factory.EncoderDecoderFactory
-
-### terratorch.models.pixel_wise_model.PixelWiseModel
-### terratorch.models.scalar_output_model.ScalarOutputModel
+    options:
+        show_source: false
 
 ## Encoders
 
@@ -74,52 +73,26 @@ Out[24]:
 ## Necks
 
 Necks are the connectors between encoder and decoder. They can perform operations such as selecting elements from the output of the encoder ([SelectIndices][terratorch.models.necks.SelectIndices]), reshaping the outputs of ViTs so they are compatible with CNNs ([ReshapeTokensToImage][terratorch.models.necks.ReshapeTokensToImage]), amongst others.
-
-Necks are `nn.Modules`, with an additional method `process_channel_list` which informs the [EncoderDecoderFactory][terratorch.models.encoder_decoder_factory.EncoderDecoderFactory] about how it will alter the channel list provided by `encoder.out_channels`.
-
-### :::terratorch.models.necks.Neck
-
-### :::terratorch.models.necks.SelectIndices
-
-### :::terratorch.models.necks.PermuteDims
-
-### :::terratorch.models.necks.InterpolateToPyramidal
-
-### :::terratorch.models.necks.MaxpoolToPyramidal
-
-### :::terratorch.models.necks.ReshapeTokensToImage
-
-### :::terratorch.models.necks.AddBottleneckLayer
-
-### :::terratorch.models.necks.LearnedInterpolateToPyramidal
+Necks are `nn.Modules`, with an additional method `process_channel_list` which informs the [EncoderDecoderFactory][terratorch.models.encoder_decoder_factory.EncoderDecoderFactory] about how it will alter the channel list provided by `encoder.out_channels`. See a better description about necks [here](necks.md).
 
 
 ## Decoders
 
 To be a valid decoder, an object must be an `nn.Module` with an attribute `out_channels`, an `int` representing the channel dimension of the output.
-
 The first argument to its constructor will be a list of channel dimensions it should expect as input.
-
-It's forward method should accept a list of embeddings.
+It's forward method should accept a list of embeddings. To see a list of built-in decoders check the
+related [documentation](decoders.md). 
 
 ## Heads
 
 Most decoders require a final head to be added for a specific task (e.g. semantic segmentation vs pixel wise regression).
-
 Those registries producing decoders that dont require a head must expose the attribute `includes_head=True` so that a head is not added.
-Decoders passed as `nn.Modules` which do not require a head must expose the same attribute themselves.
-
-## :::terratorch.models.heads.classification_head.ClassificationHead
-
-## :::terratorch.models.heads.regression_head.RegressionHead
-
-## :::terratorch.models.heads.segmentation_head.SegmentationHead
-
+Decoders passed as `nn.Modules` which do not require a head must expose the same attribute themselves. More
+about heads can be seen in its [documentation](heads.md). 
 
 ## Decoder compatibilities
 
 Not all encoders and decoders are compatible. Below we include some caveats.
-
 Some decoders expect pyramidal outputs, but some encoders do not produce such outputs (e.g. vanilla ViT models).
 In this case, the [InterpolateToPyramidal][terratorch.models.necks.InterpolateToPyramidal], [MaxpoolToPyramidal][terratorch.models.necks.MaxpoolToPyramidal] and [LearnedInterpolateToPyramidal][terratorch.models.necks.LearnedInterpolateToPyramidal] necks may be particularly useful.
 
