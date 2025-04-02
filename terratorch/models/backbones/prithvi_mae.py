@@ -286,7 +286,7 @@ class PrithviViT(nn.Module):
         depth: int = 24,
         num_heads: int = 16,
         mlp_ratio: float = 4.0,
-        norm_layer: nn.Module = nn.LayerNorm,
+        norm_layer: type[nn.Module] = nn.LayerNorm,
         coords_encoding: list[str] | None = None,
         coords_scale_learn: bool = False,
         drop_path: float = 0.0,
