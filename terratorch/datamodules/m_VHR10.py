@@ -93,6 +93,7 @@ def apply_transforms(sample, transforms):
                              labels=sample["labels"])
     transformed['boxes'] = torch.tensor(transformed['bboxes'], dtype=torch.float32)
     transformed['labels'] = torch.tensor(transformed['labels'], dtype=torch.int64)
+    transformed['masks'] = [x for x in transformed['masks'] if x.any()]
     del transformed['bboxes']
 
     return transformed
