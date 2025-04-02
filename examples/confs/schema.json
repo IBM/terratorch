@@ -2,272 +2,122 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
-    "seed_everything": {
-      "type": "integer"
-    },
-    "subcommand": {
-      "type": "string",
-      "enum": ["fit", "validate", "test", "predict", "compute_statistics"]
-    },
-    "trainer": {
-      "$ref": "#/definitions/trainer"
-    },
-    "data": {
-      "$ref": "#/definitions/data"
-    },
-    "model": {
-      "$ref": "#/definitions/model"
-    },
-    "optimizer": {
-      "$ref": "#/definitions/optimizer"
-    },
-    "lr_scheduler": {
-      "$ref": "#/definitions/lr_scheduler"
-    }
-  },
-  "required": ["seed_everything", "data", "model"],
-  "definitions": {
+    "seed_everything": { "type": "integer" },
     "trainer": {
       "type": "object",
       "properties": {
-        "accelerator": {
-          "type": "string",
-          "enum": ["auto", "None", "gpu", "tpu", "cuda", "cpu", "hpu", "mps", "xla"]
-        },
-        "strategy": {
-          "type": "string",
-          "enum": ["auto", "ddp", "ddp_spawn", "deepspeed", "hpu_parallel", "hpu_single", "single_device", "fsdp", "xla", "single_xla"]
-        },
-        "devices": {
-          "oneOf": [
-            {
-              "type": "string",
-              "enum": ["auto"]
-            },
-            {
-              "type": "integer",
-              "minimum": -1
-            }
-          ]
-        },
-        "num_nodes": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "precision": {
-          "oneOf": [
-            {
-              "type": "integer",
-              "enum": [64, 32, 16]
-            },
-            {
-              "type": "string",
-              "enum": ["64", "64-true", "32", "32-true", "16", "16-mixed", "bf16", "bf16-mixed"]
-            }
-          ]
-        },
+        "accelerator": { "type": "string" },
+        "strategy": { "type": "string" },
+        "devices": { "oneOf": [{ "type": "string" }, { "type": "integer" }] },
+        "num_nodes": { "type": "integer" },
+        "precision": { "type": "string" },
         "logger": {
-          "oneOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/logger"
+          "type": "object",
+          "properties": {
+            "class_path": { "type": "string" },
+            "init_args": {
+              "type": "object",
+              "properties": {
+                "save_dir": { "type": "string" },
+                "name": { "type": "string" }
+              },
+              "required": ["save_dir", "name"]
             }
-          ]
+          },
+          "required": ["class_path", "init_args"]
         },
         "callbacks": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/callbackslist"
+            "type": "object",
+            "properties": {
+              "class_path": { "type": "string" },
+              "init_args": { "type": "object" }
+            },
+            "required": ["class_path"]
           }
         },
-        "fast_dev_run": {
-          "oneOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "integer",
-              "minimum": 1
-            }
-          ]
-        },
-        "max_epochs": {
-          "oneOf": [
-            {
-              "type": "string",
-              "enum": ["None"]
-            },
-            {
-              "type": "integer",
-              "minimum": -1
-            }
-          ]
-        },
-        "min_epochs": {
-          "oneOf": [
-            {
-              "type": "string",
-              "enum": ["None"]
-            },
-            {
-              "type": "integer",
-              "minimum": 0
-            }
-          ]
-        },
-        "max_steps": {
-          "type": "integer",
-          "minimum": -1
-        },
-        "min_steps": {
-          "oneOf": [
-            {
-              "type": "string",
-              "enum": ["None"]
-            },
-            {
-              "type": "integer",
-              "minimum": 0
-            }
-          ]
-        },
-        "max_time": {
-          "oneOf": [
-            {
-              "type": "string",
-              "enum": ["None"]
-            },
-            {
-              "type": "string",
-              "format": "date-time"
-            }
-          ]
-        },
-        "limit_train_batches": {
-          "oneOf": [
-            {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            },
-            {
-              "type": "integer",
-              "minimum": 1
-            }
-          ]
-        },
-        "limit_val_batches": {
-          "oneOf": [
-            {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            },
-            {
-              "type": "integer",
-              "minimum": 1
-            }
-          ]
-        },
-        "limit_test_batches": {
-          "oneOf": [
-            {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            },
-            {
-              "type": "integer",
-              "minimum": 1
-            }
-          ]
-        },
-        "limit_predict_batches": {
-          "oneOf": [
-            {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            },
-            {
-              "type": "integer",
-              "minimum": 1
-            }
-          ]
-        },
-        "overfit_batches": {
-          "oneOf": [
-            {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            },
-            {
-              "type": "integer",
-              "minimum": 1
-            }
-          ]
-        },
-        "val_check_interval": {
-          "oneOf": [
-            {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            },
-            {
-              "type": "integer",
-              "minimum": 1
-            }
-          ]
-        },
-        "check_val_every_n_epoch": {
-          "oneOf": [
-            {
-              "type": "string",
-              "enum": ["None"]
-            },
-            {
-              "type": "integer",
-              "minimum": 1
-            }
-          ]
-        },
-        "num_sanity_val_steps": {
-          "type": "integer",
-          "minimum": -1
-        },
-        "log_every_n_steps": {
-          "type": "integer",
-          "minimum": 50
-        },
-        "enable_checkpointing": {
-          "type": "boolean"
-        },
-        "enable_progress_bar": {
-          "type": "boolean"
-        },
-        "enable_model_summary": {
-          "type": "boolean"
-        },
-        "accumulate_grad_batches": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "gradient_clip_val": {
-          "oneOf": [
-            {
-              "type": "string",
-              "enum": ["None"]
-            },
-            {
-              "type": "number"
-            }
-          ]
-        },
-        "gradient_clip_algorithm": {
-          "
-::contentReference[oaicite:6]{index=6}
- 
+        "max_epochs": { "type": "integer" },
+        "check_val_every_n_epoch": { "type": "integer" },
+        "log_every_n_steps": { "type": "integer" },
+        "enable_checkpointing": { "type": "boolean" },
+        "default_root_dir": { "type": "string" }
+      },
+      "required": ["accelerator", "strategy", "devices", "num_nodes", "logger"]
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "class_path": { "type": "string" },
+        "init_args": {
+          "type": "object",
+          "properties": {
+            "batch_size": { "type": "integer" },
+            "num_workers": { "type": "integer" },
+            "dataset_bands": { "type": "array", "items": { "type": "string" } },
+            "output_bands": { "type": "array", "items": { "type": "string" } },
+            "train_data_root": { "type": "string" },
+            "val_data_root": { "type": "string" },
+            "test_data_root": { "type": "string" },
+            "img_grep": { "type": "string" },
+            "label_grep": { "type": "string" },
+            "means": { "type": "array", "items": { "type": "number" } },
+            "stds": { "type": "array", "items": { "type": "number" } },
+            "num_classes": { "type": "integer" }
+          },
+          "required": ["batch_size", "num_workers", "dataset_bands", "output_bands", "train_data_root", "val_data_root", "test_data_root", "num_classes"]
+        }
+      },
+      "required": ["class_path", "init_args"]
+    },
+    "model": {
+      "type": "object",
+      "properties": {
+        "class_path": { "type": "string" },
+        "init_args": {
+          "type": "object",
+          "properties": {
+            "model_factory": { "type": "string" },
+            "model_args": { "type": "object" },
+            "loss": { "type": "string" },
+            "ignore_index": { "type": "integer" },
+            "freeze_backbone": { "type": "boolean" },
+            "freeze_decoder": { "type": "boolean" }
+          },
+          "required": ["model_factory", "model_args", "loss"]
+        }
+      },
+      "required": ["class_path", "init_args"]
+    },
+    "optimizer": {
+      "type": "object",
+      "properties": {
+        "class_path": { "type": "string" },
+        "init_args": {
+          "type": "object",
+          "properties": {
+            "lr": { "type": "number" },
+            "weight_decay": { "type": "number" }
+          },
+          "required": ["lr"]
+        }
+      },
+      "required": ["class_path", "init_args"]
+    },
+    "lr_scheduler": {
+      "type": "object",
+      "properties": {
+        "class_path": { "type": "string" },
+        "init_args": {
+          "type": "object",
+          "properties": {
+            "monitor": { "type": "string" }
+          },
+          "required": ["monitor"]
+        }
+      },
+      "required": ["class_path", "init_args"]
+    }
+  },
+  "required": ["seed_everything", "trainer", "data", "model", "optimizer", "lr_scheduler"]
+}
