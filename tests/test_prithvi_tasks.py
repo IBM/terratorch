@@ -27,6 +27,13 @@ def model_factory() -> str:
 def model_input() -> torch.Tensor:
     return torch.ones((1, NUM_CHANNELS, 224, 224))
 
+# In tthe following tests, we avoid the "dense" tests by dividing the tasks in
+# two parts.
+
+# First we focus on the combinations between backbones and decoders. As the
+# decoders outputs are roughly the same, we don't need to repeat the tests for
+# losses and lr for all the backbones. After it, we combine multiple decoders
+# and different losses and lr levels using the same backbone. 
 
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "prithvi_eo_v2_300", "prithvi_swin_B"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder"])
