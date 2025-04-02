@@ -133,7 +133,8 @@ def add_default_checkpointing_config(config):
 
     return config 
 
-def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16"):
+def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16",
+                    suffix="pred"):
     mask, metadata = open_tiff(input_file_name)
     mask = np.where(mask == metadata["nodata"], 1, 0)
     mask = np.max(mask, axis=0)
@@ -146,7 +147,7 @@ def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16"):
     metadata["nodata"] = -1
     file_name = os.path.basename(input_file_name)
     file_name_no_ext = os.path.splitext(file_name)[0]
-    out_file_name = file_name_no_ext + "_pred.tif"
+    out_file_name = file_name_no_ext + f"_{suffix}.tif"
     logger.info(f"Saving output to {out_file_name} ...")
     write_tiff(result, os.path.join(out_dir, out_file_name), metadata)
 
@@ -206,11 +207,30 @@ class CustomWriter(BasePredictionWriter):
             filename_batch = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
             torch.save(prediction, os.path.join(output_dir, f"{filename_batch}.pt"))
         elif isinstance(prediction, tuple):
-            pred_batch, filename_batch = prediction
+
+            pred_batch_, filename_batch = prediction
+
+            if isinstance(pred_batch_, tuple):
+                pred_batch, pred_batch_prob = pred_batch_
+                outputting_logits = True
+            else:
+                pred_batch = pred_batch_
+                outputting_logits = False
+
             for prediction, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
                 save_prediction(prediction, file_name, output_dir, dtype=trainer.out_dtype)
+
+            # Special conditions for segmentation, when the
+            # logits/probabilities can be outputted together with the
+            # prediction. 
+            if outputting_logits:
+                for prediction, file_name in zip(torch.unbind(pred_batch_prob, dim=0), filename_batch, strict=False):
+                    save_prediction(prediction, file_name, output_dir,
+                                    dtype=trainer.out_dtype,
+                                    suffix="logits_pred")
+
         else:
-            raise TypeError(f"Unknown type for prediction{type(prediction)}")
+            raise TypeError(f"Unknown type for prediction {type(prediction)}")
 
     def write_on_epoch_end(self, trainer, pl_module, predictions, batch_indices):  # noqa: ARG002
         # this will create N (num processes) files in `output_dir` each containing
