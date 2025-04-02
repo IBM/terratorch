@@ -1,3 +1,4 @@
+import warnings
 from typing import Any
 from functools import partial
 import os
@@ -68,6 +69,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         test_dataloaders_names: list[str] | None = None,
         lr_overrides: dict[str, float] | None = None,
         output_on_inference: str = "prediction",
+        output_most_probable: bool = True,
         tiled_inference_on_testing: bool = False,
     ) -> None:
         """Constructor
@@ -117,6 +119,8 @@ class SemanticSegmentationTask(TerraTorchTask):
             output_on_inference (str): A string defining the kind of output to be saved to file during the inference, it can be "prediction",
             to save just the most probable class, "probabilities", to save probabilities for all the classes or "both", to save both the 
             kinds of outputs to dedicated files. 
+            output_most_probable (bool): A boolean to define if the prediction step will output just the most probable
+            class or the probabilities for all of them. This argument has been deprecated and will be replaced with `output_on_inference`. 
             tiled_inference_on_testing (bool): A boolean to the fine if tiled inference will be used when full inference 
                 fails during the test step. 
         """
@@ -146,6 +150,12 @@ class SemanticSegmentationTask(TerraTorchTask):
         self.monitor = f"{self.val_metrics.prefix}loss"
         self.plot_on_val = int(plot_on_val)
         self.output_on_inference = output_on_inference
+
+        # When the use decides to use `output_most_probable` as `False` in
+        # order to output the probabilities instead of the prediction.
+        if not output_most_probable:
+            warnings.warn("The argument `output_most_probable` is deprecated and will be replaced with `output_on_inference='probabilities'`.", stacklevel=1)
+            output_on_inference = "probabilities"
 
         if output_on_inference == "prediction":
             self.select_classes = lambda y: y.argmax(dim=1) 
