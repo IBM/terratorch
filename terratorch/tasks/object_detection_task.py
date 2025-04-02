@@ -1,4 +1,5 @@
-# modified from https://torchgeo.readthedocs.io/en/latest/_modules/torchgeo/trainers/detection.html#ObjectDetectionTask.__init__
+# modified from https://torchgeo.readthedocs.io/en/latest/_modules/torchgeo/trainers/detection.html#ObjectDetectionTask
+# and from https://torchgeo.readthedocs.io/en/latest/_modules/torchgeo/trainers/instance_segmentation.html#InstanceSegmentationTask
 
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
@@ -82,12 +83,15 @@ class ObjectDetectionTask(BaseTask):
            *pretrained*, *learning_rate*, and *learning_rate_schedule_patience* were
            renamed to *weights*, *lr*, and *patience*.
         """
+        
         self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
+        self.framework = model_args['framework']
+        self.monitor = 'val_segm_map' if self.framework == 'mask-rcnn' else self.monitor
+    
         super().__init__()
         self.train_loss_handler = LossHandler(self.train_metrics.prefix)
         self.test_loss_handler = LossHandler(self.test_metrics.prefix)
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
-        self.monitor = f"{self.val_metrics.prefix}map"
         self.iou_threshold = iou_threshold
         self.score_threshold = score_threshold
         self.lr = lr
@@ -120,7 +124,11 @@ class ObjectDetectionTask(BaseTask):
            * 'Macro' averaging gives equal weight to each class, and is useful for
              balanced performance assessment across imbalanced classes.
         """
-        metrics = MetricCollection([MeanAveragePrecision(average='macro')])
+        if self.framework == 'mask-rcnn':
+            metrics = MetricCollection([MeanAveragePrecision(iou_type=('bbox', 'segm'))])
+        else:
+            metrics = MetricCollection([MeanAveragePrecision(average='macro')])
+
         self.train_metrics = metrics.clone(prefix='train_')
         self.val_metrics = metrics.clone(prefix='val_')
         self.test_metrics = metrics.clone(prefix='test_')
@@ -238,7 +246,13 @@ class ObjectDetectionTask(BaseTask):
             y_hat = y_hat.output
 
         y_hat = self.apply_nms_batch(y_hat, batch_size)
+        
+        if self.framework == 'mask-rcnn':
 
+            for i in range(len(y_hat)):
+                if y_hat[i]['masks'].shape[0] > 0:
+                    y_hat[i]['masks']= y_hat[i]['masks'].squeeze(1).to(torch.uint8)
+                    
         metrics = self.val_metrics(y_hat, y)
 
         # https://github.com/Lightning-AI/torchmetrics/pull/1832#issuecomment-1623890714
@@ -259,6 +273,7 @@ class ObjectDetectionTask(BaseTask):
             batch['prediction_boxes'] = [b['boxes'].cpu() for b in y_hat]
             batch['prediction_labels'] = [b['labels'].cpu() for b in y_hat]
             batch['prediction_scores'] = [b['scores'].cpu() for b in y_hat]
+            
             if "masks" in y_hat[0].keys(): 
                 batch['prediction_masks'] = [b['masks'].cpu() for b in y_hat]
             batch['image'] = batch['image'].cpu()
@@ -294,6 +309,13 @@ class ObjectDetectionTask(BaseTask):
             y_hat = y_hat.output
 
         y_hat = self.apply_nms_batch(y_hat, batch_size)
+        
+        if self.framework == 'mask-rcnn':
+
+            for i in range(len(y_hat)):
+                if y_hat[i]['masks'].shape[0] > 0:
+                    y_hat[i]['masks']= y_hat[i]['masks'].squeeze(1).to(torch.uint8)
+
 
         metrics = self.test_metrics(y_hat, y)
 
