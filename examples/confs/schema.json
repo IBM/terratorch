@@ -12,19 +12,24 @@
         "num_nodes": { "type": "integer" },
         "precision": { "type": "string" },
         "logger": {
-          "type": "object",
-          "properties": {
-            "class_path": { "type": "string" },
-            "init_args": {
+          "oneOf": [
+            { "type": "boolean", "enum": [true] },
+            {
               "type": "object",
               "properties": {
-                "save_dir": { "type": "string" },
-                "name": { "type": "string" }
+                "class_path": { "type": "string" },
+                "init_args": {
+                  "type": "object",
+                  "properties": {
+                    "save_dir": { "type": "string" },
+                    "name": { "type": "string" }
+                  },
+                  "required": ["save_dir", "name"]
+                }
               },
-              "required": ["save_dir", "name"]
+              "required": ["class_path", "init_args"]
             }
-          },
-          "required": ["class_path", "init_args"]
+          ]
         },
         "callbacks": {
           "type": "array",
@@ -56,16 +61,68 @@
             "num_workers": { "type": "integer" },
             "dataset_bands": { "type": "array", "items": { "type": "string" } },
             "output_bands": { "type": "array", "items": { "type": "string" } },
-            "train_data_root": { "type": "string" },
-            "val_data_root": { "type": "string" },
-            "test_data_root": { "type": "string" },
+            "train_data_root": {
+              "oneOf": [
+                { "type": "string" },
+                {
+                  "type": "object",
+                  "additionalProperties": { "type": "string" }
+                }
+              ]
+            },
+            "val_data_root": {
+              "oneOf": [
+                { "type": "string" },
+                {
+                  "type": "object",
+                  "additionalProperties": { "type": "string" }
+                }
+              ]
+            },
+            "test_data_root": {
+              "oneOf": [
+                { "type": "string" },
+                {
+                  "type": "object",
+                  "additionalProperties": { "type": "string" }
+                }
+              ]
+            },
             "img_grep": { "type": "string" },
             "label_grep": { "type": "string" },
-            "means": { "type": "array", "items": { "type": "number" } },
-            "stds": { "type": "array", "items": { "type": "number" } },
+            "means": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": { "type": "number" }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": { "type": "number" }
+                  }
+                }
+              ]
+            },
+            "stds": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": { "type": "number" }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": { "type": "number" }
+                  }
+                }
+              ]
+            },
             "num_classes": { "type": "integer" }
           },
-          "required": ["batch_size", "num_workers", "dataset_bands", "output_bands", "train_data_root", "val_data_root", "test_data_root", "num_classes"]
+          "required": ["batch_size", "num_workers"]
         }
       },
       "required": ["class_path", "init_args"]
@@ -113,11 +170,11 @@
           "properties": {
             "monitor": { "type": "string" }
           },
-          "required": ["monitor"]
+          "required": []
         }
       },
       "required": ["class_path", "init_args"]
     }
   },
-  "required": ["seed_everything", "trainer", "data", "model", "optimizer", "lr_scheduler"]
+  "required": ["trainer", "data", "model"]
 }
