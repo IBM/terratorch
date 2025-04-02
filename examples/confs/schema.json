@@ -1,0 +1,180 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "seed_everything": { "type": "integer" },
+    "trainer": {
+      "type": "object",
+      "properties": {
+        "accelerator": { "type": "string" },
+        "strategy": { "type": "string" },
+        "devices": { "oneOf": [{ "type": "string" }, { "type": "integer" }] },
+        "num_nodes": { "type": "integer" },
+        "precision": { "type": "string" },
+        "logger": {
+          "oneOf": [
+            { "type": "boolean", "enum": [true] },
+            {
+              "type": "object",
+              "properties": {
+                "class_path": { "type": "string" },
+                "init_args": {
+                  "type": "object",
+                  "properties": {
+                    "save_dir": { "type": "string" },
+                    "name": { "type": "string" }
+                  },
+                  "required": ["save_dir", "name"]
+                }
+              },
+              "required": ["class_path", "init_args"]
+            }
+          ]
+        },
+        "callbacks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "class_path": { "type": "string" },
+              "init_args": { "type": "object" }
+            },
+            "required": ["class_path"]
+          }
+        },
+        "max_epochs": { "type": "integer" },
+        "check_val_every_n_epoch": { "type": "integer" },
+        "log_every_n_steps": { "type": "integer" },
+        "enable_checkpointing": { "type": "boolean" },
+        "default_root_dir": { "type": "string" }
+      },
+      "required": ["accelerator", "strategy", "devices", "num_nodes", "logger"]
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "class_path": { "type": "string" },
+        "init_args": {
+          "type": "object",
+          "properties": {
+            "batch_size": { "type": "integer" },
+            "num_workers": { "type": "integer" },
+            "dataset_bands": { "type": "array", "items": { "type": "string" } },
+            "output_bands": { "type": "array", "items": { "type": "string" } },
+            "train_data_root": {
+              "oneOf": [
+                { "type": "string" },
+                {
+                  "type": "object",
+                  "additionalProperties": { "type": "string" }
+                }
+              ]
+            },
+            "val_data_root": {
+              "oneOf": [
+                { "type": "string" },
+                {
+                  "type": "object",
+                  "additionalProperties": { "type": "string" }
+                }
+              ]
+            },
+            "test_data_root": {
+              "oneOf": [
+                { "type": "string" },
+                {
+                  "type": "object",
+                  "additionalProperties": { "type": "string" }
+                }
+              ]
+            },
+            "img_grep": { "type": "string" },
+            "label_grep": { "type": "string" },
+            "means": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": { "type": "number" }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": { "type": "number" }
+                  }
+                }
+              ]
+            },
+            "stds": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": { "type": "number" }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": { "type": "number" }
+                  }
+                }
+              ]
+            },
+            "num_classes": { "type": "integer" }
+          },
+          "required": ["batch_size", "num_workers"]
+        }
+      },
+      "required": ["class_path", "init_args"]
+    },
+    "model": {
+      "type": "object",
+      "properties": {
+        "class_path": { "type": "string" },
+        "init_args": {
+          "type": "object",
+          "properties": {
+            "model_factory": { "type": "string" },
+            "model_args": { "type": "object" },
+            "loss": { "type": "string" },
+            "ignore_index": { "type": "integer" },
+            "freeze_backbone": { "type": "boolean" },
+            "freeze_decoder": { "type": "boolean" }
+          },
+          "required": ["model_factory", "model_args", "loss"]
+        }
+      },
+      "required": ["class_path", "init_args"]
+    },
+    "optimizer": {
+      "type": "object",
+      "properties": {
+        "class_path": { "type": "string" },
+        "init_args": {
+          "type": "object",
+          "properties": {
+            "lr": { "type": "number" },
+            "weight_decay": { "type": "number" }
+          },
+          "required": ["lr"]
+        }
+      },
+      "required": ["class_path", "init_args"]
+    },
+    "lr_scheduler": {
+      "type": "object",
+      "properties": {
+        "class_path": { "type": "string" },
+        "init_args": {
+          "type": "object",
+          "properties": {
+            "monitor": { "type": "string" }
+          },
+          "required": []
+        }
+      },
+      "required": ["class_path", "init_args"]
+    }
+  },
+  "required": ["trainer", "data", "model"]
+}
