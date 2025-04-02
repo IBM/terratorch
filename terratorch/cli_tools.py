@@ -28,6 +28,7 @@ import torchgeo.datamodules
 import yaml
 from albumentations.pytorch import ToTensorV2  # noqa: F401
 from jsonargparse import set_dumper
+from jsonargparse._namespace import Namespace
 from lightning.fabric.utilities.cloud_io import get_filesystem
 from lightning.fabric.utilities.types import _PATH
 from lightning.pytorch import LightningDataModule, LightningModule, Trainer
@@ -103,6 +104,7 @@ def add_default_checkpointing_config(config):
         enable_checkpointing = config[subcommand + ".trainer.enable_checkpointing"]
         callbacks = config[subcommand + ".trainer.callbacks"]
 
+        # A list for callbacks is usually expected.
         if callbacks:
             check_callbacks = [op for op in callbacks if "ModelCheckpoint" in op.class_path]
         
@@ -110,20 +112,22 @@ def add_default_checkpointing_config(config):
                 there_is_checkpointing = True
             else:
                 there_is_checkpointing = False
+        # However, if no callbacks list is provided, let's create one. 
         else:
             there_is_checkpointing = False
+            callbacks = []
 
         if enable_checkpointing:
             if not there_is_checkpointing:
-                logger.info("Enabling ModelCheckpoint since the user defined enable_checkpointing=True.")
-    
-                config["ModelCheckpoint"] = StateDictAwareModelCheckpoint
-                config["ModelCheckpoint.filename"] = "{epoch}"
-                config["ModelCheckpoint.monitor"] = "val/loss"
-                config["StateDictModelCheckpoint"] = StateDictAwareModelCheckpoint
-                config["StateDictModelCheckpoint.filename"] = "{epoch}_state_dict"
-                config["StateDictModelCheckpoint.save_weights_only"] = True
-                config["StateDictModelCheckpoint.monitor"] = "val/loss"
+                # Checkpointing is enabled, but no checkpoint rule was
+                # provided, so let's define some default choice for it.
+                model_checkpoint = Namespace(class_path="StateDictAwareModelCheckpoint",
+                                            init_args=Namespace(filename="{epoch}", monitor="val/loss"))
+                model_checkpoint_state_dict = Namespace(class_path="StateDictAwareModelCheckpoint",
+                                                   init_args=Namespace(filename="{epoch}_state_dict",
+                                                                       save_weights_only=True, monitor="val/loss"))
+                callbacks += [model_checkpoint, model_checkpoint_state_dict]   
+                config[subcommand + ".trainer.callbacks"] = callbacks
             else:
                 logger.info("No extra checkpoint config will be added, since the user already defined it in the callbacks.")
 
