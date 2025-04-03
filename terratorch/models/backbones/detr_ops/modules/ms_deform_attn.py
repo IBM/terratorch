@@ -37,10 +37,11 @@ class MSDeformAttn(nn.Module):
     ):
         """Multi-Scale Deformable Attention Module.
 
-        :param d_model      hidden dimension
-        :param n_levels     number of feature levels
-        :param n_heads      number of attention heads
-        :param n_points     number of sampling points per attention head per feature level
+        Args:
+            d_model (int): Hidden dimension.
+            n_levels (int): Number of feature levels.
+            n_heads (int): Number of attention heads.
+            n_points (int): Number of sampling points per attention head per feature level.
         """
         super().__init__()
         if d_model % n_heads != 0:
