@@ -20,6 +20,32 @@ try:
     )
 
     class PrithviViTAdapter(PrithviViT):  # type: ignore
+        """Prithvi ViT Adapter Encoder
+        Args:
+            interaction_indexes (list[list[int]]): List of indexes for each interaction block.
+            conv_inplane (int): Number of channels for Spatial Prior Module.
+            add_vit_feature (bool): Whether to add ViT features to the output.
+            deform_num_heads (int): Number of heads for the deformable attention.
+            n_points (int): Number of points for the deformable attention.
+            init_values (float): Initial values for the deformable attention.
+            with_cffn (bool): Whether to use the cffn in the interaction block.
+            cffn_ratio (float): Ratio for the cffn in the interaction block.
+            deform_ratio (float): Ratio for the deformable attention.
+            use_extra_extractor (bool): Whether to use the extra extractor in the interaction block.
+            with_cp (bool): Whether to use checkpointing.
+            img_size (int | tuple[int, int]): Size of the input image.
+            patch_size (int | tuple[int, int, int]): Size of the patches.
+            num_frames (int): Number of frames in the input.
+            in_chans (int): Number of input channels.
+            embed_dim (int): Dimension of the embedding.
+            depth (int): Depth of the model.
+            num_heads (int): Number of heads in the model.
+            mlp_ratio (float): Ratio for the mlp in the model.
+            norm_layer (type[nn.Module]): Normalization layer to use.
+            coords_encoding (list[str] | None): List of coordinate encodings to use.
+            coords_scale_learn (bool): Whether to learn the scale of the coordinates.
+            drop_path (float): Drop path rate.
+        """
         extra_layers = ("level_embed", "spm", "interactions", "up", "norm1", "norm2", "norm3", "norm4")
 
         def __init__(
