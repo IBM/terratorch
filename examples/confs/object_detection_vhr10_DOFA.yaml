@@ -2,14 +2,17 @@
 seed_everything: 0
 trainer:
   accelerator: auto
-  strategy: auto
+  strategy:
+    class_path: lightning.pytorch.strategies.DDPStrategy
+    init_args:
+      find_unused_parameters: true
   devices: auto
   num_nodes: 1
   precision: 16-mixed
   logger:
     class_path: TensorBoardLogger
     init_args:
-      save_dir: /opt/app-root/src/fm-geospatial/pf/logs/
+      save_dir: /home/xshadow/terratorch/logs/
       name: DOFA_mask-rcnn
   callbacks:
     # - class_path: RichProgressBar
@@ -27,15 +30,15 @@ trainer:
   check_val_every_n_epoch: 1
   log_every_n_steps: 50
   enable_checkpointing: true
-  default_root_dir: /opt/app-root/src/fm-geospatial/pf/logs/
+  default_root_dir: /home/xshadow/terratorch/logs/
 data:
   class_path: terratorch.datamodules.mVHR10DataModule
   init_args:
-    root: /opt/app-root/src/fm-geospatial/pf/terratorch/examples/notebooks/data/VHR10/
-    batch_size: 8
-    num_workers: 8
+    root: /home/xshadow/terratorch/data/VHR10/
+    batch_size: 4
+    num_workers: 4
     pad: false
-    image_size: 224
+    image_size: 896
 
 model:
   class_path: terratorch.tasks.ObjectDetectionTask
@@ -45,9 +48,11 @@ model:
       framework: mask-rcnn  # Model name of TorchVision (one of faster-rcnn, fcos, retinanet, mask-rcnn)
       backbone: dofa_large_patch16_224  # One of resnet18, resnet34, resnet50, resnet101, resnet152, resnext50_32x4d, resnext101_32x8d, wide_resnet50_2, or wide_resnet101_2
       backbone_pretrained: true
+      backbone_ckpt_data: https://hf.co/torchgeo/dofa/resolve/main/dofa_large_patch16_224-0ff904d3.pth
       num_classes: 12  # Number of classes including background
-      framework_min_size: 224
-      framework_max_size: 224 
+      backbone_img_size: 896
+      framework_min_size: 896
+      framework_max_size: 896
       backbone_model_bands:
         - RED
         - GREEN
@@ -56,7 +61,7 @@ model:
         - 5
         - 11
         - 17
-        - 23
+        - 21
       necks:
         - name: ReshapeTokensToImage
         - name: LearnedInterpolateToPyramidal

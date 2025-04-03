@@ -1,5 +1,6 @@
 # reference torchgeo https://torchgeo.readthedocs.io/en/latest/_modules/torchgeo/models/dofa.html#DOFA
 import torch
+import torch.nn.functional as F
 import torchgeo.models.dofa as dofa
 import logging
 from collections.abc import Callable
@@ -10,6 +11,8 @@ from typing import List
 import huggingface_hub
 from torchvision.models._api import Weights, WeightsEnum
 from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
+import math
+
 import pdb
 
 waves_list= {
@@ -28,14 +31,78 @@ waves_list= {
   "SWIR_2": 2.20,
   "THEMRAL_INFRARED_1": 10.90,
   "THEMRAL_INFRARED_12": 12.00, 
-  "VV": 3.75,
-  "VH": 3.75,
-  "ASC_VV": 3.75,
-  "ASC_VH": 3.75,
-  "DSC_VV": 3.75,
-  "DSC_VH": 3.75,
-  "VV-VH": 3.75
+  "VV": 5.405,
+  "VH": 5.405,
+  "ASC_VV": 5.405,
+  "ASC_VH": 5.405,
+  "DSC_VV": 5.405,
+  "DSC_VH": 5.405,
+  "VV-VH": 5.405
 }
+
+
+def resize(input: torch.Tensor,
+           size: tuple[int, int] | None = None,
+           scale_factor: float | None = None,
+           mode: str = 'nearest',
+           align_corners: bool | None = None,
+           warning: bool = True) -> torch.Tensor:
+    """Resize input tensor with alignment warning check.
+    
+    Args:
+        input: Input tensor of shape [B, C, H, W]
+        size: Target output size (H, W)
+        scale_factor: Multiplier for spatial size
+        mode: Interpolation mode ('nearest', 'linear', 'bilinear', etc.)
+        align_corners: If True, aligns corners for non-nearest modes
+        warning: If True, warns about potential alignment issues
+    
+    Returns:
+        Resized tensor of shape [B, C, H_new, W_new]
+    """
+    if warning:
+        if size is not None and align_corners:
+            input_h, input_w = tuple(int(x) for x in input.shape[2:])
+            output_h, output_w = tuple(int(x) for x in size)
+            if output_h > input_h or output_w > output_h:
+                if ((output_h > 1 and output_w > 1 and input_h > 1
+                     and input_w > 1) and (output_h - 1) % (input_h - 1)
+                        and (output_w - 1) % (input_w - 1)):
+                    warnings.warn(
+                        f'When align_corners={align_corners}, '
+                        'the output would more aligned if '
+                        f'input size {(input_h, input_w)} is `x+1` and '
+                        f'out size {(output_h, output_w)} is `nx+1`')
+    return F.interpolate(input, size, scale_factor, mode, align_corners)
+
+
+def resize_pos_embed(pos_embed, input_shpae, pos_shape, mode):
+    """Resize pos_embed weights.
+    Resize pos_embed using bicubic interpolate method.
+    Args:
+        pos_embed (torch.Tensor): Position embedding weights.
+        input_shpae (tuple): Tuple for (downsampled input image height,
+            downsampled input image width).
+        pos_shape (tuple): The resolution of downsampled origin training
+            image.
+        mode (str): Algorithm used for upsampling:
+            ``'nearest'`` | ``'linear'`` | ``'bilinear'`` | ``'bicubic'`` |
+            ``'trilinear'``. Default: ``'nearest'``
+    Return:
+        torch.Tensor: The resized pos_embed of shape [B, L_new, C]
+    """
+    assert pos_embed.ndim == 3, 'shape of pos_embed must be [B, L, C]'
+    pos_h, pos_w = pos_shape
+    cls_token_weight = pos_embed[:, 0]
+    pos_embed_weight = pos_embed[:, (-1 * pos_h * pos_w):]
+    pos_embed_weight = pos_embed_weight.reshape(
+        1, pos_h, pos_w, pos_embed.shape[2]).permute(0, 3, 1, 2)
+    pos_embed_weight = resize(
+        pos_embed_weight, size=input_shpae, align_corners=False, mode=mode)
+    cls_token_weight = cls_token_weight.unsqueeze(1)
+    pos_embed_weight = torch.flatten(pos_embed_weight, 2).transpose(1, 2)
+    pos_embed = torch.cat((cls_token_weight, pos_embed_weight), dim=1)
+    return pos_embed
 
 
 class DOFAEncoderWrapper(nn.Module):
@@ -62,13 +129,12 @@ class DOFAEncoderWrapper(nn.Module):
 
         self.out_indices = out_indices if out_indices else [-1]
         self.out_channels = [self.dofa_model.patch_embed.embed_dim] * len(self.out_indices)
-        
+
     def forward(self, x: List[torch.Tensor], **kwargs) -> torch.Tensor:
-        
+        N,C,oh,ow = x.shape
         wavelist = torch.tensor(self.wavelengths, device=x.device).float()
 
         x, _ = self.dofa_model.patch_embed(x, wavelist)
-
         x = x + self.dofa_model.pos_embed[:, 1:, :]
         # append cls token
         cls_token = self.dofa_model.cls_token + self.dofa_model.pos_embed[:, :1, :]
@@ -86,10 +152,16 @@ class DOFAEncoderWrapper(nn.Module):
                 
         return tuple(outs)
 
-def get_wavelenghts(model_bands):
-
+def get_wavelenghts(model_bands: list[str]) -> list[float]:
+    """Extract wavelength values for given spectral bands.
+    
+    Args:
+        model_bands: List of band names (e.g., ['RED', 'NIR', 'SWIR_1'])
+    
+    Returns:
+        List of corresponding wavelength values in micrometers
+    """
     wavelengths = [waves_list[x.split('.')[-1]] for x in model_bands]
-
     return wavelengths
     
 
@@ -123,17 +195,7 @@ def dofa_large_patch16_224(model_bands, pretrained = False, ckpt_data: str | Non
     
     return DOFAEncoderWrapper(model, wavelengths, weights, out_indices)
 
-@TERRATORCH_BACKBONE_REGISTRY.register
-def dofa_huge_patch16_224(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = None, out_indices: list | None = None, **kwargs):
-    model = dofa.dofa_huge_patch16_224(**kwargs)
-    input_size = kwargs["img_size"] if "img_size" in kwargs else 224
-    if pretrained:
-        model = load_dofa_weights(model, ckpt_data, weights, input_size)
-    wavelengths = get_wavelenghts(model_bands)
-    
-    return DOFAEncoderWrapper(model, wavelengths, weights, out_indices)
-
-def load_dofa_weights(model: nn.Module, ckpt_data: str | None = None,  weights: Weights | None = None, input_size = 224) -> nn.Module:
+def load_dofa_weights(model: nn.Module, ckpt_data: str | None = None,  weights: Weights | None = None, input_size = 224, patch_size = 16) -> nn.Module:
     state_dict = model.state_dict()
     print("Loading weights")
     if ckpt_data is not None:
@@ -155,9 +217,10 @@ def load_dofa_weights(model: nn.Module, ckpt_data: str | None = None,  weights: 
                 "pos_embed" in checkpoint_model
                 and checkpoint_model["pos_embed"].shape != state_dict["pos_embed"].shape
             ):
-                logging.info("Removing key pos_embed from pretrained checkpoint")
-                del checkpoint_model["pos_embed"]
-
+                logging.info("Resizing pos_embed from pretrained checkpoint")
+                h, w = input_size, input_size
+                pos_size = int(math.sqrt(checkpoint_model['pos_embed'].shape[1] - 1))
+                checkpoint_model["pos_embed"] = resize_pos_embed(pos_embed=checkpoint_model['pos_embed'],input_shpae=(h // patch_size, w // patch_size), pos_shape=(pos_size, pos_size), mode="bilinear")
     
         msg = model.load_state_dict(checkpoint_model, strict=False)
     
