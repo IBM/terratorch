@@ -48,13 +48,13 @@ LORA_CONFIG = {
     },
     "moe": {
         "method": "LORA",
-        "replace_qkv": "to_qkv",
+        "replace_qkv": "qkv",  # As we want to apply LoRA separately and only to Q and V, we need to separate the matrix.
         "peft_config_kwargs": {
-            "target_modules": ["to_qkv.q_linear", "to_qkv.v_linear", "1.net.1", "1.net.3"],
+            "target_modules": ["qkv.q_linear", "qkv.v_linear", "mlp.fc1", "mlp.fc2"],
             "lora_alpha": 16,
             "r": 16,
         },
-        #"moe_config": {"n_experts": 4},
+        "moe_config": {"n_experts": 4},
     }
 }
     

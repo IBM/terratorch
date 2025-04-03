@@ -109,11 +109,14 @@ class QKVSep(nn.Module):
 class MoEQKVSep(nn.Module):
     def __init__(self, original_qkv:nn.Linear, n_experts:int=6):
 
+        super(MoEQKVSep, self).__init__()
+
         experts_list = []
         for e in range(n_experts):
             experts_list.append(QKVSep(original_qkv=original_qkv))
 
-        self.moe_layer = MoELayer(experts_list=experts_list)
+        self.moe_layer = MoELayer(experts_list=experts_list,
+                                  input_size=original_qkv.in_features)
 
     def forward(self, x: torch.Tensor):
         return self.moe_layer(x)
