@@ -40,11 +40,9 @@ class MoELayer(Module):
 
         super(MoELayer, self).__init__()
 
-        # Determining the kind of device to be used for allocating the
-        # subnetworks used in the DeepONet model
-
         self.n_experts = len(experts_list)
         self.input_size = input_size
+        self.n_vars = n_vars
         self.hidden_size = hidden_size
         self.binary_selection = binary_selection
         self.is_gating_trainable = True
@@ -60,7 +58,7 @@ class MoELayer(Module):
         # The default gating network is a single-layer fully-connected network
         if gating_network is None:
             gating_network = Sequential(
-                Linear(self.input_size, self.n_experts, bias=False),
+                Linear(self.input_size * self.n_vars, self.n_experts, bias=False),
                 Softmax(),
             )
 
@@ -192,6 +190,7 @@ class MoELayer(Module):
         """
 
         gating = self.gating_network.forward(Flatten()(input_data))
+
         gating_weights_ = self.get_weights(gating=gating)
 
         gating_weights = self.topk(gating_weights_)
