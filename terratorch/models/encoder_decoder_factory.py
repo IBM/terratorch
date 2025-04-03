@@ -100,15 +100,15 @@ class TemporalWrapper(nn.Module):
         else:
             return [torch.mean(feat, dim=2) for feat in features_per_map]  # Mean pooling across T
 
-def _get_backbone(backbone: str | nn.Module, use_temporal=False, temporal_pooling="mean", **backbone_kwargs) -> nn.Module:
+def _get_backbone(backbone: str | nn.Module, backbone_use_temporal=False, backbone_temporal_pooling="mean", **backbone_kwargs) -> nn.Module:
     if isinstance(backbone, nn.Module):
         model = backbone
     else:
         model = BACKBONE_REGISTRY.build(backbone, **backbone_kwargs)
 
     # Apply TemporalWrapper inside _get_backbone
-    if use_temporal:
-        model = TemporalWrapper(model, pooling=temporal_pooling)
+    if backbone_use_temporal:
+        model = TemporalWrapper(model, pooling=backbone_temporal_pooling)
 
     return model
 
@@ -164,7 +164,7 @@ class EncoderDecoderFactory(ModelFactory):
         aux_decoders: list[AuxiliaryHead] | None = None,
         rescale: bool = True,  # noqa: FBT002, FBT001,
         backbone_use_temporal: bool = False,
-        temporal_pooling: str = "mean",
+        backbone_temporal_pooling: str = "mean",
         peft_config: dict | None = None,
         **kwargs,
     ) -> Model:
@@ -214,7 +214,7 @@ class EncoderDecoderFactory(ModelFactory):
             raise NotImplementedError(msg)
 
         backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
-        backbone = _get_backbone(backbone, use_temporal=backbone_use_temporal, temporal_pooling = temporal_pooling, **backbone_kwargs)
+        backbone = _get_backbone(backbone, backbone_use_temporal=backbone_use_temporal, backbone_temporal_pooling = backbone_temporal_pooling, **backbone_kwargs)
 
         # If patch size is not provided in the config or by the model, it might lead to errors due to irregular images.
         patch_size = backbone_kwargs.get("patch_size", None)
