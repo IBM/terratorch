@@ -46,8 +46,18 @@ LORA_CONFIG = {
             "r": 16,
         },
     },
+    "moe": {
+        "method": "LORA",
+        "replace_qkv": "to_qkv",
+        "peft_config_kwargs": {
+            "target_modules": ["to_qkv.q_linear", "to_qkv.v_linear", "1.net.1", "1.net.3"],
+            "lora_alpha": 16,
+            "r": 16,
+        },
+        #"moe_config": {"n_experts": 4},
+    }
 }
-
+    
 @pytest.fixture(scope="session")
 def model_factory() -> EncoderDecoderFactory:
     return EncoderDecoderFactory()
@@ -435,6 +445,53 @@ def test_create_model_with_lora(backbone, task, expected, decoder, model_factory
         embed_dim = model.encoder.embed_dim
         linear_in_out = model.encoder.blocks[0].mlp.fc1.out_features
     r = LORA_CONFIG[backbone.split("_")[0]]["peft_config_kwargs"]["r"]
+    assert encoder_trainable_params == num_layers * (2 * embed_dim * r * 2 + 2 * linear_in_out * r + 2 * embed_dim * r)
+
+    with torch.no_grad():
+        assert model(model_input).output.shape == expected
+
+    gc.collect()
+
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100"])
+@pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
+@pytest.mark.parametrize("decoder", ["FCNDecoder"])
+def test_create_model_with_molora(backbone, task, expected, decoder, model_factory: EncoderDecoderFactory, model_input):
+    model_args = {
+        "task": task,
+        "backbone": backbone,
+        "decoder": decoder,
+        "backbone_bands": PRETRAINED_BANDS,
+        "backbone_pretrained": True,
+        "peft_config": LORA_CONFIG["moe"],
+    }
+
+    if backbone == "clay_v1_base":
+        model_args["backbone_img_size"] = 224
+
+    if task == "segmentation":
+        model_args["num_classes"] = NUM_CLASSES
+    if decoder in ["UperNetDecoder", "UNetDecoder"]:
+        model_args["necks"] = VIT_UPERNET_NECK
+    if decoder == "UNetDecoder":
+        model_args["decoder_channels"] = [256, 128, 64, 32]
+
+    model = model_factory.build_model(**model_args)
+    model.eval()
+
+    encoder_trainable_params = 0
+    for param in model.encoder.parameters():
+        if param.requires_grad:
+            encoder_trainable_params += param.numel()
+
+    if backbone == "clay_v1_base":
+        num_layers = 12
+        embed_dim = 768
+        linear_in_out = 768 * 4
+    else:
+        num_layers = len(model.encoder.blocks)
+        embed_dim = model.encoder.embed_dim
+        linear_in_out = model.encoder.blocks[0].mlp.fc1.out_features
+    r = LORA_CONFIG["moe"]["peft_config_kwargs"]["r"]
     assert encoder_trainable_params == num_layers * (2 * embed_dim * r * 2 + 2 * linear_in_out * r + 2 * embed_dim * r)
 
     with torch.no_grad():
