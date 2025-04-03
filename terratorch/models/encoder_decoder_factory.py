@@ -1,6 +1,5 @@
 # Copyright contributors to the Terratorch project
 
-
 import torch
 from typing import List
 import warnings
