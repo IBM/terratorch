@@ -123,10 +123,7 @@ class IgnoreIndexMetricWrapper(WrapperMetric):
 class PixelwiseRegressionTask(TerraTorchTask):
     """Pixelwise Regression Task that accepts models from a range of sources.
 
-    This class is analog in functionality to
-    [PixelwiseRegressionTask]
-    (https://torchgeo.readthedocs.io/en/stable/api/trainers.html#torchgeo.trainers.PixelwiseRegressionTask)
-    defined by torchgeo.
+    This class is analog in functionality to PixelwiseRegressionTask defined by torchgeo.
     However, it has some important differences:
         - Accepts the specification of a model factory
         - Logs metrics per class
@@ -158,6 +155,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
         tiled_inference_parameters: TiledInferenceParameters | None = None,
         test_dataloaders_names: list[str] | None = None,
         lr_overrides: dict[str, float] | None = None,
+        tiled_inference_on_testing: bool = None,
     ) -> None:
         """Constructor
 
@@ -199,7 +197,10 @@ class PixelwiseRegressionTask(TerraTorchTask):
             lr_overrides (dict[str, float] | None, optional): Dictionary to override the default lr in specific
                 parameters. The key should be a substring of the parameter names (it will check the substring is
                 contained in the parameter name)and the value should be the new lr. Defaults to None.
+            tiled_inference_on_testing (bool): A boolean to the fine if tiled inference will be used when full inference 
+                fails during the test step. 
         """
+
         self.tiled_inference_parameters = tiled_inference_parameters
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
@@ -212,7 +213,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
         if model_factory and model is None:
             self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
 
-        super().__init__(task="regression")
+        super().__init__(task="regression", tiled_inference_on_testing=tiled_inference_on_testing)
 
         if model:
             # Custom_model
@@ -292,7 +293,6 @@ class PixelwiseRegressionTask(TerraTorchTask):
         y = batch["mask"]
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
-
         model_output: ModelOutput = self(x, **rest)
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
@@ -355,7 +355,9 @@ class PixelwiseRegressionTask(TerraTorchTask):
         y = batch["mask"]
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
-        model_output: ModelOutput = self(x, **rest)
+
+        model_output = self.handle_full_or_tiled_inference(x, 1, **rest)
+
         if dataloader_idx >= len(self.test_loss_handler):
             msg = "You are returning more than one test dataloader but not defining enough test_dataloaders_names."
             raise ValueError(msg)
@@ -384,12 +386,12 @@ class PixelwiseRegressionTask(TerraTorchTask):
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
 
-        def model_forward(x):
+        def model_forward(x, **kwargs):
             return self(x).output
 
         if self.tiled_inference_parameters:
             # TODO: tiled inference does not work with additional input data (**rest)
-            y_hat: Tensor = tiled_inference(model_forward, x, 1, self.tiled_inference_parameters)
+            y_hat: Tensor = tiled_inference(model_forward, x, 1, self.tiled_inference_parameters, **rest)
         else:
             y_hat: Tensor = self(x, **rest).output
         return y_hat, file_names

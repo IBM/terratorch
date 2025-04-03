@@ -1,18 +1,22 @@
 # Quick start
-We suggest using `3.10 <= Python <= 3.12`.
-To get started, make sure to have `[PyTorch](https://pytorch.org/get-started/locally/) >= 2.0.0` and [GDAL](https://gdal.org/index.html) installed.
+## Configuring the environment
 
-Installing GDAL can be quite a complex process. If you don't have GDAL set up on your system, we reccomend using a conda environment and installing it with `conda install -c conda-forge gdal`.
+### Python
+TerraTorch is currently tested for Python in `3.10 <= Python <= 3.12`. 
 
+### GDAL
+GDAL is required  to read and write TIFF images. It is usually easy to install in Unix/Linux systems, but if it is not your case 
+we reccomend using a conda environment and installing it with `conda install -c conda-forge gdal`.
+
+## Installing TerraTorch
 For a stable point-release, use `pip install terratorch`.
 If you prefer to get the most recent version of the main branch, install the library with `pip install git+https://github.com/IBM/terratorch.git`.
 
-To install as a developer (e.g. to extend the library) clone this repo, and run `pip install -e .`.
-
-You can interact with the library at several levels of abstraction. Each deeper level of abstraction trades off some amount of flexibility for ease of use and configuration.
+To install as a developer (e.g. to extend the library) clone this repo, and run `pip install -e .` .
 
 ## Creating Backbones
 
+You can interact with the library at several levels of abstraction. Each deeper level of abstraction trades off some amount of flexibility for ease of use and configuration.
 In the simplest case, we might only want access a backbone and code all the rest ourselves. In this case, we can simply use the library as a backbone factory:
 
 ```python title="Instantiating a prithvi backbone"
@@ -226,3 +230,9 @@ For inference, execute:
 ```sh
 terratorch predict -c <path_to_config_file> --ckpt_path<path_to_checkpoint> --predict_output_dir <path_to_output_dir> --data.init_args.predict_data_root <path_to_input_dir> --data.init_args.predict_dataset_bands <all bands in the predicted dataset, e.g. [BLUE,GREEN,RED,NIR_NARROW,SWIR_1,SWIR_2,0]>
 ```
+
+**Experimental feature**: Users that want to optimize hyperparameters or repeat best experiment might be interest in in terratorch-iterate, a terratorch's plugin. For instance, to run terratorch-iterate to optimize hyperparameters, one can run: 
+```sh
+terratorch iterate --hpo --config <path_to_config_file> 
+```
+Please see how to install terratorch-iterate on this [link](https://github.com/IBM/terratorch-iterate?tab=readme-ov-file#installation) and how to use it on this [link](https://github.com/IBM/terratorch-iterate?tab=readme-ov-file#usage).

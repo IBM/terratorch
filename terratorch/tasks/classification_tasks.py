@@ -28,7 +28,7 @@ def to_class_prediction(y: ModelOutput) -> Tensor:
 class ClassificationTask(TerraTorchTask):
     """Classification Task that accepts models from a range of sources.
 
-    This class is analog in functionality to class:ClassificationTask defined by torchgeo.
+    This class is analog in functionality to the class ClassificationTask defined by torchgeo.
     However, it has some important differences:
         - Accepts the specification of a model factory
         - Logs metrics per class
@@ -72,7 +72,6 @@ class ClassificationTask(TerraTorchTask):
         """Constructor
 
         Args:
-
             Defaults to None.
             model_args (Dict): Arguments passed to the model factory.
             model_factory (str, optional): ModelFactory class to be used to instantiate the model.
@@ -220,7 +219,6 @@ class ClassificationTask(TerraTorchTask):
         y = batch["label"]
         other_keys = batch.keys() - {"image", "label", "filename"}
         rest = {k: batch[k] for k in other_keys}
-
         model_output: ModelOutput = self(x, **rest)
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])

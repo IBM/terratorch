@@ -13,7 +13,28 @@ import pickle
 
 
 class Sen4MapDatasetMonthlyComposites(Dataset):
-    #  This dictionary maps the LUCAS classes to Land-cover classes.
+    """[Sen4Map](https://gitlab.jsc.fz-juelich.de/sdlrs/sen4map-benchmark-dataset) Dataset for Monthly Composites.
+
+    Dataset intended for land-cover and crop classification tasks based on monthly composites
+    derived from multi-temporal satellite data stored in HDF5 files.
+
+    Dataset Format:
+
+    * HDF5 files containing multi-temporal acquisitions with spectral bands (e.g., B2, B3, …, B12)
+    * Composite images computed as the median across available acquisitions for each month.
+    * Classification labels provided via HDF5 attributes (e.g., 'lc1') with mappings defined for:
+        - Land-cover: using `land_cover_classification_map`
+        - Crops: using `crop_classification_map`
+
+    Dataset Features:
+
+    * Supports two classification tasks: "land-cover" (default) and "crops".
+    * Pre-processing options include center cropping, reverse tiling, and resizing.
+    * Option to save the keys HDF5 for later filtering.
+    * Input channel selection via a mapping between available bands and input bands.
+
+
+    """
     land_cover_classification_map={'A10':0, 'A11':0, 'A12':0, 'A13':0, 
     'A20':0, 'A21':0, 'A30':0, 
     'A22':1, 'F10':1, 'F20':1, 
@@ -70,6 +91,33 @@ class Sen4MapDatasetMonthlyComposites(Dataset):
             save_keys_path = None,
             classification_map = "land-cover"
             ):
+        """Initialize a new instance of Sen4MapDatasetMonthlyComposites.
+
+        This dataset loads data from an HDF5 file object containing multi-temporal satellite data and computes
+        monthly composite images by aggregating acquisitions (via median).
+
+        Args:
+            h5py_file_object: An open h5py.File object containing the dataset.
+            h5data_keys: Optional list of keys to select a subset of data samples from the HDF5 file.
+                If None, all keys are used.
+            crop_size: Optional integer specifying the square crop size for the output image.
+            dataset_bands: Optional list of bands available in the dataset.
+            input_bands: Optional list of bands to be used as input channels.
+                Must be provided along with `dataset_bands`.
+            resize: Boolean flag indicating whether the image should be resized. Default is False.
+            resize_to: Target dimensions [height, width] for resizing. Default is [224, 224].
+            resize_interpolation: Interpolation mode used for resizing. Default is InterpolationMode.BILINEAR.
+            resize_antialiasing: Boolean flag to apply antialiasing during resizing. Default is True.
+            reverse_tile: Boolean flag indicating whether to apply reverse tiling to the image. Default is False.
+            reverse_tile_size: Kernel size for the reverse tiling operation. Must be an odd number >= 3. Default is 3.
+            save_keys_path: Optional file path to save the list of dataset keys.
+            classification_map: String specifying the classification mapping to use ("land-cover" or "crops").
+                Default is "land-cover".
+
+        Raises:
+            ValueError: If `input_bands` is provided without specifying `dataset_bands`.
+            ValueError: If an invalid `classification_map` is provided.
+        """
         self.h5data = h5py_file_object
         if h5data_keys is None:
             if classification_map == "crops": print(f"Crop classification task chosen but no keys supplied. Will fail unless dataset hdf5 files have been filtered. Either filter dataset files or create a filtered set of keys.")

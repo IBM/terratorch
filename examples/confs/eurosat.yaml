@@ -10,7 +10,7 @@ trainer:
   logger:
     class_path: TensorBoardLogger
     init_args:
-      save_dir: <your_path_here>/torchgeo_eurosat
+      save_dir: ./torchgeo_eurosat
       name: eurosat
   callbacks:
     - class_path: RichProgressBar
@@ -26,7 +26,7 @@ trainer:
   check_val_every_n_epoch: 1
   log_every_n_steps: 50
   enable_checkpointing: true
-  default_root_dir: <your_path_here>/torchgeo_eurosat
+  default_root_dir: ./torchgeo_eurosat
 
 data:
   class_path: terratorch.datamodules.TorchNonGeoDataModule
@@ -41,7 +41,7 @@ data:
     batch_size: 32
     num_workers: 8
   dict_kwargs:
-    root: /dccstor/geofm-pre/EuroSat
+    root: ./EuroSat
     download: True
     bands:
       - B02
@@ -57,7 +57,7 @@ model:
     model_args:
       decoder: IdentityDecoder
       backbone_pretrained: true
-      backbone: prithvi_eo_v1_300
+      backbone: prithvi_eo_v2_300
       head_dim_list:
         - 384
         - 128

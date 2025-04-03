@@ -35,7 +35,7 @@ STDS = {
 
 
 class FireScarsNonGeoDataModule(NonGeoDataModule):
-    """NonGeo datamodule implementation for Fire Scars"""
+    """NonGeo LightningDataModule implementation for Fire Scars dataset."""
 
     def __init__(
         self,
@@ -53,6 +53,24 @@ class FireScarsNonGeoDataModule(NonGeoDataModule):
         use_metadata: bool = False,
         **kwargs: Any,
     ) -> None:
+        """
+        Initializes the FireScarsNonGeoDataModule.
+
+        Args:
+            data_root (str): Root directory of the dataset.
+            batch_size (int, optional): Batch size for DataLoaders. Defaults to 4.
+            num_workers (int, optional): Number of workers for data loading. Defaults to 0.
+            bands (Sequence[str], optional): List of band names. Defaults to FireScarsNonGeo.all_band_names.
+            train_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for training.
+            val_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for validation.
+            test_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for testing.
+            predict_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for prediction.
+            drop_last (bool, optional): Whether to drop the last incomplete batch. Defaults to True.
+            no_data_replace (float | None, optional): Replacement value for missing data. Defaults to 0.
+            no_label_replace (int | None, optional): Replacement value for missing labels. Defaults to -1.
+            use_metadata (bool): Whether to return metadata info.
+            **kwargs: Additional keyword arguments.
+        """
         super().__init__(FireScarsNonGeo, batch_size, num_workers, **kwargs)
         self.data_root = data_root
 
@@ -70,6 +88,11 @@ class FireScarsNonGeoDataModule(NonGeoDataModule):
         self.use_metadata = use_metadata
 
     def setup(self, stage: str) -> None:
+        """Set up datasets.
+
+        Args:
+            stage: Either fit, validate, test, or predict.
+        """
         if stage in ["fit"]:
             self.train_dataset = self.dataset_class(
                 split="train",
