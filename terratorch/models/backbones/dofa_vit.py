@@ -130,7 +130,6 @@ class DOFAEncoderWrapper(nn.Module):
         self.out_channels = [self.dofa_model.patch_embed.embed_dim] * len(self.out_indices)
 
     def forward(self, x: List[torch.Tensor], **kwargs) -> torch.Tensor:
-        N,C,oh,ow = x.shape
         wavelist = torch.tensor(self.wavelengths, device=x.device).float()
 
         x, _ = self.dofa_model.patch_embed(x, wavelist)
