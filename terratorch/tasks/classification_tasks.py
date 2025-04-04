@@ -68,6 +68,7 @@ class ClassificationTask(TerraTorchTask):
         class_names: list[str] | None = None,
         test_dataloaders_names: list[str] | None = None,
         lr_overrides: dict[str, float] | None = None,
+        path_to_record_metrics: str = None,
     ) -> None:
         """Constructor
 

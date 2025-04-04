@@ -156,6 +156,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
         test_dataloaders_names: list[str] | None = None,
         lr_overrides: dict[str, float] | None = None,
         tiled_inference_on_testing: bool = None,
+        path_to_record_metrics: str = None,
     ) -> None:
         """Constructor
 
@@ -372,7 +373,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
         y_hat = model_output.output
         self.test_metrics[dataloader_idx].update(y_hat, y)
 
-        self.record_metrics(dataloader_idx, y_hat_hard, y)
+        self.record_metrics(dataloader_idx, y_hat, y)
 
     def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         """Compute the predicted class probabilities.
