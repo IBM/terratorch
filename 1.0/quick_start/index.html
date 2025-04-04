@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><link rel="canonical" href="https://ibm.github.io/terratorch/1.0/quick_start/" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Getting Started - TerraTorch</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../assets/_mkdocstrings.css" rel="stylesheet" />
+        <link href="../css/version-select.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Getting Started";
+        var mkdocs_page_input_path = "quick_start.md";
+        var mkdocs_page_url = "/terratorch/1.0/quick_start/";
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> TerraTorch
+        </a>
+        <div class="version">
+          {'provider': 'mike'}
+        </div><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Welcome to TerraTorch</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Getting Started</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#configuring-the-environment">Configuring the environment</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#python">Python</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#gdal">GDAL</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#installing-terratorch">Installing TerraTorch</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#creating-backbones">Creating Backbones</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#directly-creating-a-full-model">Directly creating a full model</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#training-with-lightning-tasks">Training with Lightning Tasks</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../examples/">Examples</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../glossary/">Glossary</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../license/">License</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Components</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" href="../architecture/">Architecture Overview</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../tasks/">Tasks</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../models/">Models</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../data/">Data</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../registry/">Registries</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="../encoder_decoder_factory/">EncoderDecoderFactory</a>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">TerraTorch</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Getting Started</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/IBM/terratorch/edit/master/docs/quick_start.md" class="icon icon-github"> Edit on GitHub</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="quick-start">Quick start<a class="headerlink" href="#quick-start" title="Permanent link">#</a></h1>
+<h2 id="configuring-the-environment">Configuring the environment<a class="headerlink" href="#configuring-the-environment" title="Permanent link">#</a></h2>
+<h3 id="python">Python<a class="headerlink" href="#python" title="Permanent link">#</a></h3>
+<p>TerraTorch is currently tested for Python in <code>3.10 &lt;= Python &lt;= 3.12</code>. </p>
+<h3 id="gdal">GDAL<a class="headerlink" href="#gdal" title="Permanent link">#</a></h3>
+<p>GDAL is required  to read and write TIFF images. It is usually easy to install in Unix/Linux systems, but if it is not your case 
+we reccomend using a conda environment and installing it with <code>conda install -c conda-forge gdal</code>.</p>
+<h2 id="installing-terratorch">Installing TerraTorch<a class="headerlink" href="#installing-terratorch" title="Permanent link">#</a></h2>
+<p>For a stable point-release, use <code>pip install terratorch</code>.
+If you prefer to get the most recent version of the main branch, install the library with <code>pip install git+https://github.com/IBM/terratorch.git</code>.</p>
+<p>To install as a developer (e.g. to extend the library) clone this repo, and run <code>pip install -e .</code>.</p>
+<h2 id="creating-backbones">Creating Backbones<a class="headerlink" href="#creating-backbones" title="Permanent link">#</a></h2>
+<p>You can interact with the library at several levels of abstraction. Each deeper level of abstraction trades off some amount of flexibility for ease of use and configuration.
+In the simplest case, we might only want access a backbone and code all the rest ourselves. In this case, we can simply use the library as a backbone factory:</p>
+<div class="language-python highlight"><span class="filename">Instantiating a prithvi backbone</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">terratorch</span> <span class="kn">import</span> <span class="n">BACKBONE_REGISTRY</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># find available prithvi models</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nb">print</span><span class="p">([</span><span class="n">model_name</span> <span class="k">for</span> <span class="n">model_name</span> <span class="ow">in</span> <span class="n">BACKBONE_REGISTRY</span> <span class="k">if</span> <span class="s2">&quot;terratorch_prithvi&quot;</span> <span class="ow">in</span> <span class="n">model_name</span><span class="p">])</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="o">&gt;&gt;&gt;</span> <span class="p">[</span><span class="s1">&#39;terratorch_prithvi_eo_tiny&#39;</span><span class="p">,</span> <span class="s1">&#39;terratorch_prithvi_eo_v1_100&#39;</span><span class="p">,</span> <span class="s1">&#39;terratorch_prithvi_eo_v2_300&#39;</span><span class="p">,</span> <span class="s1">&#39;terratorch_prithvi_eo_v2_600&#39;</span><span class="p">,</span> <span class="s1">&#39;terratorch_prithvi_eo_v2_300_tl&#39;</span><span class="p">,</span> <span class="s1">&#39;terratorch_prithvi_eo_v2_600_tl&#39;</span><span class="p">]</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># show all models with list(BACKBONE_REGISTRY)</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># check a model is in the registry</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="s2">&quot;terratorch_prithvi_eo_v2_300&quot;</span> <span class="ow">in</span> <span class="n">BACKBONE_REGISTRY</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="o">&gt;&gt;&gt;</span> <span class="kc">True</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="c1"># without the prefix, all internal registries will be searched until the first match is found</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="s2">&quot;prithvi_eo_v1_100&quot;</span> <span class="ow">in</span> <span class="n">BACKBONE_REGISTRY</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="o">&gt;&gt;&gt;</span> <span class="kc">True</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="c1"># instantiate your desired model</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="c1"># the backbone registry prefix (e.g. `terratorch` or `timm`) is optional</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="c1"># in this case, the underlying registry is terratorch.</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="n">model</span> <span class="o">=</span> <span class="n">BACKBONE_REGISTRY</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="s2">&quot;prithvi_eo_v1_100&quot;</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="c1"># instantiate your model with more options, for instance, passing weights from your own file</span>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="n">model</span> <span class="o">=</span> <span class="n">BACKBONE_REGISTRY</span><span class="o">.</span><span class="n">build</span><span class="p">(</span>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>    <span class="s2">&quot;prithvi_eo_v2_300&quot;</span><span class="p">,</span> <span class="n">num_frames</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ckpt_path</span><span class="o">=</span><span class="s1">&#39;path/to/model.pt&#39;</span>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="p">)</span>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="c1"># Rest of your PyTorch / PyTorchLightning code</span>
+</span></code></pre></div>
+<p>Internally, terratorch maintains several registries for components such as backbones or decoders. The top-level <code>BACKBONE_REGISTRY</code> collects all of them.</p>
+<p>The name passed to <code>build</code> is used to find the appropriate model constructor, which will be the first model from the first registry found with that name.</p>
+<p>To explicitly determine the registry that will build the model, you may prepend a prefix such as <code>timm_</code> to the model name. In this case, the <code>timm</code> model registry will be exclusively searched for the model.</p>
+<h2 id="directly-creating-a-full-model">Directly creating a full model<a class="headerlink" href="#directly-creating-a-full-model" title="Permanent link">#</a></h2>
+<p>We also provide a model factory for a task specific model built on one a backbones:</p>
+<div class="language-python highlight"><span class="filename">Building a full model, with task specific decoder</span><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span> <span class="nn">terratorch</span> <span class="c1"># even though we don&#39;t use the import directly, we need it so that the models are available in the timm registry</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span> <span class="nn">terratorch.models</span> <span class="kn">import</span> <span class="n">EncoderDecoderFactory</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">from</span> <span class="nn">terratorch.datasets</span> <span class="kn">import</span> <span class="n">HLSBands</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">model_factory</span> <span class="o">=</span> <span class="n">EncoderDecoderFactory</span><span class="p">()</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># Let&#39;s build a segmentation model</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1"># Parameters prefixed with backbone_ get passed to the backbone</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="c1"># Parameters prefixed with decoder_ get passed to the decoder</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="c1"># Parameters prefixed with head_ get passed to the head</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="n">model</span> <span class="o">=</span> <span class="n">model_factory</span><span class="o">.</span><span class="n">build_model</span><span class="p">(</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="n">task</span><span class="o">=</span><span class="s2">&quot;segmentation&quot;</span><span class="p">,</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    <span class="n">backbone</span><span class="o">=</span><span class="s2">&quot;prithvi_eo_v2_300&quot;</span><span class="p">,</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>    <span class="n">backbone_pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="n">backbone_bands</span><span class="o">=</span><span class="p">[</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>        <span class="n">HLSBands</span><span class="o">.</span><span class="n">BLUE</span><span class="p">,</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>        <span class="n">HLSBands</span><span class="o">.</span><span class="n">GREEN</span><span class="p">,</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>        <span class="n">HLSBands</span><span class="o">.</span><span class="n">RED</span><span class="p">,</span>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>        <span class="n">HLSBands</span><span class="o">.</span><span class="n">NIR_NARROW</span><span class="p">,</span>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>        <span class="n">HLSBands</span><span class="o">.</span><span class="n">SWIR_1</span><span class="p">,</span>
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>        <span class="n">HLSBands</span><span class="o">.</span><span class="n">SWIR_2</span><span class="p">,</span>
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>    <span class="p">],</span>
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>    <span class="n">necks</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;SelectIndices&quot;</span><span class="p">,</span> <span class="s2">&quot;indices&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]},</span>
+</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>           <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;ReshapeTokensToImage&quot;</span><span class="p">}],</span>
+</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>    <span class="n">decoder</span><span class="o">=</span><span class="s2">&quot;FCNDecoder&quot;</span><span class="p">,</span>
+</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>    <span class="n">decoder_channels</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>    <span class="n">head_dropout</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>    <span class="n">num_classes</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="p">)</span>
+</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a>
+</span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="c1"># Rest of your PyTorch / PyTorchLightning code</span>
+</span><span id="__span-1-33"><a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="o">.</span>
+</span><span id="__span-1-34"><a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a><span class="o">.</span>
+</span><span id="__span-1-35"><a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="o">.</span>
+</span></code></pre></div>
+<h2 id="training-with-lightning-tasks">Training with Lightning Tasks<a class="headerlink" href="#training-with-lightning-tasks" title="Permanent link">#</a></h2>
+<p>At the highest level of abstraction, you can directly obtain a LightningModule ready to be trained.</p>
+<p><div class="language-python highlight"><span class="filename">Building a full Pixel-Wise Regression task</span><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">model_args</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  <span class="n">backbone</span><span class="o">=</span><span class="s2">&quot;prithvi_eo_v2_300&quot;</span><span class="p">,</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  <span class="n">backbone_pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  <span class="n">backbone_num_frames</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>  <span class="n">backbone_bands</span><span class="o">=</span><span class="p">[</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>      <span class="n">HLSBands</span><span class="o">.</span><span class="n">BLUE</span><span class="p">,</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>      <span class="n">HLSBands</span><span class="o">.</span><span class="n">GREEN</span><span class="p">,</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>      <span class="n">HLSBands</span><span class="o">.</span><span class="n">RED</span><span class="p">,</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>      <span class="n">HLSBands</span><span class="o">.</span><span class="n">NIR_NARROW</span><span class="p">,</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>      <span class="n">HLSBands</span><span class="o">.</span><span class="n">SWIR_1</span><span class="p">,</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>      <span class="n">HLSBands</span><span class="o">.</span><span class="n">SWIR_2</span><span class="p">,</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>  <span class="p">],</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>  <span class="n">necks</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;SelectIndices&quot;</span><span class="p">,</span> <span class="s2">&quot;indices&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]},</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>               <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;ReshapeTokensToImage&quot;</span><span class="p">}],</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>  <span class="n">decoder</span><span class="o">=</span><span class="s2">&quot;FCNDecoder&quot;</span><span class="p">,</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>  <span class="n">decoder_channels</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>  <span class="n">head_dropout</span><span class="o">=</span><span class="mf">0.1</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="p">)</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="n">task</span> <span class="o">=</span> <span class="n">PixelwiseRegressionTask</span><span class="p">(</span>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>    <span class="n">model_args</span><span class="p">,</span>
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>    <span class="s2">&quot;EncoderDecoderFactory&quot;</span><span class="p">,</span>
+</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>    <span class="n">loss</span><span class="o">=</span><span class="s2">&quot;rmse&quot;</span><span class="p">,</span>
+</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a>    <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">,</span>
+</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a>    <span class="n">ignore_index</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+</span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a>    <span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;AdamW&quot;</span><span class="p">,</span>
+</span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a>    <span class="n">optimizer_hparams</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;weight_decay&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">},</span>
+</span><span id="__span-2-28"><a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="p">)</span>
+</span><span id="__span-2-29"><a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a>
+</span><span id="__span-2-30"><a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="c1"># Pass this LightningModule to a Lightning Trainer, together with some LightningDataModule</span>
+</span></code></pre></div>
+Alternatively, all the process can be summarized in configuration files written in YAML format, as seen below.
+<div class="language-yaml highlight"><span class="filename">Configuration file for a Semantic Segmentation Task</span><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># lightning.pytorch==2.1.1</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nt">seed_everything</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="nt">trainer</span><span class="p">:</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="nt">accelerator</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">auto</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span><span class="nt">strategy</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">auto</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">  </span><span class="nt">devices</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">auto</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">  </span><span class="nt">num_nodes</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">  </span><span class="nt">precision</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bf16</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">  </span><span class="nt">logger</span><span class="p">:</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">    </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">TensorBoardLogger</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">    </span><span class="nt">init_args</span><span class="p">:</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">      </span><span class="nt">save_dir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;path_to_experiment_dir&gt;</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;experiment_name&gt;</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">  </span><span class="nt">callbacks</span><span class="p">:</span>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">RichProgressBar</span>
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">LearningRateMonitor</span>
+</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="w">      </span><span class="nt">init_args</span><span class="p">:</span>
+</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="w">        </span><span class="nt">logging_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">epoch</span>
+</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>
+</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="w">  </span><span class="nt">max_epochs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">200</span>
+</span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="w">  </span><span class="nt">check_val_every_n_epoch</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+</span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="w">  </span><span class="nt">log_every_n_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">50</span>
+</span><span id="__span-3-23"><a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="w">  </span><span class="nt">enable_checkpointing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="__span-3-24"><a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="w">  </span><span class="nt">default_root_dir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;path_to_experiment_dir&gt;</span>
+</span><span id="__span-3-25"><a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="nt">data</span><span class="p">:</span>
+</span><span id="__span-3-26"><a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a><span class="w">  </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">terratorch.datamodules.sen1floods11.Sen1Floods11NonGeoDataModule</span>
+</span><span id="__span-3-27"><a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a><span class="w">  </span><span class="nt">init_args</span><span class="p">:</span>
+</span><span id="__span-3-28"><a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a><span class="w">    </span><span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">16</span>
+</span><span id="__span-3-29"><a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a><span class="w">    </span><span class="nt">num_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
+</span><span id="__span-3-30"><a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a><span class="w">  </span><span class="nt">dict_kwargs</span><span class="p">:</span>
+</span><span id="__span-3-31"><a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a><span class="w">    </span><span class="nt">data_root</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;path_to_data_root&gt;</span>
+</span><span id="__span-3-32"><a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a><span class="w">    </span><span class="nt">bands</span><span class="p">:</span>
+</span><span id="__span-3-33"><a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+</span><span id="__span-3-34"><a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+</span><span id="__span-3-35"><a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+</span><span id="__span-3-36"><a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
+</span><span id="__span-3-37"><a id="__codelineno-3-37" name="__codelineno-3-37" href="#__codelineno-3-37"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">11</span>
+</span><span id="__span-3-38"><a id="__codelineno-3-38" name="__codelineno-3-38" href="#__codelineno-3-38"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">12</span>
+</span><span id="__span-3-39"><a id="__codelineno-3-39" name="__codelineno-3-39" href="#__codelineno-3-39"></a><span class="nt">model</span><span class="p">:</span>
+</span><span id="__span-3-40"><a id="__codelineno-3-40" name="__codelineno-3-40" href="#__codelineno-3-40"></a><span class="w">  </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">terratorch.tasks.SemanticSegmentationTask</span>
+</span><span id="__span-3-41"><a id="__codelineno-3-41" name="__codelineno-3-41" href="#__codelineno-3-41"></a><span class="w">  </span><span class="nt">init_args</span><span class="p">:</span>
+</span><span id="__span-3-42"><a id="__codelineno-3-42" name="__codelineno-3-42" href="#__codelineno-3-42"></a><span class="w">    </span><span class="nt">model_factory</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">EncoderDecoderFactory</span>
+</span><span id="__span-3-43"><a id="__codelineno-3-43" name="__codelineno-3-43" href="#__codelineno-3-43"></a><span class="w">    </span><span class="nt">model_args</span><span class="p">:</span>
+</span><span id="__span-3-44"><a id="__codelineno-3-44" name="__codelineno-3-44" href="#__codelineno-3-44"></a><span class="w">      </span><span class="nt">backbone</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">prithvi_eo_v2_300</span>
+</span><span id="__span-3-45"><a id="__codelineno-3-45" name="__codelineno-3-45" href="#__codelineno-3-45"></a><span class="w">      </span><span class="nt">backbone_img_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">512</span>
+</span><span id="__span-3-46"><a id="__codelineno-3-46" name="__codelineno-3-46" href="#__codelineno-3-46"></a><span class="w">      </span><span class="nt">backbone_pretrained</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+</span><span id="__span-3-47"><a id="__codelineno-3-47" name="__codelineno-3-47" href="#__codelineno-3-47"></a><span class="w">      </span><span class="nt">backbone_bands</span><span class="p">:</span>
+</span><span id="__span-3-48"><a id="__codelineno-3-48" name="__codelineno-3-48" href="#__codelineno-3-48"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">BLUE</span>
+</span><span id="__span-3-49"><a id="__codelineno-3-49" name="__codelineno-3-49" href="#__codelineno-3-49"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">GREEN</span>
+</span><span id="__span-3-50"><a id="__codelineno-3-50" name="__codelineno-3-50" href="#__codelineno-3-50"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">RED</span>
+</span><span id="__span-3-51"><a id="__codelineno-3-51" name="__codelineno-3-51" href="#__codelineno-3-51"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">NIR_NARROW</span>
+</span><span id="__span-3-52"><a id="__codelineno-3-52" name="__codelineno-3-52" href="#__codelineno-3-52"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SWIR_1</span>
+</span><span id="__span-3-53"><a id="__codelineno-3-53" name="__codelineno-3-53" href="#__codelineno-3-53"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SWIR_2</span>
+</span><span id="__span-3-54"><a id="__codelineno-3-54" name="__codelineno-3-54" href="#__codelineno-3-54"></a><span class="w">      </span><span class="nt">necks</span><span class="p">:</span>
+</span><span id="__span-3-55"><a id="__codelineno-3-55" name="__codelineno-3-55" href="#__codelineno-3-55"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SelectIndices</span>
+</span><span id="__span-3-56"><a id="__codelineno-3-56" name="__codelineno-3-56" href="#__codelineno-3-56"></a><span class="w">          </span><span class="nt">indices</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">5</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">11</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">17</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">23</span><span class="p p-Indicator">]</span>
+</span><span id="__span-3-57"><a id="__codelineno-3-57" name="__codelineno-3-57" href="#__codelineno-3-57"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ReshapeTokensToImage</span>
+</span><span id="__span-3-58"><a id="__codelineno-3-58" name="__codelineno-3-58" href="#__codelineno-3-58"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">LearnedInterpolateToPyramidal</span>
+</span><span id="__span-3-59"><a id="__codelineno-3-59" name="__codelineno-3-59" href="#__codelineno-3-59"></a><span class="w">      </span><span class="nt">decoder</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">UperNetDecoder</span>
+</span><span id="__span-3-60"><a id="__codelineno-3-60" name="__codelineno-3-60" href="#__codelineno-3-60"></a><span class="w">      </span><span class="nt">decoder_channels</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">256</span>
+</span><span id="__span-3-61"><a id="__codelineno-3-61" name="__codelineno-3-61" href="#__codelineno-3-61"></a><span class="w">      </span><span class="nt">head_channel_list</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">256</span><span class="p p-Indicator">]</span>
+</span><span id="__span-3-62"><a id="__codelineno-3-62" name="__codelineno-3-62" href="#__codelineno-3-62"></a><span class="w">      </span><span class="nt">head_dropout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span>
+</span><span id="__span-3-63"><a id="__codelineno-3-63" name="__codelineno-3-63" href="#__codelineno-3-63"></a><span class="w">      </span><span class="nt">num_classes</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+</span><span id="__span-3-64"><a id="__codelineno-3-64" name="__codelineno-3-64" href="#__codelineno-3-64"></a><span class="w">    </span><span class="nt">loss</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dice</span>
+</span><span id="__span-3-65"><a id="__codelineno-3-65" name="__codelineno-3-65" href="#__codelineno-3-65"></a><span class="w">    </span><span class="nt">ignore_index</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-1</span>
+</span><span id="__span-3-66"><a id="__codelineno-3-66" name="__codelineno-3-66" href="#__codelineno-3-66"></a><span class="w">    </span><span class="nt">freeze_backbone</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</span><span id="__span-3-67"><a id="__codelineno-3-67" name="__codelineno-3-67" href="#__codelineno-3-67"></a><span class="w">    </span><span class="nt">freeze_decoder</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">    </span>
+</span><span id="__span-3-68"><a id="__codelineno-3-68" name="__codelineno-3-68" href="#__codelineno-3-68"></a><span class="nt">optimizer</span><span class="p">:</span>
+</span><span id="__span-3-69"><a id="__codelineno-3-69" name="__codelineno-3-69" href="#__codelineno-3-69"></a><span class="w">  </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">torch.optim.AdamW</span>
+</span><span id="__span-3-70"><a id="__codelineno-3-70" name="__codelineno-3-70" href="#__codelineno-3-70"></a><span class="w">  </span><span class="nt">init_args</span><span class="p">:</span>
+</span><span id="__span-3-71"><a id="__codelineno-3-71" name="__codelineno-3-71" href="#__codelineno-3-71"></a><span class="w">    </span><span class="nt">lr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.e-4</span>
+</span><span id="__span-3-72"><a id="__codelineno-3-72" name="__codelineno-3-72" href="#__codelineno-3-72"></a><span class="w">    </span><span class="nt">weight_decay</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span>
+</span><span id="__span-3-73"><a id="__codelineno-3-73" name="__codelineno-3-73" href="#__codelineno-3-73"></a><span class="nt">lr_scheduler</span><span class="p">:</span>
+</span><span id="__span-3-74"><a id="__codelineno-3-74" name="__codelineno-3-74" href="#__codelineno-3-74"></a><span class="w">  </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ReduceLROnPlateau</span>
+</span><span id="__span-3-75"><a id="__codelineno-3-75" name="__codelineno-3-75" href="#__codelineno-3-75"></a><span class="w">  </span><span class="nt">init_args</span><span class="p">:</span>
+</span><span id="__span-3-76"><a id="__codelineno-3-76" name="__codelineno-3-76" href="#__codelineno-3-76"></a><span class="w">    </span><span class="nt">monitor</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">val/loss</span>
+</span></code></pre></div></p>
+<p>To run this training task using the YAML, simply execute:
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>terratorch<span class="w"> </span>fit<span class="w"> </span>--config<span class="w"> </span>&lt;path_to_config_file&gt;
+</span></code></pre></div></p>
+<p>To test your model on the test set, execute:
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>terratorch<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--config<span class="w">  </span>&lt;path_to_config_file&gt;<span class="w"> </span>--ckpt_path<span class="w"> </span>&lt;path_to_checkpoint_file&gt;
+</span></code></pre></div></p>
+<p>For inference, execute:
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>terratorch<span class="w"> </span>predict<span class="w"> </span>-c<span class="w"> </span>&lt;path_to_config_file&gt;<span class="w"> </span>--ckpt_path&lt;path_to_checkpoint&gt;<span class="w"> </span>--predict_output_dir<span class="w"> </span>&lt;path_to_output_dir&gt;<span class="w"> </span>--data.init_args.predict_data_root<span class="w"> </span>&lt;path_to_input_dir&gt;<span class="w"> </span>--data.init_args.predict_dataset_bands<span class="w"> </span>&lt;all<span class="w"> </span>bands<span class="w"> </span><span class="k">in</span><span class="w"> </span>the<span class="w"> </span>predicted<span class="w"> </span>dataset,<span class="w"> </span>e.g.<span class="w"> </span><span class="o">[</span>BLUE,GREEN,RED,NIR_NARROW,SWIR_1,SWIR_2,0<span class="o">]</span>&gt;
+</span></code></pre></div></p>
+<p><strong>Experimental feature</strong>: Users that want to optimize hyperparameters or repeat best experiment might be interest in in terratorch-iterate, a terratorch's plugin. For instance, to run terratorch-iterate to optimize hyperparameters, one can run: 
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>terratorch<span class="w"> </span>iterate<span class="w"> </span>--hpo<span class="w"> </span>--config<span class="w"> </span>&lt;path_to_config_file&gt;<span class="w"> </span>
+</span></code></pre></div>
+Please see how to install terratorch-iterate on this <a href="https://github.com/IBM/terratorch-iterate?tab=readme-ov-file#installation">link</a> and how to use it on this <a href="https://github.com/IBM/terratorch-iterate?tab=readme-ov-file#usage">link</a>.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href=".." class="btn btn-neutral float-left" title="Welcome to TerraTorch"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../examples/" class="btn btn-neutral float-right" title="Examples">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/IBM/terratorch" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href=".." style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../examples/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+      <script src="../js/version-select.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
