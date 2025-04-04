@@ -61,7 +61,9 @@ plugins:
 extra:
   version:
     provider: mike
-    default: latest
+    default: stable
+    canonical_version: stable
+    version_selector: true
 
 site_url: https://ibm.github.io/terratorch/
 repo_url: https://github.com/IBM/terratorch
