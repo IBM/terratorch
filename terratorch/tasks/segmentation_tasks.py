@@ -70,6 +70,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         lr_overrides: dict[str, float] | None = None,
         output_on_inference: str = "prediction",
         output_most_probable: bool = True,
+        path_to_record_metrics: str = None,
         tiled_inference_on_testing: bool = False,
     ) -> None:
         """Constructor
@@ -117,13 +118,15 @@ class SemanticSegmentationTask(TerraTorchTask):
                 parameters. The key should be a substring of the parameter names (it will check the substring is
                 contained in the parameter name)and the value should be the new lr. Defaults to None.
             output_on_inference (str): A string defining the kind of output to be saved to file during the inference, it can be "prediction",
-            to save just the most probable class, "probabilities", to save probabilities for all the classes or "both", to save both the 
-            kinds of outputs to dedicated files. 
-            output_most_probable (bool): A boolean to define if the prediction step will output just the most probable
-            class or the probabilities for all of them. This argument has been deprecated and will be replaced with `output_on_inference`. 
-            tiled_inference_on_testing (bool): A boolean to the fine if tiled inference will be used when full inference 
+                to save just the most probable class, "probabilities", to save probabilities for all the classes or "both", to save both the 
+                kinds of outputs to dedicated files. 
+                output_most_probable (bool): A boolean to define if the prediction step will output just the most probable
+                class or the probabilities for all of them. This argument has been deprecated and will be replaced with `output_on_inference`. 
+                tiled_inference_on_testing (bool): A boolean to the fine if tiled inference will be used when full inference 
                 fails during the test step. 
+            path_to_record_metrics (str): A path to save the file containing the metrics log. 
         """
+
         self.tiled_inference_parameters = tiled_inference_parameters
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
@@ -136,7 +139,8 @@ class SemanticSegmentationTask(TerraTorchTask):
         if model_factory and model is None:
             self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
 
-        super().__init__(task="segmentation", tiled_inference_on_testing=tiled_inference_on_testing)
+        super().__init__(task="segmentation", tiled_inference_on_testing=tiled_inference_on_testing,
+                         path_to_record_metrics=path_to_record_metrics)
 
         if model is not None:
             # Custom model
@@ -297,6 +301,8 @@ class SemanticSegmentationTask(TerraTorchTask):
         )
         y_hat_hard = to_segmentation_prediction(model_output)
         self.test_metrics[dataloader_idx].update(y_hat_hard, y)
+
+        self.record_metrics(dataloader_idx, y_hat_hard, y)
 
     def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         """Compute the validation loss and additional metrics.

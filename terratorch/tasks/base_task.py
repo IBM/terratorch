@@ -1,6 +1,9 @@
+import os
 import logging
 from collections.abc import Iterable
+import numpy as np
 import torch 
+import pandas as pd
 import lightning
 from lightning.pytorch.callbacks import Callback
 from torchgeo.trainers import BaseTask
@@ -20,10 +23,11 @@ class TerraTorchTask(BaseTask):
     tasks implemented in terratorch
     """
 
-    def __init__(self, task: str | None = None, tiled_inference_on_testing: bool = False):
+    def __init__(self, task: str | None = None, tiled_inference_on_testing: bool = False, path_to_record_metrics: str = False):
 
         self.task = task
         self.tiled_inference_on_testing = tiled_inference_on_testing
+        self.path_to_record_metrics = path_to_record_metrics
 
         super().__init__()
 
@@ -156,3 +160,16 @@ class TerraTorchTask(BaseTask):
             and hasattr(self.logger, "experiment")
             and (hasattr(self.logger.experiment, "add_figure") or hasattr(self.logger.experiment, "log_figure"))
         )
+
+    def record_metrics(self, dataloader_idx, y_hat_hard, y):
+
+        if self.path_to_record_metrics:
+            # Recording the metrics
+            metrics_record_ = self.test_metrics[dataloader_idx](y_hat_hard, y)
+            metrics_record_dict = {k: float(np.array(v.detach().cpu())) for k,v in metrics_record_.items()} 
+            metrics_record_list = [{"Metric": k, "Value": v} for k, v in metrics_record_dict.items()]
+            metrics_record = pd.DataFrame(data=metrics_record_list)
+
+            filename = os.path.join(self.path_to_record_metrics, "metrics.csv")
+            metrics_record.to_csv(filename)
+
