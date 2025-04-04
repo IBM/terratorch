@@ -23,7 +23,9 @@ def setup_and_cleanup(model_name):
     if os.path.isdir(os.path.join("tests", "all_ecos_random")):
         shutil.rmtree(os.path.join("tests", "all_ecos_random"))
 
-@pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_eo_v2_300", "prithvi_swin_B", "prithvi_swin_L", "prithvi_eo_v2_600"])
+# The backbones `prithvi_eo_v2_300` and `prithvi_swin_B` are already used in
+# others tests and don't need be tested here again
+@pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_swin_L", "prithvi_eo_v2_600"])
 @pytest.mark.parametrize("case", ["fit", "test", "validate", "compute_statistics"])
 def test_finetune_multiple_backbones(model_name, case):
     command_list = [case, "-c", f"tests/resources/configs/manufactured-finetune_{model_name}.yaml"]

@@ -8,6 +8,13 @@
   <center><img style="display: block; margin-left: auto; margin-right: auto"; src="https://github.com/user-attachments/assets/f7c9586f-6220-4a53-9669-2aee3300b492" alt="TerraTorch"  width="400"/></center>
 </picture>
 
+<!--
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/figs/logo_inv.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/figs/logo.png">
+</picture>
+-->
+
 [![huggingface](https://img.shields.io/badge/Hugging_Face-join-FFD21E?logo=huggingface)](https://huggingface.co/ibm-nasa-geospatial)
 [![pypi](https://badge.fury.io/py/terratorch.svg)](https://pypi.org/project/terratorch)
 [![tests](https://github.com/IBM/terratorch/actions/workflows/test.yaml/badge.svg)](https://github.com/ibm/terratorch/actions/workflows/test.yaml)
@@ -61,7 +68,7 @@ To get the most recent version of the main branch, install the library with `pip
 
 [comment]: <Another alternative is to install using [pipx](https://github.com/pypa/pipx) via `pipx install terratorch`, which creates an isolated environment and allows the user to run the application as a common CLI tool, with no need of installing dependencies or activating environments.>
 
-TerraTorch requires gdal to be installed, which can be quite a complex process. If you don't have GDAL set up on your system, we reccomend using a conda environment and installing it with `conda install -c conda-forge gdal`.
+TerraTorch requires gdal to be installed, which can be quite a complex process. If you don't have GDAL set up on your system, we recommend using a conda environment and installing it with `conda install -c conda-forge gdal`.
 
 To install as a developer (e.g. to extend the library):
 ```

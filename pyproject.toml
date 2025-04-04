@@ -65,13 +65,15 @@ dev = [
   "black",
   "mkdocs-material",
   "mkdocstrings[python]",
-  "mike" # for building docs with versions
+  "mike", # for building docs with versions
+  "mkdocs-git-revision-date-localized-plugin"
 ]
 
 test = [
   "pytest",
   "pytest-coverage",
-  "coverage-badge"
+  "coverage-badge",
+  "peft>=0.15.0"
 ]
 
 mmseg = [
@@ -92,7 +94,7 @@ visualize = [
 ]
 
 peft = [
-  "peft"
+  "peft>=0.15.0"
 ]
 
 [project.urls]
