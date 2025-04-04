@@ -116,9 +116,8 @@ class SemanticSegmentationTask(TerraTorchTask):
             lr_overrides (dict[str, float] | None, optional): Dictionary to override the default lr in specific
                 parameters. The key should be a substring of the parameter names (it will check the substring is
                 contained in the parameter name)and the value should be the new lr. Defaults to None.
-            output_on_inference (str | list[str]): A string defining the kind of output to be saved to file during the inference, it can be "prediction",
-            to save just the most probable class, "probabilities", to save probabilities for all the classes or "both", to save both the 
-            kinds of outputs to dedicated files. 
+            output_on_inference (str | list[str]): A string or a list defining the kind of output to be saved to file during the inference, for example,
+            it can be "prediction", to save just the most probable class, or ["prediction", "probabilities"] to save both prediction and probabilities.
             output_most_probable (bool): A boolean to define if the prediction step will output just the most probable
             class or the probabilities for all of them. This argument has been deprecated and will be replaced with `output_on_inference`. 
             tiled_inference_on_testing (bool): A boolean to the fine if tiled inference will be used when full inference 
