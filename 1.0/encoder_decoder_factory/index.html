@@ -1,0 +1,1605 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://ibm.github.io/terratorch/1.0/encoder_decoder_factory/">
+      
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.4.14">
+    
+    
+      
+        <title>EncoderDecoderFactory - TerraTorch</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.fad675c6.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.356b1318.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="indigo">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#encoderdecoderfactory" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="TerraTorch" class="md-header__button md-logo" aria-label="TerraTorch" data-md-component="logo">
+      
+  <img src="../figs/logo_grey.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            TerraTorch
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              EncoderDecoderFactory
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label=""  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label=""  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12c0-2.42-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7 0-.24-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91 1.61 0 2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08Z"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/IBM/terratorch" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+    
+  
+  Welcome to TerraTorch
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../license/" class="md-tabs__link">
+        
+  
+    
+  
+  License
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../quick_start/" class="md-tabs__link">
+        
+  
+    
+  
+  Getting Started
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../contributing/" class="md-tabs__link">
+        
+  
+    
+  
+  Contribution Guidelines
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../architecture/" class="md-tabs__link">
+        
+  
+    
+  
+  Architecture Overview
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../backbones/" class="md-tabs__link">
+          
+  
+  Components
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../glossary/" class="md-tabs__link">
+        
+  
+    
+  
+  Glossary
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../tutorials/the_yaml_config/" class="md-tabs__link">
+          
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
+        
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="TerraTorch" class="md-nav__button md-logo" aria-label="TerraTorch" data-md-component="logo">
+      
+  <img src="../figs/logo_grey.png" alt="logo">
+
+    </a>
+    TerraTorch
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/IBM/terratorch" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Welcome to TerraTorch
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../license/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    License
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quick_start/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Getting Started
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contribution Guidelines
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Architecture Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+      
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Components
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Components
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../backbones/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Backbones
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../decoders/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Decoders
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../necks/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Necks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../heads/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Heads
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tasks/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tasks
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model_factories/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Model Factories
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../generic_datasets/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Generic Datasets
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../datasets/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Datasets
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../generic_datamodules/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Generic Datamodules
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../datamodules/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Datamodules
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../transforms/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Transforms
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../glossary/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Glossary
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+      
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Tutorials
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/the_yaml_config/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    The YAML configuration file: an overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/basic_inference_burn_scars/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Performing an inference task with TerraTorch CLI: the Burn Scars test case
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/burn_scars_inference_simplified/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Performing a simple inference task using the TerraTorch's script interface.
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/using_datamodule_multitemporalclassificationModule/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Using a dedicated datamodule to perform inference: the crop classification example.
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/burn_scars_finetuning/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Creating a finetuning workload with the script interface
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Changelog
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory" class="md-nav__link">
+    <span class="md-ellipsis">
+      EncoderDecoderFactory
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="EncoderDecoderFactory">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory.build_model" class="md-nav__link">
+    <span class="md-ellipsis">
+      build_model
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#encoders" class="md-nav__link">
+    <span class="md-ellipsis">
+      Encoders
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#necks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Necks
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decoders" class="md-nav__link">
+    <span class="md-ellipsis">
+      Decoders
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#heads" class="md-nav__link">
+    <span class="md-ellipsis">
+      Heads
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decoder-compatibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      Decoder compatibilities
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Decoder compatibilities">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#smp-decoders" class="md-nav__link">
+    <span class="md-ellipsis">
+      SMP decoders
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mmsegmentation-decoders" class="md-nav__link">
+    <span class="md-ellipsis">
+      MMSegmentation decoders
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+    <a href="https://github.com/IBM/terratorch/edit/master/docs/encoder_decoder_factory.md" title="Edit this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4v-2m10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1 2.1 2.1Z"/></svg>
+    </a>
+  
+  
+    
+      
+    
+    <a href="https://github.com/IBM/terratorch/raw/master/docs/encoder_decoder_factory.md" title="View source of this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.15 8.15 0 0 1-1.23-2Z"/></svg>
+    </a>
+  
+
+
+<h1 id="encoderdecoderfactory">EncoderDecoderFactory<a class="headerlink" href="#encoderdecoderfactory" title="Permanent link">#</a></h1>
+<p><em>Check the <a href="../glossary/">Glossary</a> for more information about the terms used in this page.</em></p>
+<p>The <a class="autorefs autorefs-internal" href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory">EncoderDecoderFactory</a> is the main class
+used to instantiate and compose models for general tasks. </p>
+<p>This factory leverages the <code>BACKBONE_REGISTRY</code>, <code>DECODER_REGISTRY</code> and <code>NECK_REGISTRY</code> to compose models formed as encoder + decoder, with some optional glue in between provided by the necks.
+As most current models work this way, this is a particularly important factory, allowing for great flexibility in combining encoders and decoders from different sources.</p>
+<p>The factory allows arguments to be passed to the encoder, decoder and head. Arguments with the prefix <code>backbone_</code> will be routed to the backbone constructor, with <code>decoder_</code> and <code>head_</code> working the same way. These are accepted dynamically and not checked.
+Any unused arguments will raise a <code>ValueError</code>.</p>
+<p>Both encoder and decoder may be passed as strings, in which case they will be looked in the respective registry, or as <code>nn.Modules</code>, in which case they will be used as is. In the second case, the factory assumes in good faith that the encoder or decoder which is passed conforms to the expected contract.</p>
+<p>Not all decoders will readily accept the raw output of the given encoder. This is where necks come in. 
+Necks are a sequence of operations which are applied to the output of the encoder before it is passed to the decoder.
+They must be instances of <a class="autorefs autorefs-internal" href="../necks/#terratorch.models.necks.Neck">Neck</a>, which is a subclass of <code>nn.Module</code>, meaning they can even define new trainable parameters.</p>
+<p>The <a class="autorefs autorefs-internal" href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory">EncoderDecoderFactory</a> returns a <a class="autorefs autorefs-internal" href="../meta_models/#terratorch.models.pixel_wise_model.PixelWiseModel">PixelWiseModel</a> or a <a class="autorefs autorefs-internal" href="../meta_models/#terratorch.models.scalar_output_model.ScalarOutputModel">ScalarOutputModel</a> depending on the task.</p>
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="terratorch.models.encoder_decoder_factory.EncoderDecoderFactory" class="doc doc-heading">
+            <code>terratorch.models.encoder_decoder_factory.EncoderDecoderFactory</code>
+
+
+<a href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory" class="headerlink" title="Permanent link">#</a></h3>
+
+
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="terratorch.models.model.ModelFactory" href="../model_factories/#terratorch.models.model.ModelFactory">ModelFactory</a></code></p>
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h4 id="terratorch.models.encoder_decoder_factory.EncoderDecoderFactory.build_model" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">build_model</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">backbone</span><span class="p">,</span> <span class="n">decoder</span><span class="p">,</span> <span class="n">backbone_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">decoder_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">head_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">necks</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">aux_decoders</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rescale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">peft_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+<a href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory.build_model" class="headerlink" title="Permanent link">#</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Generic model factory that combines an encoder and decoder, together with a head, for a specific task.</p>
+<p>Further arguments to be passed to the backbone, decoder or head. They should be prefixed with
+<code>backbone_</code>, <code>decoder_</code> and <code>head_</code> respectively.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>task</code>
+            </td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Task to be performed. Currently supports "segmentation", "regression" and "classification".</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>backbone</code>
+            </td>
+            <td>
+                  <code>(str, <span title="torch.nn.Module">Module</span>)</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Backbone to be used. If a string, will look for such models in the different
+registries supported (internal terratorch registry, timm, ...). If a torch nn.Module, will use it
+directly. The backbone should have and <code>out_channels</code> attribute and its <code>forward</code> should return a list[Tensor].</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>decoder</code>
+            </td>
+            <td>
+                  <code>Union[str, <span title="torch.nn.Module">Module</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Decoder to be used for the segmentation model.
+    If a string, will look for such decoders in the different
+    registries supported (internal terratorch registry, smp, ...).
+    If an nn.Module, we expect it to expose a property <code>decoder.out_channels</code>.
+    Pixel wise tasks will be concatenated with a Conv2d for the final convolution.
+    Defaults to "FCNDecoder".</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>backbone_kwargs</code>
+            </td>
+            <td>
+                  <code>dict, optional) </code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Arguments to be passed to instantiate the backbone.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>decoder_kwargs</code>
+            </td>
+            <td>
+                  <code>dict, optional) </code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Arguments to be passed to instantiate the decoder.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>head_kwargs</code>
+            </td>
+            <td>
+                  <code>dict, optional) </code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Arguments to be passed to the head network. </p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>num_classes</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of classes. None for regression tasks.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>necks</code>
+            </td>
+            <td>
+                  <code>list[dict]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>nn.Modules to be called in succession on encoder features
+before passing them to the decoder. Should be registered in the NECKS_REGISTRY registry.
+Expects each one to have a key "name" and subsequent keys for arguments, if any.
+Defaults to None, which applies the identity function.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>aux_decoders</code>
+            </td>
+            <td>
+                  <code>list[<a class="autorefs autorefs-internal" title="terratorch.models.model.AuxiliaryHead" href="../extra_model_structures/#terratorch.models.model.AuxiliaryHead">AuxiliaryHead</a>] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List of AuxiliaryHead decoders to be added to the model.
+These decoders take the input from the encoder as well.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>rescale</code>
+            </td>
+            <td>
+                  <code>bool</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to apply bilinear interpolation to rescale the model output if its size
+is different from the ground truth. Only applicable to pixel wise models
+(e.g. segmentation, pixel wise regression). Defaults to True.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>peft_config</code>
+            </td>
+            <td>
+                  <code>dict</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Configuration options for using <a href="https://huggingface.co/docs/peft/index">PEFT</a>.
+The dictionary should have the following keys:</p>
+<ul>
+<li>"method": Which PEFT method to use. Should be one implemented in PEFT, a list is available <a href="https://huggingface.co/docs/peft/package_reference/peft_types#peft.PeftType">here</a>.</li>
+<li>"replace_qkv": String containing a substring of the name of the submodules to replace with QKVSep.
+  This should be used when the qkv matrices are merged together in a single linear layer and the PEFT
+  method should be applied separately to query, key and value matrices (e.g. if LoRA is only desired in
+  Q and V matrices). e.g. If using Prithvi this should be "qkv"</li>
+<li>"peft_config_kwargs": Dictionary containing keyword arguments which will be passed to <a href="https://huggingface.co/docs/peft/package_reference/config#peft.PeftConfig">PeftConfig</a></li>
+</ul>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="terratorch.models.model.Model" href="../extra_model_structures/#terratorch.models.model.Model">Model</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>nn.Module: Full model with encoder, decoder and head.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><h2 id="encoders">Encoders<a class="headerlink" href="#encoders" title="Permanent link">#</a></h2>
+<p>To be a valid encoder, an object must be an <code>nn.Module</code> and contain an attribute <code>out_channels</code>, basically a list of the channel dimensions corresponding to
+the features it returns.
+The forward method of any encoder should return a list of <code>torch.Tensor</code>.</p>
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>In<span class="w"> </span><span class="o">[</span><span class="m">19</span><span class="o">]</span>:<span class="w"> </span><span class="nv">backbone</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>BACKBONE_REGISTRY.build<span class="o">(</span><span class="s2">&quot;prithvi_eo_v2_300&quot;</span>,<span class="w"> </span><span class="nv">pretrained</span><span class="o">=</span>True<span class="o">)</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>In<span class="w"> </span><span class="o">[</span><span class="m">20</span><span class="o">]</span>:<span class="w"> </span>import<span class="w"> </span>numpy<span class="w"> </span>as<span class="w"> </span>np
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>In<span class="w"> </span><span class="o">[</span><span class="m">21</span><span class="o">]</span>:<span class="w"> </span>import<span class="w"> </span>torch
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>In<span class="w"> </span><span class="o">[</span><span class="m">22</span><span class="o">]</span>:<span class="w"> </span><span class="nv">input_image</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>torch.tensor<span class="o">(</span>np.random.rand<span class="o">(</span><span class="m">1</span>,6,224,224<span class="o">)</span>.astype<span class="o">(</span><span class="s2">&quot;float32&quot;</span><span class="o">))</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>In<span class="w"> </span><span class="o">[</span><span class="m">23</span><span class="o">]</span>:<span class="w"> </span><span class="nv">output</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>backbone.forward<span class="o">(</span>input_image<span class="o">)</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>In<span class="w"> </span><span class="o">[</span><span class="m">24</span><span class="o">]</span>:<span class="w"> </span><span class="o">[</span>item.shape<span class="w"> </span><span class="k">for</span><span class="w"> </span>item<span class="w"> </span><span class="k">in</span><span class="w"> </span>output<span class="o">]</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>Out<span class="o">[</span><span class="m">24</span><span class="o">]</span>:<span class="w"> </span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="o">[</span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])</span>,
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])</span>,
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])</span>,
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])</span>,
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])</span>,
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])</span>,
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])</span>,
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])</span>,
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])</span>,
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])</span>,
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])</span>,
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])</span>,
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])</span>,
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])</span>,
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])</span>,
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])</span>,
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])</span>,
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])</span>,
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])</span>,
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])</span>,
+</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])</span>,
+</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])</span>,
+</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])</span>,
+</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a><span class="w"> </span>torch.Size<span class="o">([</span><span class="m">1</span>,<span class="w"> </span><span class="m">197</span>,<span class="w"> </span><span class="m">1024</span><span class="o">])]</span>
+</span></code></pre></div>
+<h2 id="necks">Necks<a class="headerlink" href="#necks" title="Permanent link">#</a></h2>
+<p>Necks are the connectors between encoder and decoder. They can perform operations such as selecting elements from the output of the encoder (<a class="autorefs autorefs-internal" href="../necks/#terratorch.models.necks.SelectIndices">SelectIndices</a>), reshaping the outputs of ViTs so they are compatible with CNNs (<a class="autorefs autorefs-internal" href="../necks/#terratorch.models.necks.ReshapeTokensToImage">ReshapeTokensToImage</a>), amongst others.
+Necks are <code>nn.Modules</code>, with an additional method <code>process_channel_list</code> which informs the <a class="autorefs autorefs-internal" href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory">EncoderDecoderFactory</a> about how it will alter the channel list provided by <code>encoder.out_channels</code>. See a better description about necks <a href="../necks/">here</a>.</p>
+<h2 id="decoders">Decoders<a class="headerlink" href="#decoders" title="Permanent link">#</a></h2>
+<p>To be a valid decoder, an object must be an <code>nn.Module</code> with an attribute <code>out_channels</code>, an <code>int</code> representing the channel dimension of the output.
+The first argument to its constructor will be a list of channel dimensions it should expect as input.
+It's forward method should accept a list of embeddings. To see a list of built-in decoders check the
+related <a href="../decoders/">documentation</a>. </p>
+<h2 id="heads">Heads<a class="headerlink" href="#heads" title="Permanent link">#</a></h2>
+<p>Most decoders require a final head to be added for a specific task (e.g. semantic segmentation vs pixel wise regression).
+Those registries producing decoders that dont require a head must expose the attribute <code>includes_head=True</code> so that a head is not added.
+Decoders passed as <code>nn.Modules</code> which do not require a head must expose the same attribute themselves. More
+about heads can be seen in its <a href="../heads/">documentation</a>. </p>
+<h2 id="decoder-compatibilities">Decoder compatibilities<a class="headerlink" href="#decoder-compatibilities" title="Permanent link">#</a></h2>
+<p>Not all encoders and decoders are compatible. Below we include some caveats.
+Some decoders expect pyramidal outputs, but some encoders do not produce such outputs (e.g. vanilla ViT models).
+In this case, the <a class="autorefs autorefs-internal" href="../necks/#terratorch.models.necks.InterpolateToPyramidal">InterpolateToPyramidal</a>, <a class="autorefs autorefs-internal" href="../necks/#terratorch.models.necks.MaxpoolToPyramidal">MaxpoolToPyramidal</a> and <a class="autorefs autorefs-internal" href="../necks/#terratorch.models.necks.LearnedInterpolateToPyramidal">LearnedInterpolateToPyramidal</a> necks may be particularly useful.</p>
+<h3 id="smp-decoders">SMP decoders<a class="headerlink" href="#smp-decoders" title="Permanent link">#</a></h3>
+<p>Not all decoders are guaranteed to work with all encoders without additional necks.
+Please check smp documentation to understand the embedding spatial dimensions expected by each decoder.</p>
+<p>In particular, smp seems to assume the first feature in the passed feature list has the same spatial resolution
+as the input, which may not always be true, and may break some decoders.</p>
+<p>In addition, for some decoders, the final 2 features have the same spatial resolution.
+Adding the <a class="autorefs autorefs-internal" href="../necks/#terratorch.models.necks.AddBottleneckLayer">AddBottleneckLayer</a> neck will make this compatible.</p>
+<p>Some smp decoders require additional parameters, such as <code>decoder_channels</code>. These must be passed through the factory.
+In the case of <code>decoder_channels</code>, it would be passed as <code>decoder_decoder_channels</code> (the first <code>decoder_</code> routes the parameter to the decoder, where it is passed as <code>decoder_channels</code>).</p>
+<h3 id="mmsegmentation-decoders">MMSegmentation decoders<a class="headerlink" href="#mmsegmentation-decoders" title="Permanent link">#</a></h3>
+<p>MMSegmentation decoders are available through the BACKBONE_REGISTRY. </p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>MMSegmentation currently requires <code>mmcv==2.1.0</code>. Pre-built wheels for this only exist for <code>torch==2.1.0</code>.
+In order to use mmseg without building from source, you must downgrade your <code>torch</code> to this version.
+Install mmseg with:
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pip<span class="w"> </span>install<span class="w"> </span>-U<span class="w"> </span>openmim
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>mim<span class="w"> </span>install<span class="w"> </span>mmengine
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>mim<span class="w"> </span>install<span class="w"> </span><span class="nv">mmcv</span><span class="o">==</span><span class="m">2</span>.1.0
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>pip<span class="w"> </span>install<span class="w"> </span>regex<span class="w"> </span>ftfy<span class="w"> </span>mmsegmentation
+</span></code></pre></div></p>
+<p>We provide access to mmseg decoders as an external source of decoders, but are not directly responsible for the maintainence of that library.</p>
+</div>
+<p>Some mmseg decoders require the parameter <code>in_index</code>, which performs the same function as the <code>SelectIndices</code> neck.
+For use for pixel wise regression, mmseg decoders should take <code>num_classes=1</code>.</p>
+
+  <hr>
+<div class="md-source-file">
+  <small>
+    
+      Last update:
+      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="March 24, 2025 23:33:02">March 24, 2025</span>
+      
+    
+  </small>
+</div>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["content.code.copy", "content.code.select", "announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "navigation.footer", "navigation.instant", "navigation.path", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.tabs", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"canonical_version": "stable", "default": "latest", "provider": "mike", "version_selector": true}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.cd18aaf1.min.js"></script>
+      
+    
+  </body>
+</html>
