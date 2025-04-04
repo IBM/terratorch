@@ -12,7 +12,7 @@ trainer:
   logger:
     class_path: TensorBoardLogger
     init_args:
-      save_dir: ./logs/
+      save_dir: /home/xshadow/terratorch/logs/
       name: DOFA_mask-rcnn
   callbacks:
     # - class_path: RichProgressBar
@@ -30,11 +30,11 @@ trainer:
   check_val_every_n_epoch: 1
   log_every_n_steps: 50
   enable_checkpointing: true
-  default_root_dir: ./logs/
+  default_root_dir: /home/xshadow/terratorch/logs/
 data:
   class_path: terratorch.datamodules.mVHR10DataModule
   init_args:
-    root: ./data/VHR10/
+    root: /home/xshadow/terratorch/data/VHR10/
     batch_size: 4
     num_workers: 4
     pad: false
@@ -49,6 +49,7 @@ model:
       backbone: dofa_large_patch16_224  # One of resnet18, resnet34, resnet50, resnet101, resnet152, resnext50_32x4d, resnext101_32x8d, wide_resnet50_2, or wide_resnet101_2
       backbone_pretrained: true
       backbone_ckpt_data: https://hf.co/torchgeo/dofa/resolve/main/dofa_large_patch16_224-0ff904d3.pth
+      backbone_pos_interpolation_mode: bilinear
       num_classes: 12  # Number of classes including background
       backbone_img_size: 896
       framework_min_size: 896
@@ -58,9 +59,9 @@ model:
         - GREEN
         - BLUE
       backbone_out_indices:
-        - 5
-        - 11
-        - 17
+        - 3
+        - 9
+        - 15
         - 21
       necks:
         - name: ReshapeTokensToImage

@@ -53,7 +53,7 @@ def resize(input: torch.Tensor,
         input: Input tensor of shape [B, C, H, W]
         size: Target output size (H, W)
         scale_factor: Multiplier for spatial size
-        mode: Interpolation mode ('nearest', 'linear', 'bilinear', etc.)
+        mode: Interpolation mode ('bilinear', 'bicubic'.)
         align_corners: If True, aligns corners for non-nearest modes
         warning: If True, warns about potential alignment issues
     
@@ -86,8 +86,7 @@ def resize_pos_embed(pos_embed, input_shpae, pos_shape, mode):
         pos_shape (tuple): The resolution of downsampled origin training
             image.
         mode (str): Algorithm used for upsampling:
-            ``'nearest'`` | ``'linear'`` | ``'bilinear'`` | ``'bicubic'`` |
-            ``'trilinear'``. Default: ``'nearest'``
+            ``'bilinear'`` | ``'bicubic'`` . Default: ``'bilinear'``
     Return:
         torch.Tensor: The resized pos_embed of shape [B, L_new, C]
     """
@@ -166,36 +165,36 @@ def get_wavelenghts(model_bands: list[str]) -> list[float]:
     
 
 @TERRATORCH_BACKBONE_REGISTRY.register
-def dofa_small_patch16_224(model_bands, input_size = 224, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = None, out_indices: list | None = None, **kwargs):
+def dofa_small_patch16_224(model_bands, input_size = 224, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = None, out_indices: list | None = None, pos_interpolation_mode: str = 'bilinear', **kwargs):
     model = dofa.dofa_small_patch16_224(**kwargs)
     input_size = kwargs["img_size"] if "img_size" in kwargs else 224
     if pretrained:
-        model = load_dofa_weights(model, ckpt_data, weights, input_size)
+        model = load_dofa_weights(model, pos_interpolation_mode, ckpt_data, weights, input_size)
     wavelengths = get_wavelenghts(model_bands)
     
     return DOFAEncoderWrapper(model, wavelengths, weights, out_indices)
 
 @TERRATORCH_BACKBONE_REGISTRY.register
-def dofa_base_patch16_224(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = dofa.DOFABase16_Weights.DOFA_MAE, out_indices: list | None = None, **kwargs):
+def dofa_base_patch16_224(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = dofa.DOFABase16_Weights.DOFA_MAE, out_indices: list | None = None, pos_interpolation_mode: str = 'bilinear', **kwargs):
     model = dofa.dofa_base_patch16_224(**kwargs)
     input_size = kwargs["img_size"] if "img_size" in kwargs else 224
     if pretrained:
-        model = load_dofa_weights(model, ckpt_data, weights, input_size)
+        model = load_dofa_weights(model, pos_interpolation_mode, ckpt_data, weights, input_size)
     wavelengths = get_wavelenghts(model_bands)
     
     return DOFAEncoderWrapper(model, wavelengths, weights, out_indices)
 
 @TERRATORCH_BACKBONE_REGISTRY.register
-def dofa_large_patch16_224(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = dofa.DOFALarge16_Weights.DOFA_MAE, out_indices: list | None = None, **kwargs):
+def dofa_large_patch16_224(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = dofa.DOFALarge16_Weights.DOFA_MAE, out_indices: list | None = None, pos_interpolation_mode: str = 'bilinear', **kwargs):
     model = dofa.dofa_large_patch16_224(**kwargs)
     input_size = kwargs["img_size"] if "img_size" in kwargs else 224
     if pretrained:
-        model = load_dofa_weights(model, ckpt_data, weights, input_size)
+        model = load_dofa_weights(model, pos_interpolation_mode, ckpt_data, weights, input_size)
     wavelengths = get_wavelenghts(model_bands)
     
     return DOFAEncoderWrapper(model, wavelengths, weights, out_indices)
 
-def load_dofa_weights(model: nn.Module, ckpt_data: str | None = None,  weights: Weights | None = None, input_size = 224, patch_size = 16) -> nn.Module:
+def load_dofa_weights(model: nn.Module, mode: str, ckpt_data: str | None = None,  weights: Weights | None = None, input_size: int = 224, patch_size: int = 16) -> nn.Module:
     state_dict = model.state_dict()
     print("Loading weights")
     if ckpt_data is not None:
@@ -220,7 +219,7 @@ def load_dofa_weights(model: nn.Module, ckpt_data: str | None = None,  weights: 
                 logging.info("Resizing pos_embed from pretrained checkpoint")
                 h, w = input_size, input_size
                 pos_size = int(math.sqrt(checkpoint_model['pos_embed'].shape[1] - 1))
-                checkpoint_model["pos_embed"] = resize_pos_embed(pos_embed=checkpoint_model['pos_embed'],input_shpae=(h // patch_size, w // patch_size), pos_shape=(pos_size, pos_size), mode="bilinear")
+                checkpoint_model["pos_embed"] = resize_pos_embed(pos_embed=checkpoint_model['pos_embed'],input_shpae=(h // patch_size, w // patch_size), pos_shape=(pos_size, pos_size), mode=mode)
     
         msg = model.load_state_dict(checkpoint_model, strict=False)
     
