@@ -151,7 +151,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         self.plot_on_val = int(plot_on_val)
         self.output_on_inference = output_on_inference
 
-        # When the use decides to use `output_most_probable` as `False` in
+        # When the user decides to use `output_most_probable` as `False` in
         # order to output the probabilities instead of the prediction.
         if not output_most_probable:
             warnings.warn("The argument `output_most_probable` is deprecated and will be replaced with `output_on_inference='probabilities'`.", stacklevel=1)
@@ -161,11 +161,13 @@ class SemanticSegmentationTask(TerraTorchTask):
         self.output_prediction = lambda y: (y.argmax(dim=1), "pred")
         self.output_probabilities = lambda y: (y, "logits")
 
+        # The possible methods to define outputs.
         self.operation_map = {
                               "prediction": self.output_prediction, 
                               "probabilities": self.output_probabilities
                               }
 
+        # `output_on_inference` can be a list or a string.
         if isinstance(output_on_inference, list):
             list_of_selectors = ()
             for var in output_on_inference:
@@ -181,6 +183,9 @@ class SemanticSegmentationTask(TerraTorchTask):
                                                    list_of_selectors]
         elif isinstance(output_on_inference, str):
             self.select_classes = self.operation_map[output_on_inference]
+
+        else:
+            raise ValueError("The value {output_on_inference} isn't supported for `output_on_inference`.")
 
     def configure_losses(self) -> None:
         """Initialize the loss criterion.
