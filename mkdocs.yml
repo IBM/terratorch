@@ -61,6 +61,8 @@ plugins:
 extra:
   version:
     provider: mike
+    default: latest
+
 site_url: https://ibm.github.io/terratorch/
 repo_url: https://github.com/IBM/terratorch
 nav:
