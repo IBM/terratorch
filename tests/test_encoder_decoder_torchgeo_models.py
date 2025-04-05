@@ -1,5 +1,5 @@
 # Copyright contributors to the Terratorch project
-
+import gc
 import importlib
 
 import pytest
@@ -59,6 +59,8 @@ def test_create_classification_model_resnet(backbone, model_factory: EncoderDeco
     with torch.no_grad():
         assert model(model_input).output.shape == EXPECTED_CLASSIFICATION_OUTPUT_SHAPE
 
+    gc.collect()
+
 backbones = ["ssl4eos12_resnet50_sentinel2_all_decur"]
 pretrained = [True]
 @pytest.mark.parametrize("backbone", backbones)
@@ -76,6 +78,8 @@ def test_create_classification_model_resnet_pretrained(backbone, model_factory: 
 
     with torch.no_grad():
         assert model(model_input).output.shape == EXPECTED_CLASSIFICATION_OUTPUT_SHAPE
+
+    gc.collect()
 
 backbones = ["dofa_large_patch16_224"]
 @pytest.mark.parametrize("backbone", backbones)
@@ -95,6 +99,8 @@ def test_create_classification_model_dofa(backbone, model_factory: EncoderDecode
     with torch.no_grad():
         assert model(model_input).output.shape == EXPECTED_CLASSIFICATION_OUTPUT_SHAPE
 
+    gc.collect()
+
 backbones = ["satlas_swin_b_sentinel2_si_ms"]
 @pytest.mark.parametrize("backbone", backbones)
 @pytest.mark.parametrize("backbone_pretrained", pretrained)
@@ -112,6 +118,8 @@ def test_create_classification_model_swin(backbone, model_factory: EncoderDecode
 
     with torch.no_grad():
         assert model(model_input).output.shape == EXPECTED_CLASSIFICATION_OUTPUT_SHAPE
+
+    gc.collect()
 
 @pytest.mark.parametrize("backbone", ["ssl4eos12_resnet50_sentinel2_all_decur"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
@@ -140,7 +148,7 @@ def test_create_pixelwise_model_resnet(backbone, task, expected, decoder, model_
     with torch.no_grad():
         assert model(model_input).output.shape == expected
 
-
+    gc.collect()
 
 @pytest.mark.parametrize("backbone", ["dofa_large_patch16_224"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
@@ -167,6 +175,7 @@ def test_create_pixelwise_model_dofa(backbone, task, expected, decoder, model_fa
     with torch.no_grad():
         assert model(model_input).output.shape == expected
 
+    gc.collect()
 
 @pytest.mark.parametrize("backbone", ["satlas_swin_b_sentinel2_si_ms"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
@@ -193,4 +202,4 @@ def test_create_pixelwise_model_swin(backbone, task, expected, decoder, model_fa
     with torch.no_grad():
         assert model(model_input).output.shape == expected
 
-
+    gc.collect()
