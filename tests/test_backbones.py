@@ -112,6 +112,7 @@ def test_vit_models_different_patch_tubelet_sizes(model_name, patch_size, patch_
         {backbone.embed_dim} = {expected_t * backbone.embed_dim} but was {e.shape[1]}"
 
     gc.collect()
+
 @pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
 def test_out_indices(model_name, input_224):
     out_indices = (2, 4, 8, 10)
