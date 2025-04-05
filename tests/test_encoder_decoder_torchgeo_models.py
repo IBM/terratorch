@@ -11,7 +11,7 @@ from terratorch.models.model import AuxiliaryHead
 from terratorch.models.backbones import torchgeo_resnet as torchgeo_resnet
 
 NUM_CHANNELS = 6
-NUM_CLASSES = 10
+NUM_CLASSES = 2  #10
 EXPECTED_SEGMENTATION_OUTPUT_SHAPE = (1, NUM_CLASSES, 224, 224)
 EXPECTED_REGRESSION_OUTPUT_SHAPE = (1, 224, 224)
 EXPECTED_CLASSIFICATION_OUTPUT_SHAPE = (1, NUM_CLASSES)
