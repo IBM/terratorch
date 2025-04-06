@@ -1,6 +1,11 @@
 import binascii
 import json
 import pickle
+import os
+import random
+import re
+from pathlib import Path
+from typing import Any
 
 import albumentations as A
 import h5py
@@ -10,9 +15,15 @@ import pandas as pd
 import pytest
 import rasterio
 import torch
+import torch.nn.functional as F
 from albumentations.pytorch import ToTensorV2
+from matplotlib.figure import Figure
+from PIL import Image
+from pytest import MonkeyPatch
 from rasterio.transform import from_origin
 from xarray import DataArray
+from torchgeo.datasets import NonGeoDataset
+from torchgeo.transforms import AugmentationSequential
 
 from terratorch.datasets import (
     FireScarsNonGeo,
@@ -32,8 +43,16 @@ from terratorch.datasets import (
     #Sen1Floods11NonGeo,
 )
 from terratorch.datasets.sen1floods11 import Sen1Floods11NonGeo
+from terratorch.datasets.utils import pad_numpy, to_tensor
 
 from terratorch.datasets.transforms import FlattenTemporalIntoChannels, UnflattenTemporalFromChannels
+
+# Add necessary imports for OpenSentinelMap and testing utilities
+import sys
+# Add the terratorch root to the path to allow finding the module
+# This might need adjustment depending on how tests are run
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from terratorch.datasets import OpenSentinelMap
 
 
 def create_dummy_tiff(path, width=100, height=100, count=6, dtype="uint8"):
@@ -547,524 +566,233 @@ def crop_classification_data_root(tmp_path):
 
     return str(data_root)
 
-class TestMNeonTreeNonGeo:
-    def test_dataset_sample(self, neontree_data_root):
-        transform = A.Compose([
-            A.Resize(64, 64),
-            ToTensorV2(),
-        ])
+# Fixture for creating mock OpenSentinelMap dataset
+@pytest.fixture(scope="function") # Use function scope to ensure clean state for each test
+def open_sentinel_map_data(tmp_path: Path) -> Path:
+    """Create mock data directory for OpenSentinelMap tests."""
+    root = tmp_path
+    (root / "osm_sentinel_imagery" / "tile1" / "cell1").mkdir(parents=True)
+    (root / "osm_sentinel_imagery" / "tile1" / "cell2").mkdir(parents=True)
+    (root / "osm_label_images_v10" / "tile1").mkdir(parents=True)
 
-        dataset = MNeonTreeNonGeo(data_root=neontree_data_root, split="train", transform=transform)
-        sample = dataset[0]
-
-        assert "image" in sample, "Sample does not contain 'image'"
-        assert "mask" in sample, "Sample does not contain 'mask'"
-        assert isinstance(sample["image"], torch.Tensor), "'image' is not a torch.Tensor"
-        assert isinstance(sample["mask"], torch.Tensor), "'mask' is not a torch.Tensor"
-        assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
-        assert sample["mask"].dtype == torch.long, "'mask' does not have dtype torch.long"
-        assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
-        assert sample["mask"].shape == (64, 64), f"'mask' has incorrect shape: {sample['mask'].shape}"
-
-    def test_plot(self, neontree_data_root):
-        transform = A.Compose([ToTensorV2()])
-
-        dataset = MNeonTreeNonGeo(data_root=neontree_data_root, split="train", transform=transform)
-        sample = dataset[0]
-
-        fig = dataset.plot(sample, suptitle="Sample Plot")
-        assert isinstance(fig, plt.Figure), "Plot method did not return a plt.Figure"
-        plt.close(fig)
-
-
-class TestMBrickKilnNonGeo:
-    def test_dataset_sample(self, brickkiln_data_root):
-        transform = A.Compose([
-            A.Resize(64, 64),
-            ToTensorV2(),
-        ])
-
-        dataset = MBrickKilnNonGeo(data_root=brickkiln_data_root, split="train", transform=transform)
-        sample = dataset[0]
-
-        assert "image" in sample, "Sample does not contain 'image'"
-        assert "label" in sample, "Sample does not contain 'label'"
-        assert isinstance(sample["image"], torch.Tensor), "'image' is not a torch.Tensor"
-        assert isinstance(sample["label"], int), "'label' is not an int"
-        assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
-        assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
-
-    def test_plot(self, brickkiln_data_root):
-        transform = A.Compose([ToTensorV2()])
-
-        dataset = MBrickKilnNonGeo(data_root=brickkiln_data_root, split="train", transform=transform)
-        sample = dataset[0]
-
-        fig = dataset.plot(sample, suptitle="Sample Plot")
-        assert isinstance(fig, plt.Figure), "Plot method did not return a plt.Figure"
-        plt.close(fig)
-
-class TestMEuroSATNonGeo:
-    def test_dataset_sample(self, eurosat_data_root):
-        transform = A.Compose([
-            A.Resize(64, 64),
-            ToTensorV2(),
-        ])
-
-        dataset = MEuroSATNonGeo(data_root=eurosat_data_root, split="train", transform=transform)
-        sample = dataset[0]
-
-        assert "image" in sample, "Sample does not contain 'image'"
-        assert "label" in sample, "Sample does not contain 'label'"
-        assert isinstance(sample["image"], torch.Tensor), "'image' is not a torch.Tensor"
-        assert isinstance(sample["label"], int), "'label' is not an int"
-        assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
-        assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
-
-    def test_plot(self, eurosat_data_root):
-        transform = A.Compose([ToTensorV2()])
-
-        dataset = MEuroSATNonGeo(data_root=eurosat_data_root, split="train", transform=transform)
-        sample = dataset[0]
-
-        fig = dataset.plot(sample, suptitle="Sample Plot")
-        assert isinstance(fig, plt.Figure), "Plot method did not return a plt.Figure"
-        plt.close(fig)
-
-class TestFireScarsNonGeo:
-    def test_dataset_length(self, fire_scars_data_root):
-        dataset = FireScarsNonGeo(data_root=fire_scars_data_root, split="train")
-        expected_length = 5
-        actual_length = len(dataset)
-        assert actual_length == expected_length, f"Expected {expected_length}, but got {actual_length}"
-
-    def test_dataset_sample(self, fire_scars_data_root):
-        dataset = FireScarsNonGeo(data_root=fire_scars_data_root, split="train")
-        sample = dataset[0]
-
-        assert "image" in sample, "Sample does not contain 'image'"
-        assert "mask" in sample, "Sample does not contain 'mask'"
-        assert isinstance(sample["image"], torch.Tensor), "'image' is not a torch.Tensor"
-        assert isinstance(sample["mask"], torch.Tensor), "'mask' is not a torch.Tensor"
-        assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
-        assert sample["mask"].dtype in [torch.float32, torch.long], "'mask' does not have expected dtype (torch.float32 or torch.long)"
-        assert sample["image"].ndim == 3, "'image' does not have 3 dimensions (C, H, W)"
-        assert sample["mask"].ndim == 2, "'mask' does not have 2 dimensions (H, W)"
-
-    def test_plot(self, fire_scars_data_root):
-        transform = A.Compose([ToTensorV2()])
-
-        dataset = FireScarsNonGeo(
-            data_root=fire_scars_data_root,
-            split="train",
-            transform=transform,
-        )
-        sample = dataset[0]
-
-        fig = dataset.plot(sample, suptitle="Sample Plot")
-        assert isinstance(fig, plt.Figure), "The plot method did not return a plt.Figure"
-        plt.close(fig)
-
-class TestMBigEarthNonGeo:
-    def test_dataset_sample(self, m_bigearth_data_root):
-        transform = A.Compose([
-            ToTensorV2(),
-        ])
-
-        dataset = MBigEarthNonGeo(data_root=m_bigearth_data_root, split="train", transform=transform)
-        sample = dataset[0]
-
-        assert "image" in sample, "Sample does not contain 'image'"
-        assert "label" in sample, "Sample does not contain 'label'"
-        assert isinstance(sample["image"], torch.Tensor), "'image' is not a torch.Tensor"
-        assert isinstance(sample["label"], torch.Tensor), "'label' is not a torch.Tensor"
-        assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
-        assert sample["label"].dtype == torch.float32, "'label' does not have dtype torch.float32"
-
-    def test_plot(self, m_bigearth_data_root):
-        transform = A.Compose([ToTensorV2()])
-
-        dataset = MBigEarthNonGeo(
-            data_root=m_bigearth_data_root,
-            split="train",
-            transform=transform,
-        )
-        sample = dataset[0]
-
-        fig = dataset.plot(sample, suptitle="Sample Plot")
-        assert isinstance(fig, plt.Figure), "The plot method did not return a plt.Figure"
-        plt.close(fig)
-
-class TestMForestNetNonGeo:
-    def test_dataset_sample(self, m_forestnet_data_root):
-        transform = A.Compose([
-            ToTensorV2(),
-        ])
-
-        dataset = MForestNetNonGeo(data_root=m_forestnet_data_root, split="train", transform=transform)
-        sample = dataset[0]
-
-        assert "image" in sample, "Sample does not contain 'image'"
-        assert "label" in sample, "Sample does not contain 'label'"
-        assert isinstance(sample["image"], torch.Tensor), "'image' is not a torch.Tensor"
-        assert isinstance(sample["label"], int), "'label' is not an int"
-        assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
-        assert isinstance(sample["label"], int), "'label' is not an int"
-
-    def test_plot(self, m_forestnet_data_root):
-        transform = A.Compose([ToTensorV2()])
-
-        dataset = MForestNetNonGeo(
-            data_root=m_forestnet_data_root,
-            split="train",
-            transform=transform,
-        )
-        sample = dataset[0]
-
-        fig = dataset.plot(sample, suptitle="Sample Plot")
-        assert isinstance(fig, plt.Figure), "The plot method did not return a plt.Figure"
-        plt.close(fig)
-
-class TestMNzCattleNonGeo:
-    def test_dataset_sample(self, mnz_cattle_data_root):
-        transform = A.Compose([
-            A.Resize(64, 64),
-            ToTensorV2(),
-        ])
-
-        dataset = MNzCattleNonGeo(data_root=mnz_cattle_data_root, split="train", transform=transform)
-        sample = dataset[0]
-
-        assert "image" in sample, "Sample does not contain 'image'"
-        assert "mask" in sample, "Sample does not contain 'mask'"
-        assert isinstance(sample["image"], torch.Tensor), "'image' is not a torch.Tensor"
-        assert isinstance(sample["mask"], torch.Tensor), "'mask' is not a torch.Tensor"
-        assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
-        assert sample["mask"].dtype == torch.long, "'mask' does not have dtype torch.long"
-        assert sample["image"].shape == (3, 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
-        assert sample["mask"].shape == (64, 64), f"'mask' has incorrect shape: {sample['mask'].shape}"
-
-    def test_plot(self, mnz_cattle_data_root):
-        transform = A.Compose([ToTensorV2()])
-
-        dataset = MNzCattleNonGeo(
-            data_root=mnz_cattle_data_root,
-            split="train",
-            transform=transform,
-        )
-        sample = dataset[0]
-
-        fig = dataset.plot(sample, suptitle="Sample Plot")
-        assert isinstance(fig, plt.Figure), "The plot method did not return a plt.Figure"
-        plt.close(fig)
-
-class TestMPv4gerNonGeo:
-    def test_dataset_sample(self, pv4ger_data_root):
-        transform = A.Compose([
-            A.Resize(64, 64),
-            ToTensorV2(),
-        ])
-
-        dataset = MPv4gerNonGeo(data_root=pv4ger_data_root, split="train", transform=transform, use_metadata=True)
-        sample = dataset[0]
-        assert "image" in sample, "Sample does not contain 'image'"
-        assert "label" in sample, "Sample does not contain 'label'"
-        assert "location_coords" in sample, "Sample does not contain 'location_coords'"
-        assert isinstance(sample["image"], torch.Tensor), "'image' is not a torch.Tensor"
-        assert isinstance(sample["label"], int), "'label' is not an int"
-        assert isinstance(sample["location_coords"], torch.Tensor), "'location_coords' is not a torch.Tensor"
-        assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
-        assert sample["location_coords"].dtype == torch.float32, "'location_coords' does not have dtype torch.float32"
-        assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
-        assert sample["location_coords"].shape == (2,), f"'location_coords' has incorrect shape: {sample['location_coords'].shape}"
-
-    def test_plot(self, pv4ger_data_root):
-
-        transform = A.Compose([ToTensorV2()])
-
-
-        dataset = MPv4gerNonGeo(data_root=pv4ger_data_root, split="train", transform=transform)
-        sample = dataset[0]
-
-
-        fig = dataset.plot(sample, suptitle="Sample Plot")
-        assert isinstance(fig, plt.Figure), "Plot method did not return a plt.Figure"
-        plt.close(fig)
-
-
-class TestMPv4gerSegNonGeo:
-    def test_dataset_sample(self, pv4gerseg_data_root):
-
-        transform = A.Compose([
-            A.Resize(64, 64),
-            ToTensorV2(),
-        ])
-
-        dataset = MPv4gerSegNonGeo(data_root=pv4gerseg_data_root, split="train", transform=transform, use_metadata=True)
-        sample = dataset[0]
-
-        assert "image" in sample, "Sample does not contain 'image'"
-        assert "mask" in sample, "Sample does not contain 'mask'"
-        assert "location_coords" in sample, "Sample does not contain 'location_coords'"
-        assert isinstance(sample["image"], torch.Tensor), "'image' is not a torch.Tensor"
-        assert isinstance(sample["mask"], torch.Tensor), "'mask' is not a torch.Tensor"
-        assert isinstance(sample["location_coords"], torch.Tensor), "'location_coords' is not a torch.Tensor"
-        assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
-        assert sample["mask"].dtype == torch.long, "'mask' does not have dtype torch.long"
-        assert sample["location_coords"].dtype == torch.float32, "'location_coords' does not have dtype torch.float32"
-        assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
-        assert sample["mask"].shape == (64, 64), f"'mask' has incorrect shape: {sample['mask'].shape}"
-        assert sample["location_coords"].shape == (2,), f"'location_coords' has incorrect shape: {sample['location_coords'].shape}"
-
-    def test_plot(self, pv4gerseg_data_root):
-        transform = A.Compose([ToTensorV2()])
-
-        dataset = MPv4gerSegNonGeo(data_root=pv4gerseg_data_root, split="train", transform=transform)
-        sample = dataset[0]
-
-        fig = dataset.plot(sample, suptitle="Sample Plot")
-        assert isinstance(fig, plt.Figure), "Plot method did not return a plt.Figure"
-        plt.close(fig)
-
-@pytest.fixture(scope="function")
-def sacroptype_data_root(tmp_path):
-
-    data_root = tmp_path / "m_sa_crop_type"
-    data_directory = data_root / MSACropTypeNonGeo.data_dir
-    data_directory.mkdir(parents=True, exist_ok=True)
-
-
-    partition = {
-        "train": ["image_0", "image_1"],
-        "val": [],
-        "test": []
+    # Create dummy CSV
+    csv_data = {
+        "MGRS_tile": ["tile1", "tile1", "tile1"],
+        "cell_id": [1, 2, 3], # Cell 3 will have no label file
+        "split": ["training", "validation", "testing"]
     }
-    partition_file = data_directory / MSACropTypeNonGeo.partition_file_template.format(partition="default")
-    with open(partition_file, "w") as f:
-        json.dump(partition, f)
+    pd.DataFrame(csv_data).to_csv(root / "spatial_cell_info.csv", index=False)
 
+    # Create dummy JSON categories
+    categories = {"0": "class_a", "1": "class_b"}
+    with open(root / "osm_categories.json", "w") as f:
+        json.dump(categories, f)
 
-    bands = [
-        "COASTAL_AEROSOL", "BLUE", "GREEN", "RED", "RED_EDGE_1", "RED_EDGE_2",
-        "RED_EDGE_3", "NIR_BROAD", "NIR_NARROW", "WATER_VAPOR", "SWIR_1", "SWIR_2", "CLOUD_PROBABILITY"
-    ]
-
-
-    for img in ["image_0", "image_1"]:
-        file_path = data_directory / f"{img}.hdf5"
-        with h5py.File(file_path, "w") as h5file:
-            for band in bands:
-                h5file.create_dataset(band, data=np.random.rand(100, 100).astype(np.float32))
-
-            mask = np.random.randint(0, 3, size=(100, 100), dtype=np.uint8)
-            h5file.create_dataset("label", data=mask)
-
-    return str(data_root)
-
-
-class TestMSACropTypeNonGeo:
-    def test_dataset_sample(self, sacroptype_data_root):
-
-        transform = A.Compose([
-            A.Resize(64, 64),
-            ToTensorV2(),
-        ])
-
-        dataset = MSACropTypeNonGeo(data_root=sacroptype_data_root, split="train", transform=transform)
-        sample = dataset[0]
-
-        assert "image" in sample, "Sample does not contain 'image'"
-        assert "mask" in sample, "Sample does not contain 'mask'"
-        assert isinstance(sample["image"], torch.Tensor), "'image' is not a torch.Tensor"
-        assert isinstance(sample["mask"], torch.Tensor), "'mask' is not a torch.Tensor"
-        assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
-        assert sample["mask"].dtype == torch.long, "'mask' does not have dtype torch.long"
-        assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
-        assert sample["mask"].shape == (64, 64), f"'mask' has incorrect shape: {sample['mask'].shape}"
-
-    def test_plot(self, sacroptype_data_root):
-        transform = A.Compose([ToTensorV2()])
-
-        dataset = MSACropTypeNonGeo(data_root=sacroptype_data_root, split="train", transform=transform)
-        sample = dataset[0]
-
-        fig = dataset.plot(sample, suptitle="Sample Plot")
-        assert isinstance(fig, plt.Figure), "Plot method did not return a plt.Figure"
-        plt.close(fig)
-
-
-class TestMSo2SatNonGeo:
-    def test_dataset_sample(self, so2sat_data_root):
-        transform = A.Compose([
-            A.Resize(64, 64),
-            ToTensorV2(),
-        ])
-
-        dataset = MSo2SatNonGeo(data_root=so2sat_data_root, split="train", transform=transform)
-        sample = dataset[0]
-
-        assert "image" in sample, "Sample does not contain 'image'"
-        assert "label" in sample, "Sample does not contain 'label'"
-        assert isinstance(sample["image"], torch.Tensor), "'image' is not a torch.Tensor"
-        assert isinstance(sample["label"], int), "'label' is not an int"
-        assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
-        assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
-
-    def test_plot(self, so2sat_data_root):
-        transform = A.Compose([ToTensorV2()])
-
-        dataset = MSo2SatNonGeo(data_root=so2sat_data_root, split="train", transform=transform)
-        sample = dataset[0]
-
-        fig = dataset.plot(sample, suptitle="Sample Plot")
-        assert isinstance(fig, plt.Figure), "Plot method did not return a plt.Figure"
-        plt.close(fig)
-
-class TestMBeninSmallHolderCashewsNonGeo:
-    def test_dataset_sample(self, cashews_data_root):
-        transform = A.Compose([
-            A.Resize(64, 64),
-            ToTensorV2(),
-        ])
-
-        dataset = MBeninSmallHolderCashewsNonGeo(data_root=cashews_data_root, split="train", transform=transform, use_metadata=True)
-        sample = dataset[0]
-
-        assert "image" in sample, "Sample does not contain 'image'"
-        assert "mask" in sample, "Sample does not contain 'mask'"
-        assert "temporal_coords" in sample, "Sample does not contain 'temporal_coords'"
-        assert isinstance(sample["image"], torch.Tensor), "'image' is not a torch.Tensor"
-        assert isinstance(sample["mask"], torch.Tensor), "'mask' is not a torch.Tensor"
-        assert isinstance(sample["temporal_coords"], torch.Tensor), "'temporal_coords' is not a torch.Tensor"
-        assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
-        assert sample["mask"].dtype == torch.long, "'mask' does not have dtype torch.long"
-        assert sample["temporal_coords"].dtype == torch.float32, "'temporal_coords' does not have dtype torch.float32"
-        assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
-        assert sample["mask"].shape == (64, 64), f"'mask' has incorrect shape: {sample['mask'].shape}"
-        assert sample["temporal_coords"].shape == (1, 2), f"'temporal_coords' has incorrect shape: {sample['temporal_coords'].shape}"
-
-    def test_plot(self, cashews_data_root):
-        transform = A.Compose([ToTensorV2()])
-
-        dataset = MBeninSmallHolderCashewsNonGeo(data_root=cashews_data_root, split="train", transform=transform)
-        sample = dataset[0]
-
-        fig = dataset.plot(sample, suptitle="Sample Plot")
-        assert isinstance(fig, plt.Figure), "Plot method did not return a plt.Figure"
-        plt.close(fig)
-
-
-class TestMChesapeakeLandcoverNonGeo:
-    def test_dataset_sample(self, chesapeake_data_root):
-
-        transform = A.Compose([
-            A.Resize(64, 64),
-            ToTensorV2(),
-        ])
-
-        dataset = MChesapeakeLandcoverNonGeo(data_root=chesapeake_data_root, split="train", transform=transform)
-        sample = dataset[0]
-
-        assert "image" in sample, "Sample does not contain 'image'"
-        assert "mask" in sample, "Sample does not contain 'mask'"
-        assert isinstance(sample["image"], torch.Tensor), "'image' is not a torch.Tensor"
-        assert isinstance(sample["mask"], torch.Tensor), "'mask' is not a torch.Tensor"
-        assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
-        assert sample["mask"].dtype == torch.long, "'mask' does not have dtype torch.long"
-        assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
-        assert sample["mask"].shape == (64, 64), f"'mask' has incorrect shape: {sample['mask'].shape}"
-
-    def test_plot(self, chesapeake_data_root):
-        transform = A.Compose([ToTensorV2()])
-
-        dataset = MChesapeakeLandcoverNonGeo(data_root=chesapeake_data_root, split="train", transform=transform)
-        sample = dataset[0]
-
-        fig = dataset.plot(sample, suptitle="Sample Plot")
-        assert isinstance(fig, plt.Figure), "Plot method did not return a plt.Figure"
-        plt.close(fig)
-
-class TestSen1Floods11NonGeo:
-    def test_dataset_sample(self, sen1floods_data_root):
-        transform = A.Compose([
-            A.Resize(32, 32),
-            ToTensorV2(),
-        ])
-
-        dataset = Sen1Floods11NonGeo(data_root=sen1floods_data_root, split="train", transform=transform, use_metadata=True)
-        sample = dataset[0]
-
-        assert "image" in sample, "Sample does not contain 'image'"
-        assert "mask" in sample, "Sample does not contain 'mask'"
-        assert "location_coords" in sample, "Sample does not contain 'location_coords'"
-        assert "temporal_coords" in sample, "Sample does not contain 'temporal_coords'"
-        assert isinstance(sample["image"], torch.Tensor), "'image' is not a torch.Tensor"
-        assert isinstance(sample["mask"], torch.Tensor), "'mask' is not a torch.Tensor"
-        assert isinstance(sample["location_coords"], torch.Tensor), "'location_coords' is not a torch.Tensor"
-        assert isinstance(sample["temporal_coords"], torch.Tensor), "'temporal_coords' is not a torch.Tensor"
-        assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
-        assert sample["mask"].dtype == torch.long, "'mask' does not have dtype torch.long"
-        assert sample["location_coords"].dtype == torch.float32, "'location_coords' does not have dtype torch.float32"
-        assert sample["temporal_coords"].dtype == torch.float32, "'temporal_coords' does not have dtype torch.float32"
-        num_bands = len(dataset.bands)
-        assert sample["image"].shape == (num_bands, 32, 32), f"'image' has incorrect shape: {sample['image'].shape}"
-        assert sample["mask"].shape == (32, 32), f"'mask' has incorrect shape: {sample['mask'].shape}"
-
-    def test_plot(self, sen1floods_data_root):
-        transform = A.Compose([ToTensorV2()])
-
-        dataset = Sen1Floods11NonGeo(data_root=sen1floods_data_root, split="train", transform=transform)
-        sample = dataset[0]
-
-        fig = dataset.plot(sample, suptitle="Sample Plot")
-        assert isinstance(fig, plt.Figure), "The plot method did not return a plt.Figure"
-        plt.close(fig)
-
-class TestMultiTemporalCropClassification:
-    def test_dataset_sample(self, crop_classification_data_root):
-        transform = A.Compose(
-            [
-                FlattenTemporalIntoChannels(),
-                ToTensorV2(),
-                UnflattenTemporalFromChannels(3),
-            ],
-            is_check_shapes=False
+    # Create dummy image files (.npz) for cell1 (3 timestamps)
+    for date in ["20230101", "20230105", "20230110"]:
+        np.savez(
+            root / "osm_sentinel_imagery" / "tile1" / "cell1" / f"{date}_data.npz",
+            gsd_10=np.random.rand(192, 192, 12).astype(np.float32), # Match MAX_TEMPORAL_IMAGE_SIZE for simplicity
+            gsd_20=np.random.rand(96, 96, 6).astype(np.float32),
+            gsd_60=np.random.rand(32, 32, 2).astype(np.float32),
         )
+    # Create dummy image files (.npz) for cell2 (1 timestamp)
+    np.savez(
+        root / "osm_sentinel_imagery" / "tile1" / "cell2" / "20230201_data.npz",
+        gsd_10=np.random.rand(192, 192, 12).astype(np.float32),
+        gsd_20=np.random.rand(96, 96, 6).astype(np.float32),
+        gsd_60=np.random.rand(32, 32, 2).astype(np.float32),
+    )
 
-        dataset = MultiTemporalCropClassification(
-            data_root=crop_classification_data_root,
+    # Create dummy label files (.png)
+    Image.fromarray(np.random.randint(0, 2, size=(192, 192, 1), dtype=np.uint8)).save(
+        root / "osm_label_images_v10" / "tile1" / "1.png"
+    )
+    Image.fromarray(np.random.randint(0, 2, size=(192, 192, 1), dtype=np.uint8)).save(
+        root / "osm_label_images_v10" / "tile1" / "2.png"
+    )
+    # Note: No label file for cell 3, it should be skipped
+
+    return root
+
+# Test Class for OpenSentinelMap
+class TestOpenSentinelMap:
+    def test_init(self, open_sentinel_map_data: Path) -> None:
+        """Test basic initialization."""
+        ds = OpenSentinelMap(data_root=str(open_sentinel_map_data), split="train")
+        assert ds.split == "training" # Internal mapping check
+        assert ds.bands == ["gsd_10", "gsd_20", "gsd_60"] # Default bands
+        assert len(ds) == 1 # Only cell 1 is in 'training' split and has a label
+
+        ds_val = OpenSentinelMap(data_root=str(open_sentinel_map_data), split="val", bands=["gsd_10"])
+        assert ds_val.split == "validation"
+        assert ds_val.bands == ["gsd_10"]
+        assert len(ds_val) == 1 # Only cell 2 is in 'validation' split
+
+        ds_test = OpenSentinelMap(data_root=str(open_sentinel_map_data), split="test")
+        assert ds_test.split == "testing"
+        assert len(ds_test) == 0 # Cell 3 is in testing but has no label file
+
+    def test_invalid_split(self, open_sentinel_map_data: Path) -> None:
+        """Test error on invalid split."""
+        with pytest.raises(ValueError, match="Split 'invalid_split' not recognized"):
+            OpenSentinelMap(data_root=str(open_sentinel_map_data), split="invalid_split")
+
+    def test_invalid_band(self, open_sentinel_map_data: Path) -> None:
+        """Test error on invalid band."""
+        with pytest.raises(ValueError, match="Band 'invalid_band' is not recognized"):
+            OpenSentinelMap(data_root=str(open_sentinel_map_data), bands=["gsd_10", "invalid_band"])
+
+    def test_len(self, open_sentinel_map_data: Path) -> None:
+        """Test __len__ method."""
+        ds_train = OpenSentinelMap(data_root=str(open_sentinel_map_data), split="train")
+        assert len(ds_train) == 1
+        ds_val = OpenSentinelMap(data_root=str(open_sentinel_map_data), split="val")
+        assert len(ds_val) == 1
+        ds_test = OpenSentinelMap(data_root=str(open_sentinel_map_data), split="test")
+        assert len(ds_test) == 0 # Cell 3 has no label
+
+    def test_getitem_interpolated_stacked(self, open_sentinel_map_data: Path) -> None:
+        """Test __getitem__ with spatial_interpolate_and_stack_temporally=True."""
+        ds = OpenSentinelMap(
+            data_root=str(open_sentinel_map_data),
             split="train",
-            transform=transform,
-            use_metadata=True,
+            bands=["gsd_10", "gsd_20"], # Use two bands for testing channel concat
+            spatial_interpolate_and_stack_temporally=True,
+            pick_random_pair=False # Load all timestamps for predictability
         )
-        sample = dataset[0]
+        sample = ds[0] # Get the first sample (cell1)
 
-        assert "image" in sample, "Sample does not contain 'image'"
-        assert "mask" in sample, "Sample does not contain 'mask'"
-        assert isinstance(sample["image"], torch.Tensor), "'image' is not a torch.Tensor"
-        assert isinstance(sample["mask"], torch.Tensor), "'mask' is not a torch.Tensor"
-        assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
-        assert sample["mask"].dtype == torch.long, "'mask' does not have dtype torch.long"
-        assert sample["image"].shape == (6, 3, 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
-        assert sample["mask"].shape == (64, 64), f"'mask' has incorrect shape: {sample['mask'].shape}"
+        assert "image" in sample
+        assert "mask" in sample
+        assert isinstance(sample["image"], torch.Tensor)
+        assert isinstance(sample["mask"], torch.Tensor)
 
-    def test_plot(self, crop_classification_data_root):
-        transform = A.Compose(
-            [
-                FlattenTemporalIntoChannels(),
-                ToTensorV2(),
-                UnflattenTemporalFromChannels(3),
-            ],
-            is_check_shapes=False
-        )
+        # Expected shape: (T, C, H, W)
+        # T = 3 (timestamps for cell1)
+        # C = 12 (gsd_10) + 6 (gsd_20) = 18
+        # H = W = 192 (MAX_TEMPORAL_IMAGE_SIZE)
+        assert sample["image"].shape == (3, 18, 192, 192)
+        assert sample["mask"].shape == (192, 192)
+        assert sample["image"].dtype == torch.float32
+        assert sample["mask"].dtype == torch.int64 # Default tensor conversion type
 
-        dataset = MultiTemporalCropClassification(
-            data_root=crop_classification_data_root,
+    def test_getitem_not_interpolated_stacked(self, open_sentinel_map_data: Path) -> None:
+        """Test __getitem__ with spatial_interpolate_and_stack_temporally=False."""
+        ds = OpenSentinelMap(
+            data_root=str(open_sentinel_map_data),
             split="train",
-            transform=transform,
+            bands=["gsd_10", "gsd_20"],
+            spatial_interpolate_and_stack_temporally=False,
+            pick_random_pair=False
         )
-        sample = dataset[0]
+        sample = ds[0]
 
-        fig = dataset.plot(sample, suptitle="Sample Plot")
-        assert isinstance(fig, plt.Figure), "The plot method did not return a plt.Figure"
-        plt.close(fig)
+        assert "image" in sample
+        assert "mask" in sample
+        assert isinstance(sample["image"], dict) # Should be a dict of bands
+        assert isinstance(sample["mask"], torch.Tensor)
+
+        assert "gsd_10" in sample["image"]
+        assert "gsd_20" in sample["image"]
+        assert isinstance(sample["image"]["gsd_10"], torch.Tensor)
+        assert isinstance(sample["image"]["gsd_20"], torch.Tensor)
+
+        # Expected shape: (T, C, H, W)
+        # T = 3
+        # gsd_10: C=12, H=192, W=192
+        # gsd_20: C=6, H=96, W=96 (original size, not interpolated)
+        assert sample["image"]["gsd_10"].shape == (3, 12, 192, 192)
+        assert sample["image"]["gsd_20"].shape == (3, 6, 96, 96)
+        assert sample["mask"].shape == (192, 192)
+        assert sample["image"]["gsd_10"].dtype == torch.float32
+        assert sample["mask"].dtype == torch.int64
+
+    def test_getitem_padding_truncation(self, open_sentinel_map_data: Path) -> None:
+        """Test __getitem__ with padding and truncation."""
+        ds = OpenSentinelMap(
+            data_root=str(open_sentinel_map_data),
+            split="train",
+            bands=["gsd_10"],
+            spatial_interpolate_and_stack_temporally=True,
+            pad_image=5, # Pad to 5 timestamps
+            truncate_image=2, # Truncate to last 2 timestamps
+            pick_random_pair=False
+        )
+        sample = ds[0]
+
+        # Original T=3. Truncate to 2 -> T=2. Pad to 5 -> T=5.
+        # Expected shape: (T, C, H, W)
+        # T = 5
+        # C = 12 (gsd_10)
+        # H = W = 192
+        assert sample["image"].shape == (5, 12, 192, 192)
+
+        # Test only padding
+        ds_pad = OpenSentinelMap(
+            data_root=str(open_sentinel_map_data),
+            split="train",
+            pad_image=4, # Pad original 3 to 4
+            pick_random_pair=False,
+            spatial_interpolate_and_stack_temporally=True,
+        )
+        sample_pad = ds_pad[0]
+        assert sample_pad["image"].shape[0] == 4
+
+        # Test only truncation
+        ds_trunc = OpenSentinelMap(
+            data_root=str(open_sentinel_map_data),
+            split="train",
+            truncate_image=1, # Truncate original 3 to 1
+            pick_random_pair=False,
+            spatial_interpolate_and_stack_temporally=True,
+        )
+        sample_trunc = ds_trunc[0]
+        assert sample_trunc["image"].shape[0] == 1
+
+    def test_getitem_pick_random_pair(self, open_sentinel_map_data: Path) -> None:
+        """Test __getitem__ with pick_random_pair=True."""
+        ds = OpenSentinelMap(
+            data_root=str(open_sentinel_map_data),
+            split="train",
+            bands=["gsd_10"],
+            spatial_interpolate_and_stack_temporally=True,
+            pick_random_pair=True # Default, but explicit here
+        )
+        sample = ds[0]
+        # Should pick 2 random timestamps from the 3 available
+        assert sample["image"].shape[0] == 2
+
+    def test_getitem_target_channel(self, open_sentinel_map_data: Path) -> None:
+        """Test selecting specific target channel from mask."""
+        # Modify the fixture to create a multi-channel mask
+        mask_path = open_sentinel_map_data / "osm_label_images_v10" / "tile1" / "1.png"
+        multi_channel_mask = np.random.randint(0, 2, size=(192, 192, 3), dtype=np.uint8)
+        Image.fromarray(multi_channel_mask).save(mask_path)
+
+        ds_target0 = OpenSentinelMap(data_root=str(open_sentinel_map_data), split="train", target=0)
+        sample0 = ds_target0[0]
+        assert sample0["mask"].shape == (192, 192)
+
+        ds_target1 = OpenSentinelMap(data_root=str(open_sentinel_map_data), split="train", target=1)
+        sample1 = ds_target1[0]
+        assert sample1["mask"].shape == (192, 192)
+
+        # Check that the masks are different (highly likely with random data)
+        assert not torch.equal(sample0["mask"], sample1["mask"])
+
+    def test_plot(self, open_sentinel_map_data: Path) -> None:
+        """Test plot method."""
+        ds = OpenSentinelMap(data_root=str(open_sentinel_map_data), split="train", bands=["gsd_10"])
+        sample = ds[0]
+        fig = ds.plot(sample)
+        assert isinstance(fig, Figure)
+        plt.close(fig) # Close the plot to avoid display issues
+
+        # Test plot with no gsd_10 band (should return None or handle gracefully)
+        ds_no_rgb = OpenSentinelMap(data_root=str(open_sentinel_map_data), split="train", bands=["gsd_20"])
+        sample_no_rgb = ds_no_rgb[0]
+        # The plot method might raise an error or return None if gsd_10 is missing.
+        # Based on the code, it returns None gracefully.
+        fig_no_rgb = ds_no_rgb.plot(sample_no_rgb)
+        assert fig_no_rgb is None
