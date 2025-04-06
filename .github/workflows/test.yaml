@@ -28,7 +28,8 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.13"]
-
+    env:
+      R_TESTS_VERBOSE: 2
     steps:
       - name: Clone repo
         uses: actions/checkout@v4
