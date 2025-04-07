@@ -177,7 +177,9 @@ class WxCModelFactory(ModelFactory):
 
                 return WxCModuleWrapper(module)
             except ImportError:
-                print('ECCC downscaling not installed')
+                print("ECCC downscaling module not found")
+                print("To install it, run:")
+                print("pip install git+https://github.com/IBM/granite-wxc.git")
 
         # starting from there only for backwards compatibility, deprecated
         if backbone == 'gravitywave':
