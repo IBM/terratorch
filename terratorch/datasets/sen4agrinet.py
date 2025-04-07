@@ -15,21 +15,22 @@ from terratorch.datasets.utils import pad_numpy, to_tensor
 CAT_TILES = ["31TBF", "31TCF", "31TCG", "31TDF", "31TDG"]
 FR_TILES = ["31TCJ", "31TDK", "31TCL", "31TDM", "31UCP", "31UDR"]
 
-MAX_TEMPORAL_IMAGE_SIZE = (366,366)
+MAX_TEMPORAL_IMAGE_SIZE = (366, 366)
 
 SELECTED_CLASSES = [
-    110,   # 'Wheat'
-    120,   # 'Maize'
-    140,   # 'Sorghum'
-    150,   # 'Barley'
-    160,   # 'Rye'
-    170,   # 'Oats'
-    330,   # 'Grapes'
-    435,   # 'Rapeseed'
-    438,   # 'Sunflower'
-    510,   # 'Potatoes'
-    770,   # 'Peas'
+    110,  # 'Wheat'
+    120,  # 'Maize'
+    140,  # 'Sorghum'
+    150,  # 'Barley'
+    160,  # 'Rye'
+    170,  # 'Oats'
+    330,  # 'Grapes'
+    435,  # 'Rapeseed'
+    438,  # 'Sunflower'
+    510,  # 'Potatoes'
+    770,  # 'Peas'
 ]
+
 
 class Sen4AgriNet(NonGeoDataset):
     def __init__(
@@ -126,7 +127,6 @@ class Sen4AgriNet(NonGeoDataset):
 
         return train_files, val_files, test_files
 
-
     def __getitem__(self, index: int):
         patch_file = self.image_files[index]
 
@@ -142,7 +142,7 @@ class Sen4AgriNet(NonGeoDataset):
                 band_data = band_data[sorted_indices].astype(np.float32)
 
                 if self.truncate_image:
-                    band_data = band_data[-self.truncate_image:]
+                    band_data = band_data[-self.truncate_image :]
                 if self.pad_image:
                     band_data = pad_numpy(band_data, self.pad_image)
 
@@ -173,11 +173,12 @@ class Sen4AgriNet(NonGeoDataset):
             diff_h = mask_shape[0] - image_shape[0]
             diff_w = mask_shape[1] - image_shape[1]
 
-            output["image"] = np.pad(output["image"],
-                                [(0, 0), (0, 0),
-                                    (diff_h // 2, diff_h - diff_h // 2),
-                                    (diff_w // 2, diff_w - diff_w // 2)],
-                                mode="constant", constant_values=0)
+            output["image"] = np.pad(
+                output["image"],
+                [(0, 0), (0, 0), (diff_h // 2, diff_h - diff_h // 2), (diff_w // 2, diff_w - diff_w // 2)],
+                mode="constant",
+                constant_values=0,
+            )
 
         linear_encoder = {val: i + 1 for i, val in enumerate(sorted(SELECTED_CLASSES))}
         linear_encoder[0] = 0
@@ -192,7 +193,7 @@ class Sen4AgriNet(NonGeoDataset):
 
         return output
 
-    def plot(self, sample, suptitle=None):
+    def plot(self, sample, suptitle=None, show_axes=False):
         rgb_bands = ["B04", "B03", "B02"]
 
         if not all(band in sample for band in rgb_bands):
@@ -215,19 +216,20 @@ class Sen4AgriNet(NonGeoDataset):
 
         dates = torch.arange(sample["B04"].shape[0])
 
-        return self._plot_sample(rgb_images, dates, sample.get("labels"), suptitle=suptitle)
+        return self._plot_sample(rgb_images, dates, sample.get("labels"), suptitle=suptitle, show_axes=show_axes)
 
-    def _plot_sample(self, images, dates, labels=None, suptitle=None):
+    def _plot_sample(self, images, dates, labels=None, suptitle=None, show_axes=False):
         num_images = len(images)
         cols = 5
         rows = (num_images + cols - 1) // cols
 
         fig, ax = plt.subplots(rows, cols, figsize=(20, 4 * rows))
+        axes_visibility = "on" if show_axes else "off"
 
         for i, image in enumerate(images):
             ax[i // cols, i % cols].imshow(image)
             ax[i // cols, i % cols].set_title(f"T{i+1} - Day {dates[i].item()}")
-            ax[i // cols, i % cols].axis("off")
+            ax[i // cols, i % cols].axis(axes_visibility)
 
         if labels is not None:
             if rows * cols > num_images:
@@ -238,10 +240,10 @@ class Sen4AgriNet(NonGeoDataset):
 
             target_ax.imshow(labels.numpy(), cmap="tab20")
             target_ax.set_title("Labels")
-            target_ax.axis("off")
+            target_ax.axis(axes_visibility)
 
         for k in range(num_images, rows * cols):
-            ax[k // cols, k % cols].axis("off")
+            ax[k // cols, k % cols].axis(axes_visibility)
 
         if suptitle:
             plt.suptitle(suptitle)
