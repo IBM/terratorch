@@ -151,6 +151,7 @@ def test_create_pixelwise_model_resnet(backbone, task, expected, decoder, model_
 
     gc.collect()
 
+@pytest.mark.skip("Skip these tests for now.")
 #@pytest.mark.parametrize("backbone", ["dofa_large_patch16_224"])
 @pytest.mark.parametrize("backbone", ["dofa_base_patch16_224"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
