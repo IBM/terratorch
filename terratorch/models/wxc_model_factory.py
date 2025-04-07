@@ -152,10 +152,10 @@ class WxCModelFactory(ModelFactory):
             try:
                 model_args = kwargs['model_args']
                 if model_args.model.unet:
-                    from eccc_downscaling.models.model import get_finetune_model_UNET
+                    from granitewxc.models.model import get_finetune_model_UNET
                     module = get_finetune_model_UNET(model_args)
                 else:
-                    from eccc_downscaling.models.model import get_finetune_model
+                    from granitewxc.models.model import get_finetune_model
                     module = get_finetune_model(model_args)
 
                 if checkpoint_path:

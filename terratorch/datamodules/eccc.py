@@ -1,7 +1,7 @@
 import lightning as pl
 from torch.utils.data import DataLoader
 from granitewxc.utils.config import ExperimentConfig
-from eccc_downscaling.datasets.eccc import EcccHrdpsGdpsDataset
+from granitewxc.datasets.eccc import EcccHrdpsGdpsDataset
 
 class ECCCDataModule(pl.LightningDataModule):
     """Data module for the ECCC dataset"""

@@ -4,7 +4,7 @@ import os
 from torchgeo.trainers import BaseTask
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.optim import Adam
-from eccc_downscaling.models.loss import rmse_loss
+from granitewxc.models.loss import rmse_loss
 from torchmetrics.functional import mean_absolute_error, structural_similarity_index_measure
 from lightning.pytorch import Callback
 
