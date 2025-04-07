@@ -14,10 +14,11 @@ from terratorch.datasets.utils import pad_dates_numpy, pad_numpy
 
 
 class PASTIS(NonGeoDataset):
-    """"
-        Pytorch Dataset class to load samples from the [PASTIS](https://github.com/VSainteuf/pastis-benchmark) dataset,
-        for semantic and panoptic segmentation.
+    """ "
+    Pytorch Dataset class to load samples from the [PASTIS](https://github.com/VSainteuf/pastis-benchmark) dataset,
+    for semantic and panoptic segmentation.
     """
+
     def __init__(
         self,
         data_root,
@@ -25,11 +26,11 @@ class PASTIS(NonGeoDataset):
         target="semantic",
         folds=None,
         reference_date="2018-09-01",
-        date_interval = (-200,600),
+        date_interval=(-200, 600),
         class_mapping=None,
-        transform = None,
-        truncate_image = None,
-        pad_image = None,
+        transform=None,
+        truncate_image=None,
+        pad_image=None,
         satellites=["S2"],  # noqa: B006
     ):
         """
@@ -60,13 +61,13 @@ class PASTIS(NonGeoDataset):
             folds (list, optional): List of ints specifying which of the 5 official
                 folds to load. By default (when None is specified), all folds are loaded.
             class_mapping (dict, optional): A dictionary to define a mapping between the
-                default 18 class nomenclature and another class grouping. If not provided, 
+                default 18 class nomenclature and another class grouping. If not provided,
                 the default class mapping is used.
-            transform (callable, optional): A transform to apply to the loaded data 
+            transform (callable, optional): A transform to apply to the loaded data
                 (images, dates, and masks). By default, no transformation is applied.
-            truncate_image (int, optional): Truncate the time dimension of the image to 
+            truncate_image (int, optional): Truncate the time dimension of the image to
                 a specified number of timesteps. If None, no truncation is performed.
-            pad_image (int, optional): Pad the time dimension of the image to a specified 
+            pad_image (int, optional): Pad the time dimension of the image to a specified
                 number of timesteps. If None, no padding is applied.
             satellites (list): Defines the satellites to use. If you are using PASTIS-R, you
                 have access to Sentinel-2 imagery and Sentinel-1 observations in Ascending
@@ -88,11 +89,7 @@ class PASTIS(NonGeoDataset):
         self.data_root = data_root
         self.norm = norm
         self.reference_date = datetime(*map(int, reference_date.split("-")), tzinfo=timezone.utc)
-        self.class_mapping = (
-            np.vectorize(lambda x: class_mapping[x])
-            if class_mapping is not None
-            else class_mapping
-        )
+        self.class_mapping = np.vectorize(lambda x: class_mapping[x]) if class_mapping is not None else class_mapping
         self.target = target
         self.satellites = satellites
         self.transform = transform
@@ -110,9 +107,7 @@ class PASTIS(NonGeoDataset):
         for s in satellites:
             # maps patches to its observation dates
             dates = self.meta_patch[f"dates-{s}"]
-            date_table = pd.DataFrame(
-                index=self.meta_patch.index, columns=self.date_range, dtype=int
-            )
+            date_table = pd.DataFrame(index=self.meta_patch.index, columns=self.date_range, dtype=int)
             for pid, date_seq in dates.items():
                 if type(date_seq) is str:
                     date_seq = json.loads(date_seq)  # noqa: PLW2901
@@ -127,15 +122,12 @@ class PASTIS(NonGeoDataset):
                 date_table.loc[pid, d.values] = 1
             date_table = date_table.fillna(0)
             self.date_tables[s] = {
-                index: np.array(list(d.values()))
-                for index, d in date_table.to_dict(orient="index").items()
+                index: np.array(list(d.values())) for index, d in date_table.to_dict(orient="index").items()
             }
 
         # selects patches correspondig to selected folds
         if folds is not None:
-            self.meta_patch = pd.concat(
-                [self.meta_patch[self.meta_patch["Fold"] == f] for f in folds]
-            )
+            self.meta_patch = pd.concat([self.meta_patch[self.meta_patch["Fold"] == f] for f in folds])
 
         self.len = self.meta_patch.shape[0]
         self.id_patches = self.meta_patch.index
@@ -144,9 +136,7 @@ class PASTIS(NonGeoDataset):
         if norm:
             self.norm = {}
             for s in self.satellites:
-                with open(
-                    os.path.join(data_root, f"NORM_{s}_patch.json")
-                ) as file:
+                with open(os.path.join(data_root, f"NORM_{s}_patch.json")) as file:
                     normvals = json.loads(file.read())
                 selected_folds = folds if folds is not None else range(1, 6)
                 means = [normvals[f"Fold_{f}"]["mean"] for f in selected_folds]
@@ -179,22 +169,19 @@ class PASTIS(NonGeoDataset):
             ).astype(np.float32)
 
             if self.norm is not None:
-                    data = data - self.norm[satellite][0][None, :, None, None]
-                    data = data / self.norm[satellite][1][None, :, None, None]
+                data = data - self.norm[satellite][0][None, :, None, None]
+                data = data / self.norm[satellite][1][None, :, None, None]
 
             if self.truncate_image and data.shape[0] > self.truncate_image:
-                data = data[-self.truncate_image:]
+                data = data[-self.truncate_image :]
 
             if self.pad_image and data.shape[0] < self.pad_image:
                 data = pad_numpy(data, self.pad_image)
 
             satellites[satellite] = data.astype(np.float32)
 
-
         if self.target == "semantic":
-            target = np.load(
-                os.path.join(self.data_root, "ANNOTATIONS", f"TARGET_{id_patch}.npy")
-            )
+            target = np.load(os.path.join(self.data_root, "ANNOTATIONS", f"TARGET_{id_patch}.npy"))
             target = target[0].astype(int)
             if self.class_mapping is not None:
                 target = self.class_mapping(target)
@@ -228,14 +215,16 @@ class PASTIS(NonGeoDataset):
                     size,
                     object_semantic_annotation[:, :, None],
                     pixel_semantic_annotation[:, :, None],
-                ], axis=-1).astype(np.float32)
+                ],
+                axis=-1,
+            ).astype(np.float32)
 
         dates = {}
         for satellite in self.satellites:
             date = np.array(self.get_dates(id_patch, satellite))
 
             if self.truncate_image and len(date) > self.truncate_image:
-                date = date[-self.truncate_image:]
+                date = date[-self.truncate_image :]
 
             if self.pad_image and len(date) < self.pad_image:
                 date = pad_dates_numpy(date, self.pad_image)
@@ -253,8 +242,7 @@ class PASTIS(NonGeoDataset):
 
         return output
 
-
-    def plot(self, sample, suptitle=None):
+    def plot(self, sample, suptitle=None, show_axes=False):
         dates = sample["dates"]
         target = sample["target"]
 
@@ -277,25 +265,27 @@ class PASTIS(NonGeoDataset):
 
             rgb_images.append(np.clip(rgb_image, 0, 1))
 
-        return self._plot_sample(rgb_images, date_data, target, suptitle=suptitle)
+        return self._plot_sample(rgb_images, date_data, target, suptitle=suptitle, show_axes=show_axes)
 
     def _plot_sample(
         self,
         images: list[np.ndarray],
         dates: torch.Tensor,
         target: torch.Tensor | None,
-        suptitle: str | None = None
+        suptitle: str | None = None,
+        show_axes: bool | None = False,
     ):
         num_images = len(images)
         cols = 5
         rows = (num_images + cols) // cols
 
         fig, ax = plt.subplots(rows, cols, figsize=(20, 4 * rows))
+        axes_visibility = "on" if show_axes else "off"
 
         for i, image in enumerate(images):
             ax[i // cols, i % cols].imshow(image)
             ax[i // cols, i % cols].set_title(f"Image {i + 1} - Day {dates[i].item()}")
-            ax[i // cols, i % cols].axis("off")
+            ax[i // cols, i % cols].axis(axes_visibility)
 
         if target is not None:
             if rows * cols > num_images:
@@ -306,10 +296,10 @@ class PASTIS(NonGeoDataset):
 
             target_ax.imshow(target.numpy(), cmap="tab20")
             target_ax.set_title("Target")
-            target_ax.axis("off")
+            target_ax.axis(axes_visibility)
 
         for k in range(num_images + 1, rows * cols):
-            ax[k // cols, k % cols].axis("off")
+            ax[k // cols, k % cols].axis(axes_visibility)
 
         if suptitle:
             plt.suptitle(suptitle)
