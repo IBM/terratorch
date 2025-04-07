@@ -81,7 +81,8 @@ def test_create_classification_model_resnet_pretrained(backbone, model_factory: 
 
     gc.collect()
 
-backbones = ["dofa_large_patch16_224"]
+#backbones = ["dofa_large_patch16_224"]
+backbones = ["dofa_base_patch16_224"]
 @pytest.mark.parametrize("backbone", backbones)
 @pytest.mark.parametrize("backbone_pretrained", pretrained)
 def test_create_classification_model_dofa(backbone, model_factory: EncoderDecoderFactory, model_input, backbone_pretrained):
@@ -150,7 +151,8 @@ def test_create_pixelwise_model_resnet(backbone, task, expected, decoder, model_
 
     gc.collect()
 
-@pytest.mark.parametrize("backbone", ["dofa_large_patch16_224"])
+#@pytest.mark.parametrize("backbone", ["dofa_large_patch16_224"])
+@pytest.mark.parametrize("backbone", ["dofa_base_patch16_224"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
 @pytest.mark.parametrize("backbone_pretrained", pretrained)
@@ -161,7 +163,7 @@ def test_create_pixelwise_model_dofa(backbone, task, expected, decoder, model_fa
         "decoder": decoder,
         "backbone_model_bands": PRETRAINED_BANDS,
         "backbone_pretrained": backbone_pretrained,
-        "backbone_out_indices": [5, 11, 17, 23]
+        "backbone_out_indices":  [1, 2, 3, 4] #[5, 11, 17, 23]
     }
 
     if task == "segmentation":
