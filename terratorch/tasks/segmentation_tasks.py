@@ -118,7 +118,8 @@ class SemanticSegmentationTask(TerraTorchTask):
                 contained in the parameter name)and the value should be the new lr. Defaults to None.
             output_on_inference (str | list[str]): A string or a list defining the kind of output to be saved to file during the inference, for example,
             it can be "prediction", to save just the most probable class, or ["prediction", "probabilities"] to save both prediction and probabilities.
-            output_most_probable (bool): A boolean to define if the prediction step will output just the most probable
+            output_most_probable (bool): A boolean to define if the prediction step will output just the most probable. This argument has been deprecated and will
+                be replaced with `output_on_inference`. 
             class or the probabilities for all of them. This argument has been deprecated and will be replaced with `output_on_inference`. 
             tiled_inference_on_testing (bool): A boolean to the fine if tiled inference will be used when full inference 
                 fails during the test step. 
@@ -184,7 +185,7 @@ class SemanticSegmentationTask(TerraTorchTask):
             self.select_classes = self.operation_map[output_on_inference]
 
         else:
-            raise ValueError("The value {output_on_inference} isn't supported for `output_on_inference`.")
+            raise ValueError(f"The value {output_on_inference} isn't supported for `output_on_inference`.")
 
     def configure_losses(self) -> None:
         """Initialize the loss criterion.
