@@ -266,6 +266,9 @@ def clean_config_for_deployment_and_dump(config: dict[str, Any]):
     # drop optimizer and lr sheduler
     deploy_config.pop("optimizer", None)
     deploy_config.pop("lr_scheduler", None)
+    # drop undesirable fields, if they exist
+    if "verbose" in deploy_config:
+        deploy_config.pop("verbose", None)
     ## Trainer
     # remove logging
     deploy_config["trainer"]["logger"] = False
