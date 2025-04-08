@@ -206,7 +206,7 @@ class mVHR10(VHR10):
 
             if show_titles:
                 axs[0, 0].set_title('Ground Truth')
-        
+
         if show_predictions:
             axs[0, 1].imshow(image)
             axs[0, 1].axis('off')
@@ -247,8 +247,8 @@ class mVHR10(VHR10):
 
                 # Add masks
                 if show_pred_masks:
-                    
-                    mask = prediction_masks[i]
+
+                    mask = prediction_masks[i][0]
                     contours = skimage.measure.find_contours(mask, 0.5)
                     for verts in contours:
                         verts = np.fliplr(verts)
