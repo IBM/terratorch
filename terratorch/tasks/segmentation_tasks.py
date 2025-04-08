@@ -159,11 +159,13 @@ class SemanticSegmentationTask(TerraTorchTask):
 
         # Processing the `output_on_inference` argument.
         self.output_prediction = lambda y: (y.argmax(dim=1), "pred")
-        self.output_probabilities = lambda y: (y, "logits")
+        self.output_logits = lambda y: (y, "logits")
+        self.output_probabilities = lambda y: (torch.nn.Softmax()(y), "probabilities")
 
         # The possible methods to define outputs.
         self.operation_map = {
                               "prediction": self.output_prediction, 
+                              "logits": self.output_logits, 
                               "probabilities": self.output_probabilities
                               }
 

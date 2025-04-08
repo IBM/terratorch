@@ -102,6 +102,7 @@ model:
     output_on_inference: 
       - probabilities
       - prediction
+      - logits
     tiled_inference_on_testing: true
     loss: ce
     #aux_heads:
