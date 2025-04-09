@@ -176,7 +176,7 @@ class SemanticSegmentationTask(TerraTorchTask):
                 if var in self.operation_map:
                     list_of_selectors += (self.operation_map[var],)
                 else:
-                    warnings.warn(f"Option {var} is not supported.")
+                    raise ValueError(f"Option {var} is not supported. It must be in ['prediction', 'logits', 'probabilities']")
 
             if not len(list_of_selectors):
                 raise ValueError("The list of selectors for the output is empty, please, provide a valid value for `output_on_inference`")
