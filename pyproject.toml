@@ -7,23 +7,23 @@ include = ["terratorch*"]
 
 [project]
 name = "terratorch"
-version = "0.99.9"
+version = "1.0"
 description = "TerraTorch - A model training toolkit for geospatial tasks"
 license = { "text" = "Apache License, Version 2.0" }
 readme = "README.md"
 requires-python = ">=3.10"
 keywords = ["fine-tuning", "geospatial foundation models", "artificial intelligence"]
 authors = [
-  { name = "Carlos Gomes", email = "carlos.gomes@ibm.com" },
   { name = "Joao Lucas de Sousa Almeida", email = "joao.lucas.sousa.almeida@ibm.com"},
   { name = "Romeo Kienzler"},
   { name = "Benedikt Blumenstiel"},
+  { name = "Carlos Gomes" },
   { name = "Francesc Martí Escofet"},
   { name = "Paolo Fraccaro"},
   { name = "Pedro Henrique Conrado"},
   { name = "Jaione Tirapu Azpiroz"},
-  { name = "Daniela Szwarcman"},
   { name = "Bianca Zadrozny"},
+  { name = "Daniela Szwarcman"},
   { name = "Þorsteinn Elí Gíslason"},
   { name = "Raunak Bhansali"},
   { name = "Takao Moriyama"},
@@ -55,25 +55,25 @@ dependencies = [
   "segmentation-models-pytorch",
   "jsonargparse",
   "pytest",
-  #"torchgeo @ git+https://github.com/microsoft/torchgeo.git@fedf99375535f801565856cd774bfa9e5a251d55",
   "torchgeo",
   "einops",
   "timm>=1.0.15"
 ]
-
 
 [project.optional-dependencies]
 dev = [
   "black",
   "mkdocs-material",
   "mkdocstrings[python]",
-  "mike" # for building docs with versions
+  "mike", # for building docs with versions
+  "mkdocs-git-revision-date-localized-plugin"
 ]
 
 test = [
   "pytest",
   "pytest-coverage",
-  "coverage-badge"
+  "coverage-badge",
+  "peft>=0.15.0"
 ]
 
 mmseg = [
@@ -94,7 +94,7 @@ visualize = [
 ]
 
 peft = [
-  "peft"
+  "peft>=0.15.0"
 ]
 
 [project.urls]

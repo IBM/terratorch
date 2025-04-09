@@ -1,12 +1,14 @@
 import logging
 from collections.abc import Iterable
-
+import torch 
 import lightning
 from lightning.pytorch.callbacks import Callback
 from torchgeo.trainers import BaseTask
 
 from terratorch.models.model import Model
 from terratorch.tasks.optimizer_factory import optimizer_factory
+from terratorch.tasks.tiled_inference import tiled_inference
+from terratorch.models.model import ModelOutput
 
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
 logger = logging.getLogger("terratorch")
@@ -18,8 +20,10 @@ class TerraTorchTask(BaseTask):
     tasks implemented in terratorch
     """
 
-    def __init__(self, task: str | None = None):
+    def __init__(self, task: str | None = None, tiled_inference_on_testing: bool = False):
+
         self.task = task
+        self.tiled_inference_on_testing = tiled_inference_on_testing
 
         super().__init__()
 
@@ -49,6 +53,51 @@ class TerraTorchTask(BaseTask):
 
         if self.hparams["freeze_head"]:
             self.model.freeze_head()
+
+    def handle_full_or_tiled_inference(self, x, num_categories:int=None, **rest):
+
+        # When the input sample cannot be fit on memory for some reason
+        # the tiled inference is automatically invoked.
+        def model_forward(x,  **kwargs):
+            return self(x, **kwargs).output
+
+        # The kind of memory device we are considering 
+        if torch.cuda.is_available():
+            device = "GPU Memory"
+        else:
+            device = "RAM"
+
+        if not self.tiled_inference_on_testing:
+            # When the user don't set the variable `tiled_inference_on_testing`
+            # as `True` in the config, we will try to use full inference.
+            try:
+                model_output: ModelOutput = self(x, **rest)
+            except (torch.OutOfMemoryError, MemoryError)  as e:
+                raise Exception(f"Inference on testing failed due to insufficient {device}. Try to pass `tiled_inference_on_testing` as `True`, to use tiled inference for it.")
+
+        else:
+            logger.info("Running tiled inference.")
+            logger.info("Notice that the tiled inference WON'T produce the exactly same result as the full inference.")
+            if self.tiled_inference_parameters:
+                # Even when tiled inference is chosen and we have a config
+                # defined for it, we can have a memory issue when this
+                # config isn't suitable. A bad choice for the tile sizes is
+                # usually the cause for that.
+                try:
+                    y_hat: Tensor = tiled_inference(
+                        model_forward,
+                        x,
+                        num_categories, 
+                        self.tiled_inference_parameters,
+                        **rest,
+                    )
+                    model_output = ModelOutput(output=y_hat)
+                except (torch.OutOfMemoryError, MemoryError) as e:
+                    raise Exception("It seems your tiled inference configuration is insufficient. Try to reduce the tile sizes.")
+            else:
+                raise Exception("You need to define a configuration for the tiled inference.")
+
+        return model_output
 
     def configure_optimizers(
         self,
