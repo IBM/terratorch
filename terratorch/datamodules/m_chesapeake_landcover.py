@@ -13,6 +13,8 @@ STDS = {"BLUE": 0.17441707849502563, "GREEN": 0.1976749747991562, "NIR": 0.28317
 
 
 class MChesapeakeLandcoverNonGeoDataModule(GeobenchDataModule):
+    """NonGeo LightningDataModule implementation for M-ChesapeakeLandcover dataset."""
+
     def __init__(
         self,
         batch_size: int = 8,
@@ -26,6 +28,21 @@ class MChesapeakeLandcoverNonGeoDataModule(GeobenchDataModule):
         partition: str = "default",
         **kwargs: Any,
     ) -> None:
+        """
+        Initializes the MChesapeakeLandcoverNonGeoDataModule for the M-BigEarthNet dataset.
+
+        Args:
+            batch_size (int, optional): Batch size for DataLoaders. Defaults to 8.
+            num_workers (int, optional): Number of workers for data loading. Defaults to 0.
+            data_root (str, optional): Root directory of the dataset. Defaults to "./".
+            bands (Sequence[str] | None, optional): List of bands to use. Defaults to None.
+            train_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for training.
+            val_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for validation.
+            test_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for testing.
+            aug (AugmentationSequential, optional): Augmentation/normalization pipeline. Defaults to None.
+            partition (str, optional): Partition size. Defaults to "default".
+            **kwargs (Any): Additional keyword arguments.
+        """
         super().__init__(
             MChesapeakeLandcoverNonGeo,
             MEANS,

@@ -1,7 +1,7 @@
 # lightning.pytorch==2.1.1
 seed_everything: 42
 trainer:
-  accelerator: cpu
+  accelerator: auto
   strategy: auto
   devices: auto
   num_nodes: 1

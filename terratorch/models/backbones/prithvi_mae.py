@@ -222,9 +222,10 @@ class TemporalEncoder(nn.Module):
 
     def forward(self, temporal_coords: torch.Tensor, tokens_per_frame: int | None = None):
         """
-        temporal_coords: year and day-of-year info with shape (B, T, 2).
-        tokens_per_frame: number of tokens for each frame in the sample. If provided, embeddings will be
-            repeated over T dimension, and final shape is (B, T*tokens_per_frame, embed_dim).
+        Args:
+            temporal_coords: year and day-of-year info with shape (B, T, 2).
+            tokens_per_frame: number of tokens for each frame in the sample. If provided, embeddings will be
+                repeated over T dimension, and final shape is (B, T*tokens_per_frame, embed_dim).
         """
         shape = temporal_coords.shape[:2] + (-1,)  # B, T, -1
 
@@ -271,22 +272,24 @@ class LocationEncoder(nn.Module):
 
 
 class PrithviViT(nn.Module):
-    """ Prithvi ViT Encoder"""
-    def __init__(self,
-                 img_size: int | tuple[int, int] = 224,
-                 patch_size: int | tuple[int, int, int] = (1, 16, 16),
-                 num_frames: int = 1,
-                 in_chans: int = 3,
-                 embed_dim: int = 1024,
-                 depth: int = 24,
-                 num_heads: int = 16,
-                 mlp_ratio: float = 4.,
-                 norm_layer: nn.Module = nn.LayerNorm,
-                 coords_encoding: list[str] | None = None,
-                 coords_scale_learn: bool = False,
-                 drop_path: float = 0.,
-                 ** kwargs,
-                ):
+    """Prithvi ViT Encoder"""
+
+    def __init__(
+        self,
+        img_size: int | tuple[int, int] = 224,
+        patch_size: int | tuple[int, int, int] = (1, 16, 16),
+        num_frames: int = 1,
+        in_chans: int = 3,
+        embed_dim: int = 1024,
+        depth: int = 24,
+        num_heads: int = 16,
+        mlp_ratio: float = 4.0,
+        norm_layer: type[nn.Module] = nn.LayerNorm,
+        coords_encoding: list[str] | None = None,
+        coords_scale_learn: bool = False,
+        drop_path: float = 0.0,
+        **kwargs,
+    ):
         super().__init__()
 
         self.in_chans = in_chans
