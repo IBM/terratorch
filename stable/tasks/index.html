@@ -1992,11 +1992,11 @@ contained in the parameter name)and the value should be the new lr. Defaults to 
                 <code>output_on_inference</code>
             </td>
             <td>
-                  <code>str</code>
+                  <code>str | list[str]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>A string defining the kind of output to be saved to file during the inference, it can be "prediction",</p>
+                <p>A string or a list defining the kind of output to be saved to file during the inference, for example,</p>
               </div>
             </td>
             <td>
@@ -2012,7 +2012,8 @@ contained in the parameter name)and the value should be the new lr. Defaults to 
             </td>
             <td>
               <div class="doc-md-description">
-                <p>A boolean to define if the prediction step will output just the most probable</p>
+                <p>A boolean to define if the prediction step will output just the most probable. This argument has been deprecated and will
+be replaced with <code>output_on_inference</code>. </p>
               </div>
             </td>
             <td>
