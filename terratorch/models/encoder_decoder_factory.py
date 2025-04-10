@@ -99,7 +99,11 @@ class TemporalWrapper(nn.Module):
         else:
             return [torch.mean(feat, dim=2) for feat in features_per_map]  # Mean pooling across T
 
-def _get_backbone(backbone: str | nn.Module, use_temporal=False, temporal_pooling="mean", **backbone_kwargs) -> nn.Module:
+def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
+    use_temporal = backbone_kwargs.pop('use_temporal', None)
+    temporal_pooling = backbone_kwargs.pop('temporal_pooling', None)
+    print(use_temporal)
+    print(temporal_pooling)
     if isinstance(backbone, nn.Module):
         model = backbone
     else:
@@ -174,8 +178,6 @@ class EncoderDecoderFactory(ModelFactory):
         necks: list[dict] | None = None,
         aux_decoders: list[AuxiliaryHead] | None = None,
         rescale: bool = True,  # noqa: FBT002, FBT001,
-        use_temporal: bool = False,
-        temporal_pooling: str = "mean",
         peft_config: dict | None = None,
         **kwargs,
     ) -> Model:
@@ -230,7 +232,7 @@ class EncoderDecoderFactory(ModelFactory):
         if not backbone_kwargs:
             backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
 
-        backbone = _get_backbone(backbone, use_temporal=use_temporal, temporal_pooling = temporal_pooling, **backbone_kwargs)
+        backbone = _get_backbone(backbone, **backbone_kwargs)
 
 
         # If patch size is not provided in the config or by the model, it might lead to errors due to irregular images.
