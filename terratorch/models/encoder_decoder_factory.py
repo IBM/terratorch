@@ -102,8 +102,6 @@ class TemporalWrapper(nn.Module):
 def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
     use_temporal = backbone_kwargs.pop('use_temporal', None)
     temporal_pooling = backbone_kwargs.pop('temporal_pooling', None)
-    print(use_temporal)
-    print(temporal_pooling)
     if isinstance(backbone, nn.Module):
         model = backbone
     else:
