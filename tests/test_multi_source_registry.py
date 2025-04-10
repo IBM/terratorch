@@ -1,3 +1,4 @@
+import gc
 from collections.abc import Callable, Set
 
 import pytest
@@ -55,6 +56,7 @@ def test_build_from_registered_source(multi_source_registry, simple_registry):
 
     assert result == "constructed_model"
 
+    gc.collect()
 
 def test_build_without_prefix(multi_source_registry, simple_registry):
     # Register a function in the source registry
@@ -68,12 +70,14 @@ def test_build_without_prefix(multi_source_registry, simple_registry):
 
     assert result == "constructed_model"
 
+    gc.collect()
 
 def test_build_fails_if_not_found(multi_source_registry):
     with pytest.raises(KeyError) as excinfo:
         multi_source_registry.build("nonexistent_model")
     assert "Could not instantiate model" in str(excinfo.value)
 
+    gc.collect()
 
 def test_register_duplicate_source(multi_source_registry, simple_registry):
     multi_source_registry.register_source("simple", simple_registry)
@@ -81,6 +85,7 @@ def test_register_duplicate_source(multi_source_registry, simple_registry):
         multi_source_registry.register_source("simple", simple_registry)
     assert "Source for prefix simple already exists." in str(excinfo.value)
 
+    gc.collect()
 
 def test_contains_method(multi_source_registry, simple_registry):
     # Register a function in the source registry
@@ -95,6 +100,7 @@ def test_contains_method(multi_source_registry, simple_registry):
     # Check without prefix
     assert "my_model" in multi_source_registry
 
+    gc.collect()
 
 def test_getitem_method(multi_source_registry, simple_registry):
     # Register a function in the source registry
@@ -108,6 +114,8 @@ def test_getitem_method(multi_source_registry, simple_registry):
     # Get item by prefixed name
     assert multi_source_registry["simple"] is simple_registry
 
+    gc.collect()
+
 def test_find_registry_method(multi_source_registry, simple_registry):
     def model_constructor():
         return "constructed_model"
@@ -116,3 +124,5 @@ def test_find_registry_method(multi_source_registry, simple_registry):
     multi_source_registry.register_source("simple", simple_registry)
 
     assert multi_source_registry.find_registry("my_model") is simple_registry
+
+    gc.collect()
