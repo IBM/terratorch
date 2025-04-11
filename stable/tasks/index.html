@@ -1613,7 +1613,7 @@ However, it has some important differences:
 
 
 <h3 id="terratorch.tasks.segmentation_tasks.SemanticSegmentationTask.__init__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">model_args</span><span class="p">,</span> <span class="n">model_factory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s1">&#39;ce&#39;</span><span class="p">,</span> <span class="n">aux_heads</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">aux_loss</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">class_weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">optimizer_hparams</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scheduler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scheduler_hparams</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">freeze_backbone</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">freeze_decoder</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">freeze_head</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">plot_on_val</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">class_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tiled_inference_parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">test_dataloaders_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lr_overrides</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_on_inference</span><span class="o">=</span><span class="s1">&#39;prediction&#39;</span><span class="p">,</span> <span class="n">output_most_probable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tiled_inference_on_testing</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">model_args</span><span class="p">,</span> <span class="n">model_factory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s1">&#39;ce&#39;</span><span class="p">,</span> <span class="n">aux_heads</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">aux_loss</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">class_weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">optimizer_hparams</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scheduler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scheduler_hparams</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">freeze_backbone</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">freeze_decoder</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">freeze_head</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">plot_on_val</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">class_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tiled_inference_parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">test_dataloaders_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lr_overrides</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output_on_inference</span><span class="o">=</span><span class="s1">&#39;prediction&#39;</span><span class="p">,</span> <span class="n">output_most_probable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">path_to_record_metrics</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tiled_inference_on_testing</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
 <a href="#terratorch.tasks.segmentation_tasks.SemanticSegmentationTask.__init__" class="headerlink" title="Permanent link">#</a></h3>
 
@@ -1980,7 +1980,7 @@ which assumes only one test dataloader is used.</p>
               <div class="doc-md-description">
                 <p>Dictionary to override the default lr in specific
 parameters. The key should be a substring of the parameter names (it will check the substring is
-contained in the parameter name)and the value should be the new lr. Defaults to None.</p>
+contained in the parameter name) and the value should be the new lr. Defaults to None.</p>
               </div>
             </td>
             <td>
@@ -1996,7 +1996,8 @@ contained in the parameter name)and the value should be the new lr. Defaults to 
             </td>
             <td>
               <div class="doc-md-description">
-                <p>A string or a list defining the kind of output to be saved to file during the inference, for example,</p>
+                <p>A string or a list defining the kind of output to be saved to file during the inference, for example,
+it can be "prediction", to save just the most probable class, or ["prediction", "probabilities"] to save both prediction and probabilities.</p>
               </div>
             </td>
             <td>
@@ -2012,8 +2013,8 @@ contained in the parameter name)and the value should be the new lr. Defaults to 
             </td>
             <td>
               <div class="doc-md-description">
-                <p>A boolean to define if the prediction step will output just the most probable. This argument has been deprecated and will
-be replaced with <code>output_on_inference</code>. </p>
+                <p>A boolean to define if the prediction step will output just the most probable logit or all of them.
+This argument has been deprecated and will be replaced with <code>output_on_inference</code>. </p>
               </div>
             </td>
             <td>
@@ -2029,12 +2030,28 @@ be replaced with <code>output_on_inference</code>. </p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>A boolean to the fine if tiled inference will be used when full inference 
-fails during the test step.</p>
+                <p>A boolean to define if tiled inference will be used when full inference 
+fails during the test step. </p>
               </div>
             </td>
             <td>
                   <code>False</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>path_to_record_metrics</code>
+            </td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A path to save the file containing the metrics log.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
             </td>
           </tr>
       </tbody>
@@ -2440,7 +2457,7 @@ However, it has some important differences:
 
 
 <h3 id="terratorch.tasks.regression_tasks.PixelwiseRegressionTask.__init__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">model_args</span><span class="p">,</span> <span class="n">model_factory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s1">&#39;mse&#39;</span><span class="p">,</span> <span class="n">aux_heads</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">aux_loss</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">class_weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">optimizer_hparams</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scheduler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scheduler_hparams</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">freeze_backbone</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">freeze_decoder</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">freeze_head</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">plot_on_val</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">tiled_inference_parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">test_dataloaders_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lr_overrides</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tiled_inference_on_testing</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">model_args</span><span class="p">,</span> <span class="n">model_factory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s1">&#39;mse&#39;</span><span class="p">,</span> <span class="n">aux_heads</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">aux_loss</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">class_weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">optimizer_hparams</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scheduler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scheduler_hparams</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">freeze_backbone</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">freeze_decoder</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">freeze_head</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">plot_on_val</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">tiled_inference_parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">test_dataloaders_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lr_overrides</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tiled_inference_on_testing</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">path_to_record_metrics</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 <a href="#terratorch.tasks.regression_tasks.PixelwiseRegressionTask.__init__" class="headerlink" title="Permanent link">#</a></h3>
 
@@ -2793,7 +2810,23 @@ contained in the parameter name)and the value should be the new lr. Defaults to 
             <td>
               <div class="doc-md-description">
                 <p>A boolean to the fine if tiled inference will be used when full inference 
-fails during the test step.</p>
+fails during the test step. </p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>path_to_record_metrics</code>
+            </td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A path to save the file containing the metrics log.</p>
               </div>
             </td>
             <td>
@@ -3268,7 +3301,7 @@ However, it has some important differences:
 
 
 <h3 id="terratorch.tasks.classification_tasks.ClassificationTask.__init__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">model_args</span><span class="p">,</span> <span class="n">model_factory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s1">&#39;ce&#39;</span><span class="p">,</span> <span class="n">aux_heads</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">aux_loss</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">class_weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">optimizer_hparams</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scheduler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scheduler_hparams</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">freeze_backbone</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">freeze_decoder</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">freeze_head</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">class_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">test_dataloaders_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lr_overrides</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">model_args</span><span class="p">,</span> <span class="n">model_factory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s1">&#39;ce&#39;</span><span class="p">,</span> <span class="n">aux_heads</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">aux_loss</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">class_weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">optimizer_hparams</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scheduler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scheduler_hparams</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">freeze_backbone</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">freeze_decoder</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">freeze_head</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">class_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">test_dataloaders_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lr_overrides</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">path_to_record_metrics</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
 <a href="#terratorch.tasks.classification_tasks.ClassificationTask.__init__" class="headerlink" title="Permanent link">#</a></h3>
 
@@ -3604,6 +3637,22 @@ which assumes only one test dataloader is used.</p>
                 <p>Dictionary to override the default lr in specific
 parameters. The key should be a substring of the parameter names (it will check the substring is
 contained in the parameter name)and the value should be the new lr. Defaults to None.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>path_to_record_metrics</code>
+            </td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A path to save the file containing the metrics log.</p>
               </div>
             </td>
             <td>
