@@ -206,28 +206,30 @@ class CustomWriter(BasePredictionWriter):
         if isinstance(prediction, torch.Tensor):
             filename_batch = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
             torch.save(prediction, os.path.join(output_dir, f"{filename_batch}.pt"))
+
         elif isinstance(prediction, tuple):
 
             pred_batch_, filename_batch = prediction
 
+            # If we have just a single kind of output
             if isinstance(pred_batch_, tuple):
-                pred_batch, pred_batch_prob = pred_batch_
-                outputting_logits = True
-            else:
-                pred_batch = pred_batch_
-                outputting_logits = False
 
-            for prediction, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
-                save_prediction(prediction, file_name, output_dir, dtype=trainer.out_dtype)
+                pred_batch, suffix = pred_batch_
 
-            # Special conditions for segmentation, when the
-            # logits/probabilities can be outputted together with the
-            # prediction. 
-            if outputting_logits:
-                for prediction, file_name in zip(torch.unbind(pred_batch_prob, dim=0), filename_batch, strict=False):
+                for prediction, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
                     save_prediction(prediction, file_name, output_dir,
-                                    dtype=trainer.out_dtype,
-                                    suffix="logits_pred")
+                                    dtype=trainer.out_dtype, suffix=suffix)
+
+            # If we are outputting more than one kind of variable, as
+            # (predictions, probabilities), for segmentation
+            elif isinstance(pred_batch_, list):
+
+                for pred in pred_batch_:
+                    pred_batch, suffix = pred
+
+                    for p, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
+                        save_prediction(p, file_name, output_dir,
+                                        dtype=trainer.out_dtype, suffix=suffix)
 
         else:
             raise TypeError(f"Unknown type for prediction {type(prediction)}")
@@ -266,6 +268,9 @@ def clean_config_for_deployment_and_dump(config: dict[str, Any]):
     # drop optimizer and lr sheduler
     deploy_config.pop("optimizer", None)
     deploy_config.pop("lr_scheduler", None)
+    # drop undesirable fields, if they exist
+    if "verbose" in deploy_config:
+        deploy_config.pop("verbose", None)
     ## Trainer
     # remove logging
     deploy_config["trainer"]["logger"] = False

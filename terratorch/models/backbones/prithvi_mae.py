@@ -272,22 +272,24 @@ class LocationEncoder(nn.Module):
 
 
 class PrithviViT(nn.Module):
-    """ Prithvi ViT Encoder"""
-    def __init__(self,
-                 img_size: int | tuple[int, int] = 224,
-                 patch_size: int | tuple[int, int, int] = (1, 16, 16),
-                 num_frames: int = 1,
-                 in_chans: int = 3,
-                 embed_dim: int = 1024,
-                 depth: int = 24,
-                 num_heads: int = 16,
-                 mlp_ratio: float = 4.,
-                 norm_layer: nn.Module = nn.LayerNorm,
-                 coords_encoding: list[str] | None = None,
-                 coords_scale_learn: bool = False,
-                 drop_path: float = 0.,
-                 ** kwargs,
-                ):
+    """Prithvi ViT Encoder"""
+
+    def __init__(
+        self,
+        img_size: int | tuple[int, int] = 224,
+        patch_size: int | tuple[int, int, int] = (1, 16, 16),
+        num_frames: int = 1,
+        in_chans: int = 3,
+        embed_dim: int = 1024,
+        depth: int = 24,
+        num_heads: int = 16,
+        mlp_ratio: float = 4.0,
+        norm_layer: type[nn.Module] = nn.LayerNorm,
+        coords_encoding: list[str] | None = None,
+        coords_scale_learn: bool = False,
+        drop_path: float = 0.0,
+        **kwargs,
+    ):
         super().__init__()
 
         self.in_chans = in_chans

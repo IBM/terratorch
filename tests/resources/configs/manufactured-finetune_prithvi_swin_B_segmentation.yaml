@@ -20,7 +20,7 @@ trainer:
       init_args:
         monitor: val/loss
         patience: 100
-  max_epochs: 5
+  max_epochs: 1
   check_val_every_n_epoch: 1
   log_every_n_steps: 20
   enable_checkpointing: true
@@ -99,8 +99,10 @@ model:
       num_frames: 1
       num_classes: 2
       head_dropout: 0.5708022831486758
-        #output_on_inference: probabilities #both
-    output_most_probable: False
+    output_on_inference: 
+      - probabilities
+      - prediction
+      - logits
     tiled_inference_on_testing: true
     loss: ce
     #aux_heads:
