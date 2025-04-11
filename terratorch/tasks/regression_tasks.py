@@ -156,6 +156,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
         test_dataloaders_names: list[str] | None = None,
         lr_overrides: dict[str, float] | None = None,
         tiled_inference_on_testing: bool = None,
+        path_to_record_metrics: str = None,
     ) -> None:
         """Constructor
 
@@ -199,6 +200,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
                 contained in the parameter name)and the value should be the new lr. Defaults to None.
             tiled_inference_on_testing (bool): A boolean to the fine if tiled inference will be used when full inference 
                 fails during the test step. 
+            path_to_record_metrics (str): A path to save the file containing the metrics log. 
         """
 
         self.tiled_inference_parameters = tiled_inference_parameters
@@ -213,7 +215,8 @@ class PixelwiseRegressionTask(TerraTorchTask):
         if model_factory and model is None:
             self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
 
-        super().__init__(task="regression", tiled_inference_on_testing=tiled_inference_on_testing)
+        super().__init__(task="regression", tiled_inference_on_testing=tiled_inference_on_testing,
+                         path_to_record_metrics=path_to_record_metrics)
 
         if model:
             # Custom_model
@@ -369,6 +372,8 @@ class PixelwiseRegressionTask(TerraTorchTask):
         )
         y_hat = model_output.output
         self.test_metrics[dataloader_idx].update(y_hat, y)
+
+        self.record_metrics(dataloader_idx, y_hat, y)
 
     def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         """Compute the predicted class probabilities.
