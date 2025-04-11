@@ -405,6 +405,20 @@ class StateDictAwareModelCheckpoint(ModelCheckpoint):
 
 
 class MyLightningCLI(LightningCLI):
+    def run_init(self):
+        logger.info("Running custom init command...")
+
+    @property
+    def subcommands(self):
+        return super().subcommands + ["init"]
+
+    def run(self):
+        subcommand = self.config['subcommand']
+        if subcommand == 'init':
+            self.run_init()
+        else:
+            super().run()
+
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:
         parser.add_argument("--predict_output_dir", default=None)
         parser.add_argument("--out_dtype", default="int16")
