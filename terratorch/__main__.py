@@ -23,7 +23,7 @@ except ImportError:
 def main():
     # if user run "terratorch iterate" and terratorch-iterate has not been installed
     if not TERRATORCH_ITERATE_INSTALLED and sys.argv[1] == "iterate":
-        print("Error! terratorch-iterate has not been installed. If you want to install it, run pip install git+https://github.com/IBM/terratorch-iterate")
+        print("Error! terratorch-iterate has not been installed. If you want to install it, run pip install terratorch-iterate")
     # if user run "terratorch iterate" and terratorch-iterate has been installed
     elif TERRATORCH_ITERATE_INSTALLED and sys.argv[1] == "iterate":
         # delete iterate argument
