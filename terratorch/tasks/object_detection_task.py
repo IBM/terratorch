@@ -150,7 +150,7 @@ class ObjectDetectionTask(BaseTask):
 
         if 'masks' in batch.keys():
             y = [
-                {'boxes': batch['boxes'][i], 'labels': batch['labels'][i], 'masks': torch.cat([x[None] for x in batch['masks'][i]])}
+                {'boxes': batch['boxes'][i], 'labels': batch['labels'][i], 'masks': torch.cat([x[None].to(torch.uint8) for x in batch['masks'][i]])}
                 for i in range(batch_size)
             ]
         else:
