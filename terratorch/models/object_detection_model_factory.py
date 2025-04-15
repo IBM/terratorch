@@ -31,11 +31,28 @@ import pdb
 SUPPORTED_TASKS = ['object_detection']
 
 def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
+    """
+    Instantiate the backbone network.
+
+    Args:
+        backbone: str | nn.Module: Name of the backbone network or a pre-instantiated backbone network.
+        **backbone_kwargs: Additional keyword arguments for the backbone network.
+    
+    Return:
+        Instantiated backbone network.
+    """
     if isinstance(backbone, nn.Module):
         return backbone
     return BACKBONE_REGISTRY.build(backbone, **backbone_kwargs)
 
 def _check_all_args_used(kwargs):
+    """
+    Check if all arguments are used.
+
+    Args:
+        kwargs: dict: Dictionary of arguments.
+    
+    """
     if kwargs:
         msg = f"arguments {kwargs} were passed but not used."
         raise ValueError(msg)
@@ -50,35 +67,27 @@ class ObjectDetectionModelFactory(ModelFactory):
         framework: str,
         num_classes: int | None = None,
         necks: list[dict] | None = None,
-        # aux_decoders: list[AuxiliaryHead] | None = None,
-        # rescale: bool = True,  # noqa: FBT002, FBT001
         **kwargs,
     ) -> Model:
-        """Generic model factory that combines an encoder and decoder, together with a head, for a specific task.
+        """
+        Generic model factory that combines an encoder and necks with the detection models, called framework, in torchvision.detection.
 
-        Further arguments to be passed to the backbone, decoder or head. They should be prefixed with
-        `backbone_`, `decoder_` and `head_` respectively.
+        Further arguments to be passed to the backbone_ and framework_.
 
         Args:
-            task (str): Task to be performed. Currently supports "segmentation" and "regression".
+            task (str): Task to be performed. Currently supports "object_detection".
             backbone (str, nn.Module): Backbone to be used. If a string, will look for such models in the different
                 registries supported (internal terratorch registry, timm, ...). If a torch nn.Module, will use it
                 directly. The backbone should have and `out_channels` attribute and its `forward` should return a list[Tensor].
-            framework (str): object detection framework to be used between "faster-rcnn", "fcos", "retinanet".
+            framework (str): object detection framework to be used between "faster-rcnn", "fcos", "retinanet" for object detection and "mask-rcnn" for instance segmentation.
             num_classes (int, optional): Number of classes. None for regression tasks.
             necks (list[dict]): nn.Modules to be called in succession on encoder features
                 before passing them to the decoder. Should be registered in the NECKS_REGISTRY registry.
                 Expects each one to have a key "name" and subsequent keys for arguments, if any.
                 Defaults to None, which applies the identity function.
-            aux_decoders (list[AuxiliaryHead] | None): List of AuxiliaryHead decoders to be added to the model.
-                These decoders take the input from the encoder as well.
-            rescale (bool): Whether to apply bilinear interpolation to rescale the model output if its size
-                is different from the ground truth. Only applicable to pixel wise models
-                (e.g. segmentation, pixel wise regression). Defaults to True.
-
 
         Returns:
-            nn.Module: Full model with encoder, decoder and head.
+            nn.Module: Full torchvision detection model.
         """
         task = task.lower()
         if task not in SUPPORTED_TASKS:
@@ -224,38 +233,84 @@ class ObjectDetectionModelFactory(ModelFactory):
 
 
 class BackboneWrapper(nn.Module):
+
     def __init__(self, backbone, necks, channel_list):
+        """
+        BackboneWrapper class that wraps a backbone and necks.
+
+        Args:
+            backbone (nn.Module): Backbone module.
+            necks (nn.Module): Necks module.
+            channel_list (list): List of output channels for each neck.
+
+        Returns:
+            dict: Dictionary of output features from necks.
+        """   
         super().__init__()
-        # pdb.set_trace()
         self.backbone = backbone
         self.necks = necks
         self.out_channels = channel_list[-1]
         self.channel_list = channel_list
 
     def forward(self, x, **kwargs):
-        # pdb.set_trace()
+        """
+        Forward pass of the model.
+        
+        Parameters:
+        x (torch.Tensor): Input tensor.
+        **kwargs (dict): Additional keyword arguments.
+        
+        Returns:
+        torch.Tensor: Output tensor.
+        """
         x = self.backbone(x, **kwargs)
         x = self.necks(x)
-        # x = {i: v for i, v in enumerate(x)}
+        
         return x
 
 
 class ObjectDetectionModel(Model):
     def __init__(self, torchvision_model, model_name) -> None:
+
+        """
+        Wrapper for torchvision models.
+
+        Args:
+            torchvision_model (torchvision.models): A torchvision model.
+            model_name (str): The name of the model.
+
+        Returns:
+            None
+        """
+
         super().__init__()
         self.torchvision_model = torchvision_model
         self.model_name = model_name
 
     def forward(self, x, *args, **kwargs):
-        # pdb.set_trace()
-        # x = ImageContainer(x)
+        """
+        Forward pass of the model.
+        
+        Parameters:
+        x (torch.Tensor): Input tensor.
+        **kwargs (dict): Additional keyword arguments.
+        
+        Returns:
+        torch.Tensor: Output tensor.
+        """
         return ModelOutputObjectDetection(self.torchvision_model(x, *args, **kwargs))
 
     def freeze_encoder(self):
+        """
+        Freeze the encoder of the model.
+        """
         for param in self.torchvision_model.backbone.parameters():
             param.requires_grad = False
 
     def freeze_decoder(self):
+        """
+        Freeze the decoder of the model.
+        """
         if self.model_name == 'faster-rcnn':
             for param in self.torchvision_model.rpn.parameters():
                 param.requires_grad = False
@@ -270,9 +325,11 @@ class ObjectDetectionModel(Model):
         else:
             raise ValueError(f"Model type '{self.model_name}' is not valid.")
 
+
 @dataclass
 class ModelOutputObjectDetection(ModelOutput):
     output: dict
+
 
 class ImageContainer:
     def __init__(self, tensor):
