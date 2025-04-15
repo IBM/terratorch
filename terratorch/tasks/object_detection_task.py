@@ -52,36 +52,26 @@ class ObjectDetectionTask(BaseTask):
         score_threshold: float = 0.5,
 
     ) -> None:
-        """Initialize a new ObjectDetectionTask instance.
+       
+        """
+        Initialize a new ObjectDetectionTask instance.
 
         Args:
-            model: Name of the `torchvision
-                <https://pytorch.org/vision/stable/models.html#object-detection>`__
-                model to use. One of 'faster-rcnn', 'fcos', or 'retinanet'.
-            backbone: Name of the `torchvision
-                <https://pytorch.org/vision/stable/models.html#classification>`__
-                backbone to use. One of 'resnet18', 'resnet34', 'resnet50',
-                'resnet101', 'resnet152', 'resnext50_32x4d', 'resnext101_32x8d',
-                'wide_resnet50_2', or 'wide_resnet101_2'.
-            weights: Initial model weights. True for ImageNet weights, False or None
-                for random weights.
-            in_channels: Number of input channels to model.
-            num_classes: Number of prediction classes (including the background).
-            trainable_layers: Number of trainable layers.
-            lr: Learning rate for optimizer.
-            patience: Patience for learning rate scheduler.
-            freeze_backbone: Freeze the backbone network to fine-tune the detection
-                head.
+            model_factory (str): Name of the model factory to use.
+            model_args (dict): Arguments for the model factory.
+            lr (float, optional): Learning rate for optimizer. Defaults to 0.001.
+            optimizer (str | None, optional): Name of the optimizer to use. Defaults to None.
+            optimizer_hparams (dict | None, optional): Hyperparameters for the optimizer. Defaults to None.
+            scheduler (str | None, optional): Name of the scheduler to use. Defaults to None.
+            scheduler_hparams (dict | None, optional): Hyperparameters for the scheduler. Defaults to None.
+            freeze_backbone (bool, optional): Freeze the backbone network to fine-tune the detection head. Defaults to False.
+            freeze_decoder (bool, optional): Freeze the decoder network to fine-tune the detection head. Defaults to False.
+            class_names (list[str] | None, optional): List of class names. Defaults to None.
+            iou_threshold (float, optional): Intersection over union threshold for evaluation. Defaults to 0.5.
+            score_threshold (float, optional): Score threshold for evaluation. Defaults to 0.5.
 
-        .. versionchanged:: 0.4
-           *detection_model* was renamed to *model*.
-
-        .. versionadded:: 0.5
-           The *freeze_backbone* parameter.
-
-        .. versionchanged:: 0.5
-           *pretrained*, *learning_rate*, and *learning_rate_schedule_patience* were
-           renamed to *weights*, *lr*, and *patience*.
+        Returns:
+            None
         """
         
         self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
@@ -103,6 +93,10 @@ class ObjectDetectionTask(BaseTask):
 
 
     def configure_models(self) -> None:
+        """
+        It instantiates the model and freezes/unfreezes the backbone and decoder networks.
+        """
+
         self.model: Model = self.model_factory.build_model(
             "object_detection", **self.hparams["model_args"]
         )
@@ -112,19 +106,8 @@ class ObjectDetectionTask(BaseTask):
             self.model.freeze_decoder()
 
     def configure_metrics(self) -> None:
-        """Initialize the performance metrics.
-
-        * :class:`~torchmetrics.detection.mean_ap.MeanAveragePrecision`: Mean average
-          precision (mAP) and mean average recall (mAR). Precision is the number of
-          true positives divided by the number of true positives + false positives.
-          Recall is the number of true positives divived by the number of true positives
-          + false negatives. Uses 'macro' averaging. Higher values are better.
-
-        .. note::
-           * 'Micro' averaging suits overall performance evaluation but may not
-             reflect minority class accuracy.
-           * 'Macro' averaging gives equal weight to each class, and is useful for
-             balanced performance assessment across imbalanced classes.
+        """
+        Configure metrics for the task.
         """
         if self.framework == 'mask-rcnn':
             metrics = MetricCollection([MeanAveragePrecision(iou_type=('bbox', 'segm'))])
@@ -138,6 +121,9 @@ class ObjectDetectionTask(BaseTask):
     def configure_optimizers(
         self,
     ) -> "lightning.pytorch.utilities.types.OptimizerLRSchedulerConfig":
+        """
+        Configure optimiser for the task.
+        """
         optimizer = self.hparams["optimizer"]
         if optimizer is None:
             optimizer = "Adam"
@@ -152,7 +138,8 @@ class ObjectDetectionTask(BaseTask):
         )
 
     def reformat_batch(self, batch: Any, batch_size: int):
-        """Reformat batch to calculate loss and metrics.
+        """
+        Reformat batch to calculate loss and metrics.
 
         Args:
             batch: The output of your DataLoader.
@@ -176,6 +163,16 @@ class ObjectDetectionTask(BaseTask):
         return y
 
     def apply_nms_sample(self, y_hat, iou_threshold=0.5, score_threshold=0.5):
+        """
+        It applies nms to a sample predictions of the model.
+
+        Args:
+            y_hat: Predictions dictionary.
+            iou_threshold: IoU threshold for evaluation.
+            score_threshold: Score threshold for evaluation.
+        Returns:
+            fintered predictions for a sample after applying nms batch
+        """
 
         boxes, scores, labels = y_hat['boxes'], y_hat['scores'], y_hat['labels']
         masks = y_hat['masks'] if "masks" in y_hat.keys() else None
@@ -197,6 +194,16 @@ class ObjectDetectionTask(BaseTask):
         return y_hat
 
     def apply_nms_batch(self, y_hat: Any, batch_size: int):
+        """
+        It applies nms to a batch predictions of the model.
+
+        Args:
+            y_hat: List of predictions dictionaries.
+            iou_threshold: IoU threshold for evaluation.
+            score_threshold: Score threshold for evaluation.
+        Returns:
+            fintered predictions for a batch after applying nms batch
+        """
 
         for i in range(batch_size):
             y_hat[i] = self.apply_nms_sample(y_hat[i], iou_threshold=self.iou_threshold, score_threshold=self.score_threshold)
@@ -206,7 +213,8 @@ class ObjectDetectionTask(BaseTask):
     def training_step(
         self, batch: Any, batch_idx: int, dataloader_idx: int = 0
     ) -> Tensor:
-        """Compute the training loss.
+        """
+        Compute the training loss.
 
         Args:
             batch: The output of your DataLoader.
@@ -214,10 +222,9 @@ class ObjectDetectionTask(BaseTask):
             dataloader_idx: Index of the current dataloader.
 
         Returns:
-            The loss tensor.
+            The loss dictionary.
         """
-        #print("training")
-        
+
         x = batch['image']
         batch_size = x.shape[0]
         y = self.reformat_batch(batch, batch_size)
@@ -232,14 +239,15 @@ class ObjectDetectionTask(BaseTask):
     def validation_step(
         self, batch: Any, batch_idx: int, dataloader_idx: int = 0
     ) -> None:
-        """Compute the validation metrics.
+        """
+        Compute the validation metrics.
 
         Args:
             batch: The output of your DataLoader.
             batch_idx: Integer displaying index of this batch.
             dataloader_idx: Index of the current dataloader.
         """
-        
+
         x = batch['image']
         batch_size = x.shape[0]
         y = self.reformat_batch(batch, batch_size)
@@ -248,19 +256,19 @@ class ObjectDetectionTask(BaseTask):
             y_hat = y_hat.output
 
         y_hat = self.apply_nms_batch(y_hat, batch_size)
-        
+
         if self.framework == 'mask-rcnn':
 
             for i in range(len(y_hat)):
                 if y_hat[i]['masks'].shape[0] > 0:
-                    
+
                     y_hat[i]['masks']= (y_hat[i]['masks'] > 0.5).squeeze(1).to(torch.uint8)
 
         metrics = self.val_metrics(y_hat, y) 
 
         # https://github.com/Lightning-AI/torchmetrics/pull/1832#issuecomment-1623890714
         metrics.pop('val_classes', None)
-        
+
 
         self.log_dict(metrics, batch_size=batch_size)
 
@@ -277,7 +285,7 @@ class ObjectDetectionTask(BaseTask):
             batch['prediction_boxes'] = [b['boxes'].cpu() for b in y_hat]
             batch['prediction_labels'] = [b['labels'].cpu() for b in y_hat]
             batch['prediction_scores'] = [b['scores'].cpu() for b in y_hat]
-            
+
             if "masks" in y_hat[0].keys():
                 batch['prediction_masks'] = [b['masks'].cpu() for b in y_hat]
                 if self.framework == 'mask-rcnn':
@@ -300,14 +308,15 @@ class ObjectDetectionTask(BaseTask):
                 plt.close()
 
     def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
-        """Compute the test metrics.
+        """
+        Compute the test metrics.
 
         Args:
             batch: The output of your DataLoader.
             batch_idx: Integer displaying index of this batch.
             dataloader_idx: Index of the current dataloader.
         """
-        
+
         x = batch['image']
         batch_size = x.shape[0]
         y = self.reformat_batch(batch, batch_size)
@@ -316,7 +325,7 @@ class ObjectDetectionTask(BaseTask):
             y_hat = y_hat.output
 
         y_hat = self.apply_nms_batch(y_hat, batch_size)
-        
+
         if self.framework == 'mask-rcnn':
 
             for i in range(len(y_hat)):
@@ -334,7 +343,8 @@ class ObjectDetectionTask(BaseTask):
     def predict_step(
         self, batch: Any, batch_idx: int, dataloader_idx: int = 0
     ) -> list[dict[str, Tensor]]:
-        """Compute the predicted bounding boxes.
+        """
+        Output predicted bounding boxes, classes and masks.
 
         Args:
             batch: The output of your DataLoader.
@@ -342,7 +352,7 @@ class ObjectDetectionTask(BaseTask):
             dataloader_idx: Index of the current dataloader.
 
         Returns:
-            Output predicted probabilities.
+            Output predicted bounding boxes, classes and masks.
         """
         x = batch['image']
         batch_size = x.shape[0]
