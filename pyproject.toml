@@ -80,7 +80,8 @@ mmseg = [
   "mmcv",
   "ftfy",
   "regex",
-  "openmim"
+  "openmim",
+  "mmseg"
 ]
 
 wxc = [
