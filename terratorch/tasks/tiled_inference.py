@@ -62,7 +62,11 @@ def tiled_inference(
         torch.Tensor: The result of the inference
     """
 
-    batch_size, h_img, w_img = input_batch.shape[0], *input_batch.shape[-2:]
+    shape = input_batch.shape
+    batch_size = shape[0]
+    # omit bands and take last two dimensions
+    h_img, w_img = shape[-2], shape[-1]
+
     preds = input_batch.new_zeros((batch_size, out_channels, h_img, w_img))
 
     # this list will contain tuples. Inside the tuples:
