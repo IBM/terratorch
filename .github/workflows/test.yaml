@@ -4,18 +4,28 @@ on:
   push:
     branches:
       - main
-  
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'tests/resources/**'
+      - '**/*.svg'
+      - '**/*.png'
   pull_request:
     branches:
       - main
-      - dev
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'tests/resources/**'
+      - '**/*.svg'
+      - '**/*.png'
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12.7"]
+        python-version: ["3.10", "3.11", "3.12"]
 
     steps:
       - name: Clone repo
@@ -28,13 +38,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e .[test]
-          pip install git+https://github.com/NASA-IMPACT/Prithvi-WxC.git
-          pip install git+https://github.com/IBM/granite-wxc.git
+          pip install -e .[wxc,test]
       - name: List pip dependencies
         run: pip list
       - name: Test with pytest
         run: |
-          pytest -s tests
+          pytest -s --cov=terratorch -v --cov-report term-missing tests
 
 

@@ -367,6 +367,7 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         no_label_replace: int | None = None,
         drop_last: bool = True,
         pin_memory: bool = False,
+        check_stackability: bool = True,
         **kwargs: Any,
     ) -> None:
         """Constructor
@@ -429,7 +430,7 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
             drop_last (bool): Drop the last batch if it is not complete. Defaults to True.
             pin_memory (bool): If ``True``, the data loader will copy Tensors
             into device/CUDA pinned memory before returning them. Defaults to False.
-
+            check_stackability (bool): Check if all the files in the dataset has the same size and can be stacked.
         """
         super().__init__(GenericNonGeoPixelwiseRegressionDataset, batch_size, num_workers, **kwargs)
         self.img_grep = img_grep
@@ -474,6 +475,8 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         self.train_transform = wrap_in_compose_is_list(train_transform)
         self.val_transform = wrap_in_compose_is_list(val_transform)
         self.test_transform = wrap_in_compose_is_list(test_transform)
+
+        self.check_stackability = check_stackability
 
     def setup(self, stage: str) -> None:
         if stage in ["fit"]:
@@ -565,7 +568,9 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         dataset = self._valid_attribute(f"{split}_dataset", "dataset")
         batch_size = self._valid_attribute(f"{split}_batch_size", "batch_size")
 
-        batch_size = check_dataset_stackability(dataset, batch_size)
+        if self.check_stackability:
+            print("Checking stackability.")
+            batch_size = check_dataset_stackability(dataset, batch_size)
 
         return DataLoader(
             dataset=dataset,

@@ -19,7 +19,7 @@ from torchgeo.datasets import NonGeoDataset
 
 
 class BurnIntensityNonGeo(NonGeoDataset):
-    """Dataset implementation for Burn Intensity classification."""
+    """Dataset implementation for [Burn Intensity classification](https://huggingface.co/datasets/ibm-nasa-geospatial/burn_intensity)."""
 
     all_band_names = (
         "BLUE", "GREEN", "RED", "NIR", "SWIR_1", "SWIR_2",
