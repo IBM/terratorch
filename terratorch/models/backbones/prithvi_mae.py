@@ -718,6 +718,14 @@ class PrithviMAE(nn.Module):
                                  s=patch_size_t, p=patch_size_h, q=patch_size_w)
         return pixel_values
 
+    def freeze_encoder(self):
+        for param in self.encoder.parameters():
+            param.requires_grad_(False)
+
+    def freeze_decoder(self):
+        for param in self.decoder.parameters():
+            param.requires_grad_(False)
+
     def forward_loss(self, pixel_values, pred, mask):
         """
         Args:
