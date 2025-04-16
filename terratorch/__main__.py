@@ -15,6 +15,9 @@ except ImportError:
 
 
 def main():
+    if len(sys.argv) == 1:
+        print('usage: terratorch [-h] [-c CONFIG] [--print_config[=flags]] {fit,validate,test,predict,compute_statistics,init,iterate} ...')
+        exit(0)
     if len(sys.argv) >= 2 and sys.argv[1] == "iterate":
         # if user runs "terratorch iterate" and terratorch-iterate has not been installed
         if not TERRATORCH_ITERATE_INSTALLED:
