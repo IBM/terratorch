@@ -137,7 +137,7 @@ def test_wxc_downscaling_pincer_instantiate():
         "residual": "none",
         "masking_mode": "both",
         "positional_encoding": "absolute",
-        "config_path": "./test_prithvi_wxc_model_factory_config.yaml",
+        "config_path": "./tests/test_prithvi_wxc_model_factory_config.yaml",
         "wxc_auxiliary_data_path": ".",
         "checkpoint_path": "./pytorch_model.bin",
     }
@@ -233,7 +233,7 @@ def test_wxc_downscaling_pincer_task():
         "residual": "none",
         "masking_mode": "both",
         "positional_encoding": "absolute",
-        "config_path": "./test_prithvi_wxc_model_factory_config.yaml",
+        "config_path": "./tests/test_prithvi_wxc_model_factory_config.yaml",
         "wxc_auxiliary_data_path": ".",
         "checkpoint_path": "./pytorch_model.bin",
     }
@@ -271,7 +271,7 @@ def test_wxc_downscaling_pincer_predict():
         "residual": "none",
         "masking_mode": "both",
         "positional_encoding": "absolute",
-        "config_path": "./test_prithvi_wxc_model_factory_config.yaml",
+        "config_path": "./tests/test_prithvi_wxc_model_factory_config.yaml",
         "wxc_auxiliary_data_path": ".",
         "checkpoint_path": "./pytorch_model.bin",
     }
