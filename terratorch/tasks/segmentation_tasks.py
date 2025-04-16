@@ -292,12 +292,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat_hard = to_segmentation_prediction(model_output)
-        try:
-            self.train_metrics.update(y_hat_hard, y)
-        except:
-            print(f'{y_hat_hard.shape=}')
-            print(f'{y.shape=}')
-            print(f'{batch["filename"]=}')
+        self.train_metrics.update(y_hat_hard, y)
 
         return loss["loss"]
 
