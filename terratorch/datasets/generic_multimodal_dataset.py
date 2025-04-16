@@ -166,10 +166,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             self.non_image_modalities += ["label"]
 
         # Order by modalities and convert path strings to lists as the code expects a list of paths per modality
-        data_root = {m: data_root[m] if isinstance(data_root[m], list) else [data_root[m]] for m in self.modalities}
-
-        if label_data_root is not None and not isinstance(label_data_root, list):
-            label_data_root = [label_data_root]
+        data_root = {m: data_root[m] for m in self.modalities}
 
         self.constant_scale = constant_scale or {}
         self.no_data_replace = no_data_replace

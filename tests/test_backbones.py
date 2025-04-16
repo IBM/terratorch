@@ -1,5 +1,6 @@
 # Copyright contributors to the Terratorch project
 import os
+import warnings
 import pytest
 import timm
 import torch
@@ -152,6 +153,12 @@ def test_scale_mae_new_channels(model_name, bands):
 @pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Skip this test in GitHub Actions as deformable attn is not supported.")
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "prithvi_eo_v2_300", "prithvi_eo_v2_300_tl"])
 def test_prithvi_vit_adapter(backbone, input_224):
+    try:
+        from terratorch.models.backbones.detr_ops.modules.ms_deform_attn import MSDeformAttn
+    except ImportError:
+        warnings.warn(f'Cannot test vit_adapter due to missing deformable attn module.')
+        return
+
     backbone = BACKBONE_REGISTRY.build(backbone, pretrained=True, vit_adapter=True)
     backbone = backbone.to("cuda")
     input_224 = input_224.to("cuda")
