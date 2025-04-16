@@ -110,21 +110,21 @@ model:
   class_path: terratorch.tasks.PixelwiseRegressionTask
   init_args:
     model_args:
-      decoder: UperNet
+      decoder: UperNetDecoder
       decoder_channels: 384
-      pretrained: false
+        #pretrained: false
       backbone: AlexNetEncoder
       backbone_num_classes: 10
       backbone_num_channels: 6
-      num_frames: 1
-      in_channels: 6
-      bands:
-        - BLUE
-        - GREEN
-        - RED
-        - NIR_NARROW
-        - SWIR_1
-        - SWIR_2
+        #num_frames: 1
+        #in_channels: 6
+        #bands:
+        #- BLUE
+        #- GREEN
+        #- RED
+        #- NIR_NARROW
+        #- SWIR_1
+        #- SWIR_2
       head_dropout: 0.5708022831486758
       head_final_act: torch.nn.ReLU
       head_learned_upscale_layers: 2

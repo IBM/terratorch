@@ -158,20 +158,19 @@ def import_custom_modules(custom_modules_path: str | Path | None = None) -> None
     if custom_modules_path:
 
         custom_modules_path = Path(custom_modules_path)
-        content_ = [os.path.basename(item) for item in glob.glob(os.path.join(custom_modules_path,"*"))]
-        content = [item for item in content_ if item not in ("__init__.py", "__pycache__")]
 
         if custom_modules_path.is_dir():
 
             # Add 'custom_modules' folder to sys.path
+            module_dir = custom_modules_path.name
+
             sys.path.append(custom_modules_path)
 
             try:
-                [importlib.import_module(item) for item in content]
+                importlib.import_module(module_dir)
                 logger.info(f"Found {custom_modules_path}")
             except ImportError:
                 raise ImportError(f"It was not possible to import modules from {custom_modules_path}.")
-
         else:
             raise ValueError(f"Modules path {custom_modules_path} isn't a directory. Check if you have defined it properly.")
     else:
@@ -475,7 +474,7 @@ class MyLightningCLI(LightningCLI):
 
         if hasattr(config, "deploy_config_file"):
             self.trainer.deploy_config = config.deploy_config_file
-        print(self.config.fit.custom_modules_path)
+
         # Custom modules path
         if hasattr(self.config, "fit") and hasattr(self.config.fit, "custom_modules_path"):
             custom_modules_path = self.config.fit.custom_modules_path
@@ -487,8 +486,9 @@ class MyLightningCLI(LightningCLI):
             custom_modules_path = self.config.predict.custom_modules_path
         else:
             custom_modules_path = os.getenv("TERRATORCH_CUSTOM_MODULE_PATH", None)
-        print(custom_modules_path)
+
         import_custom_modules(custom_modules_path)
+
         super().instantiate_classes()
 
     @staticmethod
