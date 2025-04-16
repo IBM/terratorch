@@ -145,7 +145,7 @@ prithvi_adapter_cfgs = {
 
 
 def checkpoint_filter_fn_vit(
-    state_dict, model: PrithviViT, pretrained_bands: list[HLSBands | int], bands: list[HLSBands | int]
+    state_dict, model: PrithviViT, pretrained_bands: list[HLSBands | int], model_bands: list[HLSBands | int]
 ) -> dict:
     """Encoder only model"""
 
@@ -171,13 +171,13 @@ def checkpoint_filter_fn_vit(
 
     state_dict = clean_dict
 
-    state_dict = select_patch_embed_weights(state_dict, model, pretrained_bands, bands)
+    state_dict = select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands, encoder_only=True)
 
     return state_dict
 
 
 def checkpoint_filter_fn_mae(
-    state_dict, model: PrithviMAE, pretrained_bands: list[HLSBands | int], bands: list[HLSBands | int]
+    state_dict, model: PrithviMAE, pretrained_bands: list[HLSBands | int], model_bands: list[HLSBands | int]
 ) -> dict:
     """Encoder-decoder model"""
 
@@ -207,7 +207,7 @@ def checkpoint_filter_fn_mae(
 
     state_dict = clean_dict
 
-    state_dict = select_patch_embed_weights(state_dict, model, pretrained_bands, bands)
+    state_dict = select_patch_embed_weights(state_dict, model, pretrained_bands, model_bands, encoder_only=False)
 
     return state_dict
 
