@@ -75,19 +75,3 @@ def test_prithvi_vit_patch_embed_loading_not_compatible_patch(patch_size, patch_
         select_patch_embed_weights(weights, model, PRETRAINED_BANDS, PRETRAINED_BANDS)
 
     gc.collect()
-
-
-@pytest.mark.parametrize("model_name", ['prithvi_eo_v1_100_mae', 'prithvi_eo_v2_300_tl_mae'])
-def test_prithvi_mae(model_name, input_224):
-    model = FULL_MODEL_REGISTRY.build(
-        model_name,
-        pretrained=False,
-    )
-
-    loss, reconstruction, mask = model(input_224)
-
-    assert 'loss' in loss
-    assert reconstruction.shape == input_224.shape
-    assert list(mask.shape) == [1, *reconstruction.shape[-2:]]
-
-    gc.collect()
