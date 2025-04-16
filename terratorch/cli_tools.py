@@ -7,6 +7,7 @@ import logging
 import os
 import shutil
 import sys
+import glob
 import tempfile
 import warnings
 from copy import deepcopy
@@ -157,20 +158,20 @@ def import_custom_modules(custom_modules_path: str | Path | None = None) -> None
     if custom_modules_path:
 
         custom_modules_path = Path(custom_modules_path)
+        content_ = [os.path.basename(item) for item in glob.glob(os.path.join(custom_modules_path,"*"))]
+        content = [item for item in content_ if item not in ("__init__.py", "__pycache__")]
 
         if custom_modules_path.is_dir():
 
             # Add 'custom_modules' folder to sys.path
-            workdir = custom_modules_path.parents[0]
-            module_dir = custom_modules_path.name
-
-            sys.path.append(workdir)
+            sys.path.append(custom_modules_path)
 
             try:
-                importlib.import_module(module_dir)
+                [importlib.import_module(item) for item in content]
                 logger.info(f"Found {custom_modules_path}")
             except ImportError:
                 raise ImportError(f"It was not possible to import modules from {custom_modules_path}.")
+
         else:
             raise ValueError(f"Modules path {custom_modules_path} isn't a directory. Check if you have defined it properly.")
     else:
@@ -461,7 +462,6 @@ class MyLightningCLI(LightningCLI):
         # callback. 
         self.config = add_default_checkpointing_config(self.config)
 
-        super().instantiate_classes()
         # get the predict_output_dir. Depending on the value of run, it may be in the subcommand
         try:
             config = self.config.predict
@@ -475,7 +475,7 @@ class MyLightningCLI(LightningCLI):
 
         if hasattr(config, "deploy_config_file"):
             self.trainer.deploy_config = config.deploy_config_file
-
+        print(self.config.fit.custom_modules_path)
         # Custom modules path
         if hasattr(self.config, "fit") and hasattr(self.config.fit, "custom_modules_path"):
             custom_modules_path = self.config.fit.custom_modules_path
@@ -487,8 +487,9 @@ class MyLightningCLI(LightningCLI):
             custom_modules_path = self.config.predict.custom_modules_path
         else:
             custom_modules_path = os.getenv("TERRATORCH_CUSTOM_MODULE_PATH", None)
-
+        print(custom_modules_path)
         import_custom_modules(custom_modules_path)
+        super().instantiate_classes()
 
     @staticmethod
     def subcommands() -> dict[str, set[str]]:
@@ -501,7 +502,7 @@ def build_lightning_cli(
     args: ArgsType = None,
     run=True,  # noqa: FBT002
 ) -> LightningCLI:
-    """Command-line interface to GeospatialCV."""
+    """Command-line interface to TerraTorch."""
     # Taken from https://github.com/pangeo-data/cog-best-practices
     rasterio_best_practices = {
         "GDAL_DISABLE_READDIR_ON_OPEN": "EMPTY_DIR",
