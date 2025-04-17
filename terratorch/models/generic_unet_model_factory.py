@@ -26,18 +26,27 @@ class GenericUnetModelFactory(ModelFactory):
 
         try:
             print(f"Using module {model} from terratorch.")
-            model_class = getattr(builtin_engine, model)
+            if builtin_engine:
+                model_class = getattr(builtin_engine, model)
+            else:
+                model_class = None
         except:
             if _has_mmseg:
                 print("Module not available on terratorch.")
                 print(f"Using module {model} from mmseg.")
-                model_class = getattr(engine, model)
+                if engine:
+                    model_class = getattr(engine, model)
+                else:
+                    model_class = None
             else:
                 raise Exception("mmseg is not installed.")
 
-        model = model_class(
-           **model_kwargs,
-        )
+        if model_class:
+            model = model_class(
+               **model_kwargs,
+            )
+        else:
+            model = None
 
         return model 
 
@@ -53,7 +62,7 @@ class GenericUnetModelFactory(ModelFactory):
         regression_relu: bool = False,
         **kwargs,
     ) -> Model:
-        """Factory to create model based on SMP.
+        """Factory to create model based on mmseg.
 
         Args:
             task (str): Must be "segmentation".
@@ -64,14 +73,22 @@ class GenericUnetModelFactory(ModelFactory):
             regression_relu (bool). Whether to apply a ReLU if task is regression. Defaults to False.
 
         Returns:
-            Model: SMP model wrapped in SMPModelWrapper.
+            Model: UNet model.
         """
         if task not in ["segmentation", "regression"]:
-            msg = f"SMP models can only perform pixel wise tasks, but got task {task}"
+            msg = f"This model can only perform pixel wise tasks, but got task {task}"
             raise Exception(msg)
 
         builtin_engine_decoders = importlib.import_module("terratorch.models.decoders")
         builtin_engine_encoders = importlib.import_module("terratorch.models.backbones")
+
+        # Default values
+        backbone_builtin_engine = None
+        decoder_builtin_engine = None
+        backbone_engine = None 
+        decoder_engine = None 
+        backbone_model_kwargs = {}
+        decoder_model_kwargs = {}
 
         try:
             engine_decoders = importlib.import_module("mmseg.models.decode_heads")
