@@ -1,1 +1,1 @@
-from alexnet import AlexNetEncoder
+from .alexnet import AlexNetEncoder
