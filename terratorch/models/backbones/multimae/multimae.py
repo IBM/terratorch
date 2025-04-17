@@ -445,7 +445,8 @@ class MultiViT(MultiMAE):
             H *= self.input_adapters["semseg"].stride_level
             W *= self.input_adapters["semseg"].stride_level
         else:
-            B, _, H, W = list(x.values())[0].shape  # TODO: Deal with case where not all have same shape
+            # Assuming same shape for all inputs
+            B, _, H, W = list(x.values())[0].shape
 
         # Encode selected inputs to tokens
         input_task_tokens = {

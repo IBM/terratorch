@@ -1,4 +1,5 @@
-# Copyright contributors to the Terratorch project
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
 
 """Module containing generic dataset classes"""
 
@@ -28,6 +29,7 @@ from terratorch.datasets.transforms import MultimodalTransforms
 
 logger = logging.getLogger("terratorch")
 
+
 def load_table_data(file_path: str | Path) -> pd.DataFrame:
     file_path = str(file_path)
     if file_path.endswith("parquet"):
@@ -39,9 +41,10 @@ def load_table_data(file_path: str | Path) -> pd.DataFrame:
     return df
 
 
-class MultimodalToTensor():
+class MultimodalToTensor:
     def __init__(self, modalities):
         self.modalities = modalities
+
     def __call__(self, d):
         new_dict = {}
         for k, v in d.items():
@@ -89,7 +92,8 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         scalar_label: bool = False,
         data_with_sample_dim: bool = False,
         concat_bands: bool = False,
-        *args, **kwargs,
+        *args,
+        **kwargs,
     ) -> None:
         """Constructor
 
@@ -158,6 +162,12 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         self.non_image_modalities = list(set(self.modalities) - set(image_modalities))
         self.modalities = self.image_modalities + self.non_image_modalities  # Ensure image modalities to be first
 
+        if scalar_label:
+            self.non_image_modalities += ["label"]
+
+        # Order by modalities and convert path strings to lists as the code expects a list of paths per modality
+        data_root = {m: data_root[m] for m in self.modalities}
+
         self.constant_scale = constant_scale or {}
         self.no_data_replace = no_data_replace
         self.no_label_replace = no_label_replace
@@ -167,11 +177,13 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         self.scalar_label = scalar_label
         self.data_with_sample_dim = data_with_sample_dim
         self.concat_bands = concat_bands
-        assert not self.concat_bands or len(self.non_image_modalities) == 0, \
-            (f"concat_bands can only be used with image modalities, "
-             f"but non-image modalities are given: {self.non_image_modalities}")
-        assert not self.concat_bands or not allow_missing_modalities, \
-            "concat_bands cannot be used with allow_missing_modalities."
+        assert not self.concat_bands or len(self.non_image_modalities) == 0, (
+            f"concat_bands can only be used with image modalities, "
+            f"but non-image modalities are given: {self.non_image_modalities}"
+        )
+        assert (
+            not self.concat_bands or not allow_missing_modalities
+        ), "concat_bands cannot be used with allow_missing_modalities."
 
         if self.expand_temporal_dimension and dataset_bands is None:
             msg = "Please provide dataset_bands when expand_temporal_dimension is True"
@@ -210,6 +222,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         num_modalities = len(self.modalities) + int(label_data_root is not None)
 
         # Check for parquet and csv files with modality data and read the file
+
         for m, m_path in data_root.items():
             if os.path.isfile(m_path):
                 data_root[m] = load_table_data(m_path)
@@ -270,13 +283,11 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         self.rgb_indices = rgb_indices or [0, 1, 2]
 
         if dataset_bands is not None:
-            self.dataset_bands = {m: generate_bands_intervals(m_bands)
-                                  for m, m_bands in dataset_bands.items()}
+            self.dataset_bands = {m: generate_bands_intervals(m_bands) for m, m_bands in dataset_bands.items()}
         else:
             self.dataset_bands = None
         if output_bands is not None:
-            self.output_bands = {m: generate_bands_intervals(m_bands)
-                                  for m, m_bands in output_bands.items()}
+            self.output_bands = {m: generate_bands_intervals(m_bands) for m, m_bands in output_bands.items()}
             for modality in self.modalities:
                 if modality in self.output_bands and modality not in self.dataset_bands:
                     msg = f"If output bands are provided, dataset_bands must also be provided (modality: {modality})"
@@ -295,6 +306,12 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
                 self.filter_indices[m] = [self.dataset_bands[m].index(band) for band in self.output_bands[m]]
 
+            if not self.channel_position:
+                logger.warning(
+                    "output_bands is defined but no channel_position is provided. "
+                    "Channels must be in the last dimension, otherwise provide channel_position."
+                )
+
         # If no transform is given, apply only to transform to torch tensor
         if isinstance(transform, A.Compose):
             self.transform = MultimodalTransforms(transform,
@@ -304,12 +321,12 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             self.transform = MultimodalToTensor(self.modalities)
         else:
             # Modality-specific transforms
-            transform = {m: transform[m] if m in transform else default_transform
-                         for m in self.modalities}
+            transform = {m: transform[m] if m in transform else default_transform for m in self.modalities}
             self.transform = MultimodalTransforms(transform, shared=False)
 
         # Ignore rasterio warning for not geo-referenced files
         import rasterio
+
         warnings.filterwarnings("ignore", category=rasterio.errors.NotGeoreferencedWarning)
 
     def __len__(self) -> int:
@@ -334,8 +351,9 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
             # Expand temporal dim
             if modality in self.filter_indices and self.expand_temporal_dimension:
-                data = rearrange(data, "(channels time) h w -> channels time h w",
-                                 channels=len(self.dataset_bands[modality]))
+                data = rearrange(
+                    data, "(channels time) h w -> channels time h w", channels=len(self.dataset_bands[modality])
+                )
 
             if modality == "mask" and len(data) == 1:
                 # tasks expect image masks without channel dim
@@ -481,7 +499,7 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
         dataset_bands: dict[list] | None = None,
         output_bands: dict[list] | None = None,
         class_names: list[str] | None = None,
-        constant_scale: dict[float] = 1.,
+        constant_scale: dict[float] = 1.0,
         transform: A.Compose | None = None,
         no_data_replace: float | None = None,
         no_label_replace: int | None = -1,
@@ -489,7 +507,8 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
         reduce_zero_label: bool = False,
         channel_position: int = -3,
         concat_bands: bool = False,
-        *args, **kwargs,
+        *args,
+        **kwargs,
     ) -> None:
         """Constructor
 
@@ -571,7 +590,8 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
             reduce_zero_label=reduce_zero_label,
             channel_position=channel_position,
             concat_bands=concat_bands,
-            *args, **kwargs,
+            *args,
+            **kwargs,
         )
         self.num_classes = num_classes
         self.class_names = class_names
@@ -581,12 +601,15 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
         item["mask"] = item["mask"].long()
         return item
 
-    def plot(self, sample: dict[str, torch.Tensor], suptitle: str | None = None) -> Figure:
+    def plot(
+        self, sample: dict[str, torch.Tensor], suptitle: str | None = None, show_axes: bool | None = False
+    ) -> Figure:
         """Plot a sample from the dataset.
 
         Args:
             sample: a sample returned by :meth:`__getitem__`
             suptitle: optional string to use as a suptitle
+            show_axes: whether to show axes or not
 
         Returns:
             a matplotlib Figure with the rendered sample
@@ -618,31 +641,34 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
             prediction=prediction_mask if showing_predictions else None,
             suptitle=suptitle,
             class_names=self.class_names,
+            show_axes=show_axes,
         )
 
     @staticmethod
-    def _plot_sample(image, label, num_classes, prediction=None, suptitle=None, class_names=None):
+    def _plot_sample(image, label, num_classes, prediction=None, suptitle=None, class_names=None, show_axes=False):
         num_images = 5 if prediction is not None else 4
         fig, ax = plt.subplots(1, num_images, figsize=(12, 10), layout="compressed")
+        axes_visibility = "on" if show_axes else "off"
 
         # for legend
         ax[0].axis("off")
 
         norm = mpl.colors.Normalize(vmin=0, vmax=num_classes - 1)
-        ax[1].axis("off")
+        ax[1].axis(axes_visibility)
         ax[1].title.set_text("Image")
         ax[1].imshow(image)
 
-        ax[2].axis("off")
+        ax[2].axis(axes_visibility)
         ax[2].title.set_text("Ground Truth Mask")
         ax[2].imshow(label, cmap="jet", norm=norm)
 
-        ax[3].axis("off")
+        ax[3].axis(axes_visibility)
         ax[3].title.set_text("GT Mask on Image")
         ax[3].imshow(image)
         ax[3].imshow(label, cmap="jet", alpha=0.3, norm=norm)
 
         if prediction is not None:
+            ax[4].axis(axes_visibility)
             ax[4].title.set_text("Predicted Mask")
             ax[4].imshow(prediction, cmap="jet", norm=norm)
 
@@ -673,11 +699,11 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
         image_modalities: list[str] | None = None,
         rgb_modality: str | None = None,
         rgb_indices: list[int] | None = None,
-        allow_missing_modalities : bool = False,
+        allow_missing_modalities: bool = False,
         allow_substring_file_names: bool = False,
         dataset_bands: dict[list] | None = None,
         output_bands: dict[list] | None = None,
-        constant_scale: dict[float] = 1.,
+        constant_scale: dict[float] = 1.0,
         transform: A.Compose | dict | None = None,
         no_data_replace: float | None = None,
         no_label_replace: float | None = None,
@@ -685,7 +711,8 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
         reduce_zero_label: bool = False,
         channel_position: int = -3,
         concat_bands: bool = False,
-        *args, **kwargs,
+        *args,
+        **kwargs,
     ) -> None:
         """Constructor
 
@@ -763,7 +790,8 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
             reduce_zero_label=reduce_zero_label,
             channel_position=channel_position,
             concat_bands=concat_bands,
-            *args, **kwargs,
+            *args,
+            **kwargs,
         )
 
     def __getitem__(self, index: int) -> dict[str, Any]:
@@ -771,12 +799,15 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
         item["mask"] = item["mask"].float()
         return item
 
-    def plot(self, sample: dict[str, torch.Tensor], suptitle: str | None = None) -> Figure:
+    def plot(
+        self, sample: dict[str, torch.Tensor], suptitle: str | None = None, show_axes: bool | None = False
+    ) -> Figure:
         """Plot a sample from the dataset.
 
         Args:
             sample (dict[str, Tensor]): a sample returned by :meth:`__getitem__`
             suptitle (str|None): optional string to use as a suptitle
+            show_axes (bool|None): whether to show axes or not
 
         Returns:
             a matplotlib Figure with the rendered sample
@@ -807,29 +838,32 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
             label_mask,
             prediction=prediction_mask if showing_predictions else None,
             suptitle=suptitle,
+            show_axes=show_axes,
         )
 
     @staticmethod
-    def _plot_sample(image, label, prediction=None, suptitle=None):
+    def _plot_sample(image, label, prediction=None, suptitle=None, show_axes=False):
         num_images = 4 if prediction is not None else 3
         fig, ax = plt.subplots(1, num_images, figsize=(12, 10), layout="compressed")
+        axes_visibility = "on" if show_axes else "off"
 
         norm = mpl.colors.Normalize(vmin=label.min(), vmax=label.max())
-        ax[0].axis("off")
+        ax[0].axis(axes_visibility)
         ax[0].title.set_text("Image")
         ax[0].imshow(image)
 
-        ax[1].axis("off")
+        ax[1].axis(axes_visibility)
         ax[1].title.set_text("Ground Truth Mask")
         ax[1].imshow(label, cmap="Greens", norm=norm)
 
-        ax[2].axis("off")
+        ax[2].axis(axes_visibility)
         ax[2].title.set_text("GT Mask on Image")
         ax[2].imshow(image)
         ax[2].imshow(label, cmap="Greens", alpha=0.3, norm=norm)
         # ax[2].legend()
 
         if prediction is not None:
+            ax[3].axis(axes_visibility)
             ax[3].title.set_text("Predicted Mask")
             ax[3].imshow(prediction, cmap="Greens", norm=norm)
 
@@ -852,12 +886,12 @@ class GenericMultimodalScalarDataset(GenericMultimodalDataset):
         image_modalities: list[str] | None = None,
         rgb_modality: str | None = None,
         rgb_indices: list[int] | None = None,
-        allow_missing_modalities : bool = False,
+        allow_missing_modalities: bool = False,
         allow_substring_file_names: bool = False,
         dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         class_names: list[str] | None = None,
-        constant_scale: dict[float] = 1.,
+        constant_scale: dict[float] = 1.0,
         transform: A.Compose | None = None,
         no_data_replace: float | None = None,
         no_label_replace: int | None = None,
@@ -865,7 +899,8 @@ class GenericMultimodalScalarDataset(GenericMultimodalDataset):
         reduce_zero_label: bool = False,
         channel_position: int = -3,
         concat_bands: bool = False,
-        *args, **kwargs,
+        *args,
+        **kwargs,
     ) -> None:
         """Constructor
 
@@ -948,23 +983,26 @@ class GenericMultimodalScalarDataset(GenericMultimodalDataset):
             channel_position=channel_position,
             scalar_label=True,
             concat_bands=concat_bands,
-            *args, **kwargs,
+            *args,
+            **kwargs,
         )
 
         self.num_classes = num_classes
         self.class_names = class_names
 
-
     def __getitem__(self, index: int) -> dict[str, Any]:
         item = super().__getitem__(index)
         return item
 
-    def plot(self, sample: dict[str, torch.Tensor], suptitle: str | None = None) -> Figure:
+    def plot(
+        self, sample: dict[str, torch.Tensor], suptitle: str | None = None, show_axes: bool | None = False
+    ) -> Figure:
         """Plot a sample from the dataset.
 
         Args:
             sample (dict[str, Tensor]): a sample returned by :meth:`__getitem__`
             suptitle (str|None): optional string to use as a suptitle
+            show_axes (bool|None): whether to show axes or not
 
         Returns:
             a matplotlib Figure with the rendered sample
@@ -998,29 +1036,32 @@ class GenericMultimodalScalarDataset(GenericMultimodalDataset):
             label_mask,
             prediction=prediction_mask if showing_predictions else None,
             suptitle=suptitle,
+            show_axes=show_axes,
         )
 
     @staticmethod
-    def _plot_sample(image, label, prediction=None, suptitle=None):
+    def _plot_sample(image, label, prediction=None, suptitle=None, show_axes=False):
         num_images = 4 if prediction is not None else 3
         fig, ax = plt.subplots(1, num_images, figsize=(12, 10), layout="compressed")
+        axes_visibility = "on" if show_axes else "off"
 
         norm = mpl.colors.Normalize(vmin=label.min(), vmax=label.max())
-        ax[0].axis("off")
+        ax[0].axis(axes_visibility)
         ax[0].title.set_text("Image")
         ax[0].imshow(image)
 
-        ax[1].axis("off")
+        ax[1].axis(axes_visibility)
         ax[1].title.set_text("Ground Truth Mask")
         ax[1].imshow(label, cmap="Greens", norm=norm)
 
-        ax[2].axis("off")
+        ax[2].axis(axes_visibility)
         ax[2].title.set_text("GT Mask on Image")
         ax[2].imshow(image)
         ax[2].imshow(label, cmap="Greens", alpha=0.3, norm=norm)
         # ax[2].legend()
 
         if prediction is not None:
+            ax[3].axis(axes_visibility)
             ax[3].title.set_text("Predicted Mask")
             ax[3].imshow(prediction, cmap="Greens", norm=norm)
 

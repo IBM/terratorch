@@ -71,6 +71,9 @@ class ReconstructionTask(BaseTask):
                 If true, log every epoch. Defaults to 10. If int, will plot every plot_on_val epochs.
             tiled_inference_parameters (TiledInferenceParameters | None, optional): Inference parameters
                 used to determine if inference is done on the whole image or through tiling.
+            modalities list(str), optional: List of modality names that are reconstructed. Expect reconstructions as
+                dict with modelity names as keys and tensors as values. Computes metrics for every modality.
+                Currently, only supports image modalities (regression), no segmentation maps or similar.
         """
         self.tiled_inference_parameters = tiled_inference_parameters
         self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
@@ -168,10 +171,8 @@ class ReconstructionTask(BaseTask):
         x = batch["image"]
         if isinstance(x, dict):
             batch_size = list(x.values())[0].shape[0]
-            image_size = list(x.values())[0].shape[-2:]
         elif isinstance(x, torch.Tensor):
             batch_size = x.shape[0]
-            image_size = x.shape[-2:]
         else:
             raise ValueError("Could not infer batch size from input data.")
 
@@ -232,10 +233,8 @@ class ReconstructionTask(BaseTask):
         x = batch["image"]
         if isinstance(x, dict):
             batch_size = list(x.values())[0].shape[0]
-            image_size = list(x.values())[0].shape[-2:]
         elif isinstance(x, torch.Tensor):
             batch_size = x.shape[0]
-            image_size = x.shape[-2:]
         else:
             raise ValueError("Could not infer batch size from input data.")
 
@@ -313,10 +312,8 @@ class ReconstructionTask(BaseTask):
         x = batch["image"]
         if isinstance(x, dict):
             batch_size = list(x.values())[0].shape[0]
-            image_size = list(x.values())[0].shape[-2:]
         elif isinstance(x, torch.Tensor):
             batch_size = x.shape[0]
-            image_size = x.shape[-2:]
         else:
             raise ValueError("Could not infer batch size from input data.")
 

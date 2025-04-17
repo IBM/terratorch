@@ -16,7 +16,7 @@ try:
     granitewcx = True
     from terratorch.models.wxc_model_factory import WxCModelFactory
 except ImportError:
-    logging.getLogger("terratorch").debug("granitewcx not installed")
+    logging.getLogger("terratorch").debug("granitewxc not installed, please use pip install granitewxc")
     granitewcx = False
 
 __all__ = (

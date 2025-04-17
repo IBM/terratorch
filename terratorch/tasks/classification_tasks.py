@@ -28,7 +28,7 @@ def to_class_prediction(y: ModelOutput) -> Tensor:
 class ClassificationTask(TerraTorchTask):
     """Classification Task that accepts models from a range of sources.
 
-    This class is analog in functionality to class:ClassificationTask defined by torchgeo.
+    This class is analog in functionality to the class ClassificationTask defined by torchgeo.
     However, it has some important differences:
         - Accepts the specification of a model factory
         - Logs metrics per class
@@ -68,11 +68,11 @@ class ClassificationTask(TerraTorchTask):
         class_names: list[str] | None = None,
         test_dataloaders_names: list[str] | None = None,
         lr_overrides: dict[str, float] | None = None,
+        path_to_record_metrics: str = None,
     ) -> None:
         """Constructor
 
         Args:
-
             Defaults to None.
             model_args (Dict): Arguments passed to the model factory.
             model_factory (str, optional): ModelFactory class to be used to instantiate the model.
@@ -110,7 +110,9 @@ class ClassificationTask(TerraTorchTask):
             lr_overrides (dict[str, float] | None, optional): Dictionary to override the default lr in specific
                 parameters. The key should be a substring of the parameter names (it will check the substring is
                 contained in the parameter name)and the value should be the new lr. Defaults to None.
+            path_to_record_metrics (str): A path to save the file containing the metrics log. 
         """
+
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
 
@@ -122,7 +124,7 @@ class ClassificationTask(TerraTorchTask):
         if model_factory and model is None:
             self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
 
-        super().__init__(task="classification")
+        super().__init__(task="classification", path_to_record_metrics=path_to_record_metrics)
 
         if model:
             # Custom model
@@ -220,7 +222,6 @@ class ClassificationTask(TerraTorchTask):
         y = batch["label"]
         other_keys = batch.keys() - {"image", "label", "filename"}
         rest = {k: batch[k] for k in other_keys}
-
         model_output: ModelOutput = self(x, **rest)
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
@@ -272,7 +273,10 @@ class ClassificationTask(TerraTorchTask):
         y_hat_hard = to_class_prediction(model_output)
         self.test_metrics[dataloader_idx].update(y_hat_hard, y)
 
+        self.record_metrics(dataloader_idx, y_hat_hard, y)
+
     def predict_step(self, batch: object, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
+
         """Compute the predicted class probabilities.
 
         Args:

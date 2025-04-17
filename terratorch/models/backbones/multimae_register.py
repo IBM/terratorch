@@ -7,7 +7,7 @@ import numpy as np
 from functools import partial
 from huggingface_hub import hf_hub_download
 
-from terratorch.datasets.utils import Modalities, OpticalBands, SARBands, MetadataBands
+from terratorch.datasets.utils import Modalities
 from terratorch.models.backbones.multimae.multimae import MultiMAE, MultiViT
 from terratorch.models.backbones.multimae.criterion import MaskedMSELoss, MaskedCrossEntropyLoss
 from terratorch.models.backbones.multimae.input_adapters import PatchedInputAdapter, SemSegInputAdapter
@@ -325,7 +325,7 @@ def multimae_small(
     """MultiMAE small model."""
 
     if input_adapters is None:
-        input_adapters = ['S1GRD', 'S1RTC', 'S2L1C', 'S2L2A', 'S2RGB', 'NDVI', 'DEM', 'LULC']
+        input_adapters = ['S1GRD', 'S1RTC', 'S2L1C', 'S2L2A', 'S2RGB', 'DEM', 'LULC']
         logger.warning(f'Using default adapters.')
     input_adapters = _parse_input_adapters(input_adapters)
 
@@ -360,7 +360,7 @@ def multimae_base(
     """MultiMAE base model."""
 
     if input_adapters is None:
-        input_adapters = ['S1GRD', 'S1RTC', 'S2L1C', 'S2L2A', 'S2RGB', 'NDVI', 'DEM', 'LULC']
+        input_adapters = ['S1GRD', 'S1RTC', 'S2L1C', 'S2L2A', 'S2RGB', 'DEM', 'LULC']
         logger.warning(f'Using default adapters.')
     input_adapters = _parse_input_adapters(input_adapters)
 
@@ -396,7 +396,7 @@ def multimae_large(
     """MultiMAE large model."""
 
     if input_adapters is None:
-        input_adapters = ['S1GRD', 'S1RTC', 'S2L1C', 'S2L2A', 'S2RGB', 'NDVI', 'DEM', 'LULC']
+        input_adapters = ['S1GRD', 'S1RTC', 'S2L1C', 'S2L2A', 'S2RGB', 'DEM', 'LULC']
         logger.warning(f'Using default adapters.')
     input_adapters = _parse_input_adapters(input_adapters)
 
