@@ -22,7 +22,7 @@ from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
 import pdb
 import torch
-
+import warnings
 from torchvision.ops import nms
 
 
@@ -73,6 +73,7 @@ class ObjectDetectionTask(BaseTask):
         Returns:
             None
         """
+        warnings.warn("The Object Detection Task has to be considered experimental. This is less mature than the other tasks and being further improved.")
         
         self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
         self.framework = model_args['framework']
@@ -247,7 +248,7 @@ class ObjectDetectionTask(BaseTask):
             batch_idx: Integer displaying index of this batch.
             dataloader_idx: Index of the current dataloader.
         """
-
+        
         x = batch['image']
         batch_size = x.shape[0]
         y = self.reformat_batch(batch, batch_size)
@@ -293,7 +294,6 @@ class ObjectDetectionTask(BaseTask):
 
             batch['image'] = batch['image'].cpu()
             sample = unbind_samples(batch)[0]
-
             fig: Figure | None = None
             try:
                 fig = dataset.plot(sample)
