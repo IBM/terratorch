@@ -286,6 +286,8 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
             self.predict_dataset = self.dataset_class(
                 self.predict_root,
                 self.num_classes,
+                image_grep=self.img_grep,
+                label_grep=self.label_grep,
                 dataset_bands=self.predict_dataset_bands,
                 output_bands=self.predict_output_bands,
                 constant_scale=self.constant_scale,
