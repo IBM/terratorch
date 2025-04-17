@@ -162,9 +162,10 @@ def import_custom_modules(custom_modules_path: str | Path | None = None) -> None
         if custom_modules_path.is_dir():
 
             # Add 'custom_modules' folder to sys.path
+            workdir = custom_modules_path.parents[0]
             module_dir = custom_modules_path.name
 
-            sys.path.append(custom_modules_path)
+            sys.path.insert(0, str(workdir))
 
             try:
                 importlib.import_module(module_dir)

@@ -113,7 +113,7 @@ model:
       decoder: UperNetDecoder
       decoder_channels: 384
         #pretrained: false
-      backbone: AlexNetEncoder
+      backbone: alexnet.AlexNetEncoder
       backbone_num_classes: 10
       backbone_num_channels: 6
         #num_frames: 1
