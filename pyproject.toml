@@ -59,6 +59,7 @@ dependencies = [
   "einops",
   "timm>=1.0.15",
   "huggingface_hub",
+  "tifffile"
 ]
 
 [project.optional-dependencies]
