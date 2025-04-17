@@ -58,7 +58,6 @@ class GenericUnetModelFactory(ModelFactory):
         dilations: tuple[int] = (1, 6, 12, 18),
         in_channels: int = 6,
         pretrained: str | bool | None = True,
-        num_classes: int = 1,
         regression_relu: bool = False,
         **kwargs,
     ) -> Model:
@@ -69,7 +68,6 @@ class GenericUnetModelFactory(ModelFactory):
             model (str): Decoder architecture. Currently only supports "unet".
             in_channels (int): Number of input channels.
             pretrained(str | bool): Which weights to use for the backbone. If true, will use "imagenet". If false or None, random weights. Defaults to True.
-            num_classes (int): Number of classes.
             regression_relu (bool). Whether to apply a ReLU if task is regression. Defaults to False.
 
         Returns:
