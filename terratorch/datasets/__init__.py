@@ -61,6 +61,8 @@ from terratorch.datasets.sen4map import Sen4MapDatasetMonthlyComposites
 
 from terratorch.datasets.m_VHR10 import mVHR10
 
+from terratorch.datasets.substation import Substation
+
 __all__ = (
     "GenericNonGeoSegmentationDataset",
     "GenericNonGeoPixelwiseRegressionDataset",
@@ -105,5 +107,6 @@ __all__ = (
     "OpticalBands",
     "SARBands",
     "OpenEarthMapNonGeo",
-    "mVHR10"
+    "mVHR10",
+    "Substation"
 )
