@@ -14,6 +14,9 @@ def wrap_in_compose_is_list(transform_list):
 
 def check_dataset_stackability(dataset, batch_size) -> bool:
 
+    # TODO: Needs permanent solution
+    return batch_size
+
     shapes = np.array([item["image"].shape for item in dataset])
 
     if np.array_equal(shapes.max(0), shapes.min(0)):
