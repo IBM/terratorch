@@ -4,10 +4,11 @@
 """
 import glob
 import os
+from typing import Tuple
 from abc import ABC
 from pathlib import Path
 from typing import Any
-
+from PIL import Image
 import albumentations as A  # noqa: N812
 import numpy as np
 import rioxarray
@@ -136,8 +137,28 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
     def __len__(self) -> int:
         return len(self.image_files)
 
+    def _loader(self, path) -> Image.Image:
+        # open path as file to avoid ResourceWarning (https://github.com/python-pillow/Pillow/issues/835)
+        with open(path, "rb") as f:
+            img = Image.open(f)
+        return img
+
+    def __base_getitem__(self, index: int) -> Tuple[Any, Any]:
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            tuple: (sample, target) where target is class_index of the target class.
+        """
+        path, target = self.image_files[index]
+        sample = self._loader(path)
+
+        return sample, target
+
     def __getitem__(self, index: int) -> dict[str, Any]:
-        image, label = ImageFolder.__getitem__(self, index)
+
+        image, label = self.__base_getitem__(index)
         if self.expand_temporal_dimension:
             image = rearrange(image, "h w (channels time) -> time h w channels", channels=len(self.output_bands))
         if self.filter_indices:

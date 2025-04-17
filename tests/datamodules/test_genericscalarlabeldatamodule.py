@@ -9,7 +9,7 @@ def dummy_classification_data(tmp_path):
     root = tmp_path / "cls_data"
     root.mkdir()
 
-    def create_image_file(p, shape=(16,16,3), pixel_values=[0, 255]):
+    def create_image_file(p, shape=(16,16,3), pixel_values=[0.1,0.2,0.3]):#[0, 255]):
         os.makedirs(os.path.dirname(p), exist_ok=True)
         create_dummy_tiff(str(p), shape=shape, pixel_values=pixel_values)
 
@@ -55,5 +55,6 @@ def test_generic_non_geo_classification_datamodule(dummy_classification_data):
     pred_loader = dm.predict_dataloader()
     pred_batch = next(iter(pred_loader))
     assert "image" in pred_batch
-
+    for i in range(2):
+        print(dm.train_dataset[i])
     gc.collect()
