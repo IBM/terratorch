@@ -37,7 +37,7 @@ class MaskedCrossEntropyLoss(nn.Module):
         self.label_smoothing = label_smoothing
 
     def forward(self, input, target, mask=None):
-        target = target.to(torch.int)
+        target = target.to(torch.long)
         if len(target.shape) == 4:
             # Remove channel dim
             target = target.squeeze(1)

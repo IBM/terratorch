@@ -285,6 +285,10 @@ class SemanticSegmentationTask(TerraTorchTask):
         # Testing because of failures.
         x = batch["image"]
         y = batch["mask"]
+        if len(y.shape) == 4:
+            assert y.shape[1] == 1, "Segmentation task expects shape [B, H, W]"
+            # Remove channel dim from target mask
+            y = y.squeeze(1)
         other_keys = batch.keys() - {"image", "mask", "filename"}
 
         rest = {k: batch[k] for k in other_keys}
@@ -306,6 +310,10 @@ class SemanticSegmentationTask(TerraTorchTask):
         """
         x = batch["image"]
         y = batch["mask"]
+        if len(y.shape) == 4:
+            assert y.shape[1] == 1, "Segmentation task expects shape [B, H, W]"
+            # Remove channel dim from target mask
+            y = y.squeeze(1)
         other_keys = batch.keys() - {"image", "mask", "filename"}
 
         rest = {k: batch[k] for k in other_keys}
@@ -335,7 +343,10 @@ class SemanticSegmentationTask(TerraTorchTask):
         """
         x = batch["image"]
         y = batch["mask"]
-
+        if len(y.shape) == 4:
+            assert y.shape[1] == 1, "Segmentation task expects shape [B, H, W]"
+            # Remove channel dim from target mask
+            y = y.squeeze(1)
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
