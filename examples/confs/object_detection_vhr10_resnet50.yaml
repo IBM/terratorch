@@ -9,7 +9,7 @@ trainer:
   logger:
     class_path: TensorBoardLogger
     init_args:
-      save_dir: /opt/app-root/src/fm-geospatial/pf/logs/
+      save_dir: /opt/app-root/src/logs/
       name: od_resnet
   callbacks:
     # - class_path: RichProgressBar
@@ -20,17 +20,19 @@ trainer:
       init_args:
           # dirpath: output/agb/checkpoints
           mode: max
-          monitor: val_map
+          # monitor: val_map
+          monitor: val_segm_map
           filename: best-{epoch:02d}
   max_epochs: 100
   check_val_every_n_epoch: 1
   log_every_n_steps: 50
   enable_checkpointing: true
-  default_root_dir: /opt/app-root/src/fm-geospatial/pf/logs/
+  default_root_dir: /opt/app-root/src/logs/
+  
 data:
   class_path: terratorch.datamodules.mVHR10DataModule
   init_args:
-    root: /opt/app-root/src/fm-geospatial/pf/terratorch/examples/notebooks/data/VHR10/
+    root: /opt/app-root/src/datasets/VHR10
     batch_size: 8
     num_workers: 8
 
@@ -40,14 +42,12 @@ model:
     model_factory: ObjectDetectionModelFactory
     model_args:
       framework: mask-rcnn  # Model name of TorchVision (one of faster-rcnn, fcos, retinanet, mask-rcnn)
-      backbone: timm_resnet50  # One of resnet18, resnet34, resnet50, resnet101, resnet152, resnext50_32x4d, resnext101_32x8d, wide_resnet50_2, or wide_resnet101_2
+      backbone: timm_resnet50  
       backbone_pretrained: true
+      framework_min_size: 896
+      framework_max_size: 896 
+
       num_classes: 12  # Number of classes including background
-      # trainable_layers: 3  # Number of trainable layers
-      # backbone_model_bands:
-      #   - RED
-      #   - GREEN
-      #   - BLUE
       in_channels: 3
       necks:
         - name: FeaturePyramidNetworkNeck
@@ -66,7 +66,6 @@ model:
       - Harbor
       - Bridge
       - Vehicle
-
 
 optimizer:
   class_path: torch.optim.AdamW
