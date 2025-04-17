@@ -282,6 +282,7 @@ class SemanticSegmentationTask(TerraTorchTask):
             batch_idx: Integer displaying index of this batch.
             dataloader_idx: Index of the current dataloader.
         """
+        # Testing because of failures.
         x = batch["image"]
         y = batch["mask"]
         other_keys = batch.keys() - {"image", "mask", "filename"}
@@ -349,12 +350,8 @@ class SemanticSegmentationTask(TerraTorchTask):
                 batch["prediction"] = y_hat_hard
 
                 if isinstance(batch["image"], dict):
-                    if hasattr(datamodule, "rgb_modality"):
-                        # Generic multimodal dataset
-                        batch["image"] = batch["image"][datamodule.rgb_modality]
-                    else:
-                        # Multimodal dataset. Assuming first item to be the modality to visualize.
-                        batch["image"] = batch["image"][list(batch["image"].keys())[0]]
+                    rgb_modality = getattr(datamodule, 'rgb_modality', None) or list(batch["image"].keys())[0]
+                    batch["image"] = batch["image"][rgb_modality]
 
                 for key in ["image", "mask", "prediction"]:
                     batch[key] = batch[key].cpu()
