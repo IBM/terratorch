@@ -8,9 +8,14 @@ from PIL import Image
 from rasterio.transform import from_origin
 
 
-def create_dummy_tiff(path: str, shape: tuple, pixel_values, min_size: int = None) -> None:
+def create_dummy_tiff(path: str, shape: tuple, pixel_values: int | list, min_size: int = None) -> None:
 
-    if not all([type(i)==int for i in pixel_values]):
+    if type(pixel_values) == int:
+        pixel_values_ = [pixel_values]
+    else:
+        pixel_values_ = pixel_values
+
+    if not all([type(i)==int for i in pixel_values_]):
         dtype = np.float32
     else:
         dtype = np.uint8
