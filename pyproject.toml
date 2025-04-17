@@ -52,7 +52,7 @@ dependencies = [
   "h5py",
   "mlflow",
   "lightning",
-  "segmentation-models-pytorch",
+  "segmentation-models-pytorch<=0.4.0",
   "jsonargparse",
   "pytest",
   "torchgeo",
