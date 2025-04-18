@@ -99,6 +99,7 @@ class IgnoreIndexMetricWrapper(WrapperMetric):
     def update(self, preds: Tensor, target: Tensor) -> None:
         if self.ignore_index is not None:
             items_to_take = target != self.ignore_index
+            items_to_take[torch.isnan(target)] = False  # Filter NaN values as well
             target = target[items_to_take]
             preds = preds[items_to_take]
         return self.metric.update(preds, target)
@@ -106,6 +107,7 @@ class IgnoreIndexMetricWrapper(WrapperMetric):
     def forward(self, preds: Tensor, target: Tensor, *args, **kwargs) -> Any:
         if self.ignore_index is not None:
             items_to_take = target != self.ignore_index
+            items_to_take[torch.isnan(target)] = False  # Filter NaN values as well
             target = target[items_to_take]
             preds = preds[items_to_take]
         return self.metric.forward(preds, target, *args, **kwargs)
@@ -327,8 +329,8 @@ class PixelwiseRegressionTask(TerraTorchTask):
                 datamodule = self.trainer.datamodule
                 batch["prediction"] = y_hat
                 if isinstance(batch["image"], dict):
-                    # Multimodal input
-                    batch["image"] = batch["image"][self.trainer.datamodule.rgb_modality]
+                    rgb_modality = getattr(datamodule, 'rgb_modality', None) or list(batch["image"].keys())[0]
+                    batch["image"] = batch["image"][rgb_modality]
                 for key in ["image", "mask", "prediction"]:
                     batch[key] = batch[key].cpu()
                 sample = unbind_samples(batch)[0]
