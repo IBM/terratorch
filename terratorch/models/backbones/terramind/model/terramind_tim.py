@@ -228,7 +228,7 @@ class TerraMindTiM(nn.Module):
         elif not isinstance(modalities, list):
             raise ValueError(f'Modalities must be None, a list of modality keys or a dict with ints/embedding layers.')
 
-        self.tim_modalities = tim_modalities or ["tok_lulc@224"]  # TODO: Define default TiM modalities
+        self.tim_modalities = tim_modalities or ["tok_lulc@224"]
         if isinstance(tim_decoding_steps, list):
             assert len(tim_decoding_steps) == len(self.tim_modalities), "Number of decoding steps must match number of TiM modalities."
         else:

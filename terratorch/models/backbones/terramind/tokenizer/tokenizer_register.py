@@ -14,7 +14,7 @@
 
 import torch
 import logging
-from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
+from terratorch.registry import TERRATORCH_FULL_MODEL_REGISTRY
 from huggingface_hub import hf_hub_download
 
 logger = logging.getLogger('terramind')
@@ -105,9 +105,7 @@ def build_vqvae(
     return model
 
 
-# TODO Switch to TERRATORCH_FULL_MODEL_REGISTRY when available
-# from terratorch.registry import TERRATORCH_FULL_MODEL_REGISTRY
-@TERRATORCH_BACKBONE_REGISTRY.register
+@TERRATORCH_FULL_MODEL_REGISTRY.register
 def terramind_v1_tokenizer_s2l2a(**kwargs):
     """
     S2L2A Tokenizer for TerraMind v1.
@@ -132,7 +130,7 @@ def terramind_v1_tokenizer_s2l2a(**kwargs):
     return tokenizer
 
 
-@TERRATORCH_BACKBONE_REGISTRY.register
+@TERRATORCH_FULL_MODEL_REGISTRY.register
 def terramind_v1_tokenizer_s1rtc(**kwargs):
     """
     S1RTC Tokenizer for TerraMind v1.
@@ -157,7 +155,7 @@ def terramind_v1_tokenizer_s1rtc(**kwargs):
 
     return tokenizer
 
-@TERRATORCH_BACKBONE_REGISTRY.register
+@TERRATORCH_FULL_MODEL_REGISTRY.register
 def terramind_v1_tokenizer_s1grd(**kwargs):
     """
     S1GRD Tokenizer for TerraMind v1.
@@ -183,7 +181,7 @@ def terramind_v1_tokenizer_s1grd(**kwargs):
     return tokenizer
 
 
-@TERRATORCH_BACKBONE_REGISTRY.register
+@TERRATORCH_FULL_MODEL_REGISTRY.register
 def terramind_v1_tokenizer_dem(**kwargs):
     """
     DEM Tokenizer for TerraMind v1.
@@ -209,7 +207,7 @@ def terramind_v1_tokenizer_dem(**kwargs):
     return tokenizer
 
 
-@TERRATORCH_BACKBONE_REGISTRY.register
+@TERRATORCH_FULL_MODEL_REGISTRY.register
 def terramind_v1_tokenizer_lulc(**kwargs):
     """
     LULC Tokenizer for TerraMind v1.
@@ -237,7 +235,7 @@ def terramind_v1_tokenizer_lulc(**kwargs):
 
 
 
-@TERRATORCH_BACKBONE_REGISTRY.register
+@TERRATORCH_FULL_MODEL_REGISTRY.register
 def terramind_v1_tokenizer_ndvi(**kwargs):
     """
     NDVI Tokenizer for TerraMind v1.

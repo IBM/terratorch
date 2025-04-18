@@ -114,7 +114,7 @@ class PipelineCond(DiffusionPipeline):
             model_output = self.model(image, t, cond, orig_res=orig_res, **kwargs)
             
             if do_cfg:
-                model_output_uncond = self.model(image, t, cond, unconditional=True, **kwargs) # TODO: is there a better way to get unconditional output?
+                model_output_uncond = self.model(image, t, cond, unconditional=True, **kwargs)
 
                 if callable(guidance_scale):
                     guidance_scale_value = guidance_scale(t/self.scheduler.config.num_train_timesteps)

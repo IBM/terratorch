@@ -21,7 +21,7 @@ from .terramind_vit import TerraMindViT
 from .terramind_tim import TerraMindTiM
 from .terramind_generation import TerraMindGeneration
 from .tm_utils import LayerNorm
-from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
+from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY, TERRATORCH_FULL_MODEL_REGISTRY
 from huggingface_hub import hf_hub_download
 
 logger = logging.getLogger('terramind')
@@ -34,6 +34,8 @@ __all__ = [
     'terramind_v1_large',
     'terramind_v1_base_tim',
     'terramind_v1_large_tim',
+    'terramind_v1_base_encdec',
+    'terramind_v1_large_encdec',
     'terramind_v1_base_generate',
     'terramind_v1_large_generate',
 ]
@@ -44,16 +46,12 @@ pretrained_weights = {
             "hf_hub_filename": "TerraMind_v01_base.pt",
         },
         "terramind_v1_base": {
-            "hf_hub_id": "FAST-EO/TerraMind-1.0-base",
+            "hf_hub_id": "ibm-esa-geospatial/TerraMind-1.0-base",
             "hf_hub_filename": "TerraMind_v1_base.pt",
         },
         "terramind_v1_large": {
-            "hf_hub_id": "FAST-EO/TerraMind-1.0-large",
-            "hf_hub_filename": "terramind-v1-L_weights.pt",
-        },
-        "terramind_v1_large_deprecated": {
-            "hf_hub_id": "FAST-EO/TerraMind-1.0-large-deprecated",
-            "hf_hub_filename": "terramind-v1-L_weights.pt",
+            "hf_hub_id": "ibm-esa-geospatial/TerraMind-1.0-large",
+            "hf_hub_filename": "TerraMind_v1_large.pt",
         },
     }
 
@@ -473,26 +471,6 @@ def terramind_v1_large(**kwargs):
 
 
 @TERRATORCH_BACKBONE_REGISTRY.register
-def terramind_v1_large_deprecated(**kwargs):
-    model = build_terrammind_vit(
-        variant='terramind_v1_large_deprecated',
-        encoder_depth=24,
-        dim=1024,
-        num_heads=16,
-        mlp_ratio=4,
-        qkv_bias=False,
-        proj_bias=False,
-        mlp_bias=False,
-        norm_layer=partial(LayerNorm, eps=1e-6, bias=False),
-        act_layer=nn.SiLU,
-        gated_mlp=True,
-        pretrained_bands=PRETRAINED_BANDS,
-        **kwargs
-    )
-    return model
-
-
-@TERRATORCH_BACKBONE_REGISTRY.register
 def terramind_v1_large_tim(**kwargs):
     model = build_terrammind_tim(
         variant='terramind_v1_large',
@@ -513,10 +491,7 @@ def terramind_v1_large_tim(**kwargs):
     return model
 
 
-# TODO Switch to TERRATORCH_FULL_MODEL_REGISTRY when available
-# from terratorch.registry import TERRATORCH_FULL_MODEL_REGISTRY
-# @TERRATORCH_FULL_MODEL_REGISTRY.register
-@TERRATORCH_BACKBONE_REGISTRY.register
+@TERRATORCH_FULL_MODEL_REGISTRY.register
 def terramind_v1_base_encdec(**kwargs):
     model = build_terrammind_encdec(
         variant='terramind_v1_base',
@@ -537,7 +512,7 @@ def terramind_v1_base_encdec(**kwargs):
     return model
 
 
-@TERRATORCH_BACKBONE_REGISTRY.register
+@TERRATORCH_FULL_MODEL_REGISTRY.register
 def terramind_v1_large_encdec(**kwargs):
     model = build_terrammind_encdec(
         variant='terramind_v1_large',
@@ -558,10 +533,7 @@ def terramind_v1_large_encdec(**kwargs):
     return model
 
 
-# TODO Switch to TERRATORCH_FULL_MODEL_REGISTRY when available
-# from terratorch.registry import TERRATORCH_FULL_MODEL_REGISTRY
-# @TERRATORCH_FULL_MODEL_REGISTRY.register
-@TERRATORCH_BACKBONE_REGISTRY.register
+@TERRATORCH_FULL_MODEL_REGISTRY.register
 def terramind_v01_base_generate(**kwargs):
     model = build_terrammind_generate(
         variant='terramind_v01_base',
@@ -583,8 +555,7 @@ def terramind_v01_base_generate(**kwargs):
     return model
 
 
-# @TERRATORCH_FULL_MODEL_REGISTRY.register
-@TERRATORCH_BACKBONE_REGISTRY.register
+@TERRATORCH_FULL_MODEL_REGISTRY.register
 def terramind_v1_base_generate(**kwargs):
     model = build_terrammind_generate(
         variant='terramind_v1_base',
@@ -606,8 +577,7 @@ def terramind_v1_base_generate(**kwargs):
     return model
 
 
-# @TERRATORCH_FULL_MODEL_REGISTRY.register
-@TERRATORCH_BACKBONE_REGISTRY.register
+@TERRATORCH_FULL_MODEL_REGISTRY.register
 def terramind_v1_large_generate(**kwargs):
     model = build_terrammind_generate(
         variant='terramind_v1_large',

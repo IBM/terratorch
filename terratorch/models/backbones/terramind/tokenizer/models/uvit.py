@@ -897,8 +897,7 @@ class UViT(ModelMixin, ConfigMixin):
         timesteps = timestep
         is_mps = sample.device.type == "mps"
         if not torch.is_tensor(timesteps):
-            # TODO: this requires sync between CPU and GPU. So try to pass timesteps as tensors if you can
-            # This would be a good case for the `match` statement (Python 3.10+)
+            # This requires sync between CPU and GPU. So try to pass timesteps as tensors if you can
             if isinstance(timestep, float):
                 dtype = torch.float32 if is_mps else torch.float64
             else:
