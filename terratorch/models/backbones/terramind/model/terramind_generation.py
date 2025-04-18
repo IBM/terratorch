@@ -154,6 +154,8 @@ def build_tokenizer(input_modalities, output_modalities, pretrained):
     for modality in output_modalities:
         if modality in tokenizer_dict and modality not in tokenizer:
             tokenizer[modality] = tokenizer_dict[modality](pretrained=pretrained)
+        else:
+            warnings.warn(f'Tokenizer for output modality {modality} not found.')
 
     tokenizer = nn.ModuleDict(tokenizer)
 

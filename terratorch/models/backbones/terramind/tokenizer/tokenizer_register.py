@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import warnings
 
 import torch
 import logging
@@ -75,8 +76,8 @@ def build_vqvae(
         **kwargs):
 
     if not vqvae_available:
-        logger.error(f'Cannot import VQVAE/DiVAE from terramind. '
-                     f'Make sure to install diffusers==0.20.0 and huggingface-hub==0.23.2.')
+        warnings.warn(f'Cannot import VQVAE/DiVAE from terramind. '
+                      f'\nMake sure to install `pip install diffusers==0.30.0`.')
         raise import_error
 
     if model_type == 'divae':
