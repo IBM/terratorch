@@ -166,11 +166,9 @@ def import_custom_modules(custom_modules_path: str | Path | None = None) -> None
             module_dir = custom_modules_path.name
 
             sys.path.insert(0, str(workdir))
-            print(sys.path)
-            print(workdir)
+
             try:
                 module = importlib.import_module(module_dir)
-                print(module)
                 logger.info(f"Found {custom_modules_path}")
             except ImportError:
                 raise ImportError(f"It was not possible to import modules from {custom_modules_path}.")
