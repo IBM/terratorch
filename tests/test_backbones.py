@@ -156,8 +156,7 @@ def test_prithvi_vit_adapter(backbone, input_224):
     try:
         from terratorch.models.backbones.detr_ops.modules.ms_deform_attn import MSDeformAttn
     except ImportError:
-        warnings.warn(f'Cannot test vit_adapter due to missing deformable attn module.')
-        return
+        pytest.skip(f'Cannot test vit_adapter due to missing deformable attn module.')
 
     backbone = BACKBONE_REGISTRY.build(backbone, pretrained=True, vit_adapter=True)
     backbone = backbone.to("cuda")
@@ -178,5 +177,15 @@ def test_multi_mae(model_name, input_adapters):
     backbone = BACKBONE_REGISTRY.build(model_name, input_adapters=input_adapters)
     input_tensor = torch.ones((1, 12, 224, 224))
     output = backbone({"S2L2A": input_tensor})
+
+    gc.collect()
+
+
+@pytest.mark.parametrize("model_name",
+                         ["terramind_v1_base", "terramind_v1_large", "terramind_v1_base_tim", "terramind_v1_large_tim"])
+def test_terramind(model_name):
+    # default should have 3 channels
+    backbone = BACKBONE_REGISTRY.build(model_name, modalities=['S2L2A'])
+    output = backbone({"S2L2A": torch.ones((1, 12, 224, 224))})
 
     gc.collect()
