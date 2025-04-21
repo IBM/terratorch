@@ -21,7 +21,7 @@ def freeze_module(module: nn.Module):
         param.requires_grad_(False)
 
 @MODEL_FACTORY_REGISTRY.register
-class GenerictModelFactory(ModelFactory):
+class GenericModelFactory(ModelFactory):
 
     def build_model(
         self,
@@ -35,54 +35,53 @@ class GenerictModelFactory(ModelFactory):
         regression_relu: bool = False,
         **kwargs,
     ) -> Model:
-        """Factory to create model based on SMP.
+        """Factory to create models from any custom module.
 
         Args:
             task (str): Must be "segmentation".
-            model (str): Decoder architecture. Currently only supports "unet".
+            model (str): The name for the model class.
             in_channels (int): Number of input channels.
             pretrained(str | bool): Which weights to use for the backbone. If true, will use "imagenet". If false or None, random weights. Defaults to True.
             num_classes (int): Number of classes.
             regression_relu (bool). Whether to apply a ReLU if task is regression. Defaults to False.
 
         Returns:
-            Model: SMP model wrapped in SMPModelWrapper.
+            Model: A wrapped generic model.
         """
 
         model_kwargs = _extract_prefix_keys(kwargs, "backbone_")
 
         try:
-            model_class = BACKBONE_REGISTRY.get("model")
-            model = model_class(
-               **model_kwargs,
-            )
-        except ValueError:
-            raise Exception("Model {model} not found in the registry.")
+            model = BACKBONE_REGISTRY.build(backbone, **model_kwargs)
+
+        except KeyError:
+            raise KeyError(f"Model {backbone} not found in the registry.")
 
         return GenericModelWrapper(
-            backbone, decoder=decoder, relu=task == "regression" and regression_relu, squeeze_single_class=task == "regression"
+            model, squeeze_single_class=task == "regression"
         )
 
 class GenericModelWrapper(Model, nn.Module):
-    def __init__(self, model, decoder=None, relu=False, squeeze_single_class=False) -> None:
+    def __init__(self, model, squeeze_single_class=False) -> None:
         super().__init__()
         self.model = model
         self.squeeze_single_class = squeeze_single_class
 
-    def forward(self, *args, **kwargs):
+    def freeze_encoder(self):
+        freeze_module(self.model)
 
+    def freeze_decoder(self):
+        freeze_module(self.model)
+
+    def forward(self, *args, **kwargs):
         # It supposes the input has dimension (B, C, H, W)
         input_data = [args[0]] # It adapts the input to became a list of time 'snapshots'
-        args = (input_data,)
 
         model_output = self.model(*args, **kwargs)
 
         model_output = ModelOutput(model_output)
 
         return model_output
-
-    def freeze_model(self):
-        raise freeze_module(self.model)
 
 def _extract_prefix_keys(d: dict, prefix: str) -> dict:
     extracted_dict = {}
