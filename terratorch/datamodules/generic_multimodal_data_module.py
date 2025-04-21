@@ -272,7 +272,10 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 differently during the transforms and are not modified but only converted into a tensor if possible.
             rgb_modality (str, optional): Modality used for RGB plots. Defaults to first modality in data_root.keys().
             rgb_indices (list[int] | None, optional): _description_. Defaults to None.
-            allow_substring_file_names
+            allow_substring_file_names (bool, optional): Allow substrings during sample identification by adding
+                image or label grep to the sample prefixes. If False, treats sample prefixes as full file names.
+                If True and no split file is provided, considers the file stem as prefix, otherwise the full file name.
+                Defaults to True.
             class_names (list[str], optional): Names of the classes. Defaults to None.
             constant_scale (dict[float]): Factor to multiply data values by, provided as a dictionary with modalities as
                 keys. Can be subset of all modalities. Defaults to None.
