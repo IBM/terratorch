@@ -20,7 +20,7 @@ from terratorch.datasets import (GenericMultimodalDataset, GenericMultimodalSegm
 from terratorch.datamodules.generic_pixel_wise_data_module import Normalize
 from terratorch.io.file import load_from_file_or_attribute
 
-from .utils import check_dataset_stackability
+from .utils import check_dataset_stackability, check_dataset_stackability_dict
 
 logger = logging.getLogger("terratorch")
 
@@ -373,6 +373,8 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.reduce_zero_label = reduce_zero_label
         self.channel_position = channel_position
         self.concat_bands = concat_bands
+        if not concat_bands and check_stackability:
+            logger.debug(f"Cannot check stackability if bands are not concatenated.")
         self.check_stackability = check_stackability
 
         if isinstance(train_transform, dict):
@@ -542,8 +544,11 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         batch_size = self._valid_attribute(f"{split}_batch_size", "batch_size")
 
         if self.check_stackability:
-            print("Checking stackability.")
-            batch_size = check_dataset_stackability(dataset, batch_size)
+            logger.info(f'Checking dataset stackability')
+            if self.concat_bands:
+                batch_size = check_dataset_stackability(dataset, batch_size)
+            else:
+                batch_size = check_dataset_stackability_dict(dataset, batch_size)
 
         if self.sample_num_modalities:
             # Custom batch sampler for sampling modalities per batch
