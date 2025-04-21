@@ -43,27 +43,27 @@ __all__ = [
 
 pretrained_weights = {
     "terramind_v1_tokenizer_s2l2a": {
-        "hf_hub_id": "FAST-EO/TerraMind-Tokenizer-S2L2A",
+        "hf_hub_id": "ibm-esa-geospatial/TerraMind-1.0-Tokenizer-S2L2A",
         "hf_hub_filename": "TerraMind_Tokenizer_S2L2A.pt",
     },
     "terramind_v1_tokenizer_s1rtc": {
-        "hf_hub_id": "FAST-EO/TerraMind-Tokenizer-S1RTC",
+        "hf_hub_id": "ibm-esa-geospatial/TerraMind-1.0-Tokenizer-S1RTC",
         "hf_hub_filename": "TerraMind_Tokenizer_S1RTC.pt",
     },
     "terramind_v1_tokenizer_s1grd": {
-        "hf_hub_id": "FAST-EO/TerraMind-Tokenizer-S1GRD",
+        "hf_hub_id": "ibm-esa-geospatial/TerraMind-1.0-Tokenizer-S1GRD",
         "hf_hub_filename": "TerraMind_Tokenizer_S1GRD.pt",
     },
     "terramind_v1_tokenizer_dem": {
-        "hf_hub_id": "FAST-EO/TerraMind-Tokenizer-DEM",
+        "hf_hub_id": "ibm-esa-geospatial/TerraMind-1.0-Tokenizer-DEM",
         "hf_hub_filename": "TerraMind_Tokenizer_DEM.pt",
     },
     "terramind_v1_tokenizer_lulc": {
-        "hf_hub_id": "FAST-EO/TerraMind-Tokenizer-LULC",
+        "hf_hub_id": "ibm-esa-geospatial/TerraMind-1.0-Tokenizer-LULC",
         "hf_hub_filename": "TerraMind_Tokenizer_LULC.pt",
     },
     "terramind_v1_tokenizer_ndvi": {
-        "hf_hub_id": "FAST-EO/TerraMind-Tokenizer-NDVI",
+        "hf_hub_id": "ibm-esa-geospatial/TerraMind-1.0-Tokenizer-NDVI",
         "hf_hub_filename": "TerraMind_Tokenizer_NDVI.pt",
     },
 }
