@@ -12,6 +12,20 @@ class ModelOutput:
     output: Tensor
     auxiliary_heads: dict[str, Tensor] = None
 
+@dataclass
+class ReconstructionOutput:
+    """
+    Output for reconstruction models like MAE.
+    Args:
+        loss (dict[str, Tensor]): Dictionary of losses. Must include "loss".
+        pred (Tensor, dict[str, Tensor]): Prediction or dictionary of predictions for multimodal data.
+            Output format in pixel shape [B, C, H, W] or [B, C, T, H, W].
+        mask (Tensor, dict[str, Tensor], optional): Masked data or dictionary of predictions for multimodal data.
+            Output format in pixel shape [B, H, W] or [B, T, H, W] with 0 = unmasked pixels, 1 = masked pixels.
+    """
+    loss: dict[str, Tensor]
+    pred: Tensor | dict[str, Tensor]
+    mask: Tensor | dict[str, Tensor] | None
 
 class Model(ABC, nn.Module):
     def __init__(self, *args, **kwargs) -> None:

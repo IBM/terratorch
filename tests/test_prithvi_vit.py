@@ -1,11 +1,16 @@
 import pytest
-import timm
-
+import torch
 from terratorch.models.backbones.prithvi_vit import PRETRAINED_BANDS
 from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
-from terratorch.registry import BACKBONE_REGISTRY
+from terratorch.registry import BACKBONE_REGISTRY, FULL_MODEL_REGISTRY
 
 import gc
+
+NUM_CHANNELS = 6
+
+@pytest.fixture
+def input_224():
+    return torch.ones((1, NUM_CHANNELS, 224, 224))
 
 @pytest.mark.parametrize("patch_size", [4, 8, 16])
 @pytest.mark.parametrize("patch_size_time,num_frames", [(1, 1), (1, 2), (1, 3), (2, 2), (3,3)])
