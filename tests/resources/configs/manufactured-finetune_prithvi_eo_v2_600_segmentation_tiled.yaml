@@ -101,6 +101,7 @@ model:
       head_dropout: 0.5708022831486758
     output_most_probable: false
     tiled_inference_on_testing: true
+    path_to_record_metrics: ./
     loss: ce
     #aux_heads:
     #  - name: aux_head

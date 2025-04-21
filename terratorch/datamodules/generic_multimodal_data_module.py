@@ -25,6 +25,10 @@ from .utils import check_dataset_stackability
 logger = logging.getLogger("terratorch")
 
 def collate_chunk_dicts(batch_list):
+    if isinstance(batch_list, dict):
+        # batch size = 1
+        return batch_list
+
     batch = {}
     for key, value in batch_list[0].items():  # TODO: Handle missing modalities when allow_missing_modalities is set.
         if isinstance(value, torch.Tensor):
@@ -187,7 +191,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         image_modalities: list[str] | None = None,
         rgb_modality: str | None = None,
         rgb_indices: list[int] | None = None,
-        allow_substring_file_names: bool = False,
+        allow_substring_file_names: bool = True,
         class_names: list[str] | None = None,
         constant_scale: dict[float] = None,
         train_transform: dict | A.Compose | None | list[A.BasicTransform] = None,
@@ -445,7 +449,8 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
                 channel_position=self.channel_position,
-                concat_bands=self.concat_bands ,
+                data_with_sample_dim = self.data_with_sample_dim,
+                concat_bands=self.concat_bands,
             )
             logger.info(f"Train dataset: {len(self.train_dataset)}")
         if stage in ["fit", "validate"]:
@@ -469,6 +474,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
                 channel_position=self.channel_position,
+                data_with_sample_dim = self.data_with_sample_dim,
                 concat_bands=self.concat_bands,
             )
             logger.info(f"Val dataset: {len(self.val_dataset)}")
@@ -493,6 +499,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
                 channel_position=self.channel_position,
+                data_with_sample_dim = self.data_with_sample_dim,
                 concat_bands=self.concat_bands,
             )
             logger.info(f"Test dataset: {len(self.test_dataset)}")
@@ -513,6 +520,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
                 channel_position=self.channel_position,
+                data_with_sample_dim=self.data_with_sample_dim,
                 concat_bands=self.concat_bands,
             )
             logger.info(f"Predict dataset: {len(self.predict_dataset)}")

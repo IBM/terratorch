@@ -4,7 +4,7 @@ import pytest
 import torch
 
 from terratorch.models.backbones.prithvi_vit import PRETRAINED_BANDS
-from terratorch.tasks import ClassificationTask, PixelwiseRegressionTask, SemanticSegmentationTask
+from terratorch.tasks import ClassificationTask, PixelwiseRegressionTask, SemanticSegmentationTask, ReconstructionTask
 
 import gc
 
@@ -196,3 +196,16 @@ def test_create_classification_task_decoder_to_optim(backbone, decoder, loss, mo
     gc.collect()
 
 
+@pytest.mark.parametrize("model_name", ["prithvi_eo_v2_300_mae"])
+def test_create_reconstruction_task(model_name):
+    model_args = {
+        "model": model_name,
+        "pretrained": False,
+    }
+
+    ReconstructionTask(
+        model_factory="FullModelFactory",
+        model_args=model_args,
+    )
+
+    gc.collect()
