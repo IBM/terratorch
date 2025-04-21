@@ -33,7 +33,7 @@ def check_dataset_stackability_dict(dataset, batch_size) -> bool:
             else:
                 shapes[mod] = [value.shape]
 
-    if all(np.array_equal(s.max(0), s.min(0)) for s in shapes.values()):
+    if all(np.array_equal(np.max(s, 0), np.min(s, 0)) for s in shapes.values()):
         return batch_size
     else:
         print(
