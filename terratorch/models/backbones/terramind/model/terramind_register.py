@@ -34,8 +34,8 @@ __all__ = [
     'terramind_v1_large',
     'terramind_v1_base_tim',
     'terramind_v1_large_tim',
-    'terramind_v1_base_encdec',
-    'terramind_v1_large_encdec',
+    'terramind_v1_base_mae',
+    'terramind_v1_large_mae',
     'terramind_v1_base_generate',
     'terramind_v1_large_generate',
 ]
@@ -298,7 +298,7 @@ def build_terrammind_vit(
     return model
 
 
-def build_terrammind_encdec(
+def build_terrammind_mae(
         variant: str = None,
         pretrained: bool = False,
         ckpt_path: str | None = None,
@@ -492,8 +492,8 @@ def terramind_v1_large_tim(**kwargs):
 
 
 @TERRATORCH_FULL_MODEL_REGISTRY.register
-def terramind_v1_base_encdec(**kwargs):
-    model = build_terrammind_encdec(
+def terramind_v1_base_mae(**kwargs):
+    model = build_terrammind_mae(
         variant='terramind_v1_base',
         encoder_depth=12,
         decoder_depth=12,
@@ -513,8 +513,8 @@ def terramind_v1_base_encdec(**kwargs):
 
 
 @TERRATORCH_FULL_MODEL_REGISTRY.register
-def terramind_v1_large_encdec(**kwargs):
-    model = build_terrammind_encdec(
+def terramind_v1_large_mae(**kwargs):
+    model = build_terrammind_mae(
         variant='terramind_v1_large',
         encoder_depth=24,
         decoder_depth=24,
