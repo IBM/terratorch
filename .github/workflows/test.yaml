@@ -10,6 +10,7 @@ on:
       - 'tests/resources/**'
       - '**/*.svg'
       - '**/*.png'
+      - '**/*.ipynb'
   pull_request:
     branches:
       - main
@@ -19,6 +20,7 @@ on:
       - 'tests/resources/**'
       - '**/*.svg'
       - '**/*.png'
+      - '**/*.ipynb'
 jobs:
   build:
     runs-on: ubuntu-latest
