@@ -22,6 +22,25 @@ def check_dataset_stackability(dataset, batch_size) -> bool:
         print("The batch samples can't be stacked, since they don't have the same dimensions. Setting batch_size=1.")
         return 1
 
+
+def check_dataset_stackability_dict(dataset, batch_size) -> bool:
+    """Check stackability with item['image'] being a dict."""
+    shapes = {}
+    for item in dataset:
+        for mod, value in item["image"].items():
+            if mod in shapes:
+                shapes[mod].append(value.shape)
+            else:
+                shapes[mod] = [value.shape]
+
+    if all(np.array_equal(np.max(s, 0), np.min(s, 0)) for s in shapes.values()):
+        return batch_size
+    else:
+        print(
+            "The batch samples can't be stacked, since they don't have the same dimensions. Setting batch_size=1.")
+        return 1
+
+
 class NormalizeWithTimesteps(Callable):
     def __init__(self, means, stds):
         super().__init__()

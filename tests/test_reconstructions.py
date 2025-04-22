@@ -57,3 +57,23 @@ def test_prithvi_mae_reconstruction(model_name):
     assert list(mask.shape) == [1, *reconstruction.shape[-2:]]
 
     gc.collect()
+
+
+@pytest.mark.parametrize("model_name", ['terramind_v1_base_generate', 'terramind_v1_large_generate'])
+def test_terramind_generation(model_name):
+    try:
+        import diffusers
+    except ImportError:
+        pytest.skip("diffusers not installed")
+
+    model = FULL_MODEL_REGISTRY.build(
+        model_name,
+        pretrained=False,
+        modalities=['S2L2A'],
+        output_modalities=['S1GRD', 'LULC'],
+        timesteps=1,
+    )
+
+    output = model(torch.ones((1, 12, 224, 224)))
+
+    gc.collect()
