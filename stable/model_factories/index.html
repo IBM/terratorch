@@ -730,6 +730,30 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory" class="md-nav__link">
+    <span class="md-ellipsis">
+      EncoderDecoderFactory
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="EncoderDecoderFactory">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory.build_model" class="md-nav__link">
+    <span class="md-ellipsis">
+      build_model
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#terratorch.models.clay_model_factory.ClayModelFactory" class="md-nav__link">
     <span class="md-ellipsis">
       ClayModelFactory
@@ -837,30 +861,6 @@
         
           <li class="md-nav__item">
   <a href="#terratorch.models.smp_model_factory.SMPModelFactory.build_model" class="md-nav__link">
-    <span class="md-ellipsis">
-      build_model
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory" class="md-nav__link">
-    <span class="md-ellipsis">
-      EncoderDecoderFactory
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="EncoderDecoderFactory">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory.build_model" class="md-nav__link">
     <span class="md-ellipsis">
       build_model
     </span>
@@ -1220,6 +1220,30 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory" class="md-nav__link">
+    <span class="md-ellipsis">
+      EncoderDecoderFactory
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="EncoderDecoderFactory">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory.build_model" class="md-nav__link">
+    <span class="md-ellipsis">
+      build_model
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#terratorch.models.clay_model_factory.ClayModelFactory" class="md-nav__link">
     <span class="md-ellipsis">
       ClayModelFactory
@@ -1339,30 +1363,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory" class="md-nav__link">
-    <span class="md-ellipsis">
-      EncoderDecoderFactory
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="EncoderDecoderFactory">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory.build_model" class="md-nav__link">
-    <span class="md-ellipsis">
-      build_model
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -1429,6 +1429,303 @@
 
 
 
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="terratorch.models.encoder_decoder_factory.EncoderDecoderFactory" class="doc doc-heading">
+            <code>terratorch.models.encoder_decoder_factory.EncoderDecoderFactory</code>
+
+
+<a href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory" class="headerlink" title="Permanent link">#</a></h2>
+
+
+    <div class="doc doc-contents first">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="terratorch.models.model.ModelFactory" href="#terratorch.models.model.ModelFactory">ModelFactory</a></code></p>
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="terratorch.models.encoder_decoder_factory.EncoderDecoderFactory.build_model" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">build_model</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">backbone</span><span class="p">,</span> <span class="n">decoder</span><span class="p">,</span> <span class="n">backbone_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">decoder_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">head_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">necks</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">aux_decoders</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rescale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">peft_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+<a href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory.build_model" class="headerlink" title="Permanent link">#</a></h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Generic model factory that combines an encoder and decoder, together with a head, for a specific task.</p>
+<p>Further arguments to be passed to the backbone, decoder or head. They should be prefixed with
+<code>backbone_</code>, <code>decoder_</code> and <code>head_</code> respectively.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>task</code>
+            </td>
+            <td>
+                  <code>str</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Task to be performed. Currently supports "segmentation", "regression" and "classification".</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>backbone</code>
+            </td>
+            <td>
+                  <code>(str, <span title="torch.nn.Module">Module</span>)</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Backbone to be used. If a string, will look for such models in the different
+registries supported (internal terratorch registry, timm, ...). If a torch nn.Module, will use it
+directly. The backbone should have and <code>out_channels</code> attribute and its <code>forward</code> should return a list[Tensor].</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>decoder</code>
+            </td>
+            <td>
+                  <code>Union[str, <span title="torch.nn.Module">Module</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Decoder to be used for the segmentation model.
+    If a string, will look for such decoders in the different
+    registries supported (internal terratorch registry, smp, ...).
+    If an nn.Module, we expect it to expose a property <code>decoder.out_channels</code>.
+    Pixel wise tasks will be concatenated with a Conv2d for the final convolution.
+    Defaults to "FCNDecoder".</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>backbone_kwargs</code>
+            </td>
+            <td>
+                  <code>dict, optional) </code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Arguments to be passed to instantiate the backbone.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>decoder_kwargs</code>
+            </td>
+            <td>
+                  <code>dict, optional) </code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Arguments to be passed to instantiate the decoder.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>head_kwargs</code>
+            </td>
+            <td>
+                  <code>dict, optional) </code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Arguments to be passed to the head network. </p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>num_classes</code>
+            </td>
+            <td>
+                  <code>int</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of classes. None for regression tasks.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>necks</code>
+            </td>
+            <td>
+                  <code>list[dict]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>nn.Modules to be called in succession on encoder features
+before passing them to the decoder. Should be registered in the NECKS_REGISTRY registry.
+Expects each one to have a key "name" and subsequent keys for arguments, if any.
+Defaults to None, which applies the identity function.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>aux_decoders</code>
+            </td>
+            <td>
+                  <code>list[<a class="autorefs autorefs-internal" title="terratorch.models.model.AuxiliaryHead" href="../extra_model_structures/#terratorch.models.model.AuxiliaryHead">AuxiliaryHead</a>] | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List of AuxiliaryHead decoders to be added to the model.
+These decoders take the input from the encoder as well.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>rescale</code>
+            </td>
+            <td>
+                  <code>bool</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to apply bilinear interpolation to rescale the model output if its size
+is different from the ground truth. Only applicable to pixel wise models
+(e.g. segmentation, pixel wise regression). Defaults to True.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>peft_config</code>
+            </td>
+            <td>
+                  <code>dict</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Configuration options for using <a href="https://huggingface.co/docs/peft/index">PEFT</a>.
+The dictionary should have the following keys:</p>
+<ul>
+<li>"method": Which PEFT method to use. Should be one implemented in PEFT, a list is available <a href="https://huggingface.co/docs/peft/package_reference/peft_types#peft.PeftType">here</a>.</li>
+<li>"replace_qkv": String containing a substring of the name of the submodules to replace with QKVSep.
+  This should be used when the qkv matrices are merged together in a single linear layer and the PEFT
+  method should be applied separately to query, key and value matrices (e.g. if LoRA is only desired in
+  Q and V matrices). e.g. If using Prithvi this should be "qkv"</li>
+<li>"peft_config_kwargs": Dictionary containing keyword arguments which will be passed to <a href="https://huggingface.co/docs/peft/package_reference/config#peft.PeftConfig">PeftConfig</a></li>
+</ul>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="terratorch.models.model.Model" href="../extra_model_structures/#terratorch.models.model.Model">Model</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>nn.Module: Full model with encoder, decoder and head.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
 
 
 
@@ -2768,309 +3065,12 @@ as auxiliary decoders or modified encoders.</p>
 
 </div>
 
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="terratorch.models.encoder_decoder_factory.EncoderDecoderFactory" class="doc doc-heading">
-            <code>terratorch.models.encoder_decoder_factory.EncoderDecoderFactory</code>
-
-
-<a href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory" class="headerlink" title="Permanent link">#</a></h2>
-
-
-    <div class="doc doc-contents first">
-            <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="terratorch.models.model.ModelFactory" href="#terratorch.models.model.ModelFactory">ModelFactory</a></code></p>
-
-
-
-
-
-
-
-
-
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="terratorch.models.encoder_decoder_factory.EncoderDecoderFactory.build_model" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">build_model</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">backbone</span><span class="p">,</span> <span class="n">decoder</span><span class="p">,</span> <span class="n">backbone_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">decoder_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">head_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">necks</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">aux_decoders</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rescale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">peft_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
-
-<a href="#terratorch.models.encoder_decoder_factory.EncoderDecoderFactory.build_model" class="headerlink" title="Permanent link">#</a></h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Generic model factory that combines an encoder and decoder, together with a head, for a specific task.</p>
-<p>Further arguments to be passed to the backbone, decoder or head. They should be prefixed with
-<code>backbone_</code>, <code>decoder_</code> and <code>head_</code> respectively.</p>
-
-
-<p><span class="doc-section-title">Parameters:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-          <th>Default</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>task</code>
-            </td>
-            <td>
-                  <code>str</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Task to be performed. Currently supports "segmentation", "regression" and "classification".</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>backbone</code>
-            </td>
-            <td>
-                  <code>(str, <span title="torch.nn.Module">Module</span>)</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Backbone to be used. If a string, will look for such models in the different
-registries supported (internal terratorch registry, timm, ...). If a torch nn.Module, will use it
-directly. The backbone should have and <code>out_channels</code> attribute and its <code>forward</code> should return a list[Tensor].</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>decoder</code>
-            </td>
-            <td>
-                  <code>Union[str, <span title="torch.nn.Module">Module</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Decoder to be used for the segmentation model.
-    If a string, will look for such decoders in the different
-    registries supported (internal terratorch registry, smp, ...).
-    If an nn.Module, we expect it to expose a property <code>decoder.out_channels</code>.
-    Pixel wise tasks will be concatenated with a Conv2d for the final convolution.
-    Defaults to "FCNDecoder".</p>
-              </div>
-            </td>
-            <td>
-                <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>backbone_kwargs</code>
-            </td>
-            <td>
-                  <code>dict, optional) </code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Arguments to be passed to instantiate the backbone.</p>
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>decoder_kwargs</code>
-            </td>
-            <td>
-                  <code>dict, optional) </code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Arguments to be passed to instantiate the decoder.</p>
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>head_kwargs</code>
-            </td>
-            <td>
-                  <code>dict, optional) </code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Arguments to be passed to the head network. </p>
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>num_classes</code>
-            </td>
-            <td>
-                  <code>int</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Number of classes. None for regression tasks.</p>
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>necks</code>
-            </td>
-            <td>
-                  <code>list[dict]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>nn.Modules to be called in succession on encoder features
-before passing them to the decoder. Should be registered in the NECKS_REGISTRY registry.
-Expects each one to have a key "name" and subsequent keys for arguments, if any.
-Defaults to None, which applies the identity function.</p>
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>aux_decoders</code>
-            </td>
-            <td>
-                  <code>list[<a class="autorefs autorefs-internal" title="terratorch.models.model.AuxiliaryHead" href="../extra_model_structures/#terratorch.models.model.AuxiliaryHead">AuxiliaryHead</a>] | None</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>List of AuxiliaryHead decoders to be added to the model.
-These decoders take the input from the encoder as well.</p>
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>rescale</code>
-            </td>
-            <td>
-                  <code>bool</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Whether to apply bilinear interpolation to rescale the model output if its size
-is different from the ground truth. Only applicable to pixel wise models
-(e.g. segmentation, pixel wise regression). Defaults to True.</p>
-              </div>
-            </td>
-            <td>
-                  <code>True</code>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>peft_config</code>
-            </td>
-            <td>
-                  <code>dict</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Configuration options for using <a href="https://huggingface.co/docs/peft/index">PEFT</a>.
-The dictionary should have the following keys:</p>
-<ul>
-<li>"method": Which PEFT method to use. Should be one implemented in PEFT, a list is available <a href="https://huggingface.co/docs/peft/package_reference/peft_types#peft.PeftType">here</a>.</li>
-<li>"replace_qkv": String containing a substring of the name of the submodules to replace with QKVSep.
-  This should be used when the qkv matrices are merged together in a single linear layer and the PEFT
-  method should be applied separately to query, key and value matrices (e.g. if LoRA is only desired in
-  Q and V matrices). e.g. If using Prithvi this should be "qkv"</li>
-<li>"peft_config_kwargs": Dictionary containing keyword arguments which will be passed to <a href="https://huggingface.co/docs/peft/package_reference/config#peft.PeftConfig">PeftConfig</a></li>
-</ul>
-              </div>
-            </td>
-            <td>
-                  <code>None</code>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><a class="autorefs autorefs-internal" title="terratorch.models.model.Model" href="../extra_model_structures/#terratorch.models.model.Model">Model</a></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>nn.Module: Full model with encoder, decoder and head.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-    </div>
-
-</div>
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
   <hr>
 <div class="md-source-file">
   <small>
     
       Last update:
-      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="March 23, 2025 15:14:21">March 23, 2025</span>
+      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="April 21, 2025 13:13:45">April 21, 2025</span>
       
     
   </small>
