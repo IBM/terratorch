@@ -20,11 +20,8 @@
 
 from functools import partial
 
-from terratorch.models.backbones.terramind.model.decoder_embeddings import (ImageTokenDecoderEmbedding,
-                                   SequenceDecoderEmbedding)
-from terratorch.models.backbones.terramind.model.encoder_embeddings import (ImageEncoderEmbedding,
-                                   ImageTokenEncoderEmbedding,
-                                   SequenceEncoderEmbedding)
+from .decoder_embeddings import ImageTokenDecoderEmbedding, SequenceDecoderEmbedding
+from .encoder_embeddings import ImageEncoderEmbedding, ImageTokenEncoderEmbedding, SequenceEncoderEmbedding
 from terratorch.models.backbones.terramind.utils import generate_uint15_hash
 
 MODALITY_INFO = {

@@ -25,7 +25,7 @@ import torch.nn.functional as F
 from .encoder_embeddings import ImageEncoderEmbedding, ImageTokenEncoderEmbedding
 from .decoder_embeddings import ImageTokenDecoderEmbedding
 from .tm_utils import LayerNorm
-from terratorch.models.backbones.terramind.data.modality_info import MODALITY_INFO
+from .modality_info import MODALITY_INFO
 from .generate import GenerationSampler, build_chained_generation_schedules
 from .terramind import TerraMind
 from terratorch.models.backbones.terramind.tokenizer.tokenizer_register import (

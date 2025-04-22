@@ -20,7 +20,7 @@ from functools import partial
 
 from .encoder_embeddings import ImageEncoderEmbedding
 from .tm_utils import Block, LayerNorm
-from terratorch.models.backbones.terramind.data.modality_info import MODALITY_INFO
+from .modality_info import MODALITY_INFO
 
 
 def build_modality_embeddings(modalities, img_size=None, dim=None, patch_size=None):

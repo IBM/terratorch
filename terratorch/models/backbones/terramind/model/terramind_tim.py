@@ -23,7 +23,7 @@ from .encoder_embeddings import ImageEncoderEmbedding, ImageTokenEncoderEmbeddin
 from .tm_utils import Block, LayerNorm
 from .generate import GenerationSampler, build_chained_generation_schedules
 from .terramind import TerraMind
-from terratorch.models.backbones.terramind.data.modality_info import MODALITY_INFO
+from .modality_info import MODALITY_INFO
 
 
 def build_modality_embeddings(modalities, tim_modalities, img_size=None, dim=None, patch_size=None):
