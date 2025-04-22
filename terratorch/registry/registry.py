@@ -188,5 +188,10 @@ TERRATORCH_DECODER_REGISTRY.includes_head = False
 DECODER_REGISTRY: MultiSourceRegistry[DecoderRegistry] = MultiSourceRegistry()
 DECODER_REGISTRY.register_source("terratorch", TERRATORCH_DECODER_REGISTRY)
 
+# Full model registry
+TERRATORCH_FULL_MODEL_REGISTRY = Registry()
+FULL_MODEL_REGISTRY: MultiSourceRegistry[BuildableRegistry] = MultiSourceRegistry()
+FULL_MODEL_REGISTRY.register_source("terratorch", TERRATORCH_FULL_MODEL_REGISTRY)
+
 ### Model Factory Registry
 MODEL_FACTORY_REGISTRY = Registry()

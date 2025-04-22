@@ -706,17 +706,25 @@ class PrithviMAE(nn.Module):
             `torch.FloatTensor` of shape `(batch_size, num_channels, height, width)`:
                 Pixel values.
         """
+        batch_size = patchified_pixel_values.shape[0]
         patch_size_t, patch_size_h, patch_size_w = self.encoder.patch_embed.patch_size
         image_size = to_2tuple(image_size) if image_size is not None else self.encoder.img_size
         original_height, original_width = image_size
         num_patches_h = original_height // patch_size_h
         num_patches_w = original_width // patch_size_w
-        num_channels = self.encoder.in_chans
 
         pixel_values = rearrange(patchified_pixel_values, 'b (t h w) (s p q c) -> b c (t s) (h p) (w q)',
-                                 c=num_channels, h=num_patches_h, w=num_patches_w,
+                                 b=batch_size, h=num_patches_h, w=num_patches_w,
                                  s=patch_size_t, p=patch_size_h, q=patch_size_w)
         return pixel_values
+
+    def freeze_encoder(self):
+        for param in self.encoder.parameters():
+            param.requires_grad_(False)
+
+    def freeze_decoder(self):
+        for param in self.decoder.parameters():
+            param.requires_grad_(False)
 
     def forward_loss(self, pixel_values, pred, mask):
         """
@@ -750,14 +758,29 @@ class PrithviMAE(nn.Module):
         location_coords: None | torch.Tensor = None,
         mask_ratio: float = None,
     ):
+
         if len(pixel_values.shape) == 4 and self.encoder.patch_embed.input_size[0] == 1:
             # add time dim
             pixel_values = pixel_values.unsqueeze(2)
+            time_dim_added = True
+        else:
+            time_dim_added = False
 
         mask_ratio = mask_ratio or self.mask_ratio
         latent, mask, ids_restore = self.encoder(pixel_values, temporal_coords, location_coords, mask_ratio)
         pred = self.decoder(latent, ids_restore, temporal_coords, location_coords, input_size=pixel_values.shape)
         loss = self.forward_loss(pixel_values, pred, mask)
+
+        # Prepare output format in TerraTorch
+        loss = {'loss': loss}
+        mask = mask.unsqueeze(-1).repeat(1, 1, pred.shape[-1])
+        mask = self.unpatchify(mask, image_size=pixel_values.shape[-2:])
+        mask = mask[:, 0] # Remove channel dim
+        pred = self.unpatchify(pred, image_size=pixel_values.shape[-2:])
+        if time_dim_added:
+            # Remove time dim to match input data
+            pred = pred.squeeze(2)
+            mask = mask.squeeze(1)
         return loss, pred, mask
 
     def forward_features(

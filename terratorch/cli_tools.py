@@ -7,6 +7,7 @@ import logging
 import os
 import shutil
 import sys
+import glob
 import tempfile
 import warnings
 from copy import deepcopy
@@ -164,10 +165,10 @@ def import_custom_modules(custom_modules_path: str | Path | None = None) -> None
             workdir = custom_modules_path.parents[0]
             module_dir = custom_modules_path.name
 
-            sys.path.append(workdir)
+            sys.path.insert(0, str(workdir))
 
             try:
-                importlib.import_module(module_dir)
+                module = importlib.import_module(module_dir)
                 logger.info(f"Found {custom_modules_path}")
             except ImportError:
                 raise ImportError(f"It was not possible to import modules from {custom_modules_path}.")
@@ -462,6 +463,7 @@ class MyLightningCLI(LightningCLI):
         self.config = add_default_checkpointing_config(self.config)
 
         super().instantiate_classes()
+
         # get the predict_output_dir. Depending on the value of run, it may be in the subcommand
         try:
             config = self.config.predict
@@ -490,6 +492,7 @@ class MyLightningCLI(LightningCLI):
 
         import_custom_modules(custom_modules_path)
 
+
     @staticmethod
     def subcommands() -> dict[str, set[str]]:
         existing_subcommands = LightningCLI.subcommands()
@@ -501,7 +504,7 @@ def build_lightning_cli(
     args: ArgsType = None,
     run=True,  # noqa: FBT002
 ) -> LightningCLI:
-    """Command-line interface to GeospatialCV."""
+    """Command-line interface to TerraTorch."""
     # Taken from https://github.com/pangeo-data/cog-best-practices
     rasterio_best_practices = {
         "GDAL_DISABLE_READDIR_ON_OPEN": "EMPTY_DIR",

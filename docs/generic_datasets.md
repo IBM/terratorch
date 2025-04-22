@@ -4,5 +4,4 @@
 :::terratorch.datasets.generic_scalar_label_dataset
     options:
         show_source: false
-
-
+:::terratorch.datasets.generic_multimodal_dataset
