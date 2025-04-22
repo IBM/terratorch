@@ -75,7 +75,8 @@ test = [
   "pytest",
   "pytest-coverage",
   "coverage-badge",
-  "peft>=0.15.0"
+  "peft>=0.15.0",
+  "diffusers>=0.30.0"
 ]
 
 mmseg = [
