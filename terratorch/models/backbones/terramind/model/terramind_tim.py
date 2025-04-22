@@ -66,6 +66,10 @@ def build_modality_embeddings(modalities, tim_modalities, img_size=None, dim=Non
             key = 'untok_sen2rgb@224'
         elif 'dem' in modality_renamed:
             key = 'untok_dem@224'
+        elif 'caption' in modality_renamed:
+            raise NotImplementedError('Captions are not yet supported.')
+        elif 'coords' in modality_renamed:
+            raise NotImplementedError('Captions are not yet supported.')
         else:
             key = modality
 
@@ -136,6 +140,10 @@ def build_output_modality_embeddings(modalities, img_size=None, dim=None, patch_
             key = 'tok_lulc@224'
         elif 'ndvi' in modality_renamed:
             key = 'tok_ndvi@224'
+        elif 'caption' in modality_renamed:
+            raise NotImplementedError('Captions are not yet supported.')
+        elif 'coords' in modality_renamed:
+            raise NotImplementedError('Captions are not yet supported.')
         else:
             key = modality
 

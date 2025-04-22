@@ -63,6 +63,10 @@ def build_modality_embeddings(modalities, img_size=None, dim=None, patch_size=No
             key = 'untok_sen2rgb@224'
         elif 'dem' in modality_renamed:
             key = 'untok_dem@224'
+        elif 'caption' in modality_renamed:
+            raise NotImplementedError('Captions are not yet supported.')
+        elif 'coords' in modality_renamed:
+            raise NotImplementedError('Captions are not yet supported.')
         else:
             key = modality
 

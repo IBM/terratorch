@@ -83,6 +83,10 @@ def build_modality_embeddings(modalities, img_size=None, dim=None, patch_size=No
             key = 'tok_lulc@224'
         elif 'ndvi' in modality_renamed:
             key = 'tok_ndvi@224'
+        elif 'caption' in modality_renamed:
+            raise NotImplementedError('Captions are not yet supported.')
+        elif 'coords' in modality_renamed:
+            raise NotImplementedError('Captions are not yet supported.')
         else:
             key = modality
 
