@@ -16,39 +16,54 @@ First, organize your custom code into Python files (`.py`). It's recommended to 
 ```text
 my_project_root/
 ├── custom_modules/
-│   ├── __init__.py       <-- Optional, but good practice
+│   ├── __init__.py       <-- **Required** to make the directory a Python package
 │   └── my_custom_model.py
 ├── my_config.yaml
 └── ... (other project files)
 ```
 
-Inside `custom_modules/my_custom_model.py`, define your custom class. For instance, a simple custom PyTorch model component:
+Inside `custom_modules/my_custom_model.py`, define your custom class. If you intend for TerraTorch's factories to discover this module (e.g., to use it as a backbone or decoder selected by name), you **must** register it using the appropriate registry decorator.
+
+For instance, to register a simple custom CNN as a backbone:
 
 ```python
 # custom_modules/my_custom_model.py
 import torch
 import torch.nn as nn
+# Import the relevant registry
+from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
 
+# Register the class with the backbone registry
+@TERRATORCH_BACKBONE_REGISTRY.register
 class MySimpleCNN(nn.Module):
-    def __init__(self, in_channels: int, num_classes: int):
+    # Note: Backbones typically don't take num_classes directly in __init__
+    # They output features which are then processed by a decoder/head.
+    # This example is simplified for demonstration.
+    def __init__(self, in_channels: int, out_features: int = 512): # Example: output feature size
         super().__init__()
         self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=3, padding=1)
         self.relu = nn.ReLU()
-        self.conv2 = nn.Conv2d(32, num_classes, kernel_size=1)
-        print(f"Initialized MySimpleCNN with in_channels={in_channels}, num_classes={num_classes}")
+        self.pool = nn.AdaptiveAvgPool2d((1, 1)) # Example pooling
+        self.fc = nn.Linear(32, out_features) # Example final layer
+        print(f"Initialized MySimpleCNN backbone with in_channels={in_channels}, out_features={out_features}")
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> list[torch.Tensor]: # Backbones often return a list of features
         x = self.conv1(x)
         x = self.relu(x)
-        x = self.conv2(x)
-        return x
+        x = self.pool(x)
+        x = torch.flatten(x, 1)
+        x = self.fc(x)
+        # Return as a list, mimicking multi-stage feature outputs
+        return [x]
 
-# You could also define custom tasks, datamodules, etc. here
+# You could also define custom tasks, datamodules, decoders (registering with TERRATORCH_DECODER_REGISTRY), etc. here
 # from terratorch.tasks import SemanticSegmentationTask
 # class MyCustomTask(SemanticSegmentationTask):
 #     # ... override methods ...
 #     pass
 ```
+
+The `@TERRATORCH_BACKBONE_REGISTRY.register` line makes `MySimpleCNN` available to be selected by name (i.e., `"MySimpleCNN"`) in the `backbone` field of your model configuration. Similar registries exist for decoders (`TERRATORCH_DECODER_REGISTRY`), necks, and full models.
 
 Make sure your custom classes inherit from appropriate base classes if needed (e.g., `torch.nn.Module` for models, `lightning.pytorch.LightningModule` or `terratorch.tasks.BaseTask` for tasks, `lightning.pytorch.LightningDataModule` for datamodules).
 
@@ -85,39 +100,54 @@ When provided, TerraTorch will add the specified directory (`./custom_modules` i
 
 ## Step 3: Use Your Custom Component in the Configuration
 
-Now that TerraTorch can find your custom code, you can reference your custom classes in the YAML configuration using their full Python class path. The class path is constructed as `<directory_name>.<filename>.<ClassName>`.
+Now that TerraTorch can find and import your custom code, you can reference your custom classes in the YAML configuration.
 
-For example, to use `MySimpleCNN` defined in `custom_modules/my_custom_model.py` as part of your model configuration (e.g., as a decoder):
+*   **For registered components (Recommended for backbones, decoders, etc.):** If you registered your class (like `MySimpleCNN` above), you can simply use its class name as the identifier:
 
-```yaml
-# my_config.yaml
-custom_modules_path: ./custom_modules
+    ```yaml
+    # my_config.yaml
+    custom_modules_path: ./custom_modules
 
-# Assuming you are using a task that expects a model with certain components
-model:
-  # Example: Using the custom model as a segmentation decoder
-  decoder:
-    class_path: custom_modules.my_custom_model.MySimpleCNN
-    init_args:
-      in_channels: 128 # Example input channels from backbone
-      num_classes: 5   # Example number of output classes
-  backbone:
-    # ... configure backbone ...
-  # ... other model args ...
+    model:
+      class_path: terratorch.models.EncoderDecoder # Example using a standard factory
+      init_args:
+        backbone: "MySimpleCNN" # Reference the registered custom backbone by name
+        decoder: "UNetDecoder" # Example using a standard decoder
+        model_args:
+          backbone_in_channels: 3 # Passed to MySimpleCNN.__init__
+          # backbone_out_features: 512 # Default or specify if needed
+          decoder_num_classes: 5 # Example number of output classes
+          # ... other args for backbone/decoder if needed
+    # ... rest of config
+    ```
 
-task:
-  class_path: terratorch.tasks.SemanticSegmentationTask # Or your custom task
-  init_args:
-    # ... task args ...
+*   **For components not using the registry or for full class path reference:** You can always reference a class using its full Python path: `<directory_name>.<filename>.<ClassName>`. This is useful for custom tasks, callbacks, or if you choose not to register a model component and instead specify its full path.
 
-data:
-  # ... data config ...
+    ```yaml
+    # my_config.yaml
+    custom_modules_path: ./custom_modules
 
-trainer:
-  # ... trainer config ...
-```
+    # Example: Using the custom model directly via class_path (less common for backbones/decoders)
+    # model:
+    #   class_path: custom_modules.my_custom_model.MySimpleCNN # Using full path
+    #   init_args:
+    #     in_channels: 3
+    #     out_features: 512
 
-Similarly, you could reference a custom task like `custom_modules.my_custom_model.MyCustomTask` under the `task.class_path` key.
+    # Example: Using a custom task
+    task:
+      class_path: custom_modules.my_custom_task_module.MyCustomTask # Assuming it's defined elsewhere
+      init_args:
+        # ... task args ...
+
+    # Example: Using a custom callback
+    trainer:
+      callbacks:
+        - class_path: custom_modules.my_custom_callbacks.MyCallback
+          init_args:
+            # ... callback args ...
+    # ... rest of config
+    ```
 
 ## Summary
 
