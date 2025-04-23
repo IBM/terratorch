@@ -10,6 +10,7 @@ on:
       - 'tests/resources/**'
       - '**/*.svg'
       - '**/*.png'
+      - '**/*.txt'
   pull_request:
     branches:
       - main
@@ -19,14 +20,16 @@ on:
       - 'tests/resources/**'
       - '**/*.svg'
       - '**/*.png'
+      - '**/*.txt'
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
-
+        python-version: ["3.11", "3.12", "3.13"]
+    env:
+      R_TESTS_VERBOSE: 2
     steps:
       - name: Clone repo
         uses: actions/checkout@v4
@@ -41,6 +44,8 @@ jobs:
           pip install -e .[wxc,test]
       - name: List pip dependencies
         run: pip list
+      - name: Cleaning cache
+        run: pip cache purge
       - name: Test with pytest
         run: |
           pytest -s --cov=terratorch -v --cov-report term-missing tests
