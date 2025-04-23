@@ -61,6 +61,10 @@ plugins:
 extra:
   version:
     provider: mike
+    default: stable
+    canonical_version: stable
+    version_selector: true
+
 site_url: https://ibm.github.io/terratorch/
 repo_url: https://github.com/IBM/terratorch
 nav:
@@ -88,6 +92,7 @@ nav:
     - tutorials/burn_scars_inference_simplified.md
     - tutorials/using_datamodule_multitemporalclassificationModule.md
     - tutorials/burn_scars_finetuning.md
+    - tutorials/adding_custom_modules.md
   - Changelog: changelog.md
 markdown_extensions:
   - attr_list
