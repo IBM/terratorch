@@ -655,7 +655,14 @@ class LightningInferenceModel:
         if data_root:
             self.datamodule.predict_root = data_root
         predictions = self.trainer.predict(model=self.model, datamodule=self.datamodule, return_predictions=True)
-        concat_predictions = torch.cat([batch[0] for batch in predictions])
+
+        # In some cases, the output has the format ((prediction_tensor,
+        # prediction_name), filename)
+        if all([type(j[0])==tuple for j in predictions]):
+            concat_predictions = torch.cat([batch[0][0] for batch in predictions])
+        else:
+            concat_predictions = torch.cat([batch[0] for batch in predictions])
+
         concat_file_names = flatten([batch[1] for batch in predictions])
 
         return concat_predictions, concat_file_names
