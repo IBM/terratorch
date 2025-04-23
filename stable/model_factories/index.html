@@ -2142,7 +2142,7 @@ is different from the ground truth. Only applicable to pixel wise models (e.g. s
 
 
 <h3 id="terratorch.models.generic_model_factory.GenericModelFactory.build_model" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">build_model</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="s1">&#39;segmentation&#39;</span><span class="p">,</span> <span class="n">backbone</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">decoder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dilations</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">18</span><span class="p">),</span> <span class="n">in_channels</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">regression_relu</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">build_model</span><span class="p">(</span><span class="n">backbone</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">in_channels</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
 <a href="#terratorch.models.generic_model_factory.GenericModelFactory.build_model" class="headerlink" title="Permanent link">#</a></h3>
 
@@ -2163,22 +2163,6 @@ is different from the ground truth. Only applicable to pixel wise models (e.g. s
         </tr>
       </thead>
       <tbody>
-          <tr class="doc-section-item">
-            <td>
-                <code>task</code>
-            </td>
-            <td>
-                  <code>str</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>The task we are using.</p>
-              </div>
-            </td>
-            <td>
-                  <code>&#39;segmentation&#39;</code>
-            </td>
-          </tr>
           <tr class="doc-section-item">
             <td>
                 <code>model</code>
@@ -2225,22 +2209,6 @@ is different from the ground truth. Only applicable to pixel wise models (e.g. s
             </td>
             <td>
                 <em>required</em>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                <code>num_classes</code>
-            </td>
-            <td>
-                  <code>int</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Number of classes.</p>
-              </div>
-            </td>
-            <td>
-                  <code>1</code>
             </td>
           </tr>
       </tbody>
