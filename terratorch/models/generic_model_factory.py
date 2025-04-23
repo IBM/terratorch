@@ -13,7 +13,6 @@ from torch import nn
 from terratorch.models.model import Model, ModelFactory, ModelOutput
 from terratorch.models.utils import extract_prefix_keys
 from terratorch.registry import MODEL_FACTORY_REGISTRY
-from terratorch.tasks.segmentation_tasks import to_segmentation_prediction
 from terratorch.registry import BACKBONE_REGISTRY
 
 def freeze_module(module: nn.Module):
@@ -25,25 +24,17 @@ class GenericModelFactory(ModelFactory):
 
     def build_model(
         self,
-        task: str = "segmentation",
         backbone: str | None = None,
-        decoder: str | None = None,
-        dilations: tuple[int] = (1, 6, 12, 18),
         in_channels: int = 6,
         pretrained: str | bool | None = True,
-        num_classes: int = 1,
-        regression_relu: bool = False,
         **kwargs,
     ) -> Model:
         """Factory to create models from any custom module.
 
         Args:
-            task (str): The task we are using.
             model (str): The name for the model class.
             in_channels (int): Number of input channels.
             pretrained(str | bool): Which weights to use for the backbone. If true, will use "imagenet". If false or None, random weights. Defaults to True.
-            num_classes (int): Number of classes.
-            regression_relu (bool). Whether to apply a ReLU if task is regression. Defaults to False.
 
         Returns:
             Model: A wrapped generic model.
