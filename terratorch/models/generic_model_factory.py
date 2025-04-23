@@ -38,7 +38,7 @@ class GenericModelFactory(ModelFactory):
         """Factory to create models from any custom module.
 
         Args:
-            task (str): Must be "segmentation".
+            task (str): The task we are using.
             model (str): The name for the model class.
             in_channels (int): Number of input channels.
             pretrained(str | bool): Which weights to use for the backbone. If true, will use "imagenet". If false or None, random weights. Defaults to True.
@@ -57,15 +57,22 @@ class GenericModelFactory(ModelFactory):
         except KeyError:
             raise KeyError(f"Model {backbone} not found in the registry.")
 
-        return GenericModelWrapper(
-            model, squeeze_single_class=task == "regression"
-        )
+        return GenericModelWrapper(model)
 
 class GenericModelWrapper(Model, nn.Module):
-    def __init__(self, model, squeeze_single_class=False) -> None:
+    """
+    A wrapper to adapt a generic model to be used with TerraTorch
+
+    Args: 
+        model (torch.nn.Module): The model we want to wrap. 
+
+    Returns:
+        The wrapped model.
+    """
+
+    def __init__(self, model) -> None:
         super().__init__()
         self.model = model
-        self.squeeze_single_class = squeeze_single_class
 
     def freeze_encoder(self):
         freeze_module(self.model)
@@ -74,6 +81,10 @@ class GenericModelWrapper(Model, nn.Module):
         freeze_module(self.model)
 
     def forward(self, *args, **kwargs):
+        """
+        The forward method is prepared to receive any argument or keyword the wrapped model
+        need to run. 
+        """
         # It supposes the input has dimension (B, C, H, W)
         input_data = [args[0]] # It adapts the input to became a list of time 'snapshots'
 
