@@ -126,40 +126,47 @@ class GenericUnetModelFactory(ModelFactory):
         )
 
 class GenericUnetModelWrapper(Model, nn.Module):
-    def __init__(self, unet_model, decoder=None, relu=False, squeeze_single_class=False) -> None:
+    def __init__(self, unet_model, decoder=None, relu=False, squeeze_single_class=False, intermediary_outputs_in_decoder=False) -> None:
         super().__init__()
         self.unet_model = unet_model
         self.decoder = decoder
         self.final_act = nn.ReLU() if relu else nn.Identity()
         self.squeeze_single_class = squeeze_single_class
+        self.intermediary_outputs_in_decoder = intermediary_outputs_in_decoder
 
         if decoder:
             self.decode = self._with_decoder
         else:
             self.decode = self._no_decoder
 
+        if self.intermediary_outputs_in_decoder:
+            self.catch_unet_outputs = lambda x: x
+        else:
+            self.catch_unet_outputs =  lambda x: x[-1]
+
     def _no_decoder(self, x):
         return x
 
     def _with_decoder(self, x):
-        
+
         return self.decoder(x)
 
     def forward(self, *args, **kwargs):
 
         # It supposes the input has dimension (B, C, H, W)
         input_data = [args[0]] # It adapts the input to became a list of time 'snapshots'
-        args = (input_data,)
+        args = input_data
 
         unet_output = self.unet_model(*args, **kwargs)
         unet_output = self.final_act(unet_output)
+
+        unet_output = self.catch_unet_outputs(unet_output)
         # Decoding is optional
-        input_data = [unet_output]
-        unet_output_decoded = self.decode(input_data)
-        
+        unet_output_decoded = self.decode(unet_output)
+
         if unet_output_decoded.shape[1] == 1 and self.squeeze_single_class:
             unet_output_decoded = unet_output_decoded.squeeze(1)
-       
+
         model_output = ModelOutput(unet_output_decoded)
 
         return model_output
