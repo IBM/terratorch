@@ -7,6 +7,7 @@ import logging
 import os
 import shutil
 import sys
+import glob
 import tempfile
 import warnings
 from copy import deepcopy
@@ -164,10 +165,10 @@ def import_custom_modules(custom_modules_path: str | Path | None = None) -> None
             workdir = custom_modules_path.parents[0]
             module_dir = custom_modules_path.name
 
-            sys.path.append(workdir)
+            sys.path.insert(0, str(workdir))
 
             try:
-                importlib.import_module(module_dir)
+                module = importlib.import_module(module_dir)
                 logger.info(f"Found {custom_modules_path}")
             except ImportError:
                 raise ImportError(f"It was not possible to import modules from {custom_modules_path}.")
@@ -206,28 +207,30 @@ class CustomWriter(BasePredictionWriter):
         if isinstance(prediction, torch.Tensor):
             filename_batch = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
             torch.save(prediction, os.path.join(output_dir, f"{filename_batch}.pt"))
+
         elif isinstance(prediction, tuple):
 
             pred_batch_, filename_batch = prediction
 
+            # If we have just a single kind of output
             if isinstance(pred_batch_, tuple):
-                pred_batch, pred_batch_prob = pred_batch_
-                outputting_logits = True
-            else:
-                pred_batch = pred_batch_
-                outputting_logits = False
 
-            for prediction, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
-                save_prediction(prediction, file_name, output_dir, dtype=trainer.out_dtype)
+                pred_batch, suffix = pred_batch_
 
-            # Special conditions for segmentation, when the
-            # logits/probabilities can be outputted together with the
-            # prediction. 
-            if outputting_logits:
-                for prediction, file_name in zip(torch.unbind(pred_batch_prob, dim=0), filename_batch, strict=False):
+                for prediction, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
                     save_prediction(prediction, file_name, output_dir,
-                                    dtype=trainer.out_dtype,
-                                    suffix="logits_pred")
+                                    dtype=trainer.out_dtype, suffix=suffix)
+
+            # If we are outputting more than one kind of variable, as
+            # (predictions, probabilities), for segmentation
+            elif isinstance(pred_batch_, list):
+
+                for pred in pred_batch_:
+                    pred_batch, suffix = pred
+
+                    for p, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
+                        save_prediction(p, file_name, output_dir,
+                                        dtype=trainer.out_dtype, suffix=suffix)
 
         else:
             raise TypeError(f"Unknown type for prediction {type(prediction)}")
@@ -432,6 +435,20 @@ class StateDictAwareModelCheckpoint(ModelCheckpoint):
 
 
 class MyLightningCLI(LightningCLI):
+    def run_init(self):
+        logger.info("Running custom init command...")
+
+    @property
+    def subcommands(self):
+        return super().subcommands + ["init"]
+
+    def run(self):
+        subcommand = self.config['subcommand']
+        if subcommand == 'init':
+            self.run_init()
+        else:
+            super().run()
+
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:
         parser.add_argument("--predict_output_dir", default=None)
         parser.add_argument("--out_dtype", default="int16")
@@ -446,6 +463,7 @@ class MyLightningCLI(LightningCLI):
         self.config = add_default_checkpointing_config(self.config)
 
         super().instantiate_classes()
+
         # get the predict_output_dir. Depending on the value of run, it may be in the subcommand
         try:
             config = self.config.predict
@@ -474,6 +492,7 @@ class MyLightningCLI(LightningCLI):
 
         import_custom_modules(custom_modules_path)
 
+
     @staticmethod
     def subcommands() -> dict[str, set[str]]:
         existing_subcommands = LightningCLI.subcommands()
@@ -485,7 +504,7 @@ def build_lightning_cli(
     args: ArgsType = None,
     run=True,  # noqa: FBT002
 ) -> LightningCLI:
-    """Command-line interface to GeospatialCV."""
+    """Command-line interface to TerraTorch."""
     # Taken from https://github.com/pangeo-data/cog-best-practices
     rasterio_best_practices = {
         "GDAL_DISABLE_READDIR_ON_OPEN": "EMPTY_DIR",
@@ -550,11 +569,22 @@ class LightningInferenceModel:
             weights = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
             if "state_dict" in weights:
                 weights = weights["state_dict"]
+
             # It removes a residual prefix (related to timm) from older
             # checkpoints.
             weights = remove_unexpected_prefix(weights)
-            weights = {k.replace("model.", ""): v for k, v in weights.items() if k.startswith("model.")}
-            self.model.model.load_state_dict(weights)
+            # Removing the undesirable prefix `model` from the checkpoint
+            weights_ = {}
+            for k, v in weights.items():
+                splits = k.split(".")
+                if splits[0] == "model":
+                    splits = splits[1:]
+                    k_ = ".".join(splits)
+                    weights_[k_] = v
+                else:
+                    weights_[k] = v
+
+            self.model.model.load_state_dict(weights_)
 
         # dont write
         non_writing_callbacks = []
