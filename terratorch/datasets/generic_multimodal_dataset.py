@@ -355,7 +355,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                     data, "(channels time) h w -> channels time h w", channels=len(self.dataset_bands[modality])
                 )
 
-            if modality == "mask" and len(data) == 1:
+            if modality == "mask" and len(data.shape) == 3 and len(data) == 1:
                 # tasks expect image masks without channel dim
                 data = data[0]
 
@@ -422,6 +422,8 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         .. versionadded:: 0.2
         """
         image = sample["image"]
+        if isinstance(image, dict):
+            image = image[self.rgb_modality]
         if isinstance(image, torch.Tensor):
             image = image.numpy()
         image = image.take(self.rgb_indices, axis=0)
@@ -442,6 +444,8 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
         if "prediction" in sample:
             prediction = sample["prediction"]
+            if isinstance(image, dict):
+                prediction = prediction[self.rgb_modality]
             if isinstance(prediction, torch.Tensor):
                 prediction = prediction.numpy()
             # Assuming reconstructed image
@@ -617,6 +621,8 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
         .. versionadded:: 0.2
         """
         image = sample["image"]
+        if isinstance(image, dict):
+            image = image[self.rgb_modality]
         if isinstance(image, torch.Tensor):
             image = image.numpy()
         image = image.take(self.rgb_indices, axis=0)
@@ -816,6 +822,8 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
         """
 
         image = sample["image"]
+        if isinstance(image, dict):
+            image = image[self.rgb_modality]
         if isinstance(image, torch.Tensor):
             image = image.numpy()
         image = image.take(self.rgb_indices, axis=0)
@@ -1014,6 +1022,8 @@ class GenericMultimodalScalarDataset(GenericMultimodalDataset):
         raise NotImplementedError
 
         image = sample["image"]
+        if isinstance(image, dict):
+            image = image[self.rgb_modality]
         if isinstance(image, torch.Tensor):
             image = image.numpy()
         image = image.take(self.rgb_indices, axis=0)
