@@ -6722,14 +6722,13 @@ freezed.</p>
       </tbody>
     </table>
         <p>Returns:
-    decoder_tokens_all (torch.Tensor): Concatenated decoder tokens from all modalities. Shape (B, P, D) where P is the total number of all decoder tokens.
-    emb_all (torch.Tensor): Concatenated decoder embeddings from all modalities. Shape (B, P, D)
-    decoder_mask_all (torch.Tensor): Concatenated boolean masks indicating which tokens are part of the decoder input / target (set to 0 for valid tokens, 1 otherwise).
-    Shape (B, P)
-    target_ids_all (torch.Tensor): Concatenated target IDs from all modalities. Shape (B, P)
-    attention_mask_all (torch.Tensor): Concatenated attention masks in compressed format, needs to be passed to adapt_decoder_attention_mask()
-    to obtain the final attention mask. Shape (B, P)
-    mod_mask_all (torch.Tensor): Concatenated integer mask marking the modality type for each decoder token. Shape (B, P)</p>
+    tuple:
+        - decoder_tokens_all (torch.Tensor): Concatenated decoder tokens from all modalities. Shape (B, P, D) where P is the total number of all decoder tokens.
+        - emb_all (torch.Tensor): Concatenated decoder embeddings from all modalities. Shape (B, P, D)
+        - decoder_mask_all (torch.Tensor): Concatenated boolean masks indicating which tokens are part of the decoder input / target (set to 0 for valid tokens, 1 otherwise). Shape (B, P)
+        - target_ids_all (torch.Tensor): Concatenated target IDs from all modalities. Shape (B, P)
+        - attention_mask_all (torch.Tensor): Concatenated attention masks in compressed format, needs to be passed to adapt_decoder_attention_mask() to obtain the final attention mask. Shape (B, P)
+        - mod_mask_all (torch.Tensor): Concatenated integer mask marking the modality type for each decoder token. Shape (B, P)</p>
 
     </div>
 
@@ -6770,7 +6769,8 @@ freezed.</p>
             <td>
               <div class="doc-md-description">
                 <p>A dictionary containing information for each modality. 
-             Expected keys for each modality are 'x' (input tokens), </p>
+             Expected keys for each modality are 'x' (input tokens), 
+             'emb' (embeddings), 'input_mask', etc.</p>
               </div>
             </td>
             <td>
@@ -6780,10 +6780,11 @@ freezed.</p>
       </tbody>
     </table>
         <p>Returns:
-    encoder_tokens_all (torch.Tensor): Concatenated encoder tokens from all modalities. Shape (B, O, D) where O is the total number of all encoder tokens.
-    emb_all (torch.Tensor): Concatenated encoder embeddings from all modalities. Shape (B, O, D)
-    encoder_mask_all (torch.Tensor): Concatenated boolean masks indicating which tokens are part of the encoder input (set to 0 for valid tokens, 1 otherwise). Shape (B, O)
-    mod_mask_all (torch.Tensor): Concatenated integer mask marking the modality type for each encoder token. Shape (B, O)</p>
+    tuple:
+        - encoder_tokens_all (torch.Tensor): Concatenated encoder tokens from all modalities. Shape (B, O, D) where O is the total number of all encoder tokens.
+        - emb_all (torch.Tensor): Concatenated encoder embeddings from all modalities. Shape (B, O, D)
+        - encoder_mask_all (torch.Tensor): Concatenated boolean masks indicating which tokens are part of the encoder input (set to 0 for valid tokens, 1 otherwise). Shape (B, O)
+        - mod_mask_all (torch.Tensor): Concatenated integer mask marking the modality type for each encoder token. Shape (B, O)</p>
 
     </div>
 
@@ -6914,9 +6915,17 @@ freezed.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Union[dict, tuple]: 
-- If return_logits is True: dictionary of logits for each modality.
-- Otherwise: tuple containing the total loss and dictionary of loss for each modality.</p>
+                <p>Union[dict, tuple]: If return_logits is True, dictionary of logits</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code>dict[str, <span title="torch.Tensor">Tensor</span>] | tuple[<span title="torch.Tensor">Tensor</span>, dict[str, <span title="torch.Tensor">Tensor</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>for each modality. Otherwise, tuple containing the total loss and dictionary of loss for each modality.</p>
               </div>
             </td>
           </tr>
@@ -7439,25 +7448,24 @@ freezed.</p>
     <table>
       <thead>
         <tr>
-<th>Name</th>          <th>Type</th>
+          <th>Type</th>
           <th>Description</th>
         </tr>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-<td><code>tuple</code></td>            <td>
+            <td>
                   <code>tuple[<span title="torch.Tensor">Tensor</span>]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <ul>
-<li>decoder_tokens (torch.Tensor): Selected decoder tokens from all modalities. Shape (B, M, D) where M is the number of selected decoder tokens.</li>
-<li>decoder_emb (torch.Tensor): Corresponding embeddings for decoder tokens. Shape (B, M, D)</li>
-<li>decoder_mask (torch.Tensor): A boolean mask indicating which decoder tokens are valid (set to 0 for valid tokens, 1 otherwise). Shape (B, 1, M)</li>
-<li>target_ids (torch.Tensor): IDs of the target tokens corresponding to the decoder tokens. Shape (B, M)</li>
-<li>decoder_attention_mask (torch.Tensor): Mask for the decoder self-attention layers. Shape (B, M, M)</li>
-<li>mod_mask (torch.Tensor): An integer mask marking the modality type for each decoder token (with -1 indicating unassigned pad tokens). Shape (B, M)</li>
-</ul>
+                <p>tuple[torch.Tensor]:
+(torch.Tensor): Selected decoder tokens from all modalities. Shape (B, M, D) where M is the number of selected decoder tokens.
+(torch.Tensor): Corresponding embeddings for decoder tokens. Shape (B, M, D)
+(torch.Tensor): A boolean mask indicating which decoder tokens are valid (set to 0 for valid tokens, 1 otherwise). Shape (B, 1, M)
+(torch.Tensor): IDs of the target tokens corresponding to the decoder tokens. Shape (B, M)
+(torch.Tensor): Mask for the decoder self-attention layers. Shape (B, M, M)
+(torch.Tensor): An integer mask marking the modality type for each decoder token (with -1 indicating unassigned pad tokens). Shape (B, M)</p>
               </div>
             </td>
           </tr>
