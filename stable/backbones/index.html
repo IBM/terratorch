@@ -6722,13 +6722,14 @@ freezed.</p>
       </tbody>
     </table>
         <p>Returns:
-    tuple:
-        - decoder_tokens_all (torch.Tensor): Concatenated decoder tokens from all modalities. Shape (B, P, D) where P is the total number of all decoder tokens.
-        - emb_all (torch.Tensor): Concatenated decoder embeddings from all modalities. Shape (B, P, D)
-        - decoder_mask_all (torch.Tensor): Concatenated boolean masks indicating which tokens are part of the decoder input / target (set to 0 for valid tokens, 1 otherwise). Shape (B, P)
-        - target_ids_all (torch.Tensor): Concatenated target IDs from all modalities. Shape (B, P)
-        - attention_mask_all (torch.Tensor): Concatenated attention masks in compressed format, needs to be passed to adapt_decoder_attention_mask() to obtain the final attention mask. Shape (B, P)
-        - mod_mask_all (torch.Tensor): Concatenated integer mask marking the modality type for each decoder token. Shape (B, P)</p>
+    decoder_tokens_all (torch.Tensor): Concatenated decoder tokens from all modalities. Shape (B, P, D) where P is the total number of all decoder tokens.
+    emb_all (torch.Tensor): Concatenated decoder embeddings from all modalities. Shape (B, P, D)
+    decoder_mask_all (torch.Tensor): Concatenated boolean masks indicating which tokens are part of the decoder input / target (set to 0 for valid tokens, 1 otherwise).
+    Shape (B, P)
+    target_ids_all (torch.Tensor): Concatenated target IDs from all modalities. Shape (B, P)
+    attention_mask_all (torch.Tensor): Concatenated attention masks in compressed format, needs to be passed to adapt_decoder_attention_mask()
+    to obtain the final attention mask. Shape (B, P)
+    mod_mask_all (torch.Tensor): Concatenated integer mask marking the modality type for each decoder token. Shape (B, P)</p>
 
     </div>
 
@@ -6779,11 +6780,10 @@ freezed.</p>
       </tbody>
     </table>
         <p>Returns:
-    tuple:
-        encoder_tokens_all (torch.Tensor): Concatenated encoder tokens from all modalities. Shape (B, O, D) where O is the total number of all encoder tokens.
-        emb_all (torch.Tensor): Concatenated encoder embeddings from all modalities. Shape (B, O, D)
-        encoder_mask_all (torch.Tensor): Concatenated boolean masks indicating which tokens are part of the encoder input (set to 0 for valid tokens, 1 otherwise). Shape (B, O)
-        mod_mask_all (torch.Tensor): Concatenated integer mask marking the modality type for each encoder token. Shape (B, O)</p>
+    encoder_tokens_all (torch.Tensor): Concatenated encoder tokens from all modalities. Shape (B, O, D) where O is the total number of all encoder tokens.
+    emb_all (torch.Tensor): Concatenated encoder embeddings from all modalities. Shape (B, O, D)
+    encoder_mask_all (torch.Tensor): Concatenated boolean masks indicating which tokens are part of the encoder input (set to 0 for valid tokens, 1 otherwise). Shape (B, O)
+    mod_mask_all (torch.Tensor): Concatenated integer mask marking the modality type for each encoder token. Shape (B, O)</p>
 
     </div>
 
