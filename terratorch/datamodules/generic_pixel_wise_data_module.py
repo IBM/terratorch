@@ -323,7 +323,7 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
         batch_size = self._valid_attribute(f"{split}_batch_size", "batch_size")
 
         if self.check_stackability:
-            logger.info("Checking stackability.")
+            logger.info(f"Checking stackability for {split} split.")
             batch_size = check_dataset_stackability(dataset, batch_size)
 
         return DataLoader(
