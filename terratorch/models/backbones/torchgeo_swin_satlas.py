@@ -116,6 +116,15 @@ def load_model(load_function, swin_meta, **kwargs):
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_t_sentinel2_mi_ms(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_T_Weights.SENTINEL2_MI_MS_SATLAS, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        SwinEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_t, swin_v2_t_meta, **kwargs)
     if pretrained:
@@ -124,6 +133,15 @@ def satlas_swin_t_sentinel2_mi_ms(model_bands, pretrained = False, ckpt_data: st
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_t_sentinel2_mi_rgb(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_T_Weights.SENTINEL2_MI_RGB_SATLAS, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        SwinEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_t, swin_v2_t_meta, **kwargs)
     if pretrained:
@@ -132,6 +150,15 @@ def satlas_swin_t_sentinel2_mi_rgb(model_bands, pretrained = False, ckpt_data: s
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_t_sentinel2_si_ms(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_T_Weights.SENTINEL2_SI_MS_SATLAS, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        SwinEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_t, swin_v2_t_meta, **kwargs)
     if pretrained:
@@ -140,6 +167,15 @@ def satlas_swin_t_sentinel2_si_ms(model_bands, pretrained = False, ckpt_data: st
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_t_sentinel2_si_rgb(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_T_Weights.SENTINEL2_SI_RGB_SATLAS, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        SwinEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_t, swin_v2_t_meta, **kwargs)
     if pretrained:
@@ -148,6 +184,15 @@ def satlas_swin_t_sentinel2_si_rgb(model_bands, pretrained = False, ckpt_data: s
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_b_sentinel2_mi_ms(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_B_Weights.SENTINEL2_MI_MS_SATLAS, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        SwinEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_b, swin_v2_b_meta, **kwargs)
     if pretrained:
@@ -164,6 +209,15 @@ def satlas_swin_b_sentinel2_mi_rgb(model_bands, pretrained = False, ckpt_data: s
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_b_sentinel2_si_ms(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_B_Weights.SENTINEL2_SI_MS_SATLAS, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        SwinEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_b, swin_v2_b_meta, **kwargs)
     if pretrained:
@@ -172,6 +226,15 @@ def satlas_swin_b_sentinel2_si_ms(model_bands, pretrained = False, ckpt_data: st
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_b_sentinel2_si_rgb(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_B_Weights.SENTINEL2_SI_RGB_SATLAS, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        SwinEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_b, swin_v2_b_meta, **kwargs)
     if pretrained:
@@ -180,6 +243,15 @@ def satlas_swin_b_sentinel2_si_rgb(model_bands, pretrained = False, ckpt_data: s
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_b_naip_mi_rgb(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_B_Weights.NAIP_RGB_MI_SATLAS, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        SwinEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_b, swin_v2_b_meta, **kwargs)
     if pretrained:
@@ -188,6 +260,15 @@ def satlas_swin_b_naip_mi_rgb(model_bands, pretrained = False, ckpt_data: str | 
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_b_naip_si_rgb(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_B_Weights.NAIP_RGB_SI_SATLAS, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        SwinEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_b, swin_v2_b_meta, **kwargs)
     if pretrained:
@@ -196,6 +277,15 @@ def satlas_swin_b_naip_si_rgb(model_bands, pretrained = False, ckpt_data: str | 
    
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_b_landsat_mi_ms(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_B_Weights.LANDSAT_MI_SATLAS, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        SwinEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_b, swin_v2_b_meta, **kwargs)
     if pretrained:
@@ -204,6 +294,15 @@ def satlas_swin_b_landsat_mi_ms(model_bands, pretrained = False, ckpt_data: str 
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_b_landsat_mi_rgb(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_B_Weights.LANDSAT_SI_SATLAS, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        SwinEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_b, swin_v2_b_meta, **kwargs)
     if pretrained:
@@ -212,6 +311,15 @@ def satlas_swin_b_landsat_mi_rgb(model_bands, pretrained = False, ckpt_data: str
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_b_sentinel1_mi(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_B_Weights.SENTINEL1_MI_SATLAS, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        SwinEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_b, swin_v2_b_meta, **kwargs)
     if pretrained:
@@ -220,6 +328,15 @@ def satlas_swin_b_sentinel1_mi(model_bands, pretrained = False, ckpt_data: str |
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_swin_b_sentinel1_si(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = Swin_V2_B_Weights.SENTINEL1_SI_SATLAS, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        SwinEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = load_model(swin_v2_b, swin_v2_b_meta, **kwargs)
     if pretrained:

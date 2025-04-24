@@ -7,6 +7,9 @@
 :::terratorch.models.clay_model_factory.ClayModelFactory
     options:
         show_source: false
+:::terratorch.models.generic_model_factory.GenericModelFactory
+    options:
+        show_source: false
 :::terratorch.models.generic_unet_model_factory.GenericUnetModelFactory
     options:
         show_source: false
