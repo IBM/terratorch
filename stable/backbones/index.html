@@ -6769,8 +6769,7 @@ freezed.</p>
             <td>
               <div class="doc-md-description">
                 <p>A dictionary containing information for each modality. 
-             Expected keys for each modality are 'x' (input tokens), 
-             'emb' (embeddings), 'input_mask', etc.</p>
+             Expected keys for each modality are 'x' (input tokens), </p>
               </div>
             </td>
             <td>
@@ -6781,10 +6780,10 @@ freezed.</p>
     </table>
         <p>Returns:
     tuple:
-        - encoder_tokens_all (torch.Tensor): Concatenated encoder tokens from all modalities. Shape (B, O, D) where O is the total number of all encoder tokens.
-        - emb_all (torch.Tensor): Concatenated encoder embeddings from all modalities. Shape (B, O, D)
-        - encoder_mask_all (torch.Tensor): Concatenated boolean masks indicating which tokens are part of the encoder input (set to 0 for valid tokens, 1 otherwise). Shape (B, O)
-        - mod_mask_all (torch.Tensor): Concatenated integer mask marking the modality type for each encoder token. Shape (B, O)</p>
+        encoder_tokens_all (torch.Tensor): Concatenated encoder tokens from all modalities. Shape (B, O, D) where O is the total number of all encoder tokens.
+        emb_all (torch.Tensor): Concatenated encoder embeddings from all modalities. Shape (B, O, D)
+        encoder_mask_all (torch.Tensor): Concatenated boolean masks indicating which tokens are part of the encoder input (set to 0 for valid tokens, 1 otherwise). Shape (B, O)
+        mod_mask_all (torch.Tensor): Concatenated integer mask marking the modality type for each encoder token. Shape (B, O)</p>
 
     </div>
 
