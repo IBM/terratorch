@@ -3,6 +3,7 @@ import torch
 from torch import nn
 from terratorch.models.encoder_decoder_factory import TemporalWrapper
 
+# Define a dummy encoder for testing
 class DummyEncoder(nn.Module):
     def __init__(self, out_channels=64):
         super().__init__()
