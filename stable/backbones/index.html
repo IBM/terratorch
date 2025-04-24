@@ -6722,13 +6722,21 @@ freezed.</p>
       </tbody>
     </table>
         <p>Returns:
-    tuple:
-        - decoder_tokens_all (torch.Tensor): Concatenated decoder tokens from all modalities. Shape (B, P, D) where P is the total number of all decoder tokens.
-        - emb_all (torch.Tensor): Concatenated decoder embeddings from all modalities. Shape (B, P, D)
-        - decoder_mask_all (torch.Tensor): Concatenated boolean masks indicating which tokens are part of the decoder input / target (set to 0 for valid tokens, 1 otherwise). Shape (B, P)
-        - target_ids_all (torch.Tensor): Concatenated target IDs from all modalities. Shape (B, P)
-        - attention_mask_all (torch.Tensor): Concatenated attention masks in compressed format, needs to be passed to adapt_decoder_attention_mask() to obtain the final attention mask. Shape (B, P)
-        - mod_mask_all (torch.Tensor): Concatenated integer mask marking the modality type for each decoder token. Shape (B, P)</p>
+    tuple[torch.Tensor]:
+        (torch.Tensor) <strong>Concatenated decoder tokens from all
+        modalities</strong>. Shape (B, P, D) where P is the total number of all decoder tokens.
+        (torch.Tensor) <strong>Concatenated decoder embeddings from all
+        modalities</strong>. Shape (B, P, D).
+        torch.Tensor) <strong>Concatenated boolean masks indicating which
+        tokens are part of the decoder input / target (set to 0 for
+        valid tokens, 1 otherwise)</strong>. Shape (B, P).
+        (torch.Tensor) <strong>Concatenated target IDs from all modalities</strong>.
+        Shape (B, P).
+        (torch.Tensor) <strong>Concatenated attention masks in compressed
+        format, needs to be passed to adapt_decoder_attention_mask() to
+        obtain the final attention mask</strong>. Shape (B, P).
+        (torch.Tensor) <strong>Concatenated integer mask marking the modality
+        type for each decoder token</strong>. Shape (B, P).</p>
 
     </div>
 
@@ -6915,17 +6923,7 @@ freezed.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Union[dict, tuple]: If return_logits is True, dictionary of logits</p>
-              </div>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
-            <td>
-                  <code>dict[str, <span title="torch.Tensor">Tensor</span>] | tuple[<span title="torch.Tensor">Tensor</span>, dict[str, <span title="torch.Tensor">Tensor</span>]]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>for each modality. Otherwise, tuple containing the total loss and dictionary of loss for each modality.</p>
+                <p>Union[dict, tuple]: If return_logits is True, dictionary of logits for each modality. Otherwise, tuple containing the total loss and dictionary of loss for each modality.</p>
               </div>
             </td>
           </tr>
@@ -7546,7 +7544,7 @@ tokens)</strong>. Shape (B, M).</p>
       </tbody>
     </table>
         <p>Returns:
-    tuple:
+    tuple[torch.Tensor]:
         (torch.Tensor) <strong>Selected encoder tokens from all modalities</strong>. Shape (B, N, D) where N is the number of selected encoder tokens. 
         (torch.Tensor) <strong>Corresponding embeddings for encoder tokens</strong>.
         Shape (B, N, D).
