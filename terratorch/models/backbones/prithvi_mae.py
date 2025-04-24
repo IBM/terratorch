@@ -25,6 +25,8 @@ import torch.nn as nn
 from einops import rearrange
 from timm.layers import to_2tuple
 from timm.models.vision_transformer import Block
+from functools import reduce
+from operator import mul
 
 logger = logging.getLogger(__name__)
 
@@ -288,6 +290,9 @@ class PrithviViT(nn.Module):
         coords_encoding: list[str] | None = None,
         coords_scale_learn: bool = False,
         drop_path: float = 0.0,
+        vpt: bool = False,
+        vpt_n_tokens: int | None = None,
+        vpt_dropout: float = 0,
         **kwargs,
     ):
         super().__init__()
@@ -330,6 +335,18 @@ class PrithviViT(nn.Module):
 
         self.norm = norm_layer(embed_dim)
 
+        self.vpt = vpt
+        self.vpt_n_tokens = vpt_n_tokens
+        self.vpt_dropout = vpt_dropout
+        if self.vpt:
+            if self.vpt_n_tokens is None:
+                msg = "vpt_n_tokens must be provided when using VPT"
+                raise ValueError(msg)
+            self.vpt_prompt_embeddings = nn.ParameterList(
+                [nn.Parameter(torch.zeros(1, self.vpt_n_tokens, embed_dim)) for _ in range(depth)]
+            )
+            self.vpt_dropout_layers = nn.ModuleList([nn.Dropout(vpt_dropout) for _ in range(depth)])
+
         self.initialize_weights()
 
     def initialize_weights(self):
@@ -346,6 +363,13 @@ class PrithviViT(nn.Module):
         # timm's trunc_normal_(std=.02) is effectively normal_(std=0.02) as cutoff is too big (2.)
         torch.nn.init.normal_(self.cls_token, std=0.02)
         self.apply(_init_weights)
+
+        # initialize VPT prompt embeddings
+        if self.vpt:
+            # extracted from https://github.com/KMnP/vpt/blob/4410440ec1b489f24f66b9fad3d9b10ff3443567/src/models/vit_prompt/vit.py#L57
+            val = np.sqrt(6.0 / float(3 * reduce(mul, self.patch_embed.patch_size[1:], 1) + self.embed_dim))
+            for emb in self.vpt_prompt_embeddings:
+                nn.init.uniform_(emb, -val, val)
 
     def random_masking(self, sequence, mask_ratio, noise=None):
         """
@@ -426,8 +450,23 @@ class PrithviViT(nn.Module):
         x = torch.cat((cls_tokens, x), dim=1)
 
         # apply Transformer blocks
-        for block in self.blocks:
+        bs = x.shape[0]
+        for idx, block in enumerate(self.blocks):
+            if self.vpt:
+                x = torch.cat(
+                    (
+                        x[:, :1, :],
+                        self.vpt_dropout_layers[idx](self.vpt_prompt_embeddings[idx].expand(bs, -1, -1)),
+                        x[:, 1:, :],
+                    ),
+                    dim=1,
+                )  # (batch_size, cls_token + n_prompt + n_patches, hidden_dim)
             x = block(x)
+            if self.vpt:
+                x = torch.cat(
+                    (x[:, :1, :], x[:, (1 + self.vpt_n_tokens) :, :]),
+                    dim=1,
+                )
         x = self.norm(x)
 
         return x, mask, ids_restore
@@ -464,9 +503,24 @@ class PrithviViT(nn.Module):
         x = torch.cat((cls_tokens, x), dim=1)
 
         # apply Transformer blocks
+        bs = x.shape[0]
         out = []
-        for block in self.blocks:
+        for idx, block in enumerate(self.blocks):
+            if self.vpt:
+                x = torch.cat(
+                    (
+                        x[:, :1, :],
+                        self.vpt_dropout_layers[idx](self.vpt_prompt_embeddings[idx].expand(bs, -1, -1)),
+                        x[:, 1:, :],
+                    ),
+                    dim=1,
+                )  # (batch_size, cls_token + n_prompt + n_patches, hidden_dim)
             x = block(x)
+            if self.vpt:
+                x = torch.cat(
+                    (x[:, :1, :], x[:, (1 + self.vpt_n_tokens) :, :]),
+                    dim=1,
+                )
             out.append(x.clone())
 
         x = self.norm(x)
@@ -491,6 +545,10 @@ class PrithviViT(nn.Module):
             out.append(encoded)
         return out
 
+    def freeze(self):
+        for n, param in self.named_parameters():
+            if "vpt_prompt_embeddings" not in n:
+                param.requires_grad_(False)
 
 class MAEDecoder(nn.Module):
     """ Transformer Decoder used in the Prithvi MAE"""

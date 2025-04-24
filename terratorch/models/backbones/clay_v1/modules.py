@@ -1,5 +1,6 @@
 import math
 import os
+import numpy as np
 import torch
 import torch.nn.functional as F
 from einops import rearrange, repeat
@@ -70,10 +71,26 @@ class Attention(nn.Module):
 
 
 class Transformer(nn.Module):
-    def __init__(self, dim, depth, heads, dim_head, mlp_dim):
+    def __init__(self, dim, depth, heads, dim_head, mlp_dim, vpt: bool = False, vpt_n_tokens: int | None = None, vpt_dropout: float = 0.0):
         super().__init__()
         self.norm = nn.LayerNorm(dim)
         self.layers = nn.ModuleList([])
+        self.vpt = vpt
+        self.vpt_n_tokens = vpt_n_tokens
+        self.vpt_dropout = vpt_dropout
+        if self.vpt:
+            if self.vpt_n_tokens is None:
+                msg = "vpt_n_tokens must be provided when using VPT"
+                raise ValueError(msg)
+            self.vpt_prompt_embeddings = nn.ParameterList(
+                [nn.Parameter(torch.zeros(1, self.vpt_n_tokens, dim)) for _ in range(depth)]
+            )
+            self.vpt_dropout_layers = nn.ModuleList(
+                [nn.Dropout(vpt_dropout) for _ in range(depth)]
+            )
+            val = np.sqrt(6.0 / float(3 * 8**2 + dim))
+            for emb in self.vpt_prompt_embeddings:
+                nn.init.uniform_(emb, -val, val)
         for _ in range(depth):
             self.layers.append(nn.ModuleList([
                 Attention(dim, heads=heads, dim_head=dim_head),
@@ -81,10 +98,25 @@ class Transformer(nn.Module):
             ]))
 
     def forward(self, x) -> list[torch.Tensor]:
+        bs = x.shape[0]
         out = []
-        for attn, ff in self.layers:
+        for idx, (attn, ff) in enumerate(self.layers):
+            if self.vpt:
+                x = torch.cat(
+                (
+                    x[:, :1, :],
+                    self.vpt_dropout_layers[idx](self.vpt_prompt_embeddings[idx].expand(bs, -1, -1)),
+                    x[:, 1:, :],
+                ),
+                dim=1,
+            )  # (batch_size, cls_token + n_prompt + n_patches, hidden_dim)
             x = attn(x) + x
             x = ff(x) + x
+            if self.vpt:
+                x = torch.cat(
+                    (x[:, :1, :], x[:, (1 + self.vpt_n_tokens) :, :]),
+                    dim=1,
+                )  # (batch_size, cls_token + n_patches, hidden_dim)
             out.append(x.clone())
         x = self.norm(x)
         out[-1] = x.clone()
@@ -102,6 +134,9 @@ class Encoder(nn.Module):
         heads,
         dim_head,
         mlp_ratio,
+        vpt: bool = False,
+        vpt_n_tokens: int | None = None,
+        vpt_dropout: float = 0.0,
     ):
         super().__init__()
         self.mask_ratio = mask_ratio
@@ -124,6 +159,9 @@ class Encoder(nn.Module):
             heads=heads,
             dim_head=dim_head,
             mlp_dim=int(dim * mlp_ratio),
+            vpt=vpt,
+            vpt_n_tokens=vpt_n_tokens,
+            vpt_dropout=vpt_dropout,
         )
 
     def to_patch_embed(self, cube, waves):
@@ -296,6 +334,9 @@ class EmbeddingEncoder(Encoder):
         heads,
         dim_head,
         mlp_ratio,
+        vpt: bool = False,
+        vpt_n_tokens: int | None = None,
+        vpt_dropout: float = 0.0,
     ):
         super().__init__(
             mask_ratio=0.0,
@@ -306,6 +347,9 @@ class EmbeddingEncoder(Encoder):
             heads=heads,
             dim_head=dim_head,
             mlp_ratio=mlp_ratio,
+            vpt=vpt,
+            vpt_n_tokens=vpt_n_tokens,
+            vpt_dropout=vpt_dropout,
         )
         self.img_size = img_size
 
