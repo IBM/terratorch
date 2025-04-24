@@ -228,12 +228,18 @@ class TerraMind(nn.Module):
             mod_dict (dict): A dictionary containing information for each modality. 
                              Expected keys for each modality are 'x' (input tokens), 
                              'emb' (embeddings), 'input_mask', etc.
+
         Returns:
-            tuple:
-                - encoder_tokens_all (torch.Tensor): Concatenated encoder tokens from all modalities. Shape (B, O, D) where O is the total number of all encoder tokens.
-                - emb_all (torch.Tensor): Concatenated encoder embeddings from all modalities. Shape (B, O, D)
-                - encoder_mask_all (torch.Tensor): Concatenated boolean masks indicating which tokens are part of the encoder input (set to 0 for valid tokens, 1 otherwise). Shape (B, O)
-                - mod_mask_all (torch.Tensor): Concatenated integer mask marking the modality type for each encoder token. Shape (B, O)
+            tuple[torch.Tensor]:
+                (torch.Tensor) **Concatenated encoder tokens from all
+                modalities**. Shape (B, O, D) where O is the total number of all encoder tokens.
+                (torch.Tensor) **Concatenated encoder embeddings from all
+                modalities**. Shape (B, O, D).
+                (torch.Tensor) **Concatenated boolean masks
+                  indicating which tokens are part of the encoder input (set to
+                  0 for valid tokens, 1 otherwise)**. Shape (B, O).
+                (torch.Tensor) **Concatenated integer mask marking the modality
+                type for each encoder token**. Shape (B, O).
         """
 
         encoder_tokens_all = []
@@ -256,19 +262,28 @@ class TerraMind(nn.Module):
 
     def cat_decoder_tensors(self, mod_dict: dict[str, dict[str, torch.Tensor]]) -> tuple[torch.Tensor]:
         """Concatenate decoder tensors from different modalities.
-        
+
         Args:
             mod_dict (dict): A dictionary containing information for each modality.
                              Expected keys for each modality include 'x' (input tokens),
                              'ids' (target IDs), 'emb' (embeddings), 'target_mask', 'decoder_attention_mask', etc.
+
         Returns:
-            tuple:
-                - decoder_tokens_all (torch.Tensor): Concatenated decoder tokens from all modalities. Shape (B, P, D) where P is the total number of all decoder tokens.
-                - emb_all (torch.Tensor): Concatenated decoder embeddings from all modalities. Shape (B, P, D)
-                - decoder_mask_all (torch.Tensor): Concatenated boolean masks indicating which tokens are part of the decoder input / target (set to 0 for valid tokens, 1 otherwise). Shape (B, P)
-                - target_ids_all (torch.Tensor): Concatenated target IDs from all modalities. Shape (B, P)
-                - attention_mask_all (torch.Tensor): Concatenated attention masks in compressed format, needs to be passed to adapt_decoder_attention_mask() to obtain the final attention mask. Shape (B, P)
-                - mod_mask_all (torch.Tensor): Concatenated integer mask marking the modality type for each decoder token. Shape (B, P)
+            tuple[torch.Tensor]:
+                (torch.Tensor) **Concatenated decoder tokens from all
+                modalities**. Shape (B, P, D) where P is the total number of all decoder tokens.
+                (torch.Tensor) **Concatenated decoder embeddings from all
+                modalities**. Shape (B, P, D).
+                torch.Tensor) **Concatenated boolean masks indicating which
+                tokens are part of the decoder input / target (set to 0 for
+                valid tokens, 1 otherwise)**. Shape (B, P).
+                (torch.Tensor) **Concatenated target IDs from all modalities**.
+                Shape (B, P).
+                (torch.Tensor) **Concatenated attention masks in compressed
+                format, needs to be passed to adapt_decoder_attention_mask() to
+                obtain the final attention mask**. Shape (B, P).
+                (torch.Tensor) **Concatenated integer mask marking the modality
+                type for each decoder token**. Shape (B, P).
         """
 
         decoder_tokens_all = []
@@ -321,12 +336,17 @@ class TerraMind(nn.Module):
                             It is expected to have keys for each modality and values 
                             containing the modalities' associated tensors.
             num_encoder_tokens (int): Number of encoder tokens to retain after masking.
+
         Returns:
-            tuple:
-                - encoder_tokens (torch.Tensor): Selected encoder tokens from all modalities. Shape (B, N, D) where N is the number of selected encoder tokens. 
-                - encoder_emb (torch.Tensor): Corresponding embeddings for encoder tokens. Shape (B, N, D)
-                - encoder_mask (torch.Tensor): A boolean mask indicating which encoder tokens are valid (set to 0 for valid tokens, 1 otherwise). Shape (B, 1, N)
-                - mod_mask (torch.Tensor): An integer mask marking the modality type for each encoder token (with -1 indicating unassigned pad tokens). Shape (B, N)
+            tuple[torch.Tensor]:
+                (torch.Tensor) **Selected encoder tokens from all modalities**. Shape (B, N, D) where N is the number of selected encoder tokens. 
+                (torch.Tensor) **Corresponding embeddings for encoder tokens**.
+                Shape (B, N, D).
+                (torch.Tensor) **A boolean mask indicating which encoder tokens
+                are valid (set to 0 for valid tokens, 1 otherwise)**. Shape (B,
+                1, N).
+                (torch.Tensor) **An integer mask marking the modality type for
+                each encoder token (with -1 indicating unassigned pad tokens)**. Shape (B, N)
 
         Notes:
             - If `num_register_tokens` is set and greater than 0, register tokens are added at the beginning of the sequence.
@@ -376,13 +396,20 @@ class TerraMind(nn.Module):
             num_decoder_tokens (int): Number of decoder tokens to retain after masking.
 
         Returns:
-            tuple:
-                - decoder_tokens (torch.Tensor): Selected decoder tokens from all modalities. Shape (B, M, D) where M is the number of selected decoder tokens.
-                - decoder_emb (torch.Tensor): Corresponding embeddings for decoder tokens. Shape (B, M, D)
-                - decoder_mask (torch.Tensor): A boolean mask indicating which decoder tokens are valid (set to 0 for valid tokens, 1 otherwise). Shape (B, 1, M)
-                - target_ids (torch.Tensor): IDs of the target tokens corresponding to the decoder tokens. Shape (B, M)
-                - decoder_attention_mask (torch.Tensor): Mask for the decoder self-attention layers. Shape (B, M, M)
-                - mod_mask (torch.Tensor): An integer mask marking the modality type for each decoder token (with -1 indicating unassigned pad tokens). Shape (B, M)
+            tuple[torch.Tensor]:
+                (torch.Tensor) **Selected decoder tokens from all modalities**. Shape (B, M, D) where M is the number of selected decoder tokens.
+                (torch.Tensor) **Corresponding embeddings for decoder tokens**.
+                Shape (B, M, D).
+                (torch.Tensor) **A boolean mask indicating which decoder tokens
+                are valid (set to 0 for valid tokens, 1 otherwise)**. Shape (B,
+                1, M).
+                (torch.Tensor) **IDs of the target tokens corresponding to the
+                decoder tokens**. Shape (B, M).
+                (torch.Tensor) **Mask for the decoder self-attention layers**.
+                Shape (B, M, M).
+                (torch.Tensor) **An integer mask marking the modality type for
+                each decoder token (with -1 indicating unassigned pad
+                tokens)**. Shape (B, M).
         """
         # decoder_mask and target_mask are equivalent, we rename it here to harmonize with forward_mask_encoder
         decoder_tokens_all, emb_all, decoder_mask_all, target_ids_all, decoder_attention_mask_all, mod_mask_all = self.cat_decoder_tensors(mod_dict)
@@ -631,9 +658,7 @@ class TerraMind(nn.Module):
             return_logits (bool, optional): If True, return the logits. Default is False.
 
         Returns:
-            Union[dict, tuple]: 
-                - If return_logits is True: dictionary of logits for each modality.
-                - Otherwise: tuple containing the total loss and dictionary of loss for each modality.
+            Union[dict, tuple]: If return_logits is True, dictionary of logits for each modality. Otherwise, tuple containing the total loss and dictionary of loss for each modality.
         """        
         # Mod dicts
         encoder_mod_dict = {mod: self.encoder_embeddings[mod](d)
