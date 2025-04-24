@@ -4,6 +4,7 @@
 This module contains generic data modules for instantiation at runtime.
 """
 import os
+import logging
 from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
@@ -22,6 +23,8 @@ from terratorch.datasets import GenericNonGeoPixelwiseRegressionDataset, Generic
 from terratorch.io.file import load_from_file_or_attribute
 
 from .utils import check_dataset_stackability
+
+logger = logging.getLogger("terratorch")
 
 def wrap_in_compose_is_list(transform_list):
     # set check shapes to false because of the multitemporal case
@@ -110,6 +113,7 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
         no_label_replace: int | None = None,
         drop_last: bool = True,
         pin_memory: bool = False,
+        check_stackability: bool = True,
         **kwargs: Any,
     ) -> None:
         """Constructor
@@ -173,6 +177,7 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
             drop_last (bool): Drop the last batch if it is not complete. Defaults to True.
             pin_memory (bool): If ``True``, the data loader will copy Tensors
             into device/CUDA pinned memory before returning them. Defaults to False.
+            check_stackability (bool): Check if all the files in the dataset has the same size and can be stacked.
         """
         super().__init__(GenericNonGeoSegmentationDataset, batch_size, num_workers, **kwargs)
         self.num_classes = num_classes
@@ -221,6 +226,8 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
         # self.aug = Normalize(means, stds)
         # self.collate_fn = collate_fn_list_dicts
 
+        self.check_stackability = check_stackability
+        
     def setup(self, stage: str) -> None:
         if stage in ["fit"]:
             self.train_dataset = self.dataset_class(
@@ -315,7 +322,9 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
         dataset = self._valid_attribute(f"{split}_dataset", "dataset")
         batch_size = self._valid_attribute(f"{split}_batch_size", "batch_size")
 
-        batch_size = check_dataset_stackability(dataset, batch_size)
+        if self.check_stackability:
+            logger.info(f"Checking stackability for {split} split.")
+            batch_size = check_dataset_stackability(dataset, batch_size)
 
         return DataLoader(
             dataset=dataset,
@@ -571,7 +580,7 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         batch_size = self._valid_attribute(f"{split}_batch_size", "batch_size")
 
         if self.check_stackability:
-            print("Checking stackability.")
+            logger.info("Checking stackability.")
             batch_size = check_dataset_stackability(dataset, batch_size)
 
         return DataLoader(
