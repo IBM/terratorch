@@ -6788,11 +6788,16 @@ freezed.</p>
       </tbody>
     </table>
         <p>Returns:
-    tuple:
-        - encoder_tokens_all (torch.Tensor): Concatenated encoder tokens from all modalities. Shape (B, O, D) where O is the total number of all encoder tokens.
-        - emb_all (torch.Tensor): Concatenated encoder embeddings from all modalities. Shape (B, O, D)
-        - encoder_mask_all (torch.Tensor): Concatenated boolean masks indicating which tokens are part of the encoder input (set to 0 for valid tokens, 1 otherwise). Shape (B, O)
-        - mod_mask_all (torch.Tensor): Concatenated integer mask marking the modality type for each encoder token. Shape (B, O)</p>
+    tuple[torch.Tensor]:
+        (torch.Tensor) <strong>Concatenated encoder tokens from all
+        modalities</strong>. Shape (B, O, D) where O is the total number of all encoder tokens.
+        (torch.Tensor) <strong>Concatenated encoder embeddings from all
+        modalities</strong>. Shape (B, O, D).
+        (torch.Tensor) <strong>Concatenated boolean masks
+          indicating which tokens are part of the encoder input (set to
+          0 for valid tokens, 1 otherwise)</strong>. Shape (B, O).
+        (torch.Tensor) <strong>Concatenated integer mask marking the modality
+        type for each encoder token</strong>. Shape (B, O).</p>
 
     </div>
 
@@ -7440,42 +7445,21 @@ freezed.</p>
           </tr>
       </tbody>
     </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code>tuple[<span title="torch.Tensor">Tensor</span>]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>tuple[torch.Tensor]:
-(torch.Tensor) <strong>Selected decoder tokens from all modalities</strong>. Shape (B, M, D) where M is the number of selected decoder tokens.
-(torch.Tensor) <strong>Corresponding embeddings for decoder tokens</strong>.
-Shape (B, M, D).
-(torch.Tensor) <strong>A boolean mask indicating which decoder tokens
-are valid (set to 0 for valid tokens, 1 otherwise)</strong>. Shape (B,
-1, M).
-(torch.Tensor) <strong>IDs of the target tokens corresponding to the
-decoder tokens</strong>. Shape (B, M).
-(torch.Tensor) <strong>Mask for the decoder self-attention layers</strong>.
-Shape (B, M, M).
-(torch.Tensor) <strong>An integer mask marking the modality type for
-each decoder token (with -1 indicating unassigned pad
-tokens)</strong>. Shape (B, M).</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
+        <p>Returns:
+    tuple[torch.Tensor]:
+        (torch.Tensor) <strong>Selected decoder tokens from all modalities</strong>. Shape (B, M, D) where M is the number of selected decoder tokens.
+        (torch.Tensor) <strong>Corresponding embeddings for decoder tokens</strong>.
+        Shape (B, M, D).
+        (torch.Tensor) <strong>A boolean mask indicating which decoder tokens
+        are valid (set to 0 for valid tokens, 1 otherwise)</strong>. Shape (B,
+        1, M).
+        (torch.Tensor) <strong>IDs of the target tokens corresponding to the
+        decoder tokens</strong>. Shape (B, M).
+        (torch.Tensor) <strong>Mask for the decoder self-attention layers</strong>.
+        Shape (B, M, M).
+        (torch.Tensor) <strong>An integer mask marking the modality type for
+        each decoder token (with -1 indicating unassigned pad
+        tokens)</strong>. Shape (B, M).</p>
 
     </div>
 
