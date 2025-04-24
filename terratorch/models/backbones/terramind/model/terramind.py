@@ -34,28 +34,28 @@ class TerraMind(nn.Module):
     """TerraMind model.
 
     Args:
-        encoder_embeddings: dict of encoder embedding modules.
-        decoder_embeddings: dict of decoder embedding modules.
-        modality_info: dict containing modality information.
+        encoder_embeddings (dict): dict of encoder embedding modules.
+        decoder_embeddings (dict): dict of decoder embedding modules.
+        modality_info (dict): dict containing modality information.
         dim: Embedding dimension.
-        encoder_depth: Number of encoder blocks.
-        decoder_depth: Number of decoder blocks.
-        num_heads: Number of attention heads.
-        mlp_ratio: Ratio of mlp hidden dim to embedding dim.
-        qkv_bias: If True, add a learnable bias to query, key, value projections.
-        proj_bias: If True, add a learnable bias to the last projection of the attention block.
-        mlp_bias: If True, add a learnable bias to linear layers in the MLP / feed-forward.
-        drop_path_rate_encoder: Stochastic depth rate for encoder.
-        drop_path_rate_decoder: Stochastic depth rate for decoder.
-        shared_drop_path: If True, shares drop path between encoder and decoder.
-        act_layer: Activation layer to be used.
-        norm_layer: Normalization layer to be used.
-        gated_mlp: If True, make the feedforward gated (e.g., SwiGLU).
-        qk_norm: If True, applies normalization to queries and keys (QKNorm).
-        decoder_causal_mask: If True, decoder will use a causal mask for all tokens.
-        decoder_sep_mask: If True, decoder attention is restricted to within each modality only.
-        num_register_tokens: Number of register tokens.
-        use_act_checkpoint: If True, use activation checkpoint for each block.
+        encoder_depth (int): Number of encoder blocks.
+        decoder_depth (int): Number of decoder blocks.
+        num_heads (int): Number of attention heads.
+        mlp_ratio (int): Ratio of mlp hidden dim to embedding dim.
+        qkv_bias (bool): If True, add a learnable bias to query, key, value projections.
+        proj_bias (bool): If True, add a learnable bias to the last projection of the attention block.
+        mlp_bias (bool): If True, add a learnable bias to linear layers in the MLP / feed-forward.
+        drop_path_rate_encoder (float): Stochastic depth rate for encoder.
+        drop_path_rate_decoder (float): Stochastic depth rate for decoder.
+        shared_drop_path (bool): If True, shares drop path between encoder and decoder.
+        act_layer (nn.Module): Activation layer to be used.
+        norm_layer (partial): Normalization layer to be used.
+        gated_mlp (bool): If True, make the feedforward gated (e.g., SwiGLU).
+        qk_norm (bool): If True, applies normalization to queries and keys (QKNorm).
+        decoder_causal_mask (bool): If True, decoder will use a causal mask for all tokens.
+        decoder_sep_mask (bool): If True, decoder attention is restricted to within each modality only.
+        num_register_tokens (int): Number of register tokens.
+        use_act_checkpoint (bool): If True, use activation checkpoint for each block.
     """
     def __init__(self,
                  encoder_embeddings: dict[str, nn.Module],
@@ -228,7 +228,6 @@ class TerraMind(nn.Module):
             mod_dict (dict): A dictionary containing information for each modality. 
                              Expected keys for each modality are 'x' (input tokens), 
                              'emb' (embeddings), 'input_mask', etc.
-
         Returns:
             tuple:
                 - encoder_tokens_all (torch.Tensor): Concatenated encoder tokens from all modalities. Shape (B, O, D) where O is the total number of all encoder tokens.
@@ -262,8 +261,6 @@ class TerraMind(nn.Module):
             mod_dict (dict): A dictionary containing information for each modality.
                              Expected keys for each modality include 'x' (input tokens),
                              'ids' (target IDs), 'emb' (embeddings), 'target_mask', 'decoder_attention_mask', etc.
-
-        
         Returns:
             tuple:
                 - decoder_tokens_all (torch.Tensor): Concatenated decoder tokens from all modalities. Shape (B, P, D) where P is the total number of all decoder tokens.
@@ -324,7 +321,6 @@ class TerraMind(nn.Module):
                             It is expected to have keys for each modality and values 
                             containing the modalities' associated tensors.
             num_encoder_tokens (int): Number of encoder tokens to retain after masking.
-
         Returns:
             tuple:
                 - encoder_tokens (torch.Tensor): Selected encoder tokens from all modalities. Shape (B, N, D) where N is the number of selected encoder tokens. 

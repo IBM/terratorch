@@ -8,6 +8,9 @@
 :::terratorch.models.backbones.unet
     options:
         show_source: false
+:::terratorch.models.backbones.terramind.model.terramind
+    options:
+        show_source: false
 ## APIs for External Models
 :::terratorch.models.backbones.torchgeo_vit
     options:
@@ -18,3 +21,4 @@
 :::terratorch.models.backbones.torchgeo_swin_satlas
     options:
         show_source: false
+
