@@ -155,14 +155,14 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         if self.expand_temporal_dimension:
             image = rearrange(image, "(channels time) h w -> channels time h w", channels=len(self.output_bands))
         image = np.moveaxis(image, 0, -1)
-        
+
         if self.filter_indices:
             image = image[..., self.filter_indices]
         output = {
             "image": image.astype(np.float32) * self.constant_scale,
             "mask": self._load_file(self.segmentation_mask_files[index], nan_replace=self.no_label_replace).to_numpy()[
                 0
-            ]
+            ],
         }
 
         if self.reduce_zero_label:
@@ -170,7 +170,7 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         if self.transform:
             output = self.transform(**output)
         output["filename"] = self.image_files[index]
-        
+
         return output
 
     def _load_file(self, path, nan_replace: int | float | None = None) -> xr.DataArray:
@@ -267,12 +267,13 @@ class GenericNonGeoSegmentationDataset(GenericPixelWiseDataset):
         item["mask"] = item["mask"].long()
         return item
 
-    def plot(self, sample: dict[str, Tensor], suptitle: str | None = None) -> Figure:
+    def plot(self, sample: dict[str, Tensor], suptitle: str | None = None, show_axes: bool | None = False) -> Figure:
         """Plot a sample from the dataset.
 
         Args:
             sample: a sample returned by :meth:`__getitem__`
             suptitle: optional string to use as a suptitle
+            show_axes: whether to show axes or not
 
         Returns:
             a matplotlib Figure with the rendered sample
@@ -306,31 +307,34 @@ class GenericNonGeoSegmentationDataset(GenericPixelWiseDataset):
             prediction=prediction_mask if showing_predictions else None,
             suptitle=suptitle,
             class_names=self.class_names,
+            show_axes=show_axes,
         )
 
     @staticmethod
-    def _plot_sample(image, label, num_classes, prediction=None, suptitle=None, class_names=None):
+    def _plot_sample(image, label, num_classes, prediction=None, suptitle=None, class_names=None, show_axes=False):
         num_images = 5 if prediction is not None else 4
         fig, ax = plt.subplots(1, num_images, figsize=(12, 10), layout="compressed")
+        axes_visibility = "on" if show_axes else "off"
 
         # for legend
         ax[0].axis("off")
 
         norm = mpl.colors.Normalize(vmin=0, vmax=num_classes - 1)
-        ax[1].axis("off")
+        ax[1].axis(axes_visibility)
         ax[1].title.set_text("Image")
         ax[1].imshow(image)
 
-        ax[2].axis("off")
+        ax[2].axis(axes_visibility)
         ax[2].title.set_text("Ground Truth Mask")
         ax[2].imshow(label, cmap="jet", norm=norm)
 
-        ax[3].axis("off")
+        ax[3].axis(axes_visibility)
         ax[3].title.set_text("GT Mask on Image")
         ax[3].imshow(image)
         ax[3].imshow(label, cmap="jet", alpha=0.3, norm=norm)
 
         if prediction is not None:
+            ax[4].axis(axes_visibility)
             ax[4].title.set_text("Predicted Mask")
             ax[4].imshow(prediction, cmap="jet", norm=norm)
 
@@ -429,12 +433,13 @@ class GenericNonGeoPixelwiseRegressionDataset(GenericPixelWiseDataset):
         item["mask"] = item["mask"].float()
         return item
 
-    def plot(self, sample: dict[str, Tensor], suptitle: str | None = None) -> Figure:
+    def plot(self, sample: dict[str, Tensor], suptitle: str | None = None, show_axes: bool | None = False) -> Figure:
         """Plot a sample from the dataset.
 
         Args:
             sample (dict[str, Tensor]): a sample returned by :meth:`__getitem__`
             suptitle (str|None): optional string to use as a suptitle
+            show_axes (bool|None): whether to show axes or not
 
         Returns:
             a matplotlib Figure with the rendered sample
@@ -466,29 +471,32 @@ class GenericNonGeoPixelwiseRegressionDataset(GenericPixelWiseDataset):
             label_mask,
             prediction=prediction_mask if showing_predictions else None,
             suptitle=suptitle,
+            show_axes=show_axes,
         )
 
     @staticmethod
-    def _plot_sample(image, label, prediction=None, suptitle=None):
+    def _plot_sample(image, label, prediction=None, suptitle=None, show_axes=False):
         num_images = 4 if prediction is not None else 3
         fig, ax = plt.subplots(1, num_images, figsize=(12, 10), layout="compressed")
+        axes_visibility = "on" if show_axes else "off"
 
         norm = mpl.colors.Normalize(vmin=label.min(), vmax=label.max())
-        ax[0].axis("off")
+        ax[0].axis(axes_visibility)
         ax[0].title.set_text("Image")
         ax[0].imshow(image)
 
-        ax[1].axis("off")
+        ax[1].axis(axes_visibility)
         ax[1].title.set_text("Ground Truth Mask")
         ax[1].imshow(label, cmap="Greens", norm=norm)
 
-        ax[2].axis("off")
+        ax[2].axis(axes_visibility)
         ax[2].title.set_text("GT Mask on Image")
         ax[2].imshow(image)
         ax[2].imshow(label, cmap="Greens", alpha=0.3, norm=norm)
         # ax[2].legend()
 
         if prediction is not None:
+            ax[3].axis(axes_visibility)
             ax[3].title.set_text("Predicted Mask")
             ax[3].imshow(prediction, cmap="Greens", norm=norm)
 
