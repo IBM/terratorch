@@ -23,6 +23,7 @@ class TiledInferenceParameters:
         delta (int): size of the border cropped from each tile. Defaults to None, which computes this automatically,
           with a minimum of 16.
         average_patches (bool): Whether to average the overlapping regions. Defaults to True.
+        batch_size (int): Number of patches per forward pass. Defaults to 16.
     """
 
     h_crop: int
@@ -31,6 +32,7 @@ class TiledInferenceParameters:
     w_stride: int
     delta: int = None
     average_patches: bool = True
+    batch_size: int = 16
 
 
 @dataclass
@@ -68,6 +70,8 @@ def tiled_inference(
     h_img, w_img = shape[-2], shape[-1]
 
     preds = input_batch.new_zeros((batch_size, out_channels, h_img, w_img))
+    # Save preds on CPU to avoid out-of-memory errors
+    preds = preds.cpu()
 
     # this list will contain tuples. Inside the tuples:
     #   0. batch
@@ -160,15 +164,13 @@ def tiled_inference(
     # NOTE: the output may be SLIGHTLY different using batched inputs because of layers such as nn.LayerNorm
     # During inference, these layers compute batch statistics that affect the output.
     # However, this should still be correct.
-    # TODO: make this configurable by user?
-    process_batch_size = 16
     with torch.no_grad():
-        preds_count = input_batch.new_zeros(batch_size, preds.shape[-2], preds.shape[-1])
-        for start in range(0, len(coordinates_and_inputs), process_batch_size):
-            end = min(len(coordinates_and_inputs), start + process_batch_size)
+        preds_count = input_batch.new_zeros(batch_size, preds.shape[-2], preds.shape[-1], device='cpu')
+        for start in range(0, len(coordinates_and_inputs), inference_parameters.batch_size):
+            end = min(len(coordinates_and_inputs), start + inference_parameters.batch_size)
             batch = coordinates_and_inputs[start:end]
             tensor_input = torch.stack([b.input_data for b in batch], dim=0)
-            output = model_forward(tensor_input, **kwargs)
+            output = model_forward(tensor_input, **kwargs).cpu()
             output = [output[i] for i in range(len(batch))]
             for batch_input, predicted in zip(batch, output, strict=True):
                 if batch_input.output_crop is not None:
