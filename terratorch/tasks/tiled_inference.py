@@ -65,13 +65,15 @@ def tiled_inference(
     """
 
     shape = input_batch.shape
+    device = input_batch.device
+    # Move inputs to CPU to avoid out-of-memory errors
+    input_batch = input_batch.cpu()
+
     batch_size = shape[0]
     # omit bands and take last two dimensions
     h_img, w_img = shape[-2], shape[-1]
 
     preds = input_batch.new_zeros((batch_size, out_channels, h_img, w_img))
-    # Save preds on CPU to avoid out-of-memory errors
-    preds = preds.cpu()
 
     # this list will contain tuples. Inside the tuples:
     #   0. batch
@@ -165,11 +167,12 @@ def tiled_inference(
     # During inference, these layers compute batch statistics that affect the output.
     # However, this should still be correct.
     with torch.no_grad():
-        preds_count = input_batch.new_zeros(batch_size, preds.shape[-2], preds.shape[-1], device='cpu')
+        preds_count = input_batch.new_zeros(batch_size, preds.shape[-2], preds.shape[-1])
         for start in range(0, len(coordinates_and_inputs), inference_parameters.batch_size):
             end = min(len(coordinates_and_inputs), start + inference_parameters.batch_size)
             batch = coordinates_and_inputs[start:end]
             tensor_input = torch.stack([b.input_data for b in batch], dim=0)
+            tensor_input = tensor_input.to(device)
             output = model_forward(tensor_input, **kwargs).cpu()
             output = [output[i] for i in range(len(batch))]
             for batch_input, predicted in zip(batch, output, strict=True):
