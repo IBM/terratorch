@@ -9,6 +9,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 import torch
+import tqdm
 
 
 @dataclass
@@ -33,6 +34,7 @@ class TiledInferenceParameters:
     delta: int = None
     average_patches: bool = True
     batch_size: int = 16
+    verbose: bool = False
 
 
 @dataclass
@@ -48,6 +50,7 @@ def tiled_inference(
     input_batch: torch.Tensor,
     out_channels: int,
     inference_parameters: TiledInferenceParameters,
+    desc: str = None,
     **kwargs
 ) -> torch.Tensor:
     """
@@ -168,7 +171,8 @@ def tiled_inference(
     # However, this should still be correct.
     with torch.no_grad():
         preds_count = input_batch.new_zeros(batch_size, preds.shape[-2], preds.shape[-1])
-        for start in range(0, len(coordinates_and_inputs), inference_parameters.batch_size):
+        for start in tqdm.tqdm(range(0, len(coordinates_and_inputs), inference_parameters.batch_size),
+                               disable=not inference_parameters.verbose):
             end = min(len(coordinates_and_inputs), start + inference_parameters.batch_size)
             batch = coordinates_and_inputs[start:end]
             tensor_input = torch.stack([b.input_data for b in batch], dim=0)
