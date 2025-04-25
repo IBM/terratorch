@@ -7,6 +7,7 @@ import logging
 import os
 import shutil
 import sys
+import glob
 import tempfile
 import warnings
 from copy import deepcopy
@@ -28,6 +29,7 @@ import torchgeo.datamodules
 import yaml
 from albumentations.pytorch import ToTensorV2  # noqa: F401
 from jsonargparse import set_dumper
+from jsonargparse._namespace import Namespace
 from lightning.fabric.utilities.cloud_io import get_filesystem
 from lightning.fabric.utilities.types import _PATH
 from lightning.pytorch import LightningDataModule, LightningModule, Trainer
@@ -103,6 +105,7 @@ def add_default_checkpointing_config(config):
         enable_checkpointing = config[subcommand + ".trainer.enable_checkpointing"]
         callbacks = config[subcommand + ".trainer.callbacks"]
 
+        # A list for callbacks is usually expected.
         if callbacks:
             check_callbacks = [op for op in callbacks if "ModelCheckpoint" in op.class_path]
         
@@ -110,26 +113,29 @@ def add_default_checkpointing_config(config):
                 there_is_checkpointing = True
             else:
                 there_is_checkpointing = False
+        # However, if no callbacks list is provided, let's create one. 
         else:
             there_is_checkpointing = False
+            callbacks = []
 
         if enable_checkpointing:
             if not there_is_checkpointing:
-                logger.info("Enabling ModelCheckpoint since the user defined enable_checkpointing=True.")
-    
-                config["ModelCheckpoint"] = StateDictAwareModelCheckpoint
-                config["ModelCheckpoint.filename"] = "{epoch}"
-                config["ModelCheckpoint.monitor"] = "val/loss"
-                config["StateDictModelCheckpoint"] = StateDictAwareModelCheckpoint
-                config["StateDictModelCheckpoint.filename"] = "{epoch}_state_dict"
-                config["StateDictModelCheckpoint.save_weights_only"] = True
-                config["StateDictModelCheckpoint.monitor"] = "val/loss"
+                # Checkpointing is enabled, but no checkpoint rule was
+                # provided, so let's define some default choice for it.
+                model_checkpoint = Namespace(class_path="StateDictAwareModelCheckpoint",
+                                            init_args=Namespace(filename="{epoch}", monitor="val/loss"))
+                model_checkpoint_state_dict = Namespace(class_path="StateDictAwareModelCheckpoint",
+                                                   init_args=Namespace(filename="{epoch}_state_dict",
+                                                                       save_weights_only=True, monitor="val/loss"))
+                callbacks += [model_checkpoint, model_checkpoint_state_dict]   
+                config[subcommand + ".trainer.callbacks"] = callbacks
             else:
                 logger.info("No extra checkpoint config will be added, since the user already defined it in the callbacks.")
 
     return config 
 
-def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16"):
+def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16",
+                    suffix="pred"):
     mask, metadata = open_tiff(input_file_name)
     mask = np.where(mask == metadata["nodata"], 1, 0)
     mask = np.max(mask, axis=0)
@@ -142,7 +148,7 @@ def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16"):
     metadata["nodata"] = -1
     file_name = os.path.basename(input_file_name)
     file_name_no_ext = os.path.splitext(file_name)[0]
-    out_file_name = file_name_no_ext + "_pred.tif"
+    out_file_name = file_name_no_ext + f"_{suffix}.tif"
     logger.info(f"Saving output to {out_file_name} ...")
     write_tiff(result, os.path.join(out_dir, out_file_name), metadata)
 
@@ -159,10 +165,10 @@ def import_custom_modules(custom_modules_path: str | Path | None = None) -> None
             workdir = custom_modules_path.parents[0]
             module_dir = custom_modules_path.name
 
-            sys.path.append(workdir)
+            sys.path.insert(0, str(workdir))
 
             try:
-                importlib.import_module(module_dir)
+                module = importlib.import_module(module_dir)
                 logger.info(f"Found {custom_modules_path}")
             except ImportError:
                 raise ImportError(f"It was not possible to import modules from {custom_modules_path}.")
@@ -201,12 +207,33 @@ class CustomWriter(BasePredictionWriter):
         if isinstance(prediction, torch.Tensor):
             filename_batch = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
             torch.save(prediction, os.path.join(output_dir, f"{filename_batch}.pt"))
+
         elif isinstance(prediction, tuple):
-            pred_batch, filename_batch = prediction
-            for prediction, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
-                save_prediction(prediction, file_name, output_dir, dtype=trainer.out_dtype)
+
+            pred_batch_, filename_batch = prediction
+
+            # If we have just a single kind of output
+            if isinstance(pred_batch_, tuple):
+
+                pred_batch, suffix = pred_batch_
+
+                for prediction, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
+                    save_prediction(prediction, file_name, output_dir,
+                                    dtype=trainer.out_dtype, suffix=suffix)
+
+            # If we are outputting more than one kind of variable, as
+            # (predictions, probabilities), for segmentation
+            elif isinstance(pred_batch_, list):
+
+                for pred in pred_batch_:
+                    pred_batch, suffix = pred
+
+                    for p, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
+                        save_prediction(p, file_name, output_dir,
+                                        dtype=trainer.out_dtype, suffix=suffix)
+
         else:
-            raise TypeError(f"Unknown type for prediction{type(prediction)}")
+            raise TypeError(f"Unknown type for prediction {type(prediction)}")
 
     def write_on_epoch_end(self, trainer, pl_module, predictions, batch_indices):  # noqa: ARG002
         # this will create N (num processes) files in `output_dir` each containing
@@ -242,6 +269,9 @@ def clean_config_for_deployment_and_dump(config: dict[str, Any]):
     # drop optimizer and lr sheduler
     deploy_config.pop("optimizer", None)
     deploy_config.pop("lr_scheduler", None)
+    # drop undesirable fields, if they exist
+    if "verbose" in deploy_config:
+        deploy_config.pop("verbose", None)
     ## Trainer
     # remove logging
     deploy_config["trainer"]["logger"] = False
@@ -405,6 +435,20 @@ class StateDictAwareModelCheckpoint(ModelCheckpoint):
 
 
 class MyLightningCLI(LightningCLI):
+    def run_init(self):
+        logger.info("Running custom init command...")
+
+    @property
+    def subcommands(self):
+        return super().subcommands + ["init"]
+
+    def run(self):
+        subcommand = self.config['subcommand']
+        if subcommand == 'init':
+            self.run_init()
+        else:
+            super().run()
+
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:
         parser.add_argument("--predict_output_dir", default=None)
         parser.add_argument("--out_dtype", default="int16")
@@ -419,6 +463,7 @@ class MyLightningCLI(LightningCLI):
         self.config = add_default_checkpointing_config(self.config)
 
         super().instantiate_classes()
+
         # get the predict_output_dir. Depending on the value of run, it may be in the subcommand
         try:
             config = self.config.predict
@@ -447,6 +492,7 @@ class MyLightningCLI(LightningCLI):
 
         import_custom_modules(custom_modules_path)
 
+
     @staticmethod
     def subcommands() -> dict[str, set[str]]:
         existing_subcommands = LightningCLI.subcommands()
@@ -458,7 +504,7 @@ def build_lightning_cli(
     args: ArgsType = None,
     run=True,  # noqa: FBT002
 ) -> LightningCLI:
-    """Command-line interface to GeospatialCV."""
+    """Command-line interface to TerraTorch."""
     # Taken from https://github.com/pangeo-data/cog-best-practices
     rasterio_best_practices = {
         "GDAL_DISABLE_READDIR_ON_OPEN": "EMPTY_DIR",
@@ -523,11 +569,22 @@ class LightningInferenceModel:
             weights = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
             if "state_dict" in weights:
                 weights = weights["state_dict"]
+
             # It removes a residual prefix (related to timm) from older
             # checkpoints.
             weights = remove_unexpected_prefix(weights)
-            weights = {k.replace("model.", ""): v for k, v in weights.items() if k.startswith("model.")}
-            self.model.model.load_state_dict(weights)
+            # Removing the undesirable prefix `model` from the checkpoint
+            weights_ = {}
+            for k, v in weights.items():
+                splits = k.split(".")
+                if splits[0] == "model":
+                    splits = splits[1:]
+                    k_ = ".".join(splits)
+                    weights_[k_] = v
+                else:
+                    weights_[k] = v
+
+            self.model.model.load_state_dict(weights_)
 
         # dont write
         non_writing_callbacks = []
@@ -598,7 +655,14 @@ class LightningInferenceModel:
         if data_root:
             self.datamodule.predict_root = data_root
         predictions = self.trainer.predict(model=self.model, datamodule=self.datamodule, return_predictions=True)
-        concat_predictions = torch.cat([batch[0] for batch in predictions])
+
+        # In some cases, the output has the format ((prediction_tensor,
+        # prediction_name), filename)
+        if all([type(j[0])==tuple for j in predictions]):
+            concat_predictions = torch.cat([batch[0][0] for batch in predictions])
+        else:
+            concat_predictions = torch.cat([batch[0] for batch in predictions])
+
         concat_file_names = flatten([batch[1] for batch in predictions])
 
         return concat_predictions, concat_file_names

@@ -18,11 +18,13 @@ from terratorch.datasets.utils import pad_numpy, to_tensor
 
 MAX_TEMPORAL_IMAGE_SIZE = (192, 192)
 
+
 class OpenSentinelMap(NonGeoDataset):
     """
-        Pytorch Dataset class to load samples from the [OpenSentinelMap](https://visionsystemsinc.github.io/open-sentinel-map/) dataset, supporting
-        multiple bands and temporal sampling strategies.
+    Pytorch Dataset class to load samples from the [OpenSentinelMap](https://visionsystemsinc.github.io/open-sentinel-map/) dataset, supporting
+    multiple bands and temporal sampling strategies.
     """
+
     def __init__(
         self,
         data_root: str,
@@ -110,7 +112,7 @@ class OpenSentinelMap(NonGeoDataset):
     def __len__(self) -> int:
         return len(self.image_files)
 
-    def plot(self, sample: dict[str, Tensor], suptitle: str | None = None) -> Figure:
+    def plot(self, sample: dict[str, Tensor], suptitle: str | None = None, show_axes: bool | None = False) -> Figure:
         if "gsd_10" not in self.bands:
             return None
 
@@ -133,25 +135,27 @@ class OpenSentinelMap(NonGeoDataset):
         if isinstance(label_mask, Tensor):
             label_mask = label_mask.numpy()
 
-        return self._plot_sample(images, label_mask, suptitle=suptitle)
-
+        return self._plot_sample(images, label_mask, suptitle=suptitle, show_axes=show_axes)
 
     def _plot_sample(
-        self, images: list[np.ndarray],
+        self,
+        images: list[np.ndarray],
         label: np.ndarray,
         suptitle: str | None = None,
+        show_axes: bool = False,
     ) -> Figure:
         num_images = len(images)
         fig, ax = plt.subplots(1, num_images + 1, figsize=(15, 5))
+        axes_visibility = "on" if show_axes else "off"
 
         for i, image in enumerate(images):
             ax[i].imshow(image)
             ax[i].set_title(f"Image {i + 1}")
-            ax[i].axis("off")
+            ax[i].axis(axes_visibility)
 
         ax[-1].imshow(label, cmap="gray")
         ax[-1].set_title("Ground Truth Mask")
-        ax[-1].axis("off")
+        ax[-1].axis(axes_visibility)
 
         if suptitle:
             plt.suptitle(suptitle)
@@ -189,7 +193,7 @@ class OpenSentinelMap(NonGeoDataset):
 
             images = torch.stack(images_over_time, dim=0).numpy()
             if self.truncate_image:
-                images = images[-self.truncate_image:]
+                images = images[-self.truncate_image :]
             if self.pad_image:
                 images = pad_numpy(images, self.pad_image)
 
@@ -208,7 +212,7 @@ class OpenSentinelMap(NonGeoDataset):
             for band in self.bands:
                 band_images = image_dict[band]
                 if self.truncate_image:
-                    band_images = band_images[-self.truncate_image:]
+                    band_images = band_images[-self.truncate_image :]
                 if self.pad_image:
                     band_images = [pad_numpy(img, self.pad_image) for img in band_images]
                 band_images = np.stack(band_images, axis=0)

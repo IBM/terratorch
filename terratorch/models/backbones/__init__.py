@@ -11,3 +11,4 @@ import terratorch.models.backbones.torchgeo_resnet
 import terratorch.models.backbones.torchgeo_vit
 import terratorch.models.backbones.multimae_register
 from terratorch.models.backbones.unet import UNet
+import terratorch.models.backbones.terramind
