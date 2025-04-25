@@ -48,6 +48,7 @@ LORA_CONFIG = {
     },
 }
     
+
 @pytest.fixture(scope="session")
 def model_factory() -> EncoderDecoderFactory:
     return EncoderDecoderFactory()
@@ -441,5 +442,3 @@ def test_create_model_with_lora(backbone, task, expected, decoder, model_factory
         assert model(model_input).output.shape == expected
 
     gc.collect()
-
-
