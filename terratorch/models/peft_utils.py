@@ -13,8 +13,6 @@ try:
 except ModuleNotFoundError:
     _has_peft = False
 
-from terratorch.models.moe_utils import MoELayer
-
 TESTED_PEFT_METHODS = ["LORA"]
 
 
@@ -55,23 +53,14 @@ def get_peft_backbone(peft_config: dict[str, Any], backbone: nn.Module) -> nn.Mo
         raise ImportError(msg)
     peft_config_cls = PEFT_TYPE_TO_CONFIG_MAPPING[terratorch_peft_config.method]
     peft_config_peft = peft_config_cls(**terratorch_peft_config.peft_config_kwargs)
-
-    # Checking if there is some MoE configuration in the peft dictionary 
-    if "moe_config" in peft_config:
-        moe_config = peft_config.pop("moe_config", None)
-    else:
-        moe_config = {}
-
     if terratorch_peft_config.replace_qkv is not None:
-        replace_qkv(backbone, terratorch_peft_config.replace_qkv,
-                    moe_config=moe_config)  # modifies inplace
-
+        replace_qkv(backbone, terratorch_peft_config.replace_qkv)  # modifies inplace
     backbone = get_peft_model(backbone, peft_config_peft)
     return backbone
 
 
 class QKVSep(nn.Module):
-    def __init__(self, original_qkv: nn.Linear, **kwargs):
+    def __init__(self, original_qkv: nn.Linear):
         super().__init__()
         if original_qkv.out_features != original_qkv.in_features * 3:
             msg = "The output features must be 3 times the input features for Q, K, V separation"
@@ -106,34 +95,10 @@ class QKVSep(nn.Module):
         v = self.v_linear(x)
         return torch.cat((q, k, v), dim=-1)
 
-class MoEQKVSep(nn.Module):
-    def __init__(self, original_qkv:nn.Linear, n_experts:int=6, n_vars:int=2):
 
-        super(MoEQKVSep, self).__init__()
-
-        experts_list = []
-        for e in range(n_experts):
-            experts_list.append(QKVSep(original_qkv=original_qkv))
-
-        self.moe_layer = MoELayer(experts_list=experts_list,
-                                  input_size=original_qkv.in_features,
-                                  n_vars=n_vars)
-
-    def forward(self, x: torch.Tensor):
-        return self.moe_layer(x)
-
-def replace_qkv(model: nn.Module, qkv_suffix: str, moe_config: dict=None):
+def replace_qkv(model: nn.Module, qkv_suffix: str):
     # This is needed for ViTEncoderDecoder because the qkv matrices are together,
     # and it would not work with LoRA (and probably other adapters)
-
-    # We can optionally use a moe_config to extend the PEFT algorithm
-    if moe_config:
-        qkv_module = MoEQKVSep
-        kwargs = moe_config
-    else:
-        qkv_module = QKVSep
-        kwargs = {}
-
     replaced = False
     for key, _ in model.named_modules():
         if key.endswith(f".{qkv_suffix}"):
@@ -142,10 +107,7 @@ def replace_qkv(model: nn.Module, qkv_suffix: str, moe_config: dict=None):
             if not isinstance(target, nn.Linear):
                 msg = "Only a qkv nn.Linear can be replaced."
                 raise ValueError(msg)
-            # For the original PEFT, kwargs is an empty dictionary
-            new_module = qkv_module(target, **kwargs)
-
+            new_module = QKVSep(target)
             setattr(parent, target_name, new_module)
-
     if not replaced:
         warnings.warn("replace_qkv was not None but no module was found ending with that pattern.", stacklevel=1)
