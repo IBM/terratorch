@@ -13,6 +13,16 @@ os.environ["TORCH_CUDNN_V8_API_DISABLED"] = "1"
 
 # central wavelengths of pretrained model
 WAVELENGTHS= {
+  "blue": 0.493,
+  "green": 0.56,
+  "red": 0.665,
+  "rededge1": 0.704,
+  "rededge2": 0.74,
+  "rededge3": 0.783,
+  "nir": 0.842,
+  "nir08": 0.865,
+  "swir16": 1.61,
+  "swir22": 2.19,
   "COASTAL_AEROSOL": 0.44,
   "BLUE": 0.49,
   "GREEN": 0.56,
