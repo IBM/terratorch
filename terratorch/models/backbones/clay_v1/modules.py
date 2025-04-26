@@ -12,18 +12,44 @@ from terratorch.models.backbones.clay_v1.utils import posemb_sincos_1d, posemb_s
 os.environ["TORCH_CUDNN_V8_API_DISABLED"] = "1"
 
 # central wavelengths of pretrained model
-WAVELENGTHS = {
-    "blue": 0.493,
-    "green": 0.56,
-    "red": 0.665,
-    "rededge1": 0.704,
-    "rededge2": 0.74,
-    "rededge3": 0.783,
-    "nir": 0.842,
-    "nir08": 0.865,
-    "swir16": 1.61,
-    "swir22": 2.19,
-}
+# WAVELENGTHS = {
+#     "blue": 0.493,
+#     "green": 0.56,
+#     "red": 0.665,
+#     "rededge1": 0.704,
+#     "rededge2": 0.74,
+#     "rededge3": 0.783,
+#     "nir": 0.842,
+#     "nir08": 0.865,
+#     "swir16": 1.61,
+#     "swir22": 2.19,
+# }
+
+WAVELENGTHS= {
+  "COASTAL_AEROSOL": 0.44,
+  "BLUE": 0.49,
+  "GREEN": 0.56,
+  "RED": 0.665,
+  "RED_EDGE_1": 0.705,
+  "RED_EDGE_2": 0.74, 
+  "RED_EDGE_3": 0.783,
+  "NIR_BROAD": 0.832,
+  "NIR_NARROW": 0.864,
+  "WATER_VAPOR": 0.945,
+  "CIRRUS": 1.373,
+  "SWIR_1": 1.61,
+  "SWIR_2": 2.20,
+  "THEMRAL_INFRARED_1": 10.90,
+  "THEMRAL_INFRARED_12": 12.00, 
+  "VV": 5.405,
+  "VH": 5.405,
+  "ASC_VV": 5.405,
+  "ASC_VH": 5.405,
+  "DSC_VV": 5.405,
+  "DSC_VH": 5.405,
+  "VV-VH": 5.405
+  }
+
 
 
 class FeedForward(nn.Module):
@@ -571,7 +597,10 @@ class Datacuber(nn.Module):
         return datacube
 
     def _parse_wavelengths(self, bands, channels):
-        if bands is not None and all([_ in WAVELENGTHS for _ in bands]):
-            return torch.tensor([WAVELENGTHS[_] for _ in bands])
-        else:
-            return torch.zeros(channels)
+        waves = torch.tensor([WAVELENGTHS[band] if band in WAVELENGTHS.keys() else 0.0 for band in bands])
+        print(waves)
+        return waves
+        # if bands is not None and all([_ in WAVELENGTHS for _ in bands]):
+        #     return torch.tensor([WAVELENGTHS[_] for _ in bands])
+        # else:
+        #     return torch.zeros(channels)
