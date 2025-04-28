@@ -63,20 +63,28 @@ trainer = pl.Trainer(
 
 model = terratorch.tasks.ClassificationTask(
         model_args={
-      "decoder": "IdentityDecoder",
-      "backbone_pretrained": True,
-      "backbone": "prithvi_eo_v1_100",
-      "head_dim_list": [384, 128],
-      "backbone_bands":
-        ["BLUE",
-        "GREEN",
-        "RED",
-        "NIR_NARROW",
-        "SWIR_1",
-        "SWIR_2"],
-      "num_classes": 10,
-     "head_dropout": 0.1
-      },
+        "decoder": "IdentityDecoder",
+        "backbone_pretrained": True,
+        "backbone": "prithvi_eo_v1_100",
+        "head_kwargs": {
+          "dim_list": [384, 128],
+          "dropout": 0.1,
+          "moe_kwargs": {
+            "n_experts": 4,
+            "n_vars": 10,
+            "input_size": 384,
+            "use_reshaping": True,
+          },
+        },
+        "backbone_bands":
+          ["BLUE",
+          "GREEN",
+          "RED",
+          "NIR_NARROW",
+          "SWIR_1",
+          "SWIR_2"],
+        "num_classes": 10,
+        },
      loss = "ce",
      freeze_backbone = False,
      model_factory = "EncoderDecoderFactory",
