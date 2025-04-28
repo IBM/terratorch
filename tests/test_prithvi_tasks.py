@@ -168,6 +168,48 @@ def test_create_classification_task_encoder_decoder(backbone, decoder, loss, mod
 
     gc.collect()
 
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "prithvi_eo_v2_300", "prithvi_swin_B"])
+@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder"])
+@pytest.mark.parametrize("loss", ["ce"])
+@pytest.mark.parametrize("lr_overrides", [{"encoder": 0.01}, None])
+def test_create_classification_task_encoder_decoder_moe_layer(backbone,
+                                                              decoder, loss,
+                                                              model_factory:
+                                                              str,
+                                                              lr_overrides,
+                                                              model_input):
+    model_args = {
+        "backbone": backbone,
+        "decoder": decoder,
+        "backbone_bands": PRETRAINED_BANDS,
+        "backbone_pretrained": False,
+        "num_classes": NUM_CLASSES,
+        "head_kwargs": {
+          "moe_kwargs": {
+            "n_experts": 4,
+            "n_vars": 1,
+            "input_size": 256,
+            "use_reshaping": True,
+          },
+        }
+    }
+
+    if decoder in ["UperNetDecoder", "UNetDecoder"] and backbone.startswith("prithvi_eo"):
+        model_args["necks"] = VIT_UPERNET_NECK
+    if decoder == "UNetDecoder":
+        model_args["decoder_channels"] = [256, 128, 64, 32]
+
+    task = ClassificationTask(
+        model_args,
+        model_factory,
+        loss=loss,
+        lr_overrides=lr_overrides,
+    )
+    output = task.model(model_input)
+
+    gc.collect()
+
+
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v2_300"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder"])
 @pytest.mark.parametrize("loss", ["ce", "bce", "jaccard", "focal"])
