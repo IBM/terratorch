@@ -198,7 +198,7 @@ class MoELayer(Module):
             torch.Tensor: The penalties used for weighting the input distributed among the experts.
         """
 
-        gating = self.gating_network.forward(Flatten()(input_data))
+        gating = self.gating_network.forward(input_data)
 
         gating_weights_ = self.get_weights(gating=gating)
 
@@ -218,18 +218,19 @@ class MoELayer(Module):
         Returns:
             torch.Tensor: The output of the MoE evaluation.
         """
-        input_data = self.reshaping(input_data)
-        print(input_data.shape)
-        gating_weights_ = self.gate(input_data)
+
+        input_data_gate = self.reshaping(input_data)
+
+        gating_weights_ = self.gate(input_data_gate)
         counts = self.count_assigned_tokens(gating_weights_)
         gating_weights_ = self.adjust_weights(gating_weights_, counts)
-        gating_weights = [g[..., None] for g in torch.split(gating_weights_, 1, dim=1)]
+
+        gating_weights = [g[...] for g in torch.split(gating_weights_, 1, dim=1)]
 
         def _forward(worker = None) -> torch.Tensor:
             return worker.forward(input_data, *args, **kwargs)
 
         output = list(map(_forward, self.experts_list))
-
 
         result = sum([g * o for g, o in zip(gating_weights, output)])
 
