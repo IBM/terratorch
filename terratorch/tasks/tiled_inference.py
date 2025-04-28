@@ -53,8 +53,8 @@ def tiled_inference(
     **kwargs
 ) -> torch.Tensor:
     """
-    Like divide an image into (potentially) overlapping tiles and perform inference on them.
-    Additionally rebatch for increased GPU utilization.
+    Divide an image into (potentially) overlapping tiles and perform inference on them.
+    Additionally, rebatch for increased GPU utilization.
 
     Args:
         model_forward (Callable): Callable that return the output of the model.
