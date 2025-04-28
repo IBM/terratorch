@@ -18,6 +18,7 @@ warnings.filterwarnings('ignore')
 max_epochs = 1
 
 # Our datamodule. 
+BANDS = ["B02","B03", "B04", "B8A", "B11", "B12"]
 
 datamodule = terratorch.datamodules.TorchNonGeoDataModule(
     transforms = [
@@ -28,8 +29,7 @@ datamodule = terratorch.datamodules.TorchNonGeoDataModule(
       num_workers=8,
       root="./EuroSat",
       download=True,
-      bands = ["B02","B03", "B04", "B8A", "B11", "B12"]
-)
+      bands = BANDS)
 
 # Instantiating the Trainer.
 
@@ -71,9 +71,9 @@ model = terratorch.tasks.ClassificationTask(
           "dropout": 0.1,
           "moe_kwargs": {
             "n_experts": 4,
-            "n_vars": 10,
-            "input_size": 384,
+            "input_size": len(BANDS)*128,
             "use_reshaping": True,
+            "load_balancing": True
           },
         },
         "backbone_bands":
