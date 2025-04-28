@@ -14,7 +14,7 @@ class MoELayer(Module):
         experts_list: List[Module],
         gating_network: callable = None,
         input_size: int = None,
-        n_vars : int = 2, 
+        n_vars : int = 1, 
         k: int = 3,
         alpha: float = 0.2,
         devices: Union[list, str] = None,
@@ -220,7 +220,6 @@ class MoELayer(Module):
         """
 
         input_data_gate = self.reshaping(input_data)
-
         gating_weights_ = self.gate(input_data_gate)
         counts = self.count_assigned_tokens(gating_weights_)
         gating_weights_ = self.adjust_weights(gating_weights_, counts)
