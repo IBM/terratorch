@@ -21,6 +21,7 @@ class MoELayer(Module):
         binary_selection: bool = False,
         load_balancing: bool = False,
         hidden_size: Optional[int] = None,
+        use_reshaping: bool = False
     ) -> None:
         """A layer to execute Mixture of Experts
 
@@ -48,6 +49,7 @@ class MoELayer(Module):
         self.is_gating_trainable = True
         self.k = k 
         self.alpha = alpha 
+        self.use_reshaping = use_reshaping
 
         if torch.cuda.is_available():
             self.device = "cuda"
@@ -96,6 +98,13 @@ class MoELayer(Module):
             self.adjust_weights = self.load_balancing
         else:
             self.adjust_weights = lambda x, y: x
+
+        if self.use_reshaping:
+            self.reshaping = lambda x: x.reshape(x.shape[0], x.shape[1],
+                                                 -1).permute(0, 2,
+                                                             1).mean(dim=1)
+        else:
+            self.reshaping = lambda x: x
 
     def _get_weights_bypass(self, gating: torch.Tensor = None) -> torch.Tensor:
         """When the gating weights are trainable and no post-processing operation
@@ -209,6 +218,8 @@ class MoELayer(Module):
         Returns:
             torch.Tensor: The output of the MoE evaluation.
         """
+        input_data = self.reshaping(input_data)
+        print(input_data.shape)
         gating_weights_ = self.gate(input_data)
         counts = self.count_assigned_tokens(gating_weights_)
         gating_weights_ = self.adjust_weights(gating_weights_, counts)
