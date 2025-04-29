@@ -48,15 +48,15 @@ data:
       - '0'
       - '1'
       - '2'
-    train_data_root: /data//geodata-33432b140a5d11f0b5b90a580a8202d8/training_data/
-    train_label_data_root: /data//geodata-33432b140a5d11f0b5b90a580a8202d8/labels/
-    val_data_root: /data//geodata-33432b140a5d11f0b5b90a580a8202d8/training_data/
-    val_label_data_root: /data//geodata-33432b140a5d11f0b5b90a580a8202d8/labels/
-    test_data_root: /data//geodata-33432b140a5d11f0b5b90a580a8202d8/training_data/
-    test_label_data_root: /data//geodata-33432b140a5d11f0b5b90a580a8202d8/labels/
-    train_split: /data//geodata-33432b140a5d11f0b5b90a580a8202d8/split_files/train_data.txt
-    test_split: /data//geodata-33432b140a5d11f0b5b90a580a8202d8/split_files/test_data.txt
-    val_split: /data//geodata-33432b140a5d11f0b5b90a580a8202d8/split_files/val_data.txt
+    train_data_root:  /dccstor/geofm-datasets/datasets/Poland-Buildings/training_data/
+    train_label_data_root:  /dccstor/geofm-datasets/datasets/Poland-Buildings/labels/
+    val_data_root:  /dccstor/geofm-datasets/datasets/Poland-Buildings/training_data/
+    val_label_data_root:  /dccstor/geofm-datasets/datasets/Poland-Buildings/labels/
+    test_data_root:  /dccstor/geofm-datasets/datasets/Poland-Buildings/training_data/
+    test_label_data_root:  /dccstor/geofm-datasets/datasets/Poland-Buildings/labels/
+    train_split:  /dccstor/geofm-datasets/datasets/Poland-Buildings/split_files/train_data.txt
+    test_split:  /dccstor/geofm-datasets/datasets/Poland-Buildings/split_files/test_data.txt
+    val_split:  /dccstor/geofm-datasets/datasets/Poland-Buildings/split_files/val_data.txt
     img_grep: '*-img.tiff'
     label_grep: '*-lab.tiff'
     means:
