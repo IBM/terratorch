@@ -158,7 +158,7 @@ def import_custom_modules(custom_modules_path: str | Path | None = None) -> None
     if custom_modules_path:
 
         custom_modules_path = Path(custom_modules_path)
-
+        print(custom_modules_path)
         if custom_modules_path.is_dir():
 
             # Add 'custom_modules' folder to sys.path
@@ -169,6 +169,7 @@ def import_custom_modules(custom_modules_path: str | Path | None = None) -> None
 
             try:
                 module = importlib.import_module(module_dir)
+                print(module)
                 logger.info(f"Found {custom_modules_path}")
             except ImportError:
                 raise ImportError(f"It was not possible to import modules from {custom_modules_path}.")
@@ -462,7 +463,6 @@ class MyLightningCLI(LightningCLI):
         # callback. 
         self.config = add_default_checkpointing_config(self.config)
 
-        super().instantiate_classes()
 
         # get the predict_output_dir. Depending on the value of run, it may be in the subcommand
         try:
@@ -492,6 +492,7 @@ class MyLightningCLI(LightningCLI):
 
         import_custom_modules(custom_modules_path)
 
+        super().instantiate_classes()
 
     @staticmethod
     def subcommands() -> dict[str, set[str]]:
