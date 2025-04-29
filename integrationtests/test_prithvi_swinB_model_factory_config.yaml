@@ -48,7 +48,6 @@ data:
       - '3'
       - '4'
       - '5'
-
     output_bands:
       - '0'
       - '1'
@@ -56,21 +55,22 @@ data:
       - '3'
       - '4'
       - '5'
-
     rgb_indices:
       - 0
       - 1
       - 2
-
-    train_data_root: /data//geodata-060bbc44822a11efb3260a580a830dad/training_data/
-    train_label_data_root: /data//geodata-060bbc44822a11efb3260a580a830dad/labels/
-    val_data_root: /data//geodata-060bbc44822a11efb3260a580a830dad/training_data/
-    val_label_data_root: /data//geodata-060bbc44822a11efb3260a580a830dad/labels/
-    test_data_root: /data//geodata-060bbc44822a11efb3260a580a830dad/training_data/
-    test_label_data_root: /data//geodata-060bbc44822a11efb3260a580a830dad/labels/
-    train_split: /data//geodata-060bbc44822a11efb3260a580a830dad/split_files/train_data.txt
-    test_split: /data//geodata-060bbc44822a11efb3260a580a830dad/split_files/test_data.txt
-    val_split: /data//geodata-060bbc44822a11efb3260a580a830dad/split_files/val_data.txt
+    train_data_root: /dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/training
+    train_label_data_root: /dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/training
+    val_data_root: /dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/validation
+    val_label_data_root: /dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/validation
+    test_data_root: /dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/validation
+    test_label_data_root: /dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/validation
+    # Splits not available in ccc for burnscars data
+    # train_split: /data//geodata-060bbc44822a11efb3260a580a830dad/split_files/train_data.txt
+    # test_split: /data//geodata-060bbc44822a11efb3260a580a830dad/split_files/test_data.txt
+    # val_split: /data//geodata-060bbc44822a11efb3260a580a830dad/split_files/val_data.txt
+    ignore_split_file_extensions: true
+    allow_substring_split_file: true
     img_grep: "*_merged.tif"
     label_grep: "*.mask.tif"
     means: 
