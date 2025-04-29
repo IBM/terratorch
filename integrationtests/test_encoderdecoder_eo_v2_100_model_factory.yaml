@@ -105,7 +105,7 @@ model:
     model_args:
       backbone_pretrained: true 
       backbone: prithvi_eo_v1_100
-      backbone_ckpt_path: /terratorch/gfm_models/prithvi_eo_v1_100/Prithvi_EO_V1_100M.pt 
+      # backbone_ckpt_path: /terratorch/gfm_models/prithvi_eo_v1_100/Prithvi_EO_V1_100M.pt 
       backbone_drop_path: 0.1 
       backbone_bands:
         - '0'

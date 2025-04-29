@@ -106,8 +106,8 @@ model:
       # Old model version configurations
       pretrained: true
       backbone: prithvi_swin_L
-      backbone_pretrained_cfg_overlay:
-        file: /terratorch/gfm_models/prithvi_swin_L/epoch-94-loss-0.0918.pt
+      # backbone_pretrained_cfg_overlay:
+        # file: /terratorch/gfm_models/prithvi_swin_L/epoch-94-loss-0.0918.pt
       # backbone_temporal_encoding: true
       backbone_drop_path_rate: 0.3
       backbone_window_size: 7
