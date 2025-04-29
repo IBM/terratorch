@@ -21,7 +21,7 @@ trainer:
      # ---- Early stop endif ----
     - class_path: ModelCheckpoint
       init_args:
-        dirpath: /geotunes/tune-tasks/geotune-samqgfj7ixmwf24ssefyqk/
+        dirpath: /dccstor/terratorch/
         mode: min
         monitor: val/loss
         filename: best-state_dict-{epoch:02d}
@@ -31,7 +31,7 @@ trainer:
   check_val_every_n_epoch: 1
   log_every_n_steps: 50
   enable_checkpointing: true
-  default_root_dir: /geotunes/tune-tasks/geotune-samqgfj7ixmwf24ssefyqk
+  default_root_dir: /dccstor/terratorch/
 
 data:
   class_path: terratorch.datamodules.GenericNonGeoSegmentationDataModule

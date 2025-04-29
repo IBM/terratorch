@@ -15,7 +15,7 @@ trainer:
         mode: min
         monitor: val/loss
         filename: best-state_dict-{epoch:02d}
-        dirpath: /geotunes/tune-tasks/geotune-fda2ebitmwcq5qmnzhbjhh/
+        dirpath: /dccstor/terratorch/
         save_weights_only: true
     - class_path: EarlyStopping
       init_args:
@@ -25,7 +25,7 @@ trainer:
   check_val_every_n_epoch: 1
   log_every_n_steps: 5
   enable_checkpointing: true
-  default_root_dir: /geotunes/tune-tasks/geotune-fda2ebitmwcq5qmnzhbjhh
+  default_root_dir: /dccstor/terratorch/
   logger: true
 
 data:
