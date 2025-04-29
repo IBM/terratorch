@@ -158,7 +158,7 @@ def import_custom_modules(custom_modules_path: str | Path | None = None) -> None
     if custom_modules_path:
 
         custom_modules_path = Path(custom_modules_path)
-        print(custom_modules_path)
+
         if custom_modules_path.is_dir():
 
             # Add 'custom_modules' folder to sys.path
@@ -169,7 +169,6 @@ def import_custom_modules(custom_modules_path: str | Path | None = None) -> None
 
             try:
                 module = importlib.import_module(module_dir)
-                print(module)
                 logger.info(f"Found {custom_modules_path}")
             except ImportError:
                 raise ImportError(f"It was not possible to import modules from {custom_modules_path}.")
