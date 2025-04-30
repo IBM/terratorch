@@ -101,7 +101,7 @@ peft = [
 ]
 
 galileo = [
-  "git+https://github.com/Joao-L-S-Almeida/terratorch-galileo.git"
+  "galileo @ git+https://github.com/Joao-L-S-Almeida/terratorch-galileo.git"
 ]
 
 [project.urls]
