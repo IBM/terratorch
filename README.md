@@ -45,6 +45,7 @@ TerraTorch’s main purpose is to provide a flexible fine-tuning framework for G
 - Easy access to:
     - Open source pre-trained Geospatial Foundation Model backbones:
       * [Prithvi](https://huggingface.co/ibm-nasa-geospatial/Prithvi-100M)
+      * [TerraMind](https://research.ibm.com/blog/terramind-esa-earth-observation-model)
       * [SatMAE](https://sustainlab-group.github.io/SatMAE/)
       * [ScaleMAE](https://github.com/bair-climate-initiative/scale-mae)
       * Satlas (as implemented in [TorchGeo](https://github.com/microsoft/torchgeo))

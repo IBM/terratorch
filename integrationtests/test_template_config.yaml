@@ -1,0 +1,21 @@
+model:
+  type: simple_nn
+  layers:
+    - type: Dense
+      units: 64
+      activation: relu
+    - type: Dense
+      units: 10
+      activation: softmax
+
+training:
+  batch_size: 32
+  epochs: 10
+  optimizer: adam
+  loss: categorical_crossentropy
+
+data:
+  type: synthetic
+  samples: 1000
+  features: 20
+  classes: 10
