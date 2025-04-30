@@ -40,7 +40,11 @@ class RandomDataset(Dataset):
         else:
             raise ValueError(f"Unsupported task type: {self.task}")
 
-        return x, y
+        output = {
+            "image": x,
+            "label": y
+        }
+        return output
 
 
 class RandomDataModule(LightningDataModule):
