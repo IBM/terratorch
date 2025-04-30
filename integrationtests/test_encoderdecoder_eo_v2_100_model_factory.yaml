@@ -7,7 +7,7 @@ trainer:
   num_nodes: 1
   precision: 16-mixed
   logger: true
-  max_epochs: 1
+  max_epochs: 2
                
   callbacks:
     - class_path: RichProgressBar
