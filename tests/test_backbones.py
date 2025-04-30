@@ -18,6 +18,9 @@ IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "false") == "true"
 def input_224():
     return torch.ones((1, NUM_CHANNELS, 224, 224))
 
+@pytest.fixture
+def input_galileo():
+    return torch.ones((1, 224, 224, 1, NUM_CHANNELS))
 
 @pytest.fixture
 def input_512():
@@ -82,6 +85,17 @@ def test_vit_models_accept_multitemporal(model_name, input_224_multitemporal):
     backbone(input_224_multitemporal)
     gc.collect()
 
+@pytest.mark.parametrize("model_name", ["nano", "tiny", "base"])
+def test_galileo_encoders(model_name, input_galileo):
+
+    from galileo.data.utils import construct_galileo_input
+
+    backbone = BACKBONE_REGISTRY.build(f"galileo_{model_name}_encoder",
+                                       pretrained=True)
+
+    output = backbone(construct_galileo_input(s1=input_galileo))
+    print(output.shape)
+    gc.collect()
 
 @pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
 @pytest.mark.parametrize("patch_size", [8, 16])
