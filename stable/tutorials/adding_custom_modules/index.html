@@ -1222,7 +1222,7 @@
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>├── my_config.yaml
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>└── ... (other project files)
 </span></code></pre></div>
-<p>Inside <code>custom_modules/my_custom_model.py</code>, define your custom class. If you intend for TerraTorch's factories to discover this module (e.g., to use it as a backbone or decoder selected by name), you <strong>must</strong> register it using the appropriate registry decorator.</p>
+<p>Inside <code>custom_modules/my_custom_model.py</code>, define your custom class or function. If you intend for TerraTorch's factories to discover this module (e.g., to use it as a backbone or decoder selected by name), you <strong>must</strong> register it using the appropriate registry decorator.</p>
 <p>For instance, to register a simple custom CNN as a backbone:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># custom_modules/my_custom_model.py</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">import</span> <span class="nn">torch</span>
