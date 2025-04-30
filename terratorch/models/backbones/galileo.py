@@ -2,9 +2,8 @@ import logging
 import torch
 from torch import nn
 import huggingface_hub
-from single_file_galileo import Encoder
 from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
-from single_file_galileo import Encoder
+
 
 def load_weights(model: nn.Module, ckpt_data: dict, **kwargs) -> nn.Module:
 
@@ -103,6 +102,12 @@ class Galileo(torch.nn.Module):
             ):
 
       super(Galileo, self).__init__()
+
+      # Checking if the package galileo is installed.
+      try:
+          from galileo.galileo import Encoder
+      except ModuleNotFoundError:
+          raise Exception("It's necessary to install the package `galileo` to access these models: `pip install terratorch[galileo]`")
 
       self.encoder = Encoder(max_patch_size = max_patch_size,
                           embedding_size = embedding_size,
