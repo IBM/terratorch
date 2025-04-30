@@ -7,6 +7,7 @@ trainer:
   num_nodes: 1
   precision: 16-mixed
   logger: true
+  max_epochs: 2
                
   callbacks:
     - class_path: RichProgressBar
@@ -21,7 +22,7 @@ trainer:
      # ---- Early stop endif ----
     - class_path: ModelCheckpoint
       init_args:
-        dirpath: /dccstor/terratorch/
+        dirpath: /dccstor/terratorch/tmp/
         mode: min
         monitor: val/loss
         filename: best-state_dict-{epoch:02d}
@@ -31,7 +32,7 @@ trainer:
   check_val_every_n_epoch: 1
   log_every_n_steps: 50
   enable_checkpointing: true
-  default_root_dir: /dccstor/terratorch
+  default_root_dir: /dccstor/terratorch/tmp/
 
 data:
   class_path: terratorch.datamodules.GenericNonGeoSegmentationDataModule
