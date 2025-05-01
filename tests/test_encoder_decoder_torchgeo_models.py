@@ -8,6 +8,7 @@ import torch
 from terratorch.models import EncoderDecoderFactory
 from terratorch.models.backbones.prithvi_vit import PRETRAINED_BANDS
 from terratorch.models.model import AuxiliaryHead
+from terratorch.models.backbones import torchgeo_resnet as torchgeo_resnet
 
 NUM_CHANNELS = 6
 NUM_CLASSES = 10
@@ -37,9 +38,11 @@ def model_factory() -> EncoderDecoderFactory:
 def model_input() -> torch.Tensor:
     return torch.ones((1, NUM_CHANNELS, 224, 224))
 
+def torchgeo_resnet_backbones():
+    return [i for i in dir(torchgeo_resnet) if "_resnet" in i and i != "load_resnet_weights"]
 
-backbones = ["ssl4eos12_resnet50_sentinel2_all_decur"]
-pretrained = [False, True]
+backbones = torchgeo_resnet_backbones()
+pretrained = [False]
 @pytest.mark.parametrize("backbone", backbones)
 @pytest.mark.parametrize("backbone_pretrained", pretrained)
 def test_create_classification_model_resnet(backbone, model_factory: EncoderDecoderFactory, model_input, backbone_pretrained):
@@ -56,6 +59,23 @@ def test_create_classification_model_resnet(backbone, model_factory: EncoderDeco
     with torch.no_grad():
         assert model(model_input).output.shape == EXPECTED_CLASSIFICATION_OUTPUT_SHAPE
 
+backbones = ["ssl4eos12_resnet50_sentinel2_all_decur"]
+pretrained = [True]
+@pytest.mark.parametrize("backbone", backbones)
+@pytest.mark.parametrize("backbone_pretrained", pretrained)
+def test_create_classification_model_resnet_pretrained(backbone, model_factory: EncoderDecoderFactory, model_input, backbone_pretrained):
+    model = model_factory.build_model(
+        "classification",
+        backbone=backbone,
+        decoder="IdentityDecoder",
+        backbone_model_bands=PRETRAINED_BANDS,
+        backbone_pretrained=backbone_pretrained,
+        num_classes=NUM_CLASSES,
+    )
+    model.eval()
+
+    with torch.no_grad():
+        assert model(model_input).output.shape == EXPECTED_CLASSIFICATION_OUTPUT_SHAPE
 
 backbones = ["dofa_large_patch16_224"]
 @pytest.mark.parametrize("backbone", backbones)

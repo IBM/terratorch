@@ -1,5 +1,19 @@
+<!---
+<img src="https://github.com/user-attachments/assets/f7c9586f-6220-4a53-9669-2aee3300b492#light-only" alt="TerraTorch"  width="400"/>
+<img src="assets/logo_white.png#dark-only" alt="TerraTorch"  width="400"/>
+-->
+<picture>
+  <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/f8c9586f-6220-4a53-9669-2aee3300b492">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/logo_white.png">
+  <center><img style="display: block; margin-left: auto; margin-right: auto"; src="https://github.com/user-attachments/assets/f7c9586f-6220-4a53-9669-2aee3300b492" alt="TerraTorch"  width="400"/></center>
+</picture>
 
-<img src="https://github.com/user-attachments/assets/f8c9586f-6220-4a53-9669-2aee3300b492" alt="TerraTorch"  width="400"/>
+<!--
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/figs/logo_inv.png">
+  <source media="(prefers-color-scheme: light)" srcset="docs/figs/logo.png">
+</picture>
+-->
 
 [![huggingface](https://img.shields.io/badge/Hugging_Face-join-FFD21E?logo=huggingface)](https://huggingface.co/ibm-nasa-geospatial)
 [![pypi](https://badge.fury.io/py/terratorch.svg)](https://pypi.org/project/terratorch)
@@ -12,9 +26,14 @@
 TerraTorch is a library based on [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/) and the [TorchGeo](https://github.com/microsoft/torchgeo) domain library
 for geospatial data. 
 
-<!---
-(Watch the latest recording on YouTube:  Earth observation foundation models with Prithvi-EO-2.0 and TerraTorch: [![](https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=CB3FKtmuPI8))
--->
+<hr>
+<a href="https://www.youtube.com/watch?v=CB3FKtmuPI8">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/4/42/YouTube_icon_%282013-2017%29.png" alt="YouTube" width="20">
+  Watch the latest recording on YouTube: Earth observation foundation models with Prithvi-EO-2.0 and TerraTorch
+  <img src="https://upload.wikimedia.org/wikipedia/commons/4/42/YouTube_icon_%282013-2017%29.png" alt="YouTube" width="20">
+</a>
+<hr>
+
 
 TerraTorch’s main purpose is to provide a flexible fine-tuning framework for Geospatial Foundation Models, which can be interacted with at different abstraction levels. The library provides:
 
@@ -26,6 +45,7 @@ TerraTorch’s main purpose is to provide a flexible fine-tuning framework for G
 - Easy access to:
     - Open source pre-trained Geospatial Foundation Model backbones:
       * [Prithvi](https://huggingface.co/ibm-nasa-geospatial/Prithvi-100M)
+      * [TerraMind](https://research.ibm.com/blog/terramind-esa-earth-observation-model)
       * [SatMAE](https://sustainlab-group.github.io/SatMAE/)
       * [ScaleMAE](https://github.com/bair-climate-initiative/scale-mae)
       * Satlas (as implemented in [TorchGeo](https://github.com/microsoft/torchgeo))
@@ -49,7 +69,7 @@ To get the most recent version of the main branch, install the library with `pip
 
 [comment]: <Another alternative is to install using [pipx](https://github.com/pypa/pipx) via `pipx install terratorch`, which creates an isolated environment and allows the user to run the application as a common CLI tool, with no need of installing dependencies or activating environments.>
 
-TerraTorch requires gdal to be installed, which can be quite a complex process. If you don't have GDAL set up on your system, we reccomend using a conda environment and installing it with `conda install -c conda-forge gdal`.
+TerraTorch requires gdal to be installed, which can be quite a complex process. If you don't have GDAL set up on your system, we recommend using a conda environment and installing it with `conda install -c conda-forge gdal`.
 
 To install as a developer (e.g. to extend the library):
 ```
@@ -77,3 +97,13 @@ A simple hint for any contributor. If you want to meet the GitHub DCO checks, ju
 git commit -s -m <message>
 ```
 It will sign the commit with your ID and the check will be met. 
+
+## License
+
+This project is primarily licensed under the **Apache License 2.0**. 
+
+However, some files contain code licensed under the **MIT License**. These files are explicitly listed in [`MIT_FILES.txt`](./MIT_FILES.txt).
+
+By contributing to this repository, you agree that your contributions will be licensed under the Apache 2.0 License unless otherwise stated.
+
+For more details, see the [LICENSE](./LICENSE) file.

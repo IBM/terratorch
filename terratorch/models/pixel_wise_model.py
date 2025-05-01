@@ -76,7 +76,10 @@ class PixelWiseModel(Model, SegmentationModel):
         self.padding = padding
 
     def freeze_encoder(self):
-        freeze_module(self.encoder)
+        if hasattr(self.encoder, "freeze"):
+            self.encoder.freeze()
+        else:
+            freeze_module(self.encoder)
 
     def freeze_decoder(self):
         freeze_module(self.decoder)
@@ -124,6 +127,7 @@ class PixelWiseModel(Model, SegmentationModel):
             prepare = getattr(self.encoder, "prepare_features_for_image_model", lambda x: x)
 
         features = prepare(features)
+
         decoder_output = self.decoder([f.clone() for f in features])
         mask = self.head(decoder_output)
         if self.rescale and mask.shape[-2:] != input_size:
