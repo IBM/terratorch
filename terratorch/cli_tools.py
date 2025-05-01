@@ -658,13 +658,12 @@ class LightningInferenceModel:
 
         # In some cases, the output has the format ((prediction_tensor,
         # prediction_name), filename)
-        if all([type(j[0])==tuple for j in predictions]):
-            concat_predictions = torch.cat([batch[0][0] for batch in predictions])
+        if all([type(j[0]) in (tuple, list) for j in predictions]):
+            concat_predictions = torch.cat([batch[0][0][0] for batch in predictions])
         else:
             concat_predictions = torch.cat([batch[0] for batch in predictions])
 
-        concat_file_names = flatten([batch[1] for batch in predictions])
-
+        concat_file_names = flatten([batch[0][1] for batch in predictions])
         return concat_predictions, concat_file_names
 
     def inference(self, file_path: Path) -> torch.Tensor:
