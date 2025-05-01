@@ -2,6 +2,14 @@ import torch
 from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY 
 
 @TERRATORCH_BACKBONE_REGISTRY.register
+def alexnet_encoder(num_channels:int=2, pretrained:bool=False):
+
+    backbone = AlexNetEncoder(num_channels=num_channels)
+    if pretrained:
+        print("This is my life")
+
+    return backbone
+
 class AlexNetEncoder(torch.nn.Module):
 
     def __init__(self, num_channels:int=3):

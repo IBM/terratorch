@@ -462,7 +462,6 @@ class MyLightningCLI(LightningCLI):
         # callback. 
         self.config = add_default_checkpointing_config(self.config)
 
-        super().instantiate_classes()
 
         # get the predict_output_dir. Depending on the value of run, it may be in the subcommand
         try:
@@ -492,6 +491,7 @@ class MyLightningCLI(LightningCLI):
 
         import_custom_modules(custom_modules_path)
 
+        super().instantiate_classes()
 
     @staticmethod
     def subcommands() -> dict[str, set[str]]:
