@@ -43,6 +43,9 @@ model:
       framework: mask-rcnn  # Model name of TorchVision (one of faster-rcnn, fcos, retinanet, mask-rcnn)
       backbone: vit_base_patch16_224  # One of resnet18, resnet34, resnet50, resnet101, resnet152, resnext50_32x4d, resnext101_32x8d, wide_resnet50_2, or wide_resnet101_2
       backbone_pretrained: true
+            backbone_img_size: 896
+      framework_min_size: 896
+      framework_max_size: 896 
       num_classes: 12  # Number of classes including background
       # trainable_layers: 3  # Number of trainable layers
       # backbone_bands:

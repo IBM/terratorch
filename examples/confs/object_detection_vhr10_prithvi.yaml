@@ -46,6 +46,9 @@ model:
       backbone: prithvi_eo_v2_600  
       num_classes: 12  # Number of classes including background
       # trainable_layers: 3  # Number of trainable layers
+      framework_min_size: 896
+      framework_max_size: 896 
+
       backbone_pretrained: true
       backbone_bands:
         - RED
