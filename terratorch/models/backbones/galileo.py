@@ -119,6 +119,6 @@ class Galileo(torch.nn.Module):
                           drop_path = drop_path,
                   )
 
-  def forward(self, x):
+  def forward(self, **kwargs):
 
-    return self.encoder(x)
+    return self.encoder(**kwargs)
