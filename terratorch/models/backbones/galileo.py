@@ -7,7 +7,7 @@ from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
 
 def load_weights(model: nn.Module, ckpt_data: dict, **kwargs) -> nn.Module:
 
-    print(f"Loading weights for {model}")
+    print(f"Loading weights")
     if ckpt_data is not None:
 
         ckpt_data = huggingface_hub.hf_hub_download(**ckpt_data)

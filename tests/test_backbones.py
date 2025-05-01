@@ -95,18 +95,18 @@ def test_galileo_encoders(model_name, input_galileo):
     input_galileo_data = construct_galileo_input(s1=input_galileo)
     input_galileo_data = input_galileo_data._asdict()
 
-    output = backbone(s_t_x=input_galileo_data["space_time_x"],
-                      sp_x=input_galileo_data["space_x"],
-                      t_x=input_galileo_data["time_x"],
-                      st_x=input_galileo_data["static_x"],
-                      s_t_m=input_galileo_data["space_time_mask"],
-                      sp_m=input_galileo_data["space_mask"],
-                      t_m=input_galileo_data["time_mask"],
-                      st_m=input_galileo_data["static_mask"],
-                      months=input_galileo_data["months"],
+    output = backbone(s_t_x=input_galileo_data["space_time_x"][None,...],
+                      sp_x=input_galileo_data["space_x"][None,...],
+                      t_x=input_galileo_data["time_x"][None,...],
+                      st_x=input_galileo_data["static_x"][None,...],
+                      s_t_m=input_galileo_data["space_time_mask"][None,...],
+                      sp_m=input_galileo_data["space_mask"][None,...],
+                      t_m=input_galileo_data["time_mask"][None,...],
+                      st_m=input_galileo_data["static_mask"][None,...],
+                      months=input_galileo_data["months"][None,...],
                       patch_size=16)
 
-    print(output)
+    print([i.shape for i in output])
     gc.collect()
 
 @pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
