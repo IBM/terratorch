@@ -82,6 +82,34 @@ def open_tiff(fname):
 def is_one_band(img):
     return len(img.shape) == 2  # noqa: PLR2004
 
+def is_multi_output_format(pred):
+    a = type(pred[0])==list
+    b = all([type(i[1])==str for i in pred[0]])
+    c = all([type(i[0])==torch.Tensor for i in pred[0]])
+
+    if a and b and c:
+        return True
+    else:
+        return False
+
+def process_multi_output_format(predictions):
+    filenames = []
+    var_tags = []
+    outputs = []
+    for pred in predictions:
+        filename = pred[1]
+        var_tags_ = []
+        outputs_ = []
+        for output, var_tag in pred[0]:
+            var_tags_.append(var_tag)
+            outputs_.append(output)
+        var_tags += var_tags_
+        outputs += outputs_
+        filenames += len(var_tags)*[filename]
+
+    outputs = torch.cat(outputs)
+
+    return outputs, filenames, var_tags
 
 def write_tiff(img_wrt, filename, metadata):
 
@@ -135,7 +163,7 @@ def add_default_checkpointing_config(config):
     return config 
 
 def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16",
-                    suffix="pred"):
+                    suffix:str="pred", out_file_name:str | None=None):
     mask, metadata = open_tiff(input_file_name)
     mask = np.where(mask == metadata["nodata"], 1, 0)
     mask = np.max(mask, axis=0)
@@ -146,9 +174,14 @@ def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16",
     metadata["dtype"] = dtype
     metadata["compress"] = "lzw"
     metadata["nodata"] = -1
-    file_name = os.path.basename(input_file_name)
-    file_name_no_ext = os.path.splitext(file_name)[0]
-    out_file_name = file_name_no_ext + f"_{suffix}.tif"
+
+    if not out_file_name:
+        file_name = os.path.basename(input_file_name)
+        file_name_no_ext = os.path.splitext(file_name)[0]
+        out_file_name = file_name_no_ext + f"_{suffix}.tif"
+    else:
+        out_file_name += f"_{suffix}.tif"
+
     logger.info(f"Saving output to {out_file_name} ...")
     write_tiff(result, os.path.join(out_dir, out_file_name), metadata)
 
@@ -658,13 +691,17 @@ class LightningInferenceModel:
 
         # In some cases, the output has the format ((prediction_tensor,
         # prediction_name), filename)
-        if all([type(j[0]) in (tuple, list) for j in predictions]):
-            concat_predictions = torch.cat([batch[0][0][0] for batch in predictions])
+        if all([is_multi_output_format(j) for j in predictions]):
+            concat_predictions, concat_file_names, concat_var_tags = process_multi_output_format(predictions)
         else:
-            concat_predictions = torch.cat([batch[0] for batch in predictions])
+            if all([type(j[0])==tuple for j in predictions]):
+                concat_predictions = torch.cat([batch[0][0] for batch in predictions])
+            else:
+                concat_predictions = torch.cat([batch[0] for batch in predictions])
 
-        concat_file_names = flatten([batch[0][1] for batch in predictions])
-        return concat_predictions, concat_file_names
+            concat_file_names = flatten([batch[1] for batch in predictions])
+            concat_var_tags = None 
+        return concat_predictions, concat_file_names, concat_var_tags
 
     def inference(self, file_path: Path) -> torch.Tensor:
         """Perform inference on a single input file path
