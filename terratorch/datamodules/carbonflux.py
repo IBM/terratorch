@@ -7,7 +7,7 @@ from terratorch.datamodules.generic_multimodal_data_module import MultimodalNorm
 from terratorch.datamodules.generic_multimodal_data_module import wrap_in_compose_is_list
 from terratorch.datasets import CarbonFluxNonGeo
 from torchgeo.datamodules import NonGeoDataModule
-from torchgeo.transforms import AugmentationSequential
+from kornia.augmentation import AugmentationSequential
 
 MEANS = {
     "image": {

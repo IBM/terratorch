@@ -8,7 +8,7 @@ from terratorch.datamodules.generic_pixel_wise_data_module import Normalize
 from terratorch.datamodules.generic_multimodal_data_module import wrap_in_compose_is_list
 from terratorch.datasets import ForestNetNonGeo
 from torchgeo.datamodules import NonGeoDataModule
-from torchgeo.transforms import AugmentationSequential
+from kornia.augmentation import AugmentationSequential
 
 MEANS = {
     "BLUE": 19.8680,
