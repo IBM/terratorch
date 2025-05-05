@@ -462,7 +462,6 @@ class MyLightningCLI(LightningCLI):
         # callback. 
         self.config = add_default_checkpointing_config(self.config)
 
-
         # get the predict_output_dir. Depending on the value of run, it may be in the subcommand
         try:
             config = self.config.predict
