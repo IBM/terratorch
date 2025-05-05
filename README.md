@@ -23,7 +23,7 @@
 [![PyPI Downloads](https://img.shields.io/pypi/dm/terratorch.svg?label=PyPI%20downloads)](https://pypi.org/project/terratorch/)
 
 ## Overview
-TerraTorch is a library based on [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/) and the [TorchGeo](https://github.com/microsoft/torchgeo) domain library
+TerraTorch is a PyTorch domain library based on [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/) and the [TorchGeo](https://github.com/microsoft/torchgeo) domain library
 for geospatial data. 
 
 <hr>
@@ -90,13 +90,20 @@ Developers, check out the [architecture overview](https://ibm.github.io/terrator
 
 ## Contributing
 
-This project welcomes contributions and suggestions.
+This project welcomes contributions and suggestions. Ways to contribute or get involved:
+
+- Join our [Slack](https://join.slack.com/t/terratorch/shared_invite/zt-34uzp28xx-xz1VHvu9vCN1ffx7fd~dGw)
+- Create an [Issue](https://github.com/IBM/terratorch/issues) (for bugs or feature requests)
+- Contribute via [PR](https://github.com/IBM/terratorch/pulls)
+- Join our [duoweekly](https://romeokienzler.medium.com/the-duoweekly-manifesto-eaa6c1f542c8) community calls taking place [Tuesdays 4:30 PM - 5 PM CEST](https://teams.microsoft.com/l/meetup-join/19%3ameeting_MWJhMThhMTMtMjc3MS00YjAyLWI3NTMtYTI0NDQ3NWY3ZGU2%40thread.v2/0?context=%7b%22Tid%22%3a%22fcf67057-50c9-4ad4-98f3-ffca64add9e9%22%2c%22Oid%22%3a%227f7ab87a-680c-4c93-acc5-fbd7ec80823a%22%7d) and [Thursdays 2:30 PM - 3 PM CEST](https://teams.microsoft.com/l/meetup-join/19%3ameeting_MWJhMThhMTMtMjc3MS00YjAyLWI3NTMtYTI0NDQ3NWY3ZGU2%40thread.v2/0?context=%7b%22Tid%22%3a%22fcf67057-50c9-4ad4-98f3-ffca64add9e9%22%2c%22Oid%22%3a%227f7ab87a-680c-4c93-acc5-fbd7ec80823a%22%7d).
 
 A simple hint for any contributor. If you want to meet the GitHub DCO checks, just do your commits as below:
 ```
 git commit -s -m <message>
 ```
 It will sign the commit with your ID and the check will be met. 
+
+
 
 ## License
 
