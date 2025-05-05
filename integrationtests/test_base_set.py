@@ -33,7 +33,7 @@ def burnscars_image(tmp_path_factory):
     temp_dir = tmp_path_factory.mktemp("data")
     local_path = temp_dir / "burnscars_image.tif"
 
-    download_and_open_tiff(url=url, local_path=local_path)
+    download_and_open_tiff(url=url, dest_path=local_path)
 
     return str(local_path)
 
@@ -44,7 +44,7 @@ def buildings_image(tmp_path_factory):
     temp_dir = tmp_path_factory.mktemp("data")
     local_path = temp_dir / "burnscars_image.tif"
 
-    download_and_open_tiff(url=url, local_path=local_path)
+    download_and_open_tiff(url=url, dest_path=local_path)
 
     return str(local_path)
 
@@ -55,7 +55,7 @@ def floods_image(tmp_path_factory):
     temp_dir = tmp_path_factory.mktemp("data")
     local_path = temp_dir / "burnscars_image.tif"
 
-    download_and_open_tiff(url=url, local_path=local_path)
+    download_and_open_tiff(url=url, dest_path=local_path)
 
     return str(local_path)
 
