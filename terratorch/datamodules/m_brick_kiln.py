@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from typing import Any
 
 import albumentations as A
-from torchgeo.transforms import AugmentationSequential
+from kornia.augmentation import AugmentationSequential
 
 from terratorch.datamodules.geobench_data_module import GeobenchDataModule
 from terratorch.datasets import MBrickKilnNonGeo
