@@ -155,7 +155,7 @@ def test_prithvi_swinl_burns_predict(burnscars_image, base_models_path):
     config_path = f"{base_models_path}burnscars_swinl/config_swinl.yaml"
     checkpoint_path = f"{base_models_path}burnscars_swinl/checkpoint_swinl.ckpt"
 
-    preds = run_inference(config=config_path, checkpoint=checkpoint_path, image=buildings_image)
+    preds = run_inference(config=config_path, checkpoint=checkpoint_path, image=burnscars_image)
 
     assert isinstance(preds, torch.Tensor), f"Expected predictions to be type torch.Tensor, got {type(preds)}"
 
@@ -180,7 +180,7 @@ def test_prithvi_swinb_burns_predict(burnscars_image, base_models_path):
     config_path = f"{base_models_path}burnscars_swinb/config_swinl.yaml"
     checkpoint_path = f"{base_models_path}burnscars_swinb/checkpoint_swinl.ckpt"
 
-    preds = run_inference(config=config_path, checkpoint=checkpoint_path, image=buildings_image)
+    preds = run_inference(config=config_path, checkpoint=checkpoint_path, image=burnscars_image)
 
     assert isinstance(preds, torch.Tensor), f"Expected predictions to be type torch.Tensor, got {type(preds)}"
 
