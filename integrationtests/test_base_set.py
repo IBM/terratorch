@@ -177,8 +177,8 @@ def test_prithvi_swinb_burns_fit():
 
 
 def test_prithvi_swinb_burns_predict(burnscars_image, base_models_path):
-    config_path = f"{base_models_path}burnscars_swinb/config_swinl.yaml"
-    checkpoint_path = f"{base_models_path}burnscars_swinb/checkpoint_swinl.ckpt"
+    config_path = f"{base_models_path}burnscars_swinb/config_swinb.yaml"
+    checkpoint_path = f"{base_models_path}burnscars_swinb/checkpoint_swinb.ckpt"
 
     preds = run_inference(config=config_path, checkpoint=checkpoint_path, image=burnscars_image)
 
