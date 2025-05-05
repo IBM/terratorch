@@ -60,7 +60,7 @@ def floods_image(tmp_path_factory):
     return str(local_path)
 
 
-def test_eo_v2_100_burns_fit():
+def test_eo_v1_100_burns_fit():
     # Call the CLI program
     result = subprocess.run(
         ['terratorch', 'fit', '-c', 'test_encoderdecoder_eo_v1_100_model_factory.yaml'], capture_output=True, text=True
@@ -76,7 +76,7 @@ def test_eo_v2_100_burns_fit():
     ), f"Test failed with return code {result.returncode}\nSTDOUT: {result.stdout}\nSTDERR: {result.stderr}"
 
 
-def test_eo_v2_100_buildings_predict(buildings_image, base_models_path):
+def test_eo_v1_100_buildings_predict(buildings_image, base_models_path):
     config_path = f"{base_models_path}buildings_eo_v1_100/config_eo_100.yaml"
     checkpoint_path = f"{base_models_path}buildings_eo_v1_100/checkpoint_eo_100.ckpt"
 
