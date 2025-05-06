@@ -34,6 +34,8 @@ def test_finetune_multiple_backbones(model_name, case):
     command_list = [case, "-c", f"tests/resources/configs/manufactured-finetune_{model_name}.yaml"]
     _ = build_lightning_cli(command_list)
 
+    gc.collect()
+
     # It executes the prediction just after the train mode is executed
     if case == "fit":
         command_list_prediction = ["predict", "-c",
@@ -44,7 +46,7 @@ def test_finetune_multiple_backbones(model_name, case):
                                    "--data.init_args.predict_data_root", "tests/resources/inputs"]
         _ = build_lightning_cli(command_list_prediction)
 
-    gc.collect()
+        gc.collect()
 
 @pytest.mark.parametrize("model_name", ["prithvi_swin_B"])
 @pytest.mark.parametrize("case", ["fit", "test", "validate"])
