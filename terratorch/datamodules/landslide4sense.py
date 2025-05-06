@@ -86,7 +86,7 @@ class Landslide4SenseNonGeoDataModule(NonGeoDataModule):
         self.test_transform = wrap_in_compose_is_list(test_transform)
         self.predict_transform = wrap_in_compose_is_list(predict_transform)
         self.aug = (
-            AugmentationSequential(K.Normalize(self.means, self.stds), data_keys=["image"]) if aug is None else aug
+            AugmentationSequential(K.Normalize(self.means, self.stds), data_keys=None) if aug is None else aug
         )
 
     def setup(self, stage: str) -> None:

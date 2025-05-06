@@ -40,7 +40,7 @@ class GeobenchDataModule(NonGeoDataModule):
         self.data_root = data_root
         self.partition = partition
         self.aug = (
-            AugmentationSequential(K.Normalize(self.means, self.stds), data_keys=["image"]) if aug is None else aug
+            AugmentationSequential(K.Normalize(self.means, self.stds), data_keys=None) if aug is None else aug
         )
 
     def setup(self, stage: str) -> None:
