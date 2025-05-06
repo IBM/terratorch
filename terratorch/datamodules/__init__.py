@@ -41,6 +41,7 @@ except ImportError as e:
 from terratorch.datamodules.sen1floods11 import Sen1Floods11NonGeoDataModule
 from terratorch.datamodules.sen4agrinet import Sen4AgriNetDataModule
 from terratorch.datamodules.torchgeo_data_module import TorchGeoDataModule, TorchNonGeoDataModule
+from terratorch.datamodules.geobench_v2_data_module import GeoBenchV2SegmentationDataModule, GeoBenchV2ObjectDetectionDataModule, GeoBenchV2ClassificationDataModule
 from terratorch.datamodules.generic_multimodal_data_module import GenericMultiModalDataModule
 
 
@@ -76,6 +77,9 @@ __all__ = (
     "MultiTemporalCropClassificationDataModule",
     "TorchGeoDataModule",
     "TorchNonGeoDataModule",
+    "GeoBenchV2SegmentationDataModule", 
+    "GeoBenchV2ObjectDetectionDataModule",
+    "GeoBenchV2ClassificationDataModule",
     "MEuroSATNonGeoDataModule",
     "MBigEarthNonGeoDataModule",
     "MBrickKilnNonGeoDataModule",
