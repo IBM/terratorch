@@ -94,7 +94,7 @@ class Sen1Floods11NonGeoDataModule(NonGeoDataModule):
         self.val_transform = wrap_in_compose_is_list(val_transform)
         self.test_transform = wrap_in_compose_is_list(test_transform)
         self.predict_transform = wrap_in_compose_is_list(predict_transform)
-        self.aug = AugmentationSequential(K.Normalize(means, stds), data_keys=["image"])
+        self.aug = AugmentationSequential(K.Normalize(means, stds), data_keys=None)
         self.drop_last = drop_last
         self.constant_scale = constant_scale
         self.no_data_replace = no_data_replace

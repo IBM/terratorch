@@ -81,7 +81,7 @@ class FireScarsNonGeoDataModule(NonGeoDataModule):
         self.val_transform = wrap_in_compose_is_list(val_transform)
         self.test_transform = wrap_in_compose_is_list(test_transform)
         self.predict_transform = wrap_in_compose_is_list(predict_transform)
-        self.aug = AugmentationSequential(K.Normalize(means, stds), data_keys=["image"])
+        self.aug = AugmentationSequential(K.Normalize(means, stds), data_keys=None)
         self.drop_last = drop_last
         self.no_data_replace = no_data_replace
         self.no_label_replace = no_label_replace
@@ -166,8 +166,8 @@ class FireScarsDataModule(GeoDataModule):
         super().__init__(FireScarsSegmentationMask, 4, 224, 100, 0, **kwargs)
         means = list(MEANS.values())
         stds = list(STDS.values())
-        self.train_aug = AugmentationSequential(K.RandomCrop(224, 224), K.Normalize(means, stds))
-        self.aug = AugmentationSequential(K.Normalize(means, stds))
+        self.train_aug = AugmentationSequential(K.RandomCrop(224, 224), K.Normalize(means, stds), data_keys=None)
+        self.aug = AugmentationSequential(K.Normalize(means, stds), data_keys=None)
         self.data_root = data_root
 
     def setup(self, stage: str) -> None:
@@ -178,7 +178,7 @@ class FireScarsDataModule(GeoDataModule):
             os.path.join(self.data_root, "training/")
         )
         self.dataset = self.images & self.labels
-        self.train_aug = AugmentationSequential(K.RandomCrop(224, 224), K.normalize())
+        self.train_aug = AugmentationSequential(K.RandomCrop(224, 224), K.normalize(), data_keys=None)
 
         self.images_test = FireScarsHLS(
             os.path.join(self.data_root, "validation/")
