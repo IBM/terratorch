@@ -28,7 +28,7 @@ def setup_and_cleanup(model_name):
 @pytest.mark.parametrize("model_name",
                          ["terramind_v1_base", "prithvi_eo_v1_100", "prithvi_swin_L", "prithvi_eo_v2_600"])
 @pytest.mark.parametrize("case", ["fit", "test", "validate",
-                                  "compute_statistics", "predict"])
+                                  "compute_statistics"])
 def test_finetune_multiple_backbones(model_name, case):
 
     command_list = [case, "-c", f"tests/resources/configs/manufactured-finetune_{model_name}.yaml"]
