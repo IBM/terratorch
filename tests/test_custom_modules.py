@@ -14,15 +14,15 @@ from terratorch.cli_tools import build_lightning_cli
 NUM_CHANNELS = 6
 NUM_FRAMES = 4
 
-sys.path.append("examples/custom_modules")
-
-from alexnet import alexnet_encoder
-
 @pytest.fixture
 def input_224():
     return torch.ones((1, NUM_CHANNELS, 224, 224))
 
 def test_custom_module(input_224):
+
+    sys.path.append("examples/custom_modules")
+
+    from alexnet import alexnet_encoder
 
     model = BACKBONE_REGISTRY.build("alexnet_encoder", num_channels=6)
     output = model(input_224)
