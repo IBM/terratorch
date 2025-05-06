@@ -5,7 +5,7 @@ import albumentations as A
 import kornia.augmentation as K  # noqa: N812
 import torch
 from torchgeo.datamodules import NonGeoDataModule
-from torchgeo.transforms import AugmentationSequential
+from kornia.augmentation import AugmentationSequential
 
 from terratorch.datamodules.utils import wrap_in_compose_is_list
 
