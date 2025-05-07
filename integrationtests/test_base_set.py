@@ -76,36 +76,6 @@ def test_eo_v1_100_burns_fit():
     ), f"Test failed with return code {result.returncode}\nSTDOUT: {result.stdout}\nSTDERR: {result.stderr}"
 
 
-def test_eo_v1_100_burns_predict_cli(buildings_image):
-    # Call the CLI program
-    print(buildings_image)
-    result = subprocess.run(
-        [
-            'terratorch',
-            'predict',
-            '-c',
-            '/dccstor/terratorch/shared/integrationtests/testing_models/buildings_eo_v1_100/config_eo_100.yaml',
-            '--predict_output_dir',
-            '/dccstor/terratorch/tmp/outputs',
-            '--ckpt_path',
-            '/dccstor/terratorch/shared/integrationtests/testing_models/buildings_eo_v1_100/checkpoint_eo_100,ckpt',
-            '--data.init_args.predict_data_root'
-            f"{buildings_image}"
-        ],
-        capture_output=True,
-        text=True,
-    )
-
-    # Print the captured output
-    print("STDOUT:", result.stdout)
-    print("STDERR:", result.stderr)
-
-    # Check the return code
-    assert (
-        result.returncode == 0
-    ), f"Test failed with return code {result.returncode}\nSTDOUT: {result.stdout}\nSTDERR: {result.stderr}"
-
-
 def test_eo_v1_100_buildings_predict(buildings_image, base_models_path):
     config_path = f"{base_models_path}buildings_eo_v1_100/config_eo_100.yaml"
     checkpoint_path = f"{base_models_path}buildings_eo_v1_100/checkpoint_eo_100.ckpt"
