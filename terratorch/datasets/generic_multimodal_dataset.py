@@ -92,6 +92,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         scalar_label: bool = False,
         data_with_sample_dim: bool = False,
         concat_bands: bool = False,
+        prediction_mode: bool = False,
         *args,
         **kwargs,
     ) -> None:
@@ -151,7 +152,15 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             concat_bands (bool): Concatenate all image modalities along the band dimension into a single "image", so
                 that it can be processed by single-modal models. Concatenate in the order of provided modalities.
                 Works with image modalities only. Does not work with allow_missing_modalities. Defaults to False.
+            prediction_mode (bool): Used to deactivate the checking for a label
+            dataset when that is not necessary. 
         """
+
+        if not prediction_mode:
+            assert label_data_root is not None, "label_data_root must be specified for this task."
+        else:
+            label_data_root = label_data_root if label_data_root is not None else data_root
+
         super().__init__()
 
         self.split_file = split
@@ -491,7 +500,7 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
         self,
         data_root: Path,
         num_classes: int,
-        label_data_root: Path,
+        label_data_root: Path | None = None,
         image_grep: str | None = "*",
         label_grep: str | None = "*",
         split: Path | None = None,
@@ -571,7 +580,6 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
                 that it can be processed by single-modal models. Concatenate in the order of provided modalities.
                 Works with image modalities only. Does not work with allow_missing_modalities. Defaults to False.
         """
-        assert label_data_root is not None, "label_data_root must be specified for segmentation tasks."
 
         super().__init__(
             data_root,
@@ -698,7 +706,7 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
     def __init__(
         self,
         data_root: Path,
-        label_data_root: Path,
+        label_data_root: Path | None = None,
         image_grep: str | None = "*",
         label_grep: str | None = "*",
         split: Path | None = None,
@@ -773,7 +781,6 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
                 that it can be processed by single-modal models. Concatenate in the order of provided modalities.
                 Works with image modalities only. Does not work with allow_missing_modalities. Defaults to False.
         """
-        assert label_data_root is not None, "label_data_root must be specified for regression tasks."
 
         super().__init__(
             data_root,
@@ -887,7 +894,7 @@ class GenericMultimodalScalarDataset(GenericMultimodalDataset):
         self,
         data_root: Path,
         num_classes: int,
-        label_data_root: Path | None,
+        label_data_root: Path | None = None,
         image_grep: str | None = "*",
         label_grep: str | None = "*",
         split: Path | None = None,
@@ -907,7 +914,6 @@ class GenericMultimodalScalarDataset(GenericMultimodalDataset):
         reduce_zero_label: bool = False,
         channel_position: int = -3,
         concat_bands: bool = False,
-        prediction_mode: bool = False
         *args,
         **kwargs,
     ) -> None:
@@ -967,13 +973,7 @@ class GenericMultimodalScalarDataset(GenericMultimodalDataset):
             concat_bands (bool): Concatenate all image modalities along the band dimension into a single "image", so
                 that it can be processed by single-modal models. Concatenate in the order of provided modalities.
                 Works with image modalities only. Does not work with allow_missing_modalities. Defaults to False.
-            prediction_mode (bool): Used to deactivate the checking for a label
-            dataset when that is not necessary. 
         """
-        if not prediction_mode:
-            assert label_data_root is not None, "label_data_root must be specified for scalar tasks."
-        else:
-            label_data_root = label_data_root if label_data_root is not None else data_root
 
         super().__init__(
             data_root,
