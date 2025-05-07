@@ -8,7 +8,7 @@ import kornia.augmentation as K  # noqa: N812
 from torch import Tensor
 from torch.utils.data import DataLoader
 from torchgeo.datamodules import NonGeoDataModule
-from torchgeo.transforms import AugmentationSequential
+from kornia.augmentation import AugmentationSequential
 
 from terratorch.datamodules.utils import wrap_in_compose_is_list
 from terratorch.datasets import Sen1Floods11NonGeo
@@ -94,7 +94,7 @@ class Sen1Floods11NonGeoDataModule(NonGeoDataModule):
         self.val_transform = wrap_in_compose_is_list(val_transform)
         self.test_transform = wrap_in_compose_is_list(test_transform)
         self.predict_transform = wrap_in_compose_is_list(predict_transform)
-        self.aug = AugmentationSequential(K.Normalize(means, stds), data_keys=["image"])
+        self.aug = AugmentationSequential(K.Normalize(means, stds), data_keys=None)
         self.drop_last = drop_last
         self.constant_scale = constant_scale
         self.no_data_replace = no_data_replace
