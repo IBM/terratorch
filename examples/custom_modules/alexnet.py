@@ -10,6 +10,15 @@ def alexnet_encoder(num_channels:int=2, pretrained:bool=False):
 
     return backbone
 
+@TERRATORCH_BACKBONE_REGISTRY.register
+def alexnet(num_channels:int=2, pretrained:bool=False):
+
+    backbone = AlexNet(num_channels=num_channels)
+    if pretrained:
+        print("This is my life")
+
+    return backbone
+
 class AlexNetEncoder(torch.nn.Module):
 
     def __init__(self, num_channels:int=3):
@@ -63,7 +72,7 @@ class AlexNetEncoder(torch.nn.Module):
         self.out_channels = 8*[self.third_level_num_channels]
     def forward(self, x):
 
-        return self.pipeline(x)[:, None, ...] 
+        return [self.pipeline(x)[:, ...]]
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 class AlexNet(torch.nn.Module):
