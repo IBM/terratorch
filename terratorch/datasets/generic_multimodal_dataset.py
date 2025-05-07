@@ -887,7 +887,7 @@ class GenericMultimodalScalarDataset(GenericMultimodalDataset):
         self,
         data_root: Path,
         num_classes: int,
-        label_data_root: Path,
+        label_data_root: Path | None,
         image_grep: str | None = "*",
         label_grep: str | None = "*",
         split: Path | None = None,
@@ -907,6 +907,7 @@ class GenericMultimodalScalarDataset(GenericMultimodalDataset):
         reduce_zero_label: bool = False,
         channel_position: int = -3,
         concat_bands: bool = False,
+        prediction_mode: bool = False
         *args,
         **kwargs,
     ) -> None:
@@ -916,7 +917,7 @@ class GenericMultimodalScalarDataset(GenericMultimodalDataset):
             data_root (dict[Path]): Dictionary of paths to data root directory or csv/parquet files with image-level
                 data, with modalities as keys.
             num_classes (int): Number of classes.
-            label_data_root (Path): Path to data root directory with labels or csv/parquet files with labels.
+            label_data_root (Path, optional): Path to data root directory with labels or csv/parquet files with labels.
             image_grep (dict[str], optional): Dictionary with regular expression appended to data_root to find input
                 images, with modalities as keys. Defaults to "*". Ignored when allow_substring_file_names is False.
             label_grep (str, optional): Regular expression appended to label_data_root to find labels files.
@@ -966,8 +967,13 @@ class GenericMultimodalScalarDataset(GenericMultimodalDataset):
             concat_bands (bool): Concatenate all image modalities along the band dimension into a single "image", so
                 that it can be processed by single-modal models. Concatenate in the order of provided modalities.
                 Works with image modalities only. Does not work with allow_missing_modalities. Defaults to False.
+            prediction_mode (bool): Used to deactivate the checking for a label
+            dataset when that is not necessary. 
         """
-        assert label_data_root is not None, "label_data_root must be specified for scalar tasks."
+        if not prediction_mode:
+            assert label_data_root is not None, "label_data_root must be specified for scalar tasks."
+        else:
+            label_data_root = label_data_root if label_data_root is not None else data_root
 
         super().__init__(
             data_root,

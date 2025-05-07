@@ -527,6 +527,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 channel_position=self.channel_position,
                 data_with_sample_dim=self.data_with_sample_dim,
                 concat_bands=self.concat_bands,
+                prediction_mode=True,
             )
             logger.info(f"Predict dataset: {len(self.predict_dataset)}")
 
