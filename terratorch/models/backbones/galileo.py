@@ -118,6 +118,7 @@ class Galileo(torch.nn.Module):
                           freeze_projections=freeze_projections,
                           drop_path = drop_path,
                   )
+      self.out_channels = [embedding_size]
 
   def forward(self,*args, **kwargs):
 
