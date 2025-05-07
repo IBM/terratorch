@@ -8,6 +8,7 @@ import torch
 import torch.nn.functional as F  # noqa: N812
 from segmentation_models_pytorch.encoders import encoders as smp_encoders
 from torch import nn
+import timm
 
 from terratorch.datasets import HLSBands
 from terratorch.models.model import Model, ModelFactory, ModelOutput
