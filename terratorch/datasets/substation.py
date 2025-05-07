@@ -657,10 +657,10 @@ class Substation(NonGeoDataset):
         extract_archive(os.path.join(self.root, self.filename_images), self.root)
 
         # Download splits
-        download_file_from_presigned("https://ibm.box.com/shared/static/88pelj0mk58e9wgdmayscn2tkmbnv3ua.csv", 
+        download_file_from_presigned("https://ibm.box.com/shared/static/1wv1fiva5w722aka3r8dd0vrmly4zat0.csv", 
                                      self.root, 
                                      "substation_meta_splits_geobench.csv")
-        download_file_from_presigned("https://ibm.box.com/shared/static/ifl36csukpbvab6br5aexrtkdzhqbh7u.csv", 
+        download_file_from_presigned("https://ibm.box.com/shared/static/sgfsyewhtjpwvigu9wrsc8ia26t1ug9d.csv", 
                                      self.root, 
                                      "substation_meta_splits_full.csv")
 
@@ -676,7 +676,7 @@ class Substation(NonGeoDataset):
 
         elif self.mode == 'object_detection':
 
-            download_file_from_presigned("https://ibm.box.com/shared/static/unqzlvsa45i2350qx2fczftklrbjcq6b.json", 
+            download_file_from_presigned("https://ibm.box.com/shared/static/sulkq5q5v3gthjf7o2jrpyn9kbw1uszd.json", 
                                          self.root, 
                                          "annotations.json")
 
