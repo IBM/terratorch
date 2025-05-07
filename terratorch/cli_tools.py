@@ -108,7 +108,7 @@ def add_default_checkpointing_config(config):
         # A list for callbacks is usually expected.
         if callbacks:
             check_callbacks = [op for op in callbacks if "ModelCheckpoint" in op.class_path]
-        
+
             if len(check_callbacks) > 0:
                 there_is_checkpointing = True
             else:
@@ -462,20 +462,11 @@ class MyLightningCLI(LightningCLI):
         # callback. 
         self.config = add_default_checkpointing_config(self.config)
 
-
         # get the predict_output_dir. Depending on the value of run, it may be in the subcommand
         try:
             config = self.config.predict
         except AttributeError:
             config = self.config
-        if hasattr(config, "predict_output_dir"):
-            self.trainer.predict_output_dir = config.predict_output_dir
-
-        if hasattr(config, "out_dtype"):
-            self.trainer.out_dtype = config.out_dtype
-
-        if hasattr(config, "deploy_config_file"):
-            self.trainer.deploy_config = config.deploy_config_file
 
         # Custom modules path
         if hasattr(self.config, "fit") and hasattr(self.config.fit, "custom_modules_path"):
@@ -492,6 +483,15 @@ class MyLightningCLI(LightningCLI):
         import_custom_modules(custom_modules_path)
 
         super().instantiate_classes()
+
+        if hasattr(config, "predict_output_dir"):
+            self.trainer.predict_output_dir = config.predict_output_dir
+
+        if hasattr(config, "out_dtype"):
+            self.trainer.out_dtype = config.out_dtype
+
+        if hasattr(config, "deploy_config_file"):
+            self.trainer.deploy_config = config.deploy_config_file
 
     @staticmethod
     def subcommands() -> dict[str, set[str]]:
