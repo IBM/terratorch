@@ -10,7 +10,7 @@ trainer:
     class_path: TensorBoardLogger
     init_args:
       save_dir: tests/
-      name: all_ecos_random
+      name: terramind_test
   callbacks:
     - class_path: RichProgressBar
     - class_path: LearningRateMonitor

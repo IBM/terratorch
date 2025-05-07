@@ -41,7 +41,7 @@ def test_finetune_multiple_backbones(model_name, case):
         command_list_prediction = ["predict", "-c",
                                    f"tests/resources/configs/manufactured-finetune_{model_name}.yaml",
                                    "--ckpt_path",
-                                   "tests/all_ecos_random/version_0/checkpoints/epoch=0.ckpt",
+                                   "tests/terramind_test/version_0/checkpoints/epoch=0.ckpt",
                                    "--predict_output_dir", "/tmp",
                                    "--data.init_args.predict_data_root", "tests/resources/inputs"]
         _ = build_lightning_cli(command_list_prediction)
