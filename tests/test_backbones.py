@@ -6,7 +6,7 @@ import timm
 import torch
 import gc 
 from terratorch.models.backbones import scalemae
-from terratorch.registry import BACKBONE_REGISTRY
+from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY
 import terratorch.models.backbones.torchgeo_vit as torchgeo_vit
 
 NUM_CHANNELS = 6
@@ -92,6 +92,8 @@ def test_galileo_encoders(model_name, input_galileo):
 
     backbone = BACKBONE_REGISTRY.build(f"galileo_{model_name}_encoder",
                                        pretrained=True)
+    decoder = DECODER_REGISTRY.build("GalileoDecoder")
+
     input_galileo_data = construct_galileo_input(s1=input_galileo)
     input_galileo_data = input_galileo_data._asdict()
 
@@ -106,7 +108,8 @@ def test_galileo_encoders(model_name, input_galileo):
                       months=input_galileo_data["months"][None,...],
                       patch_size=16)
 
-    print([i.shape for i in output])
+    output_decoder = decoder(*output)
+
     gc.collect()
 
 @pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])

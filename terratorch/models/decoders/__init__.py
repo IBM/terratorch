@@ -8,6 +8,7 @@ from terratorch.models.decoders.aspp_head import ASPPSegmentationHead, ASPPRegre
 from terratorch.models.decoders.mlp_decoder import MLPDecoder
 from terratorch.models.decoders.unet_decoder import UNetDecoder
 from terratorch.models.decoders.linear_decoder import LinearDecoder
+from terratorch.models.decoders.galileo_decoder import GalileoDecoder
 
 __all__ = [
     "FCNDecoder",
@@ -21,4 +22,5 @@ __all__ = [
     "MLPDecoder",
     "UNetDecoder",
     "LinearDecoder",
+    "GalileoDecoder",
 ]
