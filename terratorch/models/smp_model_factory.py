@@ -152,6 +152,10 @@ class SMPModelFactory(ModelFactory):
         if backbone not in smp_encoders:
             if backbone.startswith("tu-"):
                 #for timm encoders
+                timm_encoder = backbone[3:]
+                if timm_encoder not in timm.list_models(pretrained=True):
+                    raise ValueError(f"Backbone {timm_encoder} is not a valid pretrained timm model.")
+
                 model_args = {
                     "encoder_name": backbone,
                     "encoder_weights": pretrained,
