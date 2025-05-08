@@ -130,7 +130,7 @@ class MultiModalBatchSampler(BatchSampler):
         self.sample_num_modalities = sample_num_modalities
         self.sample_replace = sample_replace
 
-    def __iter__(self) -> iter(list[int]):
+    def __iter__(self) -> Iterable[list[int]]:
         """
         Code similar to BatchSampler but samples tuples in the format (idx, ["m1", "m2", ...])
         """
