@@ -7,7 +7,7 @@ You can do this directly via the CLI with:
 terratorch predict -c config.yaml --ckpt_path path/to/model/checkpoint.ckpt --data.init_args.predict_data_root input/folder/ --predict_output_dir output/folder/ 
 ```
 
-This approach works only for supported data modules like TerraTorch's `GenericNonGeoSegmentationDataModule`. 
+This approach works only for supported data modules like the TerraTorch `GenericNonGeoSegmentationDataModule`. 
 Alternatively, define the parameters in the config file:
 
 ```yaml
@@ -20,7 +20,7 @@ data:
 
 ## Tiled inference via CLI
 
-TerraTorch supports a tiled inference that splits up a tile into smaller patches. With this approach, you can run a model on very large tiles like a 10k x 10k Sentinel-2 tile. 
+TerraTorch supports a tiled inference that splits up a tile into smaller patches. With this approach, you can run a model on very large tiles like a 10k x 10k pixel Sentinel-2 tile. 
 
 Define the tiled inference parameters in the yaml config like the following:
 ```yaml
@@ -51,7 +51,16 @@ You can use TerraTorch to run tiled inference in a python script like the follow
 
 ```python
 import torch
+from terratorch.tasks import SemanticSegmentationTask
 from terratorch.tasks.tiled_inference import TiledInferenceParameters, tiled_inference
+
+# Init an TerraTorch task, e.g. for semantic segmentation
+model = SemanticSegmentationTask.load_from_checkpoint(
+    ckpt_path,  # Pass the checkpoint path
+    model_factory="EncoderDecoderFactory",
+    model_args=model_args,  # Pass your model args
+)
+
 
 tiled_inference_parameters = TiledInferenceParameters(
     h_crop=256, 
@@ -65,14 +74,14 @@ tiled_inference_parameters = TiledInferenceParameters(
 
 # Apply your standardization values to the input tile
 input = (input - means[:, None, None]) / stds[:, None, None]
-# Create input tensor with shape [B, C, H, W]
+# Create input tensor with shape [B, C, H, W] on CPU
 input = torch.tensor(input, dtype=torch.float, device='cpu').unsqueeze(0)
 
 # Inference wrapper for TerraTorch task model
 def model_forward(x,  **kwargs):
     return model(x, **kwargs).output
 
-# Run tiled inference
+# Run tiled inference (data is loaded automatically to GPU)
 pred = tiled_inference(model_forward, input, num_classes, tiled_inference_parameters)
 
 # Remove batch dim and compute segmentation map
