@@ -135,7 +135,7 @@ def add_default_checkpointing_config(config):
     return config 
 
 def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16",
-                    suffix="pred"):
+                    suffix:str="pred", output_file_name:str | None=None):
     mask, metadata = open_tiff(input_file_name)
     mask = np.where(mask == metadata["nodata"], 1, 0)
     mask = np.max(mask, axis=0)
@@ -147,7 +147,12 @@ def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16",
     metadata["compress"] = "lzw"
     metadata["nodata"] = -1
     file_name = os.path.basename(input_file_name)
-    file_name_no_ext = os.path.splitext(file_name)[0]
+
+    if not output_file_name:
+        file_name_no_ext = os.path.splitext(file_name)[0]
+    else:
+        file_name_no_ext = output_file_name
+
     out_file_name = file_name_no_ext + f"_{suffix}.tif"
     logger.info(f"Saving output to {out_file_name} ...")
     write_tiff(result, os.path.join(out_dir, out_file_name), metadata)
