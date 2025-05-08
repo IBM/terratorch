@@ -6,7 +6,6 @@ from collections.abc import Callable
 from functools import partial
 import huggingface_hub
 import torch.nn as nn
-from typing import List
 import huggingface_hub
 from torchvision.models._api import Weights, WeightsEnum
 from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
@@ -45,7 +44,7 @@ class DOFAEncoderWrapper(nn.Module):
     Attributes:
         dofa_model (DOFA): The instantiated dofa model
     Methods:
-        forward(x: List[torch.Tensor], wavelengths: list[float]) -> torch.Tensor:
+        forward(x: list[torch.Tensor], wavelengths: list[float]) -> torch.Tensor:
             Forward pass for embeddings with specified indices.
     """
 
@@ -63,7 +62,7 @@ class DOFAEncoderWrapper(nn.Module):
         self.out_indices = out_indices if out_indices else [-1]
         self.out_channels = [self.dofa_model.patch_embed.embed_dim] * len(self.out_indices)
         
-    def forward(self, x: List[torch.Tensor], **kwargs) -> torch.Tensor:
+    def forward(self, x: list[torch.Tensor], **kwargs) -> torch.Tensor:
         
         wavelist = torch.tensor(self.wavelengths, device=x.device).float()
 

@@ -18,7 +18,7 @@
 # licensed under the Apache License, Version 2.0.
 # Source: https://github.com/apple/ml-4m/
 
-from typing import List, Tuple, Dict, Optional, Union, Any
+from typing import Tuple, Dict, Optional, Union, Any
 from contextlib import nullcontext
 import copy
 import torch
@@ -118,7 +118,7 @@ class VQ(nn.Module, PyTorchModelHubMixin):
         commitment_weight: float = 1.0,
         kmeans_init: bool = False,
         ckpt_path: Optional[str] = None,
-        ignore_keys: List[str] = [
+        ignore_keys: list[str] = [
             "decoder",
             "loss",
             "post_quant_conv",
@@ -247,7 +247,7 @@ class VQ(nn.Module, PyTorchModelHubMixin):
             module.train(mode)
         return self
 
-    def init_from_ckpt(self, path: str, ignore_keys: List[str] = list()) -> "VQ":
+    def init_from_ckpt(self, path: str, ignore_keys: list[str] = list()) -> "VQ":
         """Loads the state_dict from a checkpoint file and initializes the model with it.
         Renames the keys in the state_dict if necessary (e.g. when loading VQ-GAN weights).
 

@@ -7,7 +7,6 @@ from collections.abc import Callable
 from functools import partial
 import huggingface_hub
 import torch.nn as nn
-from typing import List
 import huggingface_hub
 from torchvision.models._api import Weights, WeightsEnum
 import torch
@@ -23,7 +22,7 @@ class ViTEncoderWrapper(nn.Module):
         satlas_model (VisionTransformer): The instantiated dofa model
         weights
     Methods:
-        forward(x: List[torch.Tensor], wavelengths: list[float]) -> torch.Tensor:
+        forward(x: list[torch.Tensor], wavelengths: list[float]) -> torch.Tensor:
             Forward pass for embeddings with specified indices.
     """
 
@@ -40,7 +39,7 @@ class ViTEncoderWrapper(nn.Module):
         self.vit_meta = vit_meta
         
 
-    def forward(self, x: List[torch.Tensor]) -> torch.Tensor:
+    def forward(self, x: list[torch.Tensor]) -> torch.Tensor:
         return self.vit_model.forward_intermediates(x, intermediates_only=True)
         
 look_up_table = {

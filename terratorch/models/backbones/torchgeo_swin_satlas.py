@@ -7,7 +7,6 @@ from collections.abc import Callable
 from functools import partial
 import huggingface_hub
 import torch.nn as nn
-from typing import List
 import huggingface_hub
 from torchvision.models._api import Weights, WeightsEnum
 from torchvision.models import swin_v2_t, swin_v2_b
@@ -25,7 +24,7 @@ class SwinEncoderWrapper(nn.Module):
         swin_model (SwinTransformer): The instantiated dofa model
         weights
     Methods:
-        forward(x: List[torch.Tensor], wavelengths: list[float]) -> torch.Tensor:
+        forward(x: list[torch.Tensor], wavelengths: list[float]) -> torch.Tensor:
             Forward pass for embeddings with specified indices.
     """
 
@@ -48,7 +47,7 @@ class SwinEncoderWrapper(nn.Module):
         self.out_channels = [elem for elem in self.out_channels for _ in range(2)]
         self.out_channels = [x for i, x in enumerate(self.out_channels) if (i in self.out_indices) | (i == (len(self.out_channels)-1)) & (-1 in self.out_indices)]
 
-    def forward(self, x: List[torch.Tensor], **kwargs) -> torch.Tensor:
+    def forward(self, x: list[torch.Tensor], **kwargs) -> torch.Tensor:
 
         outs = []
         for i, layer in enumerate(self.swin_model.features):

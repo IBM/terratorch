@@ -1,5 +1,4 @@
 # Copyright contributors to the Terratorch project
-from typing import List
 import logging 
 import torch
 import torch.nn.functional as F  # noqa: N812

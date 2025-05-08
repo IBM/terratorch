@@ -17,10 +17,10 @@ class SMPDecoderWrapper(nn.Module):
     Attributes:
         decoder (nn.Module): The SMP decoder module being wrapped.
         channels (int): The number of output channels of the decoder.
-        in_index (Union[int, List[int]]): Index or indices of the embeddings to pass to the decoder.
+        in_index (Union[int, list[int]]): Index or indices of the embeddings to pass to the decoder.
 
     Methods:
-        forward(x: List[torch.Tensor]) -> torch.Tensor:
+        forward(x: list[torch.Tensor]) -> torch.Tensor:
             Forward pass for embeddings with specified indices.
     """
 

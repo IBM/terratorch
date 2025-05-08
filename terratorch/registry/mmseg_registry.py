@@ -17,7 +17,7 @@ class MMsegDecoderWrapper(nn.Module):
         decoder (nn.Module): The decoder module being wrapped.
         channels (int): The number of output channels of the decoder.
     Methods:
-        forward(x: List[torch.Tensor]) -> torch.Tensor:
+        forward(x: list[torch.Tensor]) -> torch.Tensor:
             Forward pass for embeddings with specified indices.
     """
 

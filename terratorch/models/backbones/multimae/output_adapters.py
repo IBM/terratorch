@@ -593,8 +593,8 @@ class DPTOutputAdapter(nn.Module):
                  stride_level: int = 1,
                  patch_size: Union[int, Tuple[int, int]] = 16,
                  main_tasks: Iterable[str] = ('rgb',),
-                 hooks: List[int] = [2, 5, 8, 11],
-                 layer_dims: List[int] = [96, 192, 384, 768],
+                 hooks: list[int] = [2, 5, 8, 11],
+                 layer_dims: list[int] = [96, 192, 384, 768],
                  feature_dim: int = 256,
                  use_bn: bool = False,
                  dim_tokens_enc: Optional[int] = None,
@@ -725,7 +725,7 @@ class DPTOutputAdapter(nn.Module):
         x = torch.cat(x, dim=-1)
         return x
 
-    def forward(self, encoder_tokens: List[torch.Tensor], input_info: Dict):
+    def forward(self, encoder_tokens: list[torch.Tensor], input_info: Dict):
         assert self.dim_tokens_enc is not None, 'Need to call init(dim_tokens_enc) function first'
         H, W = input_info['image_size']
         # Number of patches in height and width

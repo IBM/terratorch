@@ -1,6 +1,5 @@
 # Copyright contributors to the Terratorch project
 
-from typing import List
 import warnings
 import logging
 from torch import nn

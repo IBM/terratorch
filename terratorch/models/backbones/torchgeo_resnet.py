@@ -7,7 +7,6 @@ from collections.abc import Callable
 from functools import partial
 import huggingface_hub
 import torch.nn as nn
-from typing import List
 import huggingface_hub
 from torchvision.models._api import Weights, WeightsEnum
 from terratorch.datasets.utils import OpticalBands, SARBands
@@ -25,7 +24,7 @@ class ResNetEncoderWrapper(nn.Module):
         satlas_model (VisionTransformer): The instantiated dofa model
         weights
     Methods:
-        forward(x: List[torch.Tensor], wavelengths: list[float]) -> torch.Tensor:
+        forward(x: list[torch.Tensor], wavelengths: list[float]) -> torch.Tensor:
             Forward pass for embeddings with specified indices.
     """
 
@@ -45,7 +44,7 @@ class ResNetEncoderWrapper(nn.Module):
         self.out_channels = [x for i, x in enumerate(self.out_channels) if (i in self.out_indices) | (i == (len(self.out_channels)-1)) & (-1 in self.out_indices)]
         
     
-    def forward(self, x: List[torch.Tensor], **kwargs) -> torch.Tensor:
+    def forward(self, x: list[torch.Tensor], **kwargs) -> torch.Tensor:
         
         features = self.resnet_model.forward_intermediates(x, intermediates_only=True)
 
