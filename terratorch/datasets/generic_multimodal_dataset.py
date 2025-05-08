@@ -152,8 +152,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             concat_bands (bool): Concatenate all image modalities along the band dimension into a single "image", so
                 that it can be processed by single-modal models. Concatenate in the order of provided modalities.
                 Works with image modalities only. Does not work with allow_missing_modalities. Defaults to False.
-            prediction_mode (bool): Used to deactivate the checking for a label
-            dataset when that is not necessary. 
+            prediction_mode (bool): Used to deactivate the checking for a label when it is not necessary.
         """
 
         if prediction_mode:
@@ -518,6 +517,7 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
         reduce_zero_label: bool = False,
         channel_position: int = -3,
         concat_bands: bool = False,
+        prediction_mode: bool = False,
         *args,
         **kwargs,
     ) -> None:
@@ -577,6 +577,7 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
             concat_bands (bool): Concatenate all image modalities along the band dimension into a single "image", so
                 that it can be processed by single-modal models. Concatenate in the order of provided modalities.
                 Works with image modalities only. Does not work with allow_missing_modalities. Defaults to False.
+            prediction_mode (bool): Used to deactivate the checking for a label when it is not necessary.
         """
 
         assert label_data_root is not None, "label_data_root must be specified for this task."
@@ -602,6 +603,7 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
             reduce_zero_label=reduce_zero_label,
             channel_position=channel_position,
             concat_bands=concat_bands,
+            prediction_mode=prediction_mode,
             *args,
             **kwargs,
         )
@@ -727,6 +729,7 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
         reduce_zero_label: bool = False,
         channel_position: int = -3,
         concat_bands: bool = False,
+        prediction_mode: bool = False,
         *args,
         **kwargs,
     ) -> None:
@@ -782,6 +785,7 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
             concat_bands (bool): Concatenate all image modalities along the band dimension into a single "image", so
                 that it can be processed by single-modal models. Concatenate in the order of provided modalities.
                 Works with image modalities only. Does not work with allow_missing_modalities. Defaults to False.
+            prediction_mode (bool): Used to deactivate the checking for a label when it is not necessary.
         """
 
         assert label_data_root is not None, "label_data_root must be specified for this task."
@@ -807,6 +811,7 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
             reduce_zero_label=reduce_zero_label,
             channel_position=channel_position,
             concat_bands=concat_bands,
+            prediction_mode=prediction_mode,
             *args,
             **kwargs,
         )
@@ -919,6 +924,7 @@ class GenericMultimodalScalarDataset(GenericMultimodalDataset):
         reduce_zero_label: bool = False,
         channel_position: int = -3,
         concat_bands: bool = False,
+        prediction_mode: bool = False,
         *args,
         **kwargs,
     ) -> None:
@@ -978,9 +984,8 @@ class GenericMultimodalScalarDataset(GenericMultimodalDataset):
             concat_bands (bool): Concatenate all image modalities along the band dimension into a single "image", so
                 that it can be processed by single-modal models. Concatenate in the order of provided modalities.
                 Works with image modalities only. Does not work with allow_missing_modalities. Defaults to False.
+            prediction_mode (bool): Used to deactivate the checking for a label when it is not necessary.
         """
-
-        assert label_data_root is not None, "label_data_root must be specified for this task."
 
         super().__init__(
             data_root,
@@ -1004,6 +1009,7 @@ class GenericMultimodalScalarDataset(GenericMultimodalDataset):
             channel_position=channel_position,
             scalar_label=True,
             concat_bands=concat_bands,
+            prediction_mode=prediction_mode,
             *args,
             **kwargs,
         )
