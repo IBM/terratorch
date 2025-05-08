@@ -156,15 +156,14 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             dataset when that is not necessary. 
         """
 
-        if not prediction_mode:
-            assert label_data_root is not None, "label_data_root must be specified for this task."
+        if prediction_mode:
+            label_data_root = None
         else:
-            label_data_root = label_data_root if label_data_root is not None else data_root
-
-        self.prediction_mode = prediction_mode
+            label_data_root = label_data_root or data_root
 
         super().__init__()
 
+        self.prediction_mode = prediction_mode
         self.split_file = split
         self.modalities = list(data_root.keys())
         assert "mask" not in self.modalities, "Modality cannot be called 'mask'."
@@ -177,11 +176,6 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
         # Order by modalities and convert path strings to lists as the code expects a list of paths per modality
         data_root = {m: data_root[m] for m in self.modalities}
-
-        # The wildcards also be defined for all the modalities
-        if image_grep == "*" and label_grep == "*":
-            image_grep = {m: "*" for m in self.modalities}
-            label_grep = {m: "*" for m in self.modalities}
 
         self.constant_scale = constant_scale or {}
         self.no_data_replace = no_data_replace
@@ -217,9 +211,8 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             image_files = {}
             for m, m_paths in data_root.items():
                 image_files[m] = sorted(glob.glob(os.path.join(m_paths, image_grep[m])))
-            if not prediction_mode:
-                if label_data_root is not None:
-                    image_files["mask"] = sorted(glob.glob(os.path.join(label_data_root, label_grep)))
+            if label_data_root is not None:
+                image_files["mask"] = sorted(glob.glob(os.path.join(label_data_root, label_grep)))
 
             if allow_substring_file_names:
                 # Remove file extensions
@@ -245,14 +238,13 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                 if not any(f in data_root[m].index for f in valid_files[:100]):
                     warnings.warn(f"Sample key expected in table index (first column) for {m} (file: {m_path}). "
                                   f"{valid_files[:3]+['...']} are not in index {list(data_root[m].index[:3])+['...']}.")
-        if not prediction_mode:
-            if label_data_root is not None:
-                if os.path.isfile(label_data_root):
-                    label_data_root = load_table_data(label_data_root)
-                    # Check for some sample keys
-                    if not any(f in label_data_root.index for f in valid_files[:100]):
-                        warnings.warn(f"Keys expected in table index (first column) for labels (file: {label_data_root}). "
-                                      f"The keys {valid_files[:3] + ['...']} are not in the index.")
+        if label_data_root is not None:
+            if os.path.isfile(label_data_root):
+                label_data_root = load_table_data(label_data_root)
+                # Check for some sample keys
+                if not any(f in label_data_root.index for f in valid_files[:100]):
+                    warnings.warn(f"Keys expected in table index (first column) for labels (file: {label_data_root}). "
+                                  f"The keys {valid_files[:3] + ['...']} are not in the index.")
 
         # Iterate over all files in split
         for file in valid_files:
@@ -273,7 +265,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                     if os.path.exists(file_path):
                         sample[m] = file_path
 
-            if label_data_root is not None and not prediction_mode:
+            if label_data_root is not None:
                 if isinstance(label_data_root, pd.DataFrame):
                     # Add tabular data to sample
                     sample["mask"] = label_data_root.loc[file].values
@@ -587,6 +579,8 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
                 Works with image modalities only. Does not work with allow_missing_modalities. Defaults to False.
         """
 
+        assert label_data_root is not None, "label_data_root must be specified for this task."
+
         super().__init__(
             data_root,
             label_data_root=label_data_root,
@@ -790,6 +784,8 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
                 Works with image modalities only. Does not work with allow_missing_modalities. Defaults to False.
         """
 
+        assert label_data_root is not None, "label_data_root must be specified for this task."
+
         super().__init__(
             data_root,
             label_data_root=label_data_root,
@@ -817,7 +813,8 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
 
     def __getitem__(self, index: int) -> dict[str, Any]:
         item = super().__getitem__(index)
-        item["mask"] = item["mask"].float()
+        if not self.prediction_mode:
+            item["mask"] = item["mask"].float()
         return item
 
     def plot(
@@ -982,6 +979,8 @@ class GenericMultimodalScalarDataset(GenericMultimodalDataset):
                 that it can be processed by single-modal models. Concatenate in the order of provided modalities.
                 Works with image modalities only. Does not work with allow_missing_modalities. Defaults to False.
         """
+
+        assert label_data_root is not None, "label_data_root must be specified for this task."
 
         super().__init__(
             data_root,
