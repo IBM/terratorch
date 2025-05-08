@@ -220,7 +220,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                 stem = re.match(glob_as_regex, file_name).group(1)
                 if allow_substring_file_names:
                     # Remove file extensions
-                    stem = stem.rsplit('.', 1)[0]
+                    stem = os.path.splitext(stem)[0]
                 # Remote folder structure
                 return os.path.basename(stem)
 
