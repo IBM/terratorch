@@ -212,6 +212,12 @@ class CustomWriter(BasePredictionWriter):
 
             pred_batch_, filename_batch = prediction
 
+            # In case of multimodal datasets, we have a dictionary
+            # with one file per modality
+            if type(filename_batch)==dict:
+                keys = list(filename_batch.keys())
+                filename_batch = filename_batch[keys[0]]
+
             # If we have just a single kind of output
             if isinstance(pred_batch_, tuple):
 
