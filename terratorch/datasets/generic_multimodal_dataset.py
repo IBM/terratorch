@@ -580,8 +580,6 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
             prediction_mode (bool): Used to deactivate the checking for a label when it is not necessary.
         """
 
-        assert label_data_root is not None, "label_data_root must be specified for this task."
-
         super().__init__(
             data_root,
             label_data_root=label_data_root,
@@ -787,8 +785,6 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
                 Works with image modalities only. Does not work with allow_missing_modalities. Defaults to False.
             prediction_mode (bool): Used to deactivate the checking for a label when it is not necessary.
         """
-
-        assert label_data_root is not None, "label_data_root must be specified for this task."
 
         super().__init__(
             data_root,
