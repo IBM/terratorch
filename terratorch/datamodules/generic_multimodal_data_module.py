@@ -5,9 +5,9 @@ This module contains generic data modules for instantiation at runtime.
 """
 import os
 import logging
+import warnings
 from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any, Iterator
 import albumentations as A
 import numpy as np
 import torch
@@ -130,7 +130,7 @@ class MultiModalBatchSampler(BatchSampler):
         self.sample_num_modalities = sample_num_modalities
         self.sample_replace = sample_replace
 
-    def __iter__(self) -> Iterator[list[int]]:
+    def __iter__(self) -> iter(list[int]):
         """
         Code similar to BatchSampler but samples tuples in the format (idx, ["m1", "m2", ...])
         """
@@ -212,7 +212,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         channel_position: int = -3,
         concat_bands: bool = False,
         check_stackability: bool = True,
-        **kwargs: Any,
+        img_grep: str | dict[str, str] | None = None,
     ) -> None:
         """Constructor
 
@@ -334,7 +334,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         else:
             raise ValueError(f"Unknown task {task}, only segmentation and regression are supported.")
 
-        super().__init__(dataset_class, batch_size, num_workers, **kwargs)
+        super().__init__(dataset_class, batch_size, num_workers)
         self.num_classes = num_classes
         self.class_names = class_names
         self.modalities = modalities
@@ -342,6 +342,12 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.non_image_modalities = list(set(self.modalities) - set(self.image_modalities))
         if task == "scalar":
             self.non_image_modalities += ["label"]
+
+        if img_grep is not None:
+            warnings.warn(f'img_grep was renamed to image_grep and will be removed in a future version.',
+                          DeprecationWarning)
+            image_grep = img_grep
+
         if isinstance(image_grep, dict):
             self.image_grep = {m: image_grep[m] if m in image_grep else "*" for m in modalities}
         else:
