@@ -360,6 +360,16 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.val_label_data_root = val_label_data_root
         self.test_label_data_root = test_label_data_root
         self.predict_root = predict_data_root
+
+        assert not train_data_root or all(m in predict_data_root for m in modalities), \
+            f"predict_data_root is missing paths to some modalities {modalities}: {train_data_root}"
+        assert not val_data_root or all(m in predict_data_root for m in modalities), \
+            f"predict_data_root is missing paths to some modalities {modalities}: {val_data_root}"
+        assert not test_data_root or all(m in predict_data_root for m in modalities), \
+            f"predict_data_root is missing paths to some modalities {modalities}: {test_data_root}"
+        assert not predict_data_root or all(m in predict_data_root for m in modalities), \
+            f"predict_data_root is missing paths to some modalities {modalities}: {predict_data_root}"
+
         self.train_split = train_split
         self.val_split = val_split
         self.test_split = test_split
