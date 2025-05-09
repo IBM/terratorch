@@ -8,7 +8,7 @@ from terratorch.datamodules.generic_multimodal_data_module import MultimodalNorm
 from terratorch.datamodules.generic_pixel_wise_data_module import Normalize
 from terratorch.datasets import BioMasstersNonGeo
 from torchgeo.datamodules import NonGeoDataModule
-from torchgeo.transforms import AugmentationSequential
+from kornia.augmentation import AugmentationSequential
 
 MEANS = {
     "AGBM": 63.4584,

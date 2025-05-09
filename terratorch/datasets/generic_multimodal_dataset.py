@@ -355,7 +355,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                     data, "(channels time) h w -> channels time h w", channels=len(self.dataset_bands[modality])
                 )
 
-            if modality == "mask" and len(data.shape) == 3 and len(data) == 1:
+            if modality == "mask" and not self.scalar_label:
                 # tasks expect image masks without channel dim
                 data = data[0]
 
