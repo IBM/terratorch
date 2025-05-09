@@ -493,6 +493,10 @@ def terramind_v1_large_tim(**kwargs):
 
 @TERRATORCH_FULL_MODEL_REGISTRY.register
 def terramind_v1_base_mae(**kwargs):
+    assert 'encoder_embeddings' in kwargs and 'decoder_embeddings' in kwargs and 'modality_info' in kwargs, \
+        ("TerraMind MAE expects encoder_embeddings, decoder_embeddings, and modality_info. "
+         "For generation, use the terramind_v1_base_generate model.")
+
     model = build_terrammind_mae(
         variant='terramind_v1_base',
         encoder_depth=12,
@@ -506,7 +510,6 @@ def terramind_v1_base_mae(**kwargs):
         norm_layer=partial(LayerNorm, eps=1e-6, bias=False),
         act_layer=nn.SiLU,
         gated_mlp=True,
-        pretrained_bands=PRETRAINED_BANDS,
         **kwargs
     )
     return model
@@ -514,6 +517,10 @@ def terramind_v1_base_mae(**kwargs):
 
 @TERRATORCH_FULL_MODEL_REGISTRY.register
 def terramind_v1_large_mae(**kwargs):
+    assert 'encoder_embeddings' in kwargs and 'decoder_embeddings' in kwargs and 'modality_info' in kwargs, \
+        ("TerraMind MAE expects encoder_embeddings, decoder_embeddings, and modality_info. "
+         "For generation, use the terramind_v1_large_generate model.")
+
     model = build_terrammind_mae(
         variant='terramind_v1_large',
         encoder_depth=24,
@@ -527,7 +534,7 @@ def terramind_v1_large_mae(**kwargs):
         norm_layer=partial(LayerNorm, eps=1e-6, bias=False),
         act_layer=nn.SiLU,
         gated_mlp=True,
-        pretrained_bands=PRETRAINED_BANDS,
+        # pretrained_bands=PRETRAINED_BANDS,
         **kwargs
     )
     return model
