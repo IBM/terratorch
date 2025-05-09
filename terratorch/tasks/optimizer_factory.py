@@ -6,6 +6,18 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 
 
+class LambdaFns():
+    def __init__(
+            milestone,
+        ) -> None:
+        self.milestone = milestone
+
+    def linear_warmup(self, current_step: int):
+        return float(current_step / self.milestone)
+    #cosine warmup
+    #etc
+
+
 def optimizer_factory(
     optimizer: str,
     lr: float,
@@ -38,10 +50,30 @@ def optimizer_factory(
     if scheduler is None:
         return {"optimizer": optimizer}
 
-    scheduler = getattr(torch.optim.lr_scheduler, scheduler)
     scheduler_hparams = scheduler_hparams if scheduler_hparams else {}
     interval = scheduler_hparams.get("interval", "epoch")
     scheduler_hparams_no_interval = {k: v for k, v in scheduler_hparams.items() if k != "interval"}
+
+    #unpack sequential schedule
+    if scheduler == "SequentialLR":
+        assert "schedulers" in scheduler_hparams_no_interval, "Please provide scheduler for SequentialLR"
+        assert "milestones" in scheduler_hparams_no_interval, "Please provide milestones for SequentialLR"
+        schedule_sequence = []
+        milestones = []
+        for k, v in scheduler_hparams_no_interval["schedulers"].items():
+            if k == "LambdaLR":
+                lr_lambda = v.get("lr_lambda", "linear_warmup")
+                #v["lr_lambda"] =  getattr(LambdaFns, lr_lambda) 
+                def linear_warmup(current_step: int):
+                    return float(current_step / 5)
+                v["lr_lambda"] = linear_warmup
+                print(f'v["lr_lambda"] : {v["lr_lambda"]}')
+            nested_scheduler = getattr(torch.optim.lr_scheduler, k)
+            nested_scheduler = nested_scheduler(optimizer, **v)
+            schedule_sequence.append(nested_scheduler)
+        scheduler_hparams_no_interval["schedulers"] = schedule_sequence
+
+    scheduler = getattr(torch.optim.lr_scheduler, scheduler)
     scheduler = scheduler(optimizer, **scheduler_hparams_no_interval)
     return {
         "optimizer": optimizer,
