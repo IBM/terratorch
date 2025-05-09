@@ -108,7 +108,7 @@ def add_default_checkpointing_config(config):
         # A list for callbacks is usually expected.
         if callbacks:
             check_callbacks = [op for op in callbacks if "ModelCheckpoint" in op.class_path]
-        
+
             if len(check_callbacks) > 0:
                 there_is_checkpointing = True
             else:
@@ -135,7 +135,7 @@ def add_default_checkpointing_config(config):
     return config 
 
 def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16",
-                    suffix="pred"):
+                    suffix:str="pred", output_file_name:str | None=None):
     mask, metadata = open_tiff(input_file_name)
     mask = np.where(mask == metadata["nodata"], 1, 0)
     mask = np.max(mask, axis=0)
@@ -147,7 +147,12 @@ def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16",
     metadata["compress"] = "lzw"
     metadata["nodata"] = -1
     file_name = os.path.basename(input_file_name)
-    file_name_no_ext = os.path.splitext(file_name)[0]
+
+    if not output_file_name:
+        file_name_no_ext = os.path.splitext(file_name)[0]
+    else:
+        file_name_no_ext = output_file_name
+
     out_file_name = file_name_no_ext + f"_{suffix}.tif"
     logger.info(f"Saving output to {out_file_name} ...")
     write_tiff(result, os.path.join(out_dir, out_file_name), metadata)
@@ -211,6 +216,12 @@ class CustomWriter(BasePredictionWriter):
         elif isinstance(prediction, tuple):
 
             pred_batch_, filename_batch = prediction
+
+            # In case of multimodal datasets, we have a dictionary
+            # with one file per modality
+            if type(filename_batch)==dict:
+                keys = list(filename_batch.keys())
+                filename_batch = filename_batch[keys[0]]
 
             # If we have just a single kind of output
             if isinstance(pred_batch_, tuple):
@@ -289,7 +300,11 @@ def clean_config_for_deployment_and_dump(config: dict[str, Any]):
             deploy_config["model"]["init_args"]["model_args"]["pretrained"] = False
         elif "backbone_pretrained" in deploy_config["model"]["init_args"]["model_args"]:
             deploy_config["model"]["init_args"]["model_args"]["backbone_pretrained"] = False
-
+            
+    # Set image_grep and label_grep to *tif* . 
+    # Fixes issue with inference not finding image named as the training image.
+    deploy_config['data']['init_args']['img_grep'] = "*tif*"
+    deploy_config['data']['init_args']['label_grep'] = "*tif*"
     return yaml.safe_dump(deploy_config)
 
 
@@ -462,21 +477,11 @@ class MyLightningCLI(LightningCLI):
         # callback. 
         self.config = add_default_checkpointing_config(self.config)
 
-        super().instantiate_classes()
-
         # get the predict_output_dir. Depending on the value of run, it may be in the subcommand
         try:
             config = self.config.predict
         except AttributeError:
             config = self.config
-        if hasattr(config, "predict_output_dir"):
-            self.trainer.predict_output_dir = config.predict_output_dir
-
-        if hasattr(config, "out_dtype"):
-            self.trainer.out_dtype = config.out_dtype
-
-        if hasattr(config, "deploy_config_file"):
-            self.trainer.deploy_config = config.deploy_config_file
 
         # Custom modules path
         if hasattr(self.config, "fit") and hasattr(self.config.fit, "custom_modules_path"):
@@ -492,6 +497,16 @@ class MyLightningCLI(LightningCLI):
 
         import_custom_modules(custom_modules_path)
 
+        super().instantiate_classes()
+
+        if hasattr(config, "predict_output_dir"):
+            self.trainer.predict_output_dir = config.predict_output_dir
+
+        if hasattr(config, "out_dtype"):
+            self.trainer.out_dtype = config.out_dtype
+
+        if hasattr(config, "deploy_config_file"):
+            self.trainer.deploy_config = config.deploy_config_file
 
     @staticmethod
     def subcommands() -> dict[str, set[str]]:

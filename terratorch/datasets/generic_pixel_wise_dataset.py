@@ -116,6 +116,15 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
                 ignore_extensions=ignore_split_file_extensions,
                 allow_substring=allow_substring_split_file,
             )
+
+        # We don't define a split file for prediction
+        if not self.split_file:
+            # When prediction is enabled, we don't have mask files, so
+            # we need to provide a way to run the dataloder in these cases.
+            if not self.segmentation_mask_files:
+                self.segmentation_mask_files = self.image_files
+                # The masks can be `None` since they won't be used in fact. 
+
         self.rgb_indices = [0, 1, 2] if rgb_indices is None else rgb_indices
 
         self.dataset_bands = generate_bands_intervals(dataset_bands)
