@@ -129,7 +129,7 @@ model:
     ignore_index: -1
     freeze_backbone: true
     freeze_decoder: false
-    model_factory: EncoderDecoderFactory
+    model_factory: PrithviModelFactory
     tiled_inference_parameters:
       h_crop: 224
       h_stride: 192
