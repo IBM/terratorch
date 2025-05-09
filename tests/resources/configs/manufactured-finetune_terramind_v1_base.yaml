@@ -113,7 +113,12 @@ model:
     ignore_index: -1
     freeze_backbone: true
     freeze_decoder: false
-
+    tiled_inference_parameters:
+      h_crop: 224
+      h_stride: 192
+      w_crop: 224
+      w_stride: 192
+      average_patches: true
 optimizer:
   class_path: torch.optim.AdamW
   init_args:
