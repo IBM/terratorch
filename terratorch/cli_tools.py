@@ -208,11 +208,12 @@ class CustomWriter(BasePredictionWriter):
             output_dir = self.output_dir
 
         # Defining a prefix for the output files
-        try:
+        if hasattr(trainer, "output_file_prefix"):
             output_file_prefix = trainer.output_file_prefix
-        except AttributeError as err:
+        else:
             output_file_prefix = None
             msg = "As you don't defined a value for `--output_file_prefix` via comand line, we will use a name based on the input file names."
+            logger.info(msg)
 
         if not os.path.exists(output_dir):
             os.makedirs(output_dir, exist_ok=True)
