@@ -16,7 +16,7 @@ import torch
 from torch import Tensor
 from torch.utils.data import DataLoader
 from torchgeo.datamodules import NonGeoDataModule
-from torchgeo.transforms import AugmentationSequential
+from kornia.augmentation import AugmentationSequential
 
 from terratorch.datamodules.utils import wrap_in_compose_is_list
 from terratorch.datasets import GenericNonGeoPixelwiseRegressionDataset, GenericNonGeoSegmentationDataset, HLSBands

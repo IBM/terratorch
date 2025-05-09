@@ -108,7 +108,7 @@ def add_default_checkpointing_config(config):
         # A list for callbacks is usually expected.
         if callbacks:
             check_callbacks = [op for op in callbacks if "ModelCheckpoint" in op.class_path]
-        
+
             if len(check_callbacks) > 0:
                 there_is_checkpointing = True
             else:
@@ -289,7 +289,11 @@ def clean_config_for_deployment_and_dump(config: dict[str, Any]):
             deploy_config["model"]["init_args"]["model_args"]["pretrained"] = False
         elif "backbone_pretrained" in deploy_config["model"]["init_args"]["model_args"]:
             deploy_config["model"]["init_args"]["model_args"]["backbone_pretrained"] = False
-
+            
+    # Set image_grep and label_grep to *tif* . 
+    # Fixes issue with inference not finding image named as the training image.
+    deploy_config['data']['init_args']['img_grep'] = "*tif*"
+    deploy_config['data']['init_args']['label_grep'] = "*tif*"
     return yaml.safe_dump(deploy_config)
 
 
@@ -462,21 +466,11 @@ class MyLightningCLI(LightningCLI):
         # callback. 
         self.config = add_default_checkpointing_config(self.config)
 
-        super().instantiate_classes()
-
         # get the predict_output_dir. Depending on the value of run, it may be in the subcommand
         try:
             config = self.config.predict
         except AttributeError:
             config = self.config
-        if hasattr(config, "predict_output_dir"):
-            self.trainer.predict_output_dir = config.predict_output_dir
-
-        if hasattr(config, "out_dtype"):
-            self.trainer.out_dtype = config.out_dtype
-
-        if hasattr(config, "deploy_config_file"):
-            self.trainer.deploy_config = config.deploy_config_file
 
         # Custom modules path
         if hasattr(self.config, "fit") and hasattr(self.config.fit, "custom_modules_path"):
@@ -492,6 +486,16 @@ class MyLightningCLI(LightningCLI):
 
         import_custom_modules(custom_modules_path)
 
+        super().instantiate_classes()
+
+        if hasattr(config, "predict_output_dir"):
+            self.trainer.predict_output_dir = config.predict_output_dir
+
+        if hasattr(config, "out_dtype"):
+            self.trainer.out_dtype = config.out_dtype
+
+        if hasattr(config, "deploy_config_file"):
+            self.trainer.deploy_config = config.deploy_config_file
 
     @staticmethod
     def subcommands() -> dict[str, set[str]]:
