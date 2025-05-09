@@ -361,17 +361,14 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.test_label_data_root = test_label_data_root
         self.predict_root = predict_data_root
 
-        # When using the prediction mode, we need to verify if all the
-        # modalities have defined a path for the input data
-        if predict_data_root:
-            assert not train_data_root or all(m in predict_data_root for m in modalities), \
-                f"predict_data_root is missing paths to some modalities {modalities}: {train_data_root}"
-            assert not val_data_root or all(m in predict_data_root for m in modalities), \
-                f"predict_data_root is missing paths to some modalities {modalities}: {val_data_root}"
-            assert not test_data_root or all(m in predict_data_root for m in modalities), \
-                f"predict_data_root is missing paths to some modalities {modalities}: {test_data_root}"
-            assert not predict_data_root or all(m in predict_data_root for m in modalities), \
-                f"predict_data_root is missing paths to some modalities {modalities}: {predict_data_root}"
+        assert not train_data_root or all(m in train_data_root for m in modalities), \
+            f"predict_data_root is missing paths to some modalities {modalities}: {train_data_root}"
+        assert not val_data_root or all(m in val_data_root for m in modalities), \
+            f"predict_data_root is missing paths to some modalities {modalities}: {val_data_root}"
+        assert not test_data_root or all(m in test_data_root for m in modalities), \
+            f"predict_data_root is missing paths to some modalities {modalities}: {test_data_root}"
+        assert not predict_data_root or all(m in predict_data_root for m in modalities), \
+            f"predict_data_root is missing paths to some modalities {modalities}: {predict_data_root}"
 
         self.train_split = train_split
         self.val_split = val_split
