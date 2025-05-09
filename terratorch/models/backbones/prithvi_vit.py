@@ -168,6 +168,10 @@ def checkpoint_filter_fn_vit(
             clean_dict[k.replace("encoder.", "")] = v  # Convert Prithvi MAE to Prithvi ViT
         else:
             clean_dict[k] = v
+    
+    for k, v in model.state_dict().items():
+        if "vpt_prompt_embeddings" in k:
+            clean_dict[k] = v
 
     state_dict = clean_dict
 

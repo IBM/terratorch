@@ -32,6 +32,9 @@ class Embedder(nn.Module):
         ckpt_path=None,
         bands=["blue", "green", "red", "nir", "swir16", "swir22"],
         out_indices: tuple[int] = default_out_indices,
+        vpt: bool = False,
+        vpt_n_tokens: int | None = None,
+        vpt_dropout: float = 0.0,
         **kwargs,
     ):
         super().__init__()
@@ -53,6 +56,9 @@ class Embedder(nn.Module):
                 heads=12,
                 dim_head=64,
                 mlp_ratio=4.0,
+                vpt=vpt,
+                vpt_n_tokens=vpt_n_tokens,
+                vpt_dropout=vpt_dropout,
             )
         )
 
@@ -96,6 +102,9 @@ class Embedder(nn.Module):
             for name, param in state_dict.items()
             if name.startswith("model.encoder")
         }
+        for k, v in model.state_dict().items():
+            if "vpt_prompt_embeddings" in k:
+                state_dict[k] = v
         return state_dict
 
     def forward_features(
@@ -135,6 +144,11 @@ class Embedder(nn.Module):
         
         # return as list for features list compatibility
         return [encoded]
+
+    def freeze(self):
+        for n, param in self.named_parameters():
+            if "vpt_prompt_embeddings" not in n:
+                param.requires_grad_(False)
 
 
 def _make_clay(
