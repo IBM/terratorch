@@ -1,0 +1,58 @@
+seed_everything: 0
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: 16-mixed
+  logger: True # will use default tensorboard logger
+  max_epochs: 1
+  check_val_every_n_epoch: 1
+  log_every_n_steps: 50
+  enable_checkpointing: false
+
+
+data:
+  class_path: terratorch.datamodules.random.RandomDataModule
+  init_args:
+    input_shape: [6, 1, 16, 16]
+    batch_size: 32
+    num_classes: 2
+
+model:
+  class_path: terratorch.tasks.ClassificationTask
+  init_args:
+    model_factory: EncoderDecoderFactory
+    model_args:
+      backbone: prithvi_eo_v2_300_tl
+      backbone_pretrained: true
+      backbone_num_frames: 3
+      backbone_coords_encoding: []
+      backbone_bands:
+        - BLUE
+        - GREEN
+        - RED
+        - NIR_NARROW
+        - SWIR_1
+        - SWIR_2
+      decoder: UNetDecoder
+      decoder_channels: [3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072]
+      head_dropout: 0.1
+      num_classes: 13
+    loss: ce
+    ignore_index: -1
+    freeze_backbone: true
+    freeze_decoder: true
+
+
+
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 1.e-4
+    weight_decay: 0.05
+
+lr_scheduler:
+  class_path: CosineAnnealingLR
+  init_args:
+    T_max: 20

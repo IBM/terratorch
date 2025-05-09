@@ -22,7 +22,7 @@ from terratorch.datasets.utils import clip_image, default_transform, filter_vali
 
 
 class MultiTemporalCropClassification(NonGeoDataset):
-    """NonGeo dataset implementation for multi-temporal crop classification."""
+    """NonGeo dataset implementation for [multi-temporal crop classification](https://huggingface.co/datasets/ibm-nasa-geospatial/multi-temporal-crop-classification)."""
 
     all_band_names = (
         "BLUE",
@@ -56,7 +56,6 @@ class MultiTemporalCropClassification(NonGeoDataset):
     num_classes = 13
     time_steps = 3
     splits = {"train": "training", "val": "validation"}  # Only train and val splits available
-    metadata_file_name = "chip_df_final.csv"
     col_name = "chip_id"
     date_columns = ["first_img_date", "middle_img_date", "last_img_date"]
 
@@ -71,6 +70,7 @@ class MultiTemporalCropClassification(NonGeoDataset):
         expand_temporal_dimension: bool = True,
         reduce_zero_label: bool = True,
         use_metadata: bool = False,
+        metadata_file_name: str = "chips_df.csv",
     ) -> None:
         """Constructor
 
@@ -106,7 +106,7 @@ class MultiTemporalCropClassification(NonGeoDataset):
         data_dir = self.data_root / f"{split_name}_chips"
         self.image_files = sorted(glob.glob(os.path.join(data_dir, "*_merged.tif")))
         self.segmentation_mask_files = sorted(glob.glob(os.path.join(data_dir, "*.mask.tif")))
-        split_file = data_dir / f"{split_name}_data.txt"
+        split_file = self.data_root / f"{split_name}_data.txt"
 
         with open(split_file) as f:
             split = f.readlines()
@@ -130,6 +130,7 @@ class MultiTemporalCropClassification(NonGeoDataset):
         self.expand_temporal_dimension = expand_temporal_dimension
         self.use_metadata = use_metadata
         self.metadata = None
+        self.metadata_file_name = metadata_file_name
         if self.use_metadata:
             metadata_file = self.data_root / self.metadata_file_name
             self.metadata = pd.read_csv(metadata_file)
@@ -156,7 +157,7 @@ class MultiTemporalCropClassification(NonGeoDataset):
         temporal_coords = []
         for col in self.date_columns:
             date_str = row[col]
-            date = pd.to_datetime(date_str, format="%Y-%m-%d")
+            date = pd.to_datetime(date_str)
             temporal_coords.append([date.year, date.dayofyear - 1])
 
         return torch.tensor(temporal_coords, dtype=torch.float32)
@@ -263,9 +264,9 @@ class MultiTemporalCropClassification(NonGeoDataset):
 
         if "prediction" in sample:
             prediction = sample["prediction"]
-            ax[self.time_steps + 1].axis("off")
-            ax[self.time_steps+2].title.set_text("Predicted Mask")
-            ax[self.time_steps+2].imshow(prediction, cmap="jet", norm=norm)
+            ax[self.time_steps + 2].axis("off")
+            ax[self.time_steps + 2].title.set_text("Predicted Mask")
+            ax[self.time_steps + 2].imshow(prediction, cmap="jet", norm=norm)
 
         cmap = plt.get_cmap("jet")
         legend_data = [[i, cmap(norm(i)), self.class_names[i]] for i in range(self.num_classes)]

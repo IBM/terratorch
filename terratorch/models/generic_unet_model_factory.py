@@ -26,18 +26,27 @@ class GenericUnetModelFactory(ModelFactory):
 
         try:
             print(f"Using module {model} from terratorch.")
-            model_class = getattr(builtin_engine, model)
+            if builtin_engine:
+                model_class = getattr(builtin_engine, model)
+            else:
+                model_class = None
         except:
             if _has_mmseg:
                 print("Module not available on terratorch.")
                 print(f"Using module {model} from mmseg.")
-                model_class = getattr(engine, model)
+                if engine:
+                    model_class = getattr(engine, model)
+                else:
+                    model_class = None
             else:
                 raise Exception("mmseg is not installed.")
 
-        model = model_class(
-           **model_kwargs,
-        )
+        if model_class:
+            model = model_class(
+               **model_kwargs,
+            )
+        else:
+            model = None
 
         return model 
 
@@ -49,29 +58,35 @@ class GenericUnetModelFactory(ModelFactory):
         dilations: tuple[int] = (1, 6, 12, 18),
         in_channels: int = 6,
         pretrained: str | bool | None = True,
-        num_classes: int = 1,
         regression_relu: bool = False,
         **kwargs,
     ) -> Model:
-        """Factory to create model based on SMP.
+        """Factory to create model based on mmseg.
 
         Args:
             task (str): Must be "segmentation".
             model (str): Decoder architecture. Currently only supports "unet".
             in_channels (int): Number of input channels.
             pretrained(str | bool): Which weights to use for the backbone. If true, will use "imagenet". If false or None, random weights. Defaults to True.
-            num_classes (int): Number of classes.
             regression_relu (bool). Whether to apply a ReLU if task is regression. Defaults to False.
 
         Returns:
-            Model: SMP model wrapped in SMPModelWrapper.
+            Model: UNet model.
         """
         if task not in ["segmentation", "regression"]:
-            msg = f"SMP models can only perform pixel wise tasks, but got task {task}"
+            msg = f"This model can only perform pixel wise tasks, but got task {task}"
             raise Exception(msg)
 
         builtin_engine_decoders = importlib.import_module("terratorch.models.decoders")
         builtin_engine_encoders = importlib.import_module("terratorch.models.backbones")
+
+        # Default values
+        backbone_builtin_engine = None
+        decoder_builtin_engine = None
+        backbone_engine = None 
+        decoder_engine = None 
+        backbone_model_kwargs = {}
+        decoder_model_kwargs = {}
 
         try:
             engine_decoders = importlib.import_module("mmseg.models.decode_heads")
@@ -111,40 +126,47 @@ class GenericUnetModelFactory(ModelFactory):
         )
 
 class GenericUnetModelWrapper(Model, nn.Module):
-    def __init__(self, unet_model, decoder=None, relu=False, squeeze_single_class=False) -> None:
+    def __init__(self, unet_model, decoder=None, relu=False, squeeze_single_class=False, intermediary_outputs_in_decoder=False) -> None:
         super().__init__()
         self.unet_model = unet_model
         self.decoder = decoder
         self.final_act = nn.ReLU() if relu else nn.Identity()
         self.squeeze_single_class = squeeze_single_class
+        self.intermediary_outputs_in_decoder = intermediary_outputs_in_decoder
 
         if decoder:
             self.decode = self._with_decoder
         else:
             self.decode = self._no_decoder
 
+        if self.intermediary_outputs_in_decoder:
+            self.catch_unet_outputs = lambda x: x
+        else:
+            self.catch_unet_outputs =  lambda x: x[-1]
+
     def _no_decoder(self, x):
         return x
 
     def _with_decoder(self, x):
-        
+
         return self.decoder(x)
 
     def forward(self, *args, **kwargs):
 
         # It supposes the input has dimension (B, C, H, W)
         input_data = [args[0]] # It adapts the input to became a list of time 'snapshots'
-        args = (input_data,)
+        args = input_data
 
         unet_output = self.unet_model(*args, **kwargs)
         unet_output = self.final_act(unet_output)
+
+        unet_output = self.catch_unet_outputs(unet_output)
         # Decoding is optional
-        input_data = [unet_output]
-        unet_output_decoded = self.decode(input_data)
-        
+        unet_output_decoded = self.decode(unet_output)
+
         if unet_output_decoded.shape[1] == 1 and self.squeeze_single_class:
             unet_output_decoded = unet_output_decoded.squeeze(1)
-       
+
         model_output = ModelOutput(unet_output_decoded)
 
         return model_output

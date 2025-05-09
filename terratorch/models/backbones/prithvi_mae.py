@@ -25,8 +25,11 @@ import torch.nn as nn
 from einops import rearrange
 from timm.layers import to_2tuple
 from timm.models.vision_transformer import Block
+from functools import reduce
+from operator import mul
 
 logger = logging.getLogger(__name__)
+
 
 def get_3d_sincos_pos_embed(embed_dim, grid_size, add_cls_token=False):
     """
@@ -90,11 +93,7 @@ def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
 
 
 def _get_1d_sincos_embed_from_grid_torch(embed_dim: int, pos: torch.Tensor):
-    """ This is the torch version of *get_1d_sincos_pos_embed_from_grid()*. However,
-        it was modified to cast omega values to pos.dtype which must be float (and not int as in
-        regular positional embeddings). This was required in order to allow for native FSDP mixed
-        precision support: modify omega to appropriate dtype (pos carries the correct float dtype),
-        instead of manually forcing float32.
+    """ Modified torch version of *get_1d_sincos_pos_embed_from_grid()*.
 
         embed_dim: output dimension for each position
         pos: a list of positions to be encoded: size (M,) - must be float dtype!
@@ -129,6 +128,50 @@ def _init_weights(module):
         module.weight.data.fill_(1.0)
 
 
+def _interpolate_pos_encoding(
+        pos_embed: torch.Tensor,
+        grid_size: tuple[int, int, int] | list[int],
+        patch_size: tuple[int, int, int] | list[int],
+        shape: tuple[int, int, int],
+        embed_dim: int,
+):
+    """
+    Adapted from:
+    - transformers.models.vit.modeling_vit.ViTEmbeddings.interpolate_pos_encoding,
+    - https://github.com/facebookresearch/dino/blob/de9ee3df6cf39fac952ab558447af1fa1365362a/vision_transformer.py#L174-L194
+    """
+    t, h, w = shape
+    t_patches = t // patch_size[0]
+    h_patches = h // patch_size[1]
+    w_patches = w // patch_size[2]
+
+    if [t_patches, h_patches, w_patches] == grid_size:
+        # No interpolation needed
+        return pos_embed
+    if t_patches != grid_size[0]:
+        # Re-compute pos embedding to handle changed num_frames
+        new_grid_size = (t_patches, *grid_size[1:])
+        new_pos_embed = get_3d_sincos_pos_embed(pos_embed.shape[-1], new_grid_size, add_cls_token=True)
+        new_pos_embed = torch.from_numpy(new_pos_embed).float().unsqueeze(0)
+    else:
+        new_grid_size = grid_size
+        new_pos_embed = pos_embed
+
+    class_pos_embed, patch_pos_embed = new_pos_embed[:, :1], new_pos_embed[:, 1:]
+
+    patch_pos_embed = patch_pos_embed.reshape(*new_grid_size, embed_dim).permute(0, 3, 1, 2)
+
+    patch_pos_embed = nn.functional.interpolate(
+        patch_pos_embed,
+        size=(h_patches, w_patches),
+        mode='bicubic',
+        align_corners=True,
+    )
+    patch_pos_embed = patch_pos_embed.permute(0, 2, 3, 1).view(1, -1, embed_dim)
+
+    return torch.cat((class_pos_embed, patch_pos_embed), dim=1)
+
+
 class PatchEmbed(nn.Module):
     """3D version of timm.models.vision_transformer.PatchEmbed"""
     def __init__(
@@ -145,7 +188,7 @@ class PatchEmbed(nn.Module):
         self.input_size = input_size
         self.patch_size = patch_size
         self.grid_size = [s // p for s, p in zip(self.input_size, self.patch_size)]
-        assert self.grid_size >= [1,1,1], "Patch size is bigger than input size."
+        assert self.grid_size >= [1, 1, 1], "Patch size is bigger than input size."
         self.num_patches = self.grid_size[0] * self.grid_size[1] * self.grid_size[2]
         self.flatten = flatten
 
@@ -181,9 +224,10 @@ class TemporalEncoder(nn.Module):
 
     def forward(self, temporal_coords: torch.Tensor, tokens_per_frame: int | None = None):
         """
-        temporal_coords: year and day-of-year info with shape (B, T, 2).
-        tokens_per_frame: number of tokens for each frame in the sample. If provided, embeddings will be
-            repeated over T dimension, and final shape is (B, T*tokens_per_frame, embed_dim).
+        Args:
+            temporal_coords: year and day-of-year info with shape (B, T, 2).
+            tokens_per_frame: number of tokens for each frame in the sample. If provided, embeddings will be
+                repeated over T dimension, and final shape is (B, T*tokens_per_frame, embed_dim).
         """
         shape = temporal_coords.shape[:2] + (-1,)  # B, T, -1
 
@@ -230,28 +274,32 @@ class LocationEncoder(nn.Module):
 
 
 class PrithviViT(nn.Module):
-    """ Prithvi ViT Encoder"""
-    def __init__(self,
-                 img_size: int | tuple[int, int] = 224,
-                 patch_size: int | tuple[int, int, int] = (1, 16, 16),
-                 num_frames: int = 1,
-                 in_chans: int = 3,
-                 embed_dim: int = 1024,
-                 depth: int = 24,
-                 num_heads: int = 16,
-                 mlp_ratio: float = 4.,
-                 norm_layer: nn.Module = nn.LayerNorm,
-                 coords_encoding: list[str] | None = None,
-                 coords_scale_learn: bool = False,
-                 drop_path: float = 0.,
-                 ** kwargs,
-                ):
+    """Prithvi ViT Encoder"""
+
+    def __init__(
+        self,
+        img_size: int | tuple[int, int] = 224,
+        patch_size: int | tuple[int, int, int] = (1, 16, 16),
+        num_frames: int = 1,
+        in_chans: int = 3,
+        embed_dim: int = 1024,
+        depth: int = 24,
+        num_heads: int = 16,
+        mlp_ratio: float = 4.0,
+        norm_layer: type[nn.Module] = nn.LayerNorm,
+        coords_encoding: list[str] | None = None,
+        coords_scale_learn: bool = False,
+        drop_path: float = 0.0,
+        vpt: bool = False,
+        vpt_n_tokens: int | None = None,
+        vpt_dropout: float = 0,
+        **kwargs,
+    ):
         super().__init__()
 
         self.in_chans = in_chans
         self.num_frames = num_frames
         self.embed_dim = embed_dim
-        self.out_channels = [embed_dim] * depth
         self.img_size = to_2tuple(img_size)
         if isinstance(patch_size, int):
             patch_size = (1, patch_size, patch_size)
@@ -263,6 +311,7 @@ class PrithviViT(nn.Module):
             in_chans=in_chans,
             embed_dim=embed_dim,
         )
+        self.out_channels = [embed_dim * self.patch_embed.grid_size[0]] * depth
 
         # Optional temporal and location embedding
         coords_encoding = coords_encoding or []
@@ -286,6 +335,18 @@ class PrithviViT(nn.Module):
 
         self.norm = norm_layer(embed_dim)
 
+        self.vpt = vpt
+        self.vpt_n_tokens = vpt_n_tokens
+        self.vpt_dropout = vpt_dropout
+        if self.vpt:
+            if self.vpt_n_tokens is None:
+                msg = "vpt_n_tokens must be provided when using VPT"
+                raise ValueError(msg)
+            self.vpt_prompt_embeddings = nn.ParameterList(
+                [nn.Parameter(torch.zeros(1, self.vpt_n_tokens, embed_dim)) for _ in range(depth)]
+            )
+            self.vpt_dropout_layers = nn.ModuleList([nn.Dropout(vpt_dropout) for _ in range(depth)])
+
         self.initialize_weights()
 
     def initialize_weights(self):
@@ -302,6 +363,13 @@ class PrithviViT(nn.Module):
         # timm's trunc_normal_(std=.02) is effectively normal_(std=0.02) as cutoff is too big (2.)
         torch.nn.init.normal_(self.cls_token, std=0.02)
         self.apply(_init_weights)
+
+        # initialize VPT prompt embeddings
+        if self.vpt:
+            # extracted from https://github.com/KMnP/vpt/blob/4410440ec1b489f24f66b9fad3d9b10ff3443567/src/models/vit_prompt/vit.py#L57
+            val = np.sqrt(6.0 / float(3 * reduce(mul, self.patch_embed.patch_size[1:], 1) + self.embed_dim))
+            for emb in self.vpt_prompt_embeddings:
+                nn.init.uniform_(emb, -val, val)
 
     def random_masking(self, sequence, mask_ratio, noise=None):
         """
@@ -336,33 +404,16 @@ class PrithviViT(nn.Module):
 
         return sequence_unmasked, mask, ids_restore
 
-    def interpolate_pos_encoding(self, x, t, w, h):
-        """
-        Adapted from:
-        - transformers.models.vit.modeling_vit.ViTEmbeddings.interpolate_pos_encoding,
-        - https://github.com/facebookresearch/dino/blob/de9ee3df6cf39fac952ab558447af1fa1365362a/vision_transformer.py#L174-L194
-        """
-        if x.shape[1] == self.pos_embed.shape[1] and w == h:
-            # No interpolation needed
-            return self.pos_embed
+    def interpolate_pos_encoding(self, sample_shape: tuple[int, int, int]):
 
-        class_pos_embed = self.pos_embed[:, :1]
-        patch_pos_embed = self.pos_embed[:, 1:]
-        t_patches = t // self.patch_embed.patch_size[0]
-        w_patches = w // self.patch_embed.patch_size[1]
-        h_patches = h // self.patch_embed.patch_size[2]
-
-        n_sqrt = int((patch_pos_embed.shape[1] / t_patches) ** 0.5)
-        patch_pos_embed = patch_pos_embed.reshape(t_patches, n_sqrt, n_sqrt, self.embed_dim).permute(0, 3, 1, 2)
-
-        patch_pos_embed = nn.functional.interpolate(
-            patch_pos_embed,
-            size=(h_patches, w_patches),
-            mode='bicubic',
-            align_corners=True,
+        pos_embed = _interpolate_pos_encoding(
+            pos_embed=self.pos_embed,
+            grid_size=self.patch_embed.grid_size,
+            patch_size=self.patch_embed.patch_size,
+            shape=sample_shape,
+            embed_dim=self.embed_dim,
         )
-        patch_pos_embed = patch_pos_embed.permute(0, 2, 3, 1).view(1, -1, self.embed_dim)
-        return torch.cat((class_pos_embed, patch_pos_embed), dim=1)
+        return pos_embed
 
     def forward(
         self, x: torch.Tensor,
@@ -373,12 +424,12 @@ class PrithviViT(nn.Module):
         if len(x.shape) == 4 and self.patch_embed.input_size[0] == 1:
             # add time dim
             x = x.unsqueeze(2)
-        t, h, w = x.shape[-3:]
+        sample_shape = x.shape[-3:]
 
         # embed patches
         x = self.patch_embed(x)
 
-        pos_embed = self.interpolate_pos_encoding(x, t, h, w)
+        pos_embed = self.interpolate_pos_encoding(sample_shape)
         # add pos embed w/o cls token
         x = x + pos_embed[:, 1:, :]
 
@@ -399,8 +450,23 @@ class PrithviViT(nn.Module):
         x = torch.cat((cls_tokens, x), dim=1)
 
         # apply Transformer blocks
-        for block in self.blocks:
+        bs = x.shape[0]
+        for idx, block in enumerate(self.blocks):
+            if self.vpt:
+                x = torch.cat(
+                    (
+                        x[:, :1, :],
+                        self.vpt_dropout_layers[idx](self.vpt_prompt_embeddings[idx].expand(bs, -1, -1)),
+                        x[:, 1:, :],
+                    ),
+                    dim=1,
+                )  # (batch_size, cls_token + n_prompt + n_patches, hidden_dim)
             x = block(x)
+            if self.vpt:
+                x = torch.cat(
+                    (x[:, :1, :], x[:, (1 + self.vpt_n_tokens) :, :]),
+                    dim=1,
+                )
         x = self.norm(x)
 
         return x, mask, ids_restore
@@ -414,12 +480,12 @@ class PrithviViT(nn.Module):
         if len(x.shape) == 4 and self.patch_embed.input_size[0] == 1:
             # add time dim
             x = x.unsqueeze(2)
-        t, h, w = x.shape[-3:]
+        sample_shape = x.shape[-3:]
 
         # embed patches
         x = self.patch_embed(x)
 
-        pos_embed = self.interpolate_pos_encoding(x, t, h, w)
+        pos_embed = self.interpolate_pos_encoding(sample_shape)
         # add pos embed w/o cls token
         x = x + pos_embed[:, 1:, :]
 
@@ -437,9 +503,24 @@ class PrithviViT(nn.Module):
         x = torch.cat((cls_tokens, x), dim=1)
 
         # apply Transformer blocks
+        bs = x.shape[0]
         out = []
-        for block in self.blocks:
+        for idx, block in enumerate(self.blocks):
+            if self.vpt:
+                x = torch.cat(
+                    (
+                        x[:, :1, :],
+                        self.vpt_dropout_layers[idx](self.vpt_prompt_embeddings[idx].expand(bs, -1, -1)),
+                        x[:, 1:, :],
+                    ),
+                    dim=1,
+                )  # (batch_size, cls_token + n_prompt + n_patches, hidden_dim)
             x = block(x)
+            if self.vpt:
+                x = torch.cat(
+                    (x[:, :1, :], x[:, (1 + self.vpt_n_tokens) :, :]),
+                    dim=1,
+                )
             out.append(x.clone())
 
         x = self.norm(x)
@@ -464,6 +545,10 @@ class PrithviViT(nn.Module):
             out.append(encoded)
         return out
 
+    def freeze(self):
+        for n, param in self.named_parameters():
+            if "vpt_prompt_embeddings" not in n:
+                param.requires_grad_(False)
 
 class MAEDecoder(nn.Module):
     """ Transformer Decoder used in the Prithvi MAE"""
@@ -526,33 +611,17 @@ class MAEDecoder(nn.Module):
         torch.nn.init.normal_(self.mask_token, std=0.02)
         self.apply(_init_weights)
 
-    def interpolate_pos_encoding(self, x, t, w, h):
-        """
-        Adapted from:
-        - transformers.models.vit.modeling_vit.ViTEmbeddings.interpolate_pos_encoding,
-        - https://github.com/facebookresearch/dino/blob/de9ee3df6cf39fac952ab558447af1fa1365362a/vision_transformer.py#L174-L194
-        """
-        if x.shape[1] == self.decoder_pos_embed.shape[1] and w == h:
-            # No interpolation needed
-            return self.decoder_pos_embed
+    def interpolate_pos_encoding(self, sample_shape: tuple[int, int, int]):
 
-        class_pos_embed = self.decoder_pos_embed[:, :1]
-        patch_pos_embed = self.decoder_pos_embed[:, 1:]
-        t_patches = t // self.patch_size[0]
-        w_patches = w // self.patch_size[1]
-        h_patches = h // self.patch_size[2]
-
-        n_sqrt = int((patch_pos_embed.shape[1] / t_patches) ** 0.5)
-        patch_pos_embed = patch_pos_embed.reshape(t_patches, n_sqrt, n_sqrt, self.decoder_embed_dim).permute(0, 3, 1, 2)
-
-        patch_pos_embed = nn.functional.interpolate(
-            patch_pos_embed,
-            size=(h_patches, w_patches),
-            mode='bicubic',
-            align_corners=True,
+        pos_embed = _interpolate_pos_encoding(
+            pos_embed=self.decoder_pos_embed,
+            grid_size=self.grid_size,
+            patch_size=self.patch_size,
+            shape=sample_shape,
+            embed_dim=self.decoder_embed_dim,
         )
-        patch_pos_embed = patch_pos_embed.permute(0, 2, 3, 1).view(1, -1, self.decoder_embed_dim)
-        return torch.cat((class_pos_embed, patch_pos_embed), dim=1)
+
+        return pos_embed
 
     def forward(
         self,
@@ -573,8 +642,7 @@ class MAEDecoder(nn.Module):
         x = torch.gather(x, dim=1, index=ids_restore.unsqueeze(-1).repeat(1, 1, x.shape[2]).to(x.device))
 
         # add pos embed
-        t, h, w = input_size[-3:]
-        decoder_pos_embed = self.interpolate_pos_encoding(x, t, w, h)
+        decoder_pos_embed = self.interpolate_pos_encoding(input_size[-3:])
         cls_token = cls_token + decoder_pos_embed[:, :1, :]
         x = x + decoder_pos_embed[:, 1:, :]
 
@@ -670,7 +738,8 @@ class PrithviMAE(nn.Module):
                 Pixel values.
 
         Returns:
-            torch.FloatTensor of shape `(batch_size, num_patches, patch_size[0]*patch_size[1]*patch_size[2] * num_channels)`:
+            torch.FloatTensor of shape
+                `(batch_size, num_patches, patch_size[0]*patch_size[1]*patch_size[2] * num_channels)`:
                 Patchified pixel values.
         """
         patch_size_t, patch_size_h, patch_size_w = self.encoder.patch_embed.patch_size
@@ -680,14 +749,13 @@ class PrithviMAE(nn.Module):
         patchified_pixel_values = rearrange(pixel_values, 'b c (t s) (h p) (w q) -> b (t h w) (s p q c)',
                                             c=num_channels, s=patch_size_t, p=patch_size_h, q=patch_size_w)
 
-
         return patchified_pixel_values
 
     def unpatchify(self, patchified_pixel_values, image_size: tuple[int, int] | None = None):
         """
         Args:
             patchified_pixel_values (`torch.FloatTensor` of shape
-                `(batch_size, num_patches, patch_size[0]*patch_size[1]*patch_size[2] * num_channels)`:
+                `(batch_size, num_patches, patch_size[0]*patch_size[1]*patch_size[2] * num_channels))`:
                 Patchified pixel values.
             image_size (`tuple[int, int]`, *optional*):
                 Original image size.
@@ -696,24 +764,33 @@ class PrithviMAE(nn.Module):
             `torch.FloatTensor` of shape `(batch_size, num_channels, height, width)`:
                 Pixel values.
         """
+        batch_size = patchified_pixel_values.shape[0]
         patch_size_t, patch_size_h, patch_size_w = self.encoder.patch_embed.patch_size
         image_size = to_2tuple(image_size) if image_size is not None else self.encoder.img_size
         original_height, original_width = image_size
         num_patches_h = original_height // patch_size_h
         num_patches_w = original_width // patch_size_w
-        num_channels = self.encoder.in_chans
 
         pixel_values = rearrange(patchified_pixel_values, 'b (t h w) (s p q c) -> b c (t s) (h p) (w q)',
-                                 c=num_channels, h=num_patches_h, w=num_patches_w,
+                                 b=batch_size, h=num_patches_h, w=num_patches_w,
                                  s=patch_size_t, p=patch_size_h, q=patch_size_w)
         return pixel_values
+
+    def freeze_encoder(self):
+        for param in self.encoder.parameters():
+            param.requires_grad_(False)
+
+    def freeze_decoder(self):
+        for param in self.decoder.parameters():
+            param.requires_grad_(False)
 
     def forward_loss(self, pixel_values, pred, mask):
         """
         Args:
             pixel_values (`torch.FloatTensor` of shape `(batch_size, num_channels, time, height, width)`):
                 Pixel values.
-            pred (`torch.FloatTensor` of shape `(batch_size, num_patches, patch_size[0]*patch_size[1]*patch_size[2] * num_channels)`:
+            pred (`torch.FloatTensor` of shape
+                `(batch_size, num_patches, patch_size[0]*patch_size[1]*patch_size[2] * num_channels)`:
                 Predicted pixel values.
             mask (`torch.FloatTensor` of shape `(batch_size, sequence_length)`):
                 Tensor indicating which patches are masked (1) and which are not (0).
@@ -739,14 +816,29 @@ class PrithviMAE(nn.Module):
         location_coords: None | torch.Tensor = None,
         mask_ratio: float = None,
     ):
+
         if len(pixel_values.shape) == 4 and self.encoder.patch_embed.input_size[0] == 1:
             # add time dim
             pixel_values = pixel_values.unsqueeze(2)
+            time_dim_added = True
+        else:
+            time_dim_added = False
 
         mask_ratio = mask_ratio or self.mask_ratio
         latent, mask, ids_restore = self.encoder(pixel_values, temporal_coords, location_coords, mask_ratio)
         pred = self.decoder(latent, ids_restore, temporal_coords, location_coords, input_size=pixel_values.shape)
         loss = self.forward_loss(pixel_values, pred, mask)
+
+        # Prepare output format in TerraTorch
+        loss = {'loss': loss}
+        mask = mask.unsqueeze(-1).repeat(1, 1, pred.shape[-1])
+        mask = self.unpatchify(mask, image_size=pixel_values.shape[-2:])
+        mask = mask[:, 0] # Remove channel dim
+        pred = self.unpatchify(pred, image_size=pixel_values.shape[-2:])
+        if time_dim_added:
+            # Remove time dim to match input data
+            pred = pred.squeeze(2)
+            mask = mask.squeeze(1)
         return loss, pred, mask
 
     def forward_features(

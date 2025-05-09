@@ -1,11 +1,11 @@
-from functools import partial
-from typing import Any
+
 import logging
 import lightning
 import matplotlib.pyplot as plt
 import torch
 from lightning.pytorch.callbacks import Callback
 from segmentation_models_pytorch.losses import FocalLoss, JaccardLoss
+from functools import partial
 from torch import Tensor, nn
 from torchgeo.datasets.utils import unbind_samples
 from torchmetrics import ClasswiseWrapper, MetricCollection
@@ -28,7 +28,7 @@ def to_class_prediction(y: ModelOutput) -> Tensor:
 class ClassificationTask(TerraTorchTask):
     """Classification Task that accepts models from a range of sources.
 
-    This class is analog in functionality to class:ClassificationTask defined by torchgeo.
+    This class is analog in functionality to the class ClassificationTask defined by torchgeo.
     However, it has some important differences:
         - Accepts the specification of a model factory
         - Logs metrics per class
@@ -64,14 +64,15 @@ class ClassificationTask(TerraTorchTask):
         #
         freeze_backbone: bool = False,  # noqa: FBT001, FBT002
         freeze_decoder: bool = False,  # noqa: FBT002, FBT001
+        freeze_head: bool = False,  # noqa: FBT002, FBT001
         class_names: list[str] | None = None,
         test_dataloaders_names: list[str] | None = None,
         lr_overrides: dict[str, float] | None = None,
+        path_to_record_metrics: str = None,
     ) -> None:
         """Constructor
 
         Args:
-
             Defaults to None.
             model_args (Dict): Arguments passed to the model factory.
             model_factory (str, optional): ModelFactory class to be used to instantiate the model.
@@ -99,7 +100,8 @@ class ClassificationTask(TerraTorchTask):
             scheduler_hparams (dict | None): Parameters to be passed for instantiation of the scheduler.
                 Overriden by config / cli specification through LightningCLI.
             freeze_backbone (bool, optional): Whether to freeze the backbone. Defaults to False.
-            freeze_decoder (bool, optional): Whether to freeze the decoder and segmentation head. Defaults to False.
+            freeze_decoder (bool, optional): Whether to freeze the decoder. Defaults to False.
+            freeze_head (bool, optional): Whether to freeze the segmentation_head. Defaults to False.
             class_names (list[str] | None, optional): List of class names passed to metrics for better naming.
                 Defaults to numeric ordering.
             test_dataloaders_names (list[str] | None, optional): Names used to differentiate metrics when
@@ -108,7 +110,9 @@ class ClassificationTask(TerraTorchTask):
             lr_overrides (dict[str, float] | None, optional): Dictionary to override the default lr in specific
                 parameters. The key should be a substring of the parameter names (it will check the substring is
                 contained in the parameter name)and the value should be the new lr. Defaults to None.
+            path_to_record_metrics (str): A path to save the file containing the metrics log. 
         """
+
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
 
@@ -120,7 +124,7 @@ class ClassificationTask(TerraTorchTask):
         if model_factory and model is None:
             self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
 
-        super().__init__(task="classification")
+        super().__init__(task="classification", path_to_record_metrics=path_to_record_metrics)
 
         if model:
             # Custom model
@@ -206,7 +210,7 @@ class ClassificationTask(TerraTorchTask):
         else:
             self.test_metrics = nn.ModuleList([metrics.clone(prefix="test/")])
 
-    def training_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
+    def training_step(self, batch: object, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         """Compute the train loss and additional metrics.
 
         Args:
@@ -215,19 +219,18 @@ class ClassificationTask(TerraTorchTask):
             dataloader_idx: Index of the current dataloader.
         """
         x = batch["image"]
-        y = batch["label"]
+        y = batch["label"] 
         other_keys = batch.keys() - {"image", "label", "filename"}
         rest = {k: batch[k] for k in other_keys}
-
         model_output: ModelOutput = self(x, **rest)
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
-        self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
+        self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat_hard = to_class_prediction(model_output)
         self.train_metrics.update(y_hat_hard, y)
 
         return loss["loss"]
 
-    def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
+    def validation_step(self, batch: object, batch_idx: int, dataloader_idx: int = 0) -> None:
         """Compute the validation loss and additional metrics.
 
         Args:
@@ -241,11 +244,11 @@ class ClassificationTask(TerraTorchTask):
         rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
-        self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=x.shape[0])
+        self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat_hard = to_class_prediction(model_output)
         self.val_metrics.update(y_hat_hard, y)
 
-    def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
+    def test_step(self, batch: object, batch_idx: int, dataloader_idx: int = 0) -> None:
         """Compute the test loss and additional metrics.
 
         Args:
@@ -265,12 +268,15 @@ class ClassificationTask(TerraTorchTask):
         self.test_loss_handler[dataloader_idx].log_loss(
             partial(self.log, add_dataloader_idx=False),  # We don't need the dataloader idx as prefixes are different
             loss_dict=loss,
-            batch_size=x.shape[0],
+            batch_size=y.shape[0],
         )
         y_hat_hard = to_class_prediction(model_output)
         self.test_metrics[dataloader_idx].update(y_hat_hard, y)
 
-    def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
+        self.record_metrics(dataloader_idx, y_hat_hard, y)
+
+    def predict_step(self, batch: object, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
+
         """Compute the predicted class probabilities.
 
         Args:
@@ -285,8 +291,6 @@ class ClassificationTask(TerraTorchTask):
         file_names = batch["filename"] if "filename" in batch else None
         other_keys = batch.keys() - {"image", "label", "filename"}
         rest = {k: batch[k] for k in other_keys}
-        model_output: ModelOutput = self(x, **rest)
-
-        y_hat = self(x).output
+        y_hat = self(x, **rest).output
         y_hat = y_hat.argmax(dim=1)
         return y_hat, file_names

@@ -1,6 +1,7 @@
 # Copyright contributors to the Terratorch project
 
 import torch
+import torch.nn.functional as F
 from albumentations import BasicTransform, Compose, ImageOnlyTransform
 from einops import rearrange
 import albumentations as A
@@ -25,10 +26,39 @@ def default_non_image_transform(array):
     else:
         return array
 
-class FlattenTemporalIntoChannels(ImageOnlyTransform):
-    """Flatten the temporal dimension into channels"""
+class Padding(ImageOnlyTransform):
+    """Padding to adjust (slight) discrepancies between input images"""
 
+    def __init__(self, input_shape: list=None):
+        super().__init__(True, 1)
+        self.input_shape = input_shape
+
+    def apply(self, img, **params):
+
+        shape = img.shape[-2:]
+        pad_values_ = [j - i for i,j in zip(shape, self.input_shape)]
+
+        if all([i%2==0 for i in pad_values_]):
+            pad_values = sum([[int(j/2), int(j/2)] for j in  pad_values_], [])
+        else:
+            pad_values = sum([[0, j] for j in  pad_values_], [])
+
+        return F.pad(img, pad_values)
+
+    def get_transform_init_args_names(self):
+        return ()
+
+class FlattenTemporalIntoChannels(ImageOnlyTransform):
+    """
+    FlattenTemporalIntoChannels is an image transformation that flattens the temporal dimension into the channel dimension.
+
+    This transform rearranges an input tensor with a temporal dimension into one where the time and channel dimensions
+    are merged. It expects the input to have a fixed number of dimensions defined by N_DIMS_FOR_TEMPORAL.
+    """
     def __init__(self):
+        """
+        Initialize the FlattenTemporalIntoChannels transform.
+        """
         super().__init__(True, 1)
 
     def apply(self, img, **params):
@@ -43,11 +73,25 @@ class FlattenTemporalIntoChannels(ImageOnlyTransform):
 
 
 class UnflattenTemporalFromChannels(ImageOnlyTransform):
-    """Unflatten the temporal dimension from the channel dimension
-    Assumes channels first (usually should be run after ToTensorV2)"""
+    """
+    UnflattenTemporalFromChannels is an image transformation that restores the temporal dimension from the channel dimension.
+
+    This transform is typically applied after converting images to a channels-first format (e.g., after ToTensorV2)
+    and rearranges the flattened temporal information back into separate time and channel dimensions.
+    """
 
     def __init__(self, n_timesteps: int | None = None, n_channels: int | None = None):
         super().__init__(True, 1)
+        """
+        Initialize the UnflattenTemporalFromChannels transform.
+
+        Args:
+            n_timesteps (int | None): The number of time steps. Must be provided if n_channels is not provided.
+            n_channels (int | None): The number of channels per time step. Must be provided if n_timesteps is not provided.
+
+        Raises:
+            Exception: If neither n_timesteps nor n_channels is provided.
+        """
         if n_timesteps is None and n_channels is None:
             msg = "One of n_timesteps or n_channels must be provided"
             raise Exception(msg)
@@ -68,9 +112,19 @@ class UnflattenTemporalFromChannels(ImageOnlyTransform):
         return ("n_timesteps", "n_channels")
 
 class FlattenSamplesIntoChannels(ImageOnlyTransform):
-    """Flatten the sample and optional temporal dimension into channels"""
+    """
+    FlattenSamplesIntoChannels is an image transformation that merges the sample (and optionally temporal) dimensions into the channel dimension.
 
+    This transform rearranges an input tensor by flattening the sample dimension, and if specified, also the temporal dimension,
+    thereby concatenating these dimensions into a single channel dimension.
+    """
     def __init__(self, time_dim: bool = True):
+        """
+        Initialize the FlattenSamplesIntoChannels transform.
+
+        Args:
+            time_dim (bool): If True, the temporal dimension is included in the flattening process. Default is True.
+        """
         super().__init__(True, 1)
         self.time_dim = time_dim
 
@@ -87,9 +141,12 @@ class FlattenSamplesIntoChannels(ImageOnlyTransform):
 
 
 class UnflattenSamplesFromChannels(ImageOnlyTransform):
-    """Unflatten the sample and optional the temporal dimension from the channel dimension
-    Assumes channels first (usually should be run after ToTensorV2)"""
+    """
+    UnflattenSamplesFromChannels is an image transformation that restores the sample (and optionally temporal) dimensions from the channel dimension.
 
+    This transform is designed to reverse the flattening performed by FlattenSamplesIntoChannels and is typically applied
+    after converting images to a channels-first format.
+    """
     def __init__(
             self,
             time_dim: bool = True,
@@ -97,6 +154,19 @@ class UnflattenSamplesFromChannels(ImageOnlyTransform):
             n_timesteps: int | None = None,
             n_channels: int | None = None
     ):
+        """
+        Initialize the UnflattenSamplesFromChannels transform.
+
+        Args:
+            time_dim (bool): If True, the temporal dimension is considered during unflattening.
+            n_samples (int | None): The number of samples.
+            n_timesteps (int | None): The number of time steps.
+            n_channels (int | None): The number of channels per time step.
+
+        Raises:
+            Exception: If time_dim is True and fewer than two of n_channels, n_timesteps, and n_samples are provided.
+            Exception: If time_dim is False and neither n_channels nor n_samples is provided.
+        """
         super().__init__(True, 1)
 
         self.time_dim = time_dim
@@ -133,11 +203,24 @@ class UnflattenSamplesFromChannels(ImageOnlyTransform):
 
 
 class Rearrange(ImageOnlyTransform):
-    """Flatten the temporal dimension into channels"""
+    """
+    Rearrange is a generic image transformation that reshapes an input tensor using a custom einops pattern.
+
+    This transform allows flexible reordering of tensor dimensions based on the provided pattern and arguments.
+    """
 
     def __init__(
         self, rearrange: str, rearrange_args: dict[str, int] | None = None, always_apply: bool = True, p: float = 1
     ):
+        """
+        Initialize the Rearrange transform.
+
+        Args:
+            rearrange (str): The einops rearrangement pattern to apply.
+            rearrange_args (dict[str, int] | None): Additional arguments for the rearrangement pattern.
+            always_apply (bool): Whether to always apply this transform. Default is True.
+            p (float): The probability of applying the transform. Default is 1.
+        """
         super().__init__(always_apply, p)
         self.rearrange = rearrange
         self.vars = rearrange_args if rearrange_args else {}
@@ -150,9 +233,19 @@ class Rearrange(ImageOnlyTransform):
 
 
 class SelectBands(ImageOnlyTransform):
-    """Select a subset of the input bands"""
+    """
+    SelectBands is an image transformation that selects a subset of bands (channels) from an input image.
+
+    This transform uses specified band indices to filter and output only the desired channels from the image tensor.
+    """
 
     def __init__(self, band_indices: list[int]):
+        """
+        Initialize the SelectBands transform.
+
+        Args:
+            band_indices (list[int]): A list of indices specifying which bands to select.
+        """
         super().__init__(True, 1)
         self.band_indices = band_indices
 
@@ -171,7 +264,12 @@ def default_non_image_transform(array):
 
 
 class MultimodalTransforms:
-    """Applies albumentations transforms to multiple images"""
+    """
+    MultimodalTransforms applies albumentations transforms to multiple image modalities.
+
+    This class supports both shared transformations across modalities and separate transformations for each modality.
+    It also handles non-image modalities by applying a specified non-image transform.
+    """
     def __init__(
             self,
             transforms: dict | A.Compose,
@@ -179,6 +277,15 @@ class MultimodalTransforms:
             non_image_modalities: list[str] | None = None,
             non_image_transform: object | None = None,
     ):
+        """
+        Initialize the MultimodalTransforms.
+
+        Args:
+            transforms (dict or A.Compose): The transformation(s) to apply to the data.
+            shared (bool): If True, the same transform is applied to all modalities; if False, separate transforms are used.
+            non_image_modalities (list[str] | None): List of keys corresponding to non-image modalities.
+            non_image_transform (object | None): A transform to apply to non-image modalities. If None, a default transform is used.
+        """
         self.transforms = transforms
         self.shared = shared
         self.non_image_modalities = non_image_modalities
@@ -187,7 +294,8 @@ class MultimodalTransforms:
     def __call__(self, data: dict):
         if self.shared:
             # albumentations requires a key 'image' and treats all other keys as additional targets
-            image_modality = list(set(data.keys()) - set(self.non_image_modalities))[0]
+            # (+ don't select 'mask' as 'image')
+            image_modality = [k for k in data.keys() if k not in self.non_image_modalities + ['mask']][0]
             data['image'] = data.pop(image_modality)
             data = self.transforms(**data)
             data[image_modality] = data.pop('image')

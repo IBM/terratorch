@@ -103,6 +103,15 @@ def get_pretrained_bands(model_bands):
 #### resnet 18
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet18_landsat_tm_toa_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet18_Weights.LANDSAT_TM_TOA_MOCO, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
@@ -111,6 +120,15 @@ def ssl4eol_resnet18_landsat_tm_toa_moco(model_bands, pretrained = False, ckpt_d
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet18_landsat_tm_toa_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet18_Weights.LANDSAT_TM_TOA_SIMCLR, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
@@ -120,6 +138,15 @@ def ssl4eol_resnet18_landsat_tm_toa_simclr(model_bands, pretrained = False, ckpt
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet18_landsat_etm_toa_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet18_Weights.LANDSAT_ETM_TOA_MOCO, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
@@ -129,6 +156,15 @@ def ssl4eol_resnet18_landsat_etm_toa_moco(model_bands, pretrained = False, ckpt_
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet18_landsat_etm_toa_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet18_Weights.LANDSAT_ETM_TOA_SIMCLR, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
@@ -138,6 +174,15 @@ def ssl4eol_resnet18_landsat_etm_toa_simclr(model_bands, pretrained = False, ckp
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet18_landsat_etm_sr_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet18_Weights.LANDSAT_ETM_SR_MOCO, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
@@ -147,6 +192,15 @@ def ssl4eol_resnet18_landsat_etm_sr_moco(model_bands, pretrained = False, ckpt_d
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet18_landsat_etm_sr_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet18_Weights.LANDSAT_ETM_SR_SIMCLR, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
@@ -156,6 +210,15 @@ def ssl4eol_resnet18_landsat_etm_sr_simclr(model_bands, pretrained = False, ckpt
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet18_landsat_oli_tirs_toa_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet18_Weights.LANDSAT_OLI_TIRS_TOA_MOCO, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
@@ -165,6 +228,15 @@ def ssl4eol_resnet18_landsat_oli_tirs_toa_moco(model_bands, pretrained = False, 
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet18_landsat_oli_tirs_toa_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet18_Weights.LANDSAT_OLI_TIRS_TOA_SIMCLR, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
@@ -174,6 +246,15 @@ def ssl4eol_resnet18_landsat_oli_tirs_toa_simclr(model_bands, pretrained = False
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet18_landsat_oli_sr_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet18_Weights.LANDSAT_OLI_SR_MOCO, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
@@ -183,6 +264,15 @@ def ssl4eol_resnet18_landsat_oli_sr_moco(model_bands, pretrained = False, ckpt_d
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet18_landsat_oli_sr_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet18_Weights.LANDSAT_OLI_SR_SIMCLR, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
@@ -192,6 +282,15 @@ def ssl4eol_resnet18_landsat_oli_sr_simclr(model_bands, pretrained = False, ckpt
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eos12_resnet18_sentinel2_all_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None =  ResNet18_Weights.SENTINEL2_ALL_MOCO, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
@@ -201,6 +300,15 @@ def ssl4eos12_resnet18_sentinel2_all_moco(model_bands, pretrained = False, ckpt_
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eos12_resnet18_sentinel2_rgb_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet18_Weights.SENTINEL2_RGB_MOCO, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
@@ -210,6 +318,15 @@ def ssl4eos12_resnet18_sentinel2_rgb_moco(model_bands, pretrained = False, ckpt_
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def seco_resnet18_sentinel2_rgb_seco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet18_Weights.SENTINEL2_RGB_SECO, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet18(**kwargs)
     if pretrained:
@@ -220,6 +337,15 @@ def seco_resnet18_sentinel2_rgb_seco(model_bands, pretrained = False, ckpt_data:
 #### resnet 50
 @TERRATORCH_BACKBONE_REGISTRY.register
 def fmow_resnet50_fmow_rgb_gassl(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.FMOW_RGB_GASSL, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
@@ -229,6 +355,15 @@ def fmow_resnet50_fmow_rgb_gassl(model_bands, pretrained = False, ckpt_data: str
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet50_landsat_tm_toa_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.LANDSAT_TM_TOA_MOCO, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
@@ -237,6 +372,15 @@ def ssl4eol_resnet50_landsat_tm_toa_moco(model_bands, pretrained = False, ckpt_d
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet50_landsat_tm_toa_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.LANDSAT_TM_TOA_SIMCLR, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
@@ -245,6 +389,15 @@ def ssl4eol_resnet50_landsat_tm_toa_simclr(model_bands, pretrained = False, ckpt
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet50_landsat_etm_toa_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.LANDSAT_ETM_TOA_MOCO, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
@@ -253,6 +406,15 @@ def ssl4eol_resnet50_landsat_etm_toa_moco(model_bands, pretrained = False, ckpt_
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet50_landsat_etm_toa_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.LANDSAT_ETM_TOA_SIMCLR, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
@@ -261,6 +423,15 @@ def ssl4eol_resnet50_landsat_etm_toa_simclr(model_bands, pretrained = False, ckp
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet50_landsat_etm_sr_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.LANDSAT_ETM_SR_MOCO, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
@@ -269,6 +440,15 @@ def ssl4eol_resnet50_landsat_etm_sr_moco(model_bands, pretrained = False, ckpt_d
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet50_landsat_etm_sr_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.LANDSAT_ETM_SR_SIMCLR, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
@@ -277,6 +457,15 @@ def ssl4eol_resnet50_landsat_etm_sr_simclr(model_bands, pretrained = False, ckpt
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet50_landsat_oli_tirs_toa_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.LANDSAT_OLI_TIRS_TOA_MOCO, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
@@ -285,6 +474,15 @@ def ssl4eol_resnet50_landsat_oli_tirs_toa_moco(model_bands, pretrained = False, 
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet50_landsat_oli_tirs_toa_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.LANDSAT_OLI_TIRS_TOA_SIMCLR, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
@@ -293,6 +491,15 @@ def ssl4eol_resnet50_landsat_oli_tirs_toa_simclr(model_bands, pretrained = False
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet50_landsat_oli_sr_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.LANDSAT_OLI_SR_MOCO, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
@@ -301,6 +508,15 @@ def ssl4eol_resnet50_landsat_oli_sr_moco(model_bands, pretrained = False, ckpt_d
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_resnet50_landsat_oli_sr_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.LANDSAT_OLI_SR_SIMCLR, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
@@ -309,6 +525,15 @@ def ssl4eol_resnet50_landsat_oli_sr_simclr(model_bands, pretrained = False, ckpt
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eos12_resnet50_sentinel1_all_decur(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.SENTINEL1_ALL_DECUR, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
@@ -319,6 +544,15 @@ def ssl4eos12_resnet50_sentinel1_all_decur(model_bands, pretrained = False, ckpt
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eos12_resnet50_sentinel1_all_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None =  ResNet50_Weights.SENTINEL1_ALL_MOCO, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
@@ -329,6 +563,15 @@ def ssl4eos12_resnet50_sentinel1_all_moco(model_bands, pretrained = False, ckpt_
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eos12_resnet50_sentinel2_all_decur(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.SENTINEL2_ALL_DECUR, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
@@ -339,6 +582,15 @@ def ssl4eos12_resnet50_sentinel2_all_decur(model_bands, pretrained = False, ckpt
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eos12_resnet50_sentinel2_all_dino(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.SENTINEL2_ALL_DINO, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
@@ -349,6 +601,15 @@ def ssl4eos12_resnet50_sentinel2_all_dino(model_bands, pretrained = False, ckpt_
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eos12_resnet50_sentinel2_all_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.SENTINEL2_ALL_MOCO, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
@@ -359,6 +620,15 @@ def ssl4eos12_resnet50_sentinel2_all_moco(model_bands, pretrained = False, ckpt_
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eos12_resnet50_sentinel2_rgb_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.SENTINEL2_RGB_MOCO, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
@@ -367,6 +637,15 @@ def ssl4eos12_resnet50_sentinel2_rgb_moco(model_bands, pretrained = False, ckpt_
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def seco_resnet50_sentinel2_rgb_seco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.SENTINEL2_RGB_SECO, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
@@ -375,6 +654,15 @@ def seco_resnet50_sentinel2_rgb_seco(model_bands, pretrained = False, ckpt_data:
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_resnet50_sentinel2_mi_ms_satlas(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.SENTINEL2_MI_MS_SATLAS, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
@@ -383,6 +671,15 @@ def satlas_resnet50_sentinel2_mi_ms_satlas(model_bands, pretrained = False, ckpt
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_resnet50_sentinel2_mi_rgb_satlas(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.SENTINEL2_MI_RGB_SATLAS, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
@@ -391,6 +688,15 @@ def satlas_resnet50_sentinel2_mi_rgb_satlas(model_bands, pretrained = False, ckp
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_resnet50_sentinel2_si_ms_satlas(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.SENTINEL2_SI_MS_SATLAS, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
@@ -399,6 +705,15 @@ def satlas_resnet50_sentinel2_si_ms_satlas(model_bands, pretrained = False, ckpt
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_resnet50_sentinel2_si_rgb_satlas(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet50_Weights.SENTINEL2_SI_RGB_SATLAS, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet50(**kwargs)
     if pretrained:
@@ -408,6 +723,15 @@ def satlas_resnet50_sentinel2_si_rgb_satlas(model_bands, pretrained = False, ckp
 #### resnet152
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_resnet152_sentinel2_mi_ms(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None =  ResNet152_Weights.SENTINEL2_MI_MS_SATLAS, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet152(**kwargs)
     if pretrained:
@@ -416,6 +740,15 @@ def satlas_resnet152_sentinel2_mi_ms(model_bands, pretrained = False, ckpt_data:
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_resnet152_sentinel2_mi_rgb(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet152_Weights.SENTINEL2_MI_RGB_SATLAS, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet152(**kwargs)
     if pretrained:
@@ -424,6 +757,15 @@ def satlas_resnet152_sentinel2_mi_rgb(model_bands, pretrained = False, ckpt_data
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_resnet152_sentinel2_si_ms_satlas(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ResNet152_Weights.SENTINEL2_SI_MS_SATLAS, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet152(**kwargs)
     if pretrained:
@@ -432,6 +774,15 @@ def satlas_resnet152_sentinel2_si_ms_satlas(model_bands, pretrained = False, ckp
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def satlas_resnet152_sentinel2_si_rgb_satlas(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None =  ResNet152_Weights.SENTINEL2_SI_RGB_SATLAS, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = resnet152(**kwargs)
     if pretrained:
@@ -448,8 +799,8 @@ def load_resnet_weights(model: nn.Module, model_bands, ckpt_data: str, weights: 
             repo_id = ckpt_data.split("/resolve/")[0].replace("https://hf.co/", '')
             filename = ckpt_data.split("/")[-1]
             ckpt_data = huggingface_hub.hf_hub_download(repo_id=repo_id, filename=filename)
-        # checkpoint_model = torch.load(ckpt_data, map_location="cpu")["model"]
-        checkpoint_model = torch.load(ckpt_data, map_location="cpu")
+
+        checkpoint_model = torch.load(ckpt_data, map_location="cpu", weights_only=True)
         state_dict = model.state_dict()
         
         for k in ["fc.weight", "fc.bias"]:

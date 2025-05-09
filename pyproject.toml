@@ -7,75 +7,76 @@ include = ["terratorch*"]
 
 [project]
 name = "terratorch"
-version = "0.99.7"
+version = "1.0.1"
 description = "TerraTorch - A model training toolkit for geospatial tasks"
 license = { "text" = "Apache License, Version 2.0" }
 readme = "README.md"
 requires-python = ">=3.10"
 keywords = ["fine-tuning", "geospatial foundation models", "artificial intelligence"]
 authors = [
-  { name = "Carlos Gomes", email = "carlos.gomes@ibm.com" },
   { name = "Joao Lucas de Sousa Almeida", email = "joao.lucas.sousa.almeida@ibm.com"},
   { name = "Romeo Kienzler"},
-  { name = "Benedikt Blumenstiel"}
+  { name = "Benedikt Blumenstiel"},
+  { name = "Carlos Gomes" },
+  { name = "Francesc Martí Escofet"},
+  { name = "Paolo Fraccaro"},
+  { name = "Pedro Henrique Conrado"},
+  { name = "Jaione Tirapu Azpiroz"},
+  { name = "Bianca Zadrozny"},
+  { name = "Daniela Szwarcman"},
+  { name = "Þorsteinn Elí Gíslason"},
+  { name = "Raunak Bhansali"},
+  { name = "Takao Moriyama"},
 ]
+
 classifiers = [
-  "Development Status :: 2 - Pre-Alpha",
-  "Programming Language :: Python",
+#  "Development Status :: 2 - Pre-Alpha",
+#  "Programming Language :: Python",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
-  "Programming Language :: Python :: Implementation :: CPython",
+#  "Programming Language :: Python :: Implementation :: CPython",
 ]
 
 dependencies = [
-  "torch>=2.1.0, <=2.5.0",
-  "torchvision>=0.16.0",
-  "torchgeo>=0.6.0",
-  "rioxarray>=0.15.0",
-  # see issue #64
-  "albumentations>=1.3.1, <=1.4.21",
-  "albucore<=0.0.16",
-  "rasterio>=1.3.9",
-  "torchmetrics<=1.3.1",
-  "geopandas>=0.14.4",
-  "lightly>=1.4.25",
-  "h5py>=3.10.0",
-  "mlflow>=2.12.1",
-  # broken due to https://github.com/Lightning-AI/pytorch-lightning/issues/19977
-  "lightning[pytorch-extra]>=2,!=2.3.*",
-  "segmentation-models-pytorch>=0.3",
+  "torch",
+  "torchvision",
+  "rioxarray",
+  "albumentations==1.4.6",
+  "albucore==0.0.16",
+  "rasterio",
+  "torchmetrics",
+  "geopandas",
+  "lightly",
   "jsonargparse<=4.35.0",
-  # Dependencies not available on PyPI
+  "h5py",
+  "mlflow",
+  "lightning",
+  "segmentation-models-pytorch<=0.4.0",
+  "jsonargparse",
+  "pytest",
+  "torchgeo",
+  "einops",
+  "timm>=1.0.15",
+  "huggingface_hub",
+  "tifffile"
 ]
 
 [project.optional-dependencies]
-torchgeo = [
-  "torch==2.4.1",
-  "torchvision==0.19.1",
-  "torchgeo @ git+https://github.com/microsoft/torchgeo.git@fedf99375535f801565856cd774bfa9e5a251d55",
-  "rioxarray>=0.15.0",
-  "albumentations==1.3.1",
-  "albucore<=0.0.16",
-  "rasterio>=1.3.9",
-  "torchmetrics<=1.3.1",
-  "geopandas>=0.14.4",
-  "lightly>=1.4.25",
-  "h5py>=3.10.0",
-  "mlflow>=2.12.1",
-  "lightning[pytorch-extra]>=2,!=2.3.*",
-  "segmentation-models-pytorch>=0.3"
-]
-
 dev = [
   "black",
   "mkdocs-material",
   "mkdocstrings[python]",
-  "mike" # for building docs with versions
+  "mike", # for building docs with versions
+  "mkdocs-git-revision-date-localized-plugin"
 ]
+
 test = [
-  "coverage",
-  "pytest"
+  "pytest",
+  "pytest-coverage",
+  "coverage-badge",
+  "peft>=0.15.0",
+  "diffusers>=0.30.0"
 ]
 
 mmseg = [
@@ -90,16 +91,17 @@ wxc = [
   "granitewxc"
 ]
 
-#geobench = [
-#  "geobench @ git+https://github.com/fmartiescofet/geo-bench.git" # pull from fork until depenedencies for geobench are relaxed
-#]
+visualize = [
+  "torchview",
+  "graphviz"
+]
 
 peft = [
-  "peft"
+  "peft>=0.15.0"
 ]
 
 [project.urls]
-Documentation = "https://github.com/IBM/terratorch#readme"
+Documentation = "https://ibm.github.io/terratorch/"
 Issues = "https://github.com/IBM/terratorch/issues"
 Source = "https://github.com/IBM/terratorch"
 
