@@ -130,14 +130,12 @@ model:
     freeze_backbone: true
     freeze_decoder: false
     model_factory: PrithviModelFactory
-
-    # uncomment this block for tiled inference
-    # tiled_inference_parameters:
-    #   h_crop: 224
-    #   h_stride: 192
-    #   w_crop: 224
-    #   w_stride: 192
-    #   average_patches: true
+    tiled_inference_parameters:
+       h_crop: 56
+       h_stride: 48
+       w_crop: 56
+       w_stride: 48
+       average_patches: true
 optimizer:
   class_path: torch.optim.AdamW
   init_args:

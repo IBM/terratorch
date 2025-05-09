@@ -9,6 +9,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 import torch
+import tqdm
 
 
 @dataclass
@@ -23,6 +24,7 @@ class TiledInferenceParameters:
         delta (int): size of the border cropped from each tile. Defaults to None, which computes this automatically,
           with a minimum of 16.
         average_patches (bool): Whether to average the overlapping regions. Defaults to True.
+        batch_size (int): Number of patches per forward pass. Defaults to 16.
     """
 
     h_crop: int
@@ -31,6 +33,8 @@ class TiledInferenceParameters:
     w_stride: int
     delta: int = None
     average_patches: bool = True
+    batch_size: int = 16
+    verbose: bool = False
 
 
 @dataclass
@@ -49,8 +53,8 @@ def tiled_inference(
     **kwargs
 ) -> torch.Tensor:
     """
-    Like divide an image into (potentially) overlapping tiles and perform inference on them.
-    Additionally rebatch for increased GPU utilization.
+    Divide an image into (potentially) overlapping tiles and perform inference on them.
+    Additionally, rebatch for increased GPU utilization.
 
     Args:
         model_forward (Callable): Callable that return the output of the model.
@@ -63,6 +67,10 @@ def tiled_inference(
     """
 
     shape = input_batch.shape
+    device = input_batch.device
+    # Move inputs to CPU to avoid out-of-memory errors
+    input_batch = input_batch.cpu()
+
     batch_size = shape[0]
     # omit bands and take last two dimensions
     h_img, w_img = shape[-2], shape[-1]
@@ -160,15 +168,15 @@ def tiled_inference(
     # NOTE: the output may be SLIGHTLY different using batched inputs because of layers such as nn.LayerNorm
     # During inference, these layers compute batch statistics that affect the output.
     # However, this should still be correct.
-    # TODO: make this configurable by user?
-    process_batch_size = 16
     with torch.no_grad():
         preds_count = input_batch.new_zeros(batch_size, preds.shape[-2], preds.shape[-1])
-        for start in range(0, len(coordinates_and_inputs), process_batch_size):
-            end = min(len(coordinates_and_inputs), start + process_batch_size)
+        for start in tqdm.tqdm(range(0, len(coordinates_and_inputs), inference_parameters.batch_size),
+                               desc="Tiled inference", disable=not inference_parameters.verbose):
+            end = min(len(coordinates_and_inputs), start + inference_parameters.batch_size)
             batch = coordinates_and_inputs[start:end]
             tensor_input = torch.stack([b.input_data for b in batch], dim=0)
-            output = model_forward(tensor_input, **kwargs)
+            tensor_input = tensor_input.to(device)
+            output = model_forward(tensor_input, **kwargs).cpu()
             output = [output[i] for i in range(len(batch))]
             for batch_input, predicted in zip(batch, output, strict=True):
                 if batch_input.output_crop is not None:
