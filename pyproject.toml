@@ -68,7 +68,8 @@ dev = [
   "mkdocs-material",
   "mkdocstrings[python]",
   "mike", # for building docs with versions
-  "mkdocs-git-revision-date-localized-plugin"
+  "mkdocs-git-revision-date-localized-plugin",
+  "pre-commit"
 ]
 
 test = [
