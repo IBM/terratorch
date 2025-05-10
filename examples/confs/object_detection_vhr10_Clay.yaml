@@ -1,0 +1,95 @@
+# lightning.pytorch==2.1.1
+seed_everything: 0
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: 16-mixed
+  logger:
+    class_path: TensorBoardLogger
+    init_args:
+      save_dir: /opt/app-root/src/fm-geospatial/pf/logs/
+      name: clay_mask-rcnn
+  callbacks:
+    # - class_path: RichProgressBar
+    - class_path: LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+    - class_path: ModelCheckpoint
+      init_args:
+          # dirpath: output/agb/checkpoints
+          mode: max
+          monitor: val_map
+          filename: best-{epoch:02d}
+
+  max_epochs: 100
+  check_val_every_n_epoch: 1
+  log_every_n_steps: 50
+  enable_checkpointing: true
+  default_root_dir: /opt/app-root/src/fm-geospatial/pf/logs/
+data:
+  class_path: terratorch.datamodules.mVHR10DataModule
+  init_args:
+    root: /opt/app-root/src/fm-geospatial/pf/terratorch/examples/notebooks/data/VHR10/
+    batch_size: 8
+    num_workers: 8
+    pad: true
+    image_size: 896
+
+
+model:
+  class_path: terratorch.tasks.ObjectDetectionTask
+  init_args:
+    model_factory: ObjectDetectionModelFactory
+    model_args:
+      framework: mask-rcnn  # Model name of TorchVision (one of faster-rcnn, fcos, retinanet, mask-rcnn)
+      backbone: clay_v1_base  # One of resnet18, resnet34, resnet50, resnet101, resnet152, resnext50_32x4d, resnext101_32x8d, wide_resnet50_2, or wide_resnet101_2
+      backbone_pretrained: true
+      # backbone: prithvi_vit_100
+      num_classes: 12  # Number of classes including background
+      backbone_img_size: 896
+      framework_min_size: 896
+      framework_max_size: 896 
+
+      # trainable_layers: 3  # Number of trainable layers
+      backbone_bands:
+        - RED
+        - GREEN
+        - BLUE
+      necks:
+        - name: SelectIndices
+          indices: [2, 5, 8, 11]
+        - name: ReshapeTokensToImage
+        - name: LearnedInterpolateToPyramidal
+        - name: FeaturePyramidNetworkNeck
+        
+    freeze_backbone: false
+    freeze_decoder: false
+    # loss: ce
+    class_names:  # Optional class names (Alphabetic order for generic classification dataset)
+      - Background
+      - Airplane
+      - Ships
+      - Storage tank
+      - Baseball diamond
+      - Tennis court
+      - Basketball court
+      - Ground track field
+      - Harbor
+      - Bridge
+      - Vehicle
+
+
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 1e-4
+    weight_decay: 0.05
+
+lr_scheduler:
+  class_path: CosineAnnealingLR
+  init_args:
+    T_max: 20
+
+
