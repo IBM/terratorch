@@ -18,7 +18,6 @@ from functools import partial
 
 from terratorch.datasets import mVHR10
 
-# from torchgeo.datamodules.utils import collate_fn_detection
 from torchgeo.datamodules import NonGeoDataModule
 
 import albumentations as A
@@ -32,24 +31,7 @@ from torch import nn
 import numpy as np
 
 import pdb
-# def custom_collate(batch):
 
-#     pdb.set_trace()
-#     transformed_images = [item['image'] for item in batch]
-#     transformed_bboxes = [item['boxes'] for item in batch]
-#     transformed_masks = [item['masks'] for item in batch]
-#     transformed_labels = [item['labels'] for item in batch]
-    
-    
-#     # Collate the transformed data
-#     collated_images = default_collate(transformed_images)
-#     collated_bboxes = default_collate(transformed_bboxes)
-#     collated_masks = default_collate(transformed_masks)
-#     collated_labels = default_collate(transformed_labels)
-    
-#     # collated_targets = [{k: default_collate([d[k] for d in transformed_targets]) for k in transformed_targets[0]}]
-    
-#     return {'image': collated_images, 'bboxes': collated_bboxes, 'masks': collated_masks, 'labels': collated_labels}
 def collate_fn_detection(batch):
     new_batch = {
         "image": [item["image"] for item in batch],
@@ -57,8 +39,7 @@ def collate_fn_detection(batch):
         "labels": [item["labels"] for item in batch],
         "masks": [item["masks"] for item in batch],
     }
-    # print("Collate function")
-    # print(new_batch)
+
     return new_batch
 
 
@@ -79,8 +60,6 @@ def get_transform(train, image_size=896, pad=True):
 
 def apply_transforms(sample, transforms):
 
-
-    # pdb.set_trace()
     sample['image'] = torch.stack(tuple(sample["image"]))
     sample['image'] = sample['image'].permute(1, 2, 0) if len(sample['image'].shape) == 3 else sample['image'].permute(0, 2, 3, 1)
     sample['image'] = np.array(sample['image'].cpu())
@@ -107,12 +86,7 @@ class Normalize(Callable):
         self.max_pixel_value = max_pixel_value
 
     def __call__(self, batch):
-        # min_value = self.means - 2 * self.stds
-        # max_value = self.means + 2 * self.stds
-        # img = (batch["image"] - min_value) / (max_value - min_value)
-        # img = torch.clip(img, 0, 1)
-        # batch["image"] = img
-        # return batch
+
         batch['image']=torch.stack(tuple(batch["image"]))
         image = batch["image"]/self.max_pixel_value if self.max_pixel_value is not None else batch["image"]
         if len(image.shape) == 5:
@@ -150,8 +124,6 @@ class mVHR10DataModule(NonGeoDataModule):
         num_workers: int = 0,
         pad = True,
         image_size=896,
-        # means = ,
-        # stds = ,
         collate_fn = None,
         *args,
         **kwargs):
@@ -182,7 +154,6 @@ class mVHR10DataModule(NonGeoDataModule):
         self.collate_fn = collate_fn_detection if collate_fn is None else collate_fn
         self.download = download
         self.checksum = checksum
-        # self.aug = self.val_transform
 
     def setup(self, stage: str) -> None:
 
