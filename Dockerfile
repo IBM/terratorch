@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.9.0-cudnn-runtime-ubuntu24.04
+FROM ubuntu:24.04 as builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -31,6 +31,11 @@ ENV PATH=/opt/app-root/src/venv/bin:$PATH
 
 RUN chown -R 10000:0 /opt/app-root
 RUN chmod -R g+rwX /opt/app-root
+
+
+FROM nvidia/cuda:12.9.0-cudnn-runtime-ubuntu24.04
+
+COPY --from=builder /opt/app-root/src/venv /opt/app-root/src/venv
 
 USER 10000
 
