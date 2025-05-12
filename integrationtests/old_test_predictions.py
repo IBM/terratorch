@@ -18,17 +18,19 @@ def download_and_open_tiff(url, dest_path):
         for chunk in response.iter_content(chunk_size=8192):
             f.write(chunk)
 
+
 def create_deploy_config(config_path):
     if not os.path.isfile(config_path):
         raise FileNotFoundError(f"No such file: {config_path}")
-    
+
     dir_name = os.path.dirname(config_path)
     name, ext = os.path.splitext(os.path.basename(config_path))
     deploy_config_path = os.path.join(dir_name, f"{name}_deploy{ext}")
-    
+
     shutil.copyfile(config_path, deploy_config_path)
 
     return deploy_config_path
+
 
 def update_grep_config_in_file(config_path: str, new_img_pattern: str):
     """Function to update img_grep in config
@@ -43,17 +45,18 @@ def update_grep_config_in_file(config_path: str, new_img_pattern: str):
 
     with open(config_path, 'r') as file:
         config = file.read()
-    
+
     # Find the current img_grep pattern (this assumes there is one img_grep line)
     current_img_pattern_match = re.search(r"img_grep:\s*'(.*?)'", config)
-    
+
     # If the img_grep line exists, update it with the new img_pattern
     if current_img_pattern_match:
         config = re.sub(r"img_grep:\s*'.*'", f"img_grep: '{new_img_pattern}'", config)
-    
+
     # Write the updated config back to the file
     with open(config_path, 'w') as file:
         file.write(config)
+
 
 @pytest.fixture(scope="session")
 def buildings_image(tmp_path_factory):
@@ -76,6 +79,7 @@ def burnscars_image(tmp_path_factory):
 
     return str(local_path)
 
+
 @pytest.fixture(scope="session")
 def floods_image(tmp_path_factory):
     url = 'https://s3.us-east.cloud-object-storage.appdomain.cloud/geospatial-studio-example-data/examples-for-[…]porto-allegre-floods-20240506-S2L2A.wgs84.tif'
@@ -85,6 +89,7 @@ def floods_image(tmp_path_factory):
     download_and_open_tiff(url=url, dest_path=local_path)
 
     return str(local_path)
+
 
 def run_inference(config, checkpoint, image):
     model = LightningInferenceModel.from_config(config_path=config, checkpoint_path=checkpoint)
@@ -121,12 +126,14 @@ def test_burnscars_predict(burnscars_image, model_name):
 
     assert isinstance(preds, torch.Tensor), f"Expected predictions to be type torch.Tensor, got {type(preds)}"
 
-## Only run these tests after running test_finetune.py. 
-## Uses the recently created checkpoints to test if the 
+
+## Only run these tests after running test_finetune.py.
+## Uses the recently created checkpoints to test if the
 ## current terratorch version runs inference successfully
 
+
 @pytest.mark.parametrize("config_name", ["smp_resnet34", "enc_dec_resnet34"])
-def test_current_terratorch_version_buildings_predict( config_name, buildings_image):
+def test_current_terratorch_version_buildings_predict(config_name, buildings_image):
     # Models trained with current terratorch version
     config_path = f"/dccstor/terratorch/tmp/{config_name}/lightning_logs/version_0/config_deploy.yaml"
 
@@ -134,7 +141,7 @@ def test_current_terratorch_version_buildings_predict( config_name, buildings_im
     checkpoint_path = glob.glob(pattern)[0]
 
     # deploy_config_path = create_deploy_config(config_path)
-    #ToDo: Remove after updating terratorch version and running fine-tune tests again.
+    # ToDo: Remove after updating terratorch version and running fine-tune tests again.
     update_grep_config_in_file(config_path=config_path, new_img_pattern="*.tif*")
 
     preds = run_inference(config=config_path, checkpoint=checkpoint_path, image=buildings_image)
@@ -148,7 +155,7 @@ def test_current_terratorch_version_burnscars_predict(config_name, burnscars_ima
     # config_path = f"configs/test_{config_name}.yaml"
     config_path = f"/dccstor/terratorch/tmp/{config_name}/lightning_logs/version_0/config_deploy.yaml"
 
-    #ToDo: Remove after updating terratorch version and running fine-tune tests again.
+    # ToDo: Remove after updating terratorch version and running fine-tune tests again.
     update_grep_config_in_file(config_path=config_path, new_img_pattern="*.tif*")
 
     pattern = os.path.join(f"/dccstor/terratorch/tmp/{config_name}/", "best-state_dict-epoch=*.ckpt")
