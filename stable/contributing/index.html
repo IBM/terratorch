@@ -1180,24 +1180,25 @@ and established features, in this way, for any modification in the core source c
 automatically execute
 a pipeline with hundreds of unit and integration tests to verify that the package have not broken after the
 modification be merged to <code>main</code>. In this way, when an user wants to modify
-<code>terratorch</code> for adding new features or bufixes, this are the best practices. </p>
-<ul>
-<li>If you are an user outside the IBM org, create a fork to add your modifications. If you are inside the IBM
-    org or have received writing provileges, create a branch for it. </li>
-<li>If you are adding new features, we ask you to also add tests for it. These tests are defined in the
+<code>terratorch</code> for adding new features or bufixes, this are the best practices. 
+* This repository uses <code>pre-commit</code>, a tool which automatically runs basic
+    steps before sending modifications to the remote (as linting, for example).
+    See how to configure it <a href="https://pre-commit.com/#installation">here</a>. 
+* If you are an user outside the IBM org, create a fork to add your modifications. If you are inside the IBM
+    org or have received writing provileges, create a branch for it. 
+* If you are adding new features, we ask you to also add tests for it. These tests are defined in the
     directory <code>tests/</code> and are fundamental to check if your feature is working as expected and not breaking
     anything. If your feature is something more complex, as a new model or auxiliary algorithm, you can also
-    (optionally) to add a complete example, as a notebook, demonstrating how the feature works.</li>
-<li>After finishing your modifications, we recommend you to test locally using <code>pytest</code>, for example:
+    (optionally) to add a complete example, as a notebook, demonstrating how the feature works.
+* After finishing your modifications, we recommend you to test locally using <code>pytest</code>, for example:
     <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pytest -s -v tests/
-</span></code></pre></div></li>
-<li>If all the tests are passing, you can open a PR to <code>terratorch:main</code> describing what you are adding and why
+</span></code></pre></div>
+* If all the tests are passing, you can open a PR to <code>terratorch:main</code> describing what you are adding and why
     that is important to be merged. You
-    do not need to choose a reviewer, since the maintainers will check the new open PR and request review for it by themselves.  </li>
-<li>The PR will pass through the tests in GitHub Actions and if the reviewer approve it, it will soon be merged. </li>
-<li>It is recommended to add a label to your PR. For example <code>bug</code>, when it solves some issue or <code>enhancement</code>
-    when it adds new features. </li>
-</ul>
+    do not need to choose a reviewer, since the maintainers will check the new open PR and request review for it by themselves.<br />
+* The PR will pass through the tests in GitHub Actions and if the reviewer approve it, it will soon be merged. 
+* It is recommended to add a label to your PR. For example <code>bug</code>, when it solves some issue or <code>enhancement</code>
+    when it adds new features. </p>
 <p><strong>NOTICE</strong>: The PR will not be merged if the automatic tests are failing and the user which has sent the PR is
     responsible for fixing it. </p>
 <h2 id="contributing-with-documentation">Contributing with documentation<a class="headerlink" href="#contributing-with-documentation" title="Permanent link">#</a></h2>
@@ -1225,7 +1226,7 @@ look on an example of <a href="https://github.com/IBM/terratorch/issues/506">a g
   <small>
     
       Last update:
-      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="April 1, 2025 00:34:58">April 1, 2025</span>
+      <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="May 10, 2025 23:49:13">May 10, 2025</span>
       
     
   </small>
