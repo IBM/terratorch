@@ -135,7 +135,8 @@ def add_default_checkpointing_config(config):
     return config 
 
 def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16",
-                    suffix="pred"):
+                    suffix:str="pred", output_file_name:str | None=None):
+
     mask, metadata = open_tiff(input_file_name)
     mask = np.where(mask == metadata["nodata"], 1, 0)
     mask = np.max(mask, axis=0)
@@ -147,7 +148,12 @@ def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16",
     metadata["compress"] = "lzw"
     metadata["nodata"] = -1
     file_name = os.path.basename(input_file_name)
-    file_name_no_ext = os.path.splitext(file_name)[0]
+
+    if not output_file_name:
+        file_name_no_ext = os.path.splitext(file_name)[0]
+    else:
+        file_name_no_ext = output_file_name
+
     out_file_name = file_name_no_ext + f"_{suffix}.tif"
     logger.info(f"Saving output to {out_file_name} ...")
     write_tiff(result, os.path.join(out_dir, out_file_name), metadata)
@@ -201,6 +207,14 @@ class CustomWriter(BasePredictionWriter):
         else:
             output_dir = self.output_dir
 
+        # Defining a prefix for the output files
+        if hasattr(trainer, "output_file_prefix"):
+            output_file_prefix = trainer.output_file_prefix
+        else:
+            output_file_prefix = None
+            msg = "As you don't defined a value for `--output_file_prefix` via comand line, we will use a name based on the input file names."
+            logger.info(msg)
+
         if not os.path.exists(output_dir):
             os.makedirs(output_dir, exist_ok=True)
 
@@ -212,6 +226,13 @@ class CustomWriter(BasePredictionWriter):
 
             pred_batch_, filename_batch = prediction
 
+            # In case of multimodal datasets, we have a dictionary
+            # with one file per modality. We need to use a file as 
+            # input in order to copy metadata. 
+            if type(filename_batch)==dict:
+                keys = list(filename_batch.keys())
+                filename_batch = filename_batch[keys[0]]
+
             # If we have just a single kind of output
             if isinstance(pred_batch_, tuple):
 
@@ -219,7 +240,8 @@ class CustomWriter(BasePredictionWriter):
 
                 for prediction, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
                     save_prediction(prediction, file_name, output_dir,
-                                    dtype=trainer.out_dtype, suffix=suffix)
+                                    dtype=trainer.out_dtype, suffix=suffix,
+                                    output_file_name=output_file_prefix)
 
             # If we are outputting more than one kind of variable, as
             # (predictions, probabilities), for segmentation
@@ -230,7 +252,8 @@ class CustomWriter(BasePredictionWriter):
 
                     for p, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
                         save_prediction(p, file_name, output_dir,
-                                        dtype=trainer.out_dtype, suffix=suffix)
+                                        dtype=trainer.out_dtype, suffix=suffix,
+                                        output_file_name=output_file_prefix)
 
         else:
             raise TypeError(f"Unknown type for prediction {type(prediction)}")
@@ -455,6 +478,7 @@ class MyLightningCLI(LightningCLI):
 
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:
         parser.add_argument("--predict_output_dir", default=None)
+        parser.add_argument("--output_file_prefix", default=None)
         parser.add_argument("--out_dtype", default="int16")
         parser.add_argument("--deploy_config_file", type=bool, default=True)
         parser.add_argument("--custom_modules_path", type=str, default=None)
@@ -490,6 +514,9 @@ class MyLightningCLI(LightningCLI):
 
         if hasattr(config, "predict_output_dir"):
             self.trainer.predict_output_dir = config.predict_output_dir
+
+        if hasattr(config, "output_file_prefix"):
+            self.trainer.output_file_prefix = config.output_file_prefix
 
         if hasattr(config, "out_dtype"):
             self.trainer.out_dtype = config.out_dtype
