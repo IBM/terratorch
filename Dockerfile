@@ -18,10 +18,8 @@ WORKDIR /opt/app-root/src
 # Create venv and install terratorch
 USER 10000
 RUN python3 -m venv /opt/app-root/src/venv
-RUN chgrp 0 -R /opt/app-root/src/venv/lib64/python3.12/site-packages
-#USER root
-RUN chmod 775 -R /opt/app-root/src/venv/lib64/python3.12/site-packages
-#USER 10000
+RUN chgrp 0 -R /opt/app-root/src/venv/
+RUN chmod 775 -R /opt/app-root/src/venv
 RUN . /opt/app-root/src/venv/bin/activate && pip install  --no-cache-dir --upgrade pip && pip install  --no-cache-dir terratorch
 USER root
 RUN pip cache purge
