@@ -15,8 +15,12 @@ WORKDIR /opt/app-root/src
 # Create venv and install terratorch
 RUN python3 -m venv /opt/app-root/src/venv
 RUN chmod 755 /opt/app-root/src/venv/bin/activate
-RUN . /opt/app-root/src/venv/bin/activate && pip install --upgrade pip && pip install terratorch
+RUN . /opt/app-root/src/venv/bin/activate && pip install  --no-cache-dir --upgrade pip && pip install  --no-cache-dir terratorch
 RUN pip cache purge
+
+RUN apt-get purge -y build-essential && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
 
 
 RUN useradd --uid 10000 --create-home --home-dir /opt/app-root --shell /sbin/nologin appuser
