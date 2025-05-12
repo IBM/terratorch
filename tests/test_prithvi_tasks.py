@@ -281,7 +281,7 @@ def test_create_segmentation_task_encoder_decoder_moe_layer(backbone,
     )
     output = task.model(model_input_batch)
 
-    assert output.output.shape == (4, NUM_CLASSES)
+    assert output.output.shape == (4, NUM_CLASSES, 224, 224)
 
     gc.collect()
 

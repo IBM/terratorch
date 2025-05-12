@@ -28,15 +28,26 @@ class MoELayer(Module):
 
         Args:
             experts_list (List[None]): The list of neural networks used as experts.
-            gating_network (Union[callable], optional): Network or callable operation used for predicting
-        weights associated to the experts. (Default value = None)
+                gating_network (Union[callable], optional): Network or callable operation used for predicting
+                weights associated to the experts. (Default value = None)
             input_size (int, optional): The number of dimensions of the input. (Default value = None)
+            n_vars (int): The number of variables in the input data. (Default value = 1).
+            k (int): The number of top experts to select per forward step.(Default value = 3)
+            alpha (float): An update rate used to modify the gating weights
+                when `load_balancing` is activated. (Default value = 0.2)
             devices (Union[list, str], optional): Device ("gpu" or "cpu") or list of devices in which
-        the model is placed. (Default value = None)
+                the model is placed. (Default value = None)
             binary_selection (bool, optional): The weights will be forced to be binary or not. (Default value = False)
+            load_balancing (bool): An option to activate a load balancing
+                method, which tries to enforce a better distribution of workload between the experts. 
             hidden_size (Optional[int], optional): If information about the experts hidden size is required, which occurs,
-        for instance, when they are ConvexDenseNetwork objects,
-        it is necessary to define this argument. (Default value = None)
+                for instance, when they are ConvexDenseNetwork objects, it is necessary to define this argument. (Default value = None)
+            use_reshaping (bool): The input data need be reshaped before.(Default value = False)
+                passing through the gating step or not. It is required when the
+                input dataset `has number of dimensions >= 2`. (Default value = False).
+            is_pixelwise (bool): The task being performed is pixelwise or
+                scalar. In the first case the gating weights are unsqueezed to
+                became compatible with the expersts outputs. (Default value = True).
 
         """
 
