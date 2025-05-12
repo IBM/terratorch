@@ -19,6 +19,7 @@ WORKDIR /opt/app-root/src
 USER 10000
 RUN python3 -m venv /opt/app-root/src/venv
 RUN chmod 755 /opt/app-root/src/venv/bin/activate
+RUN chmod 755 /opt/app-root/src/venv/bin/pip
 RUN . /opt/app-root/src/venv/bin/activate && pip install  --no-cache-dir --upgrade pip && pip install  --no-cache-dir terratorch
 USER root
 RUN pip cache purge
