@@ -23,19 +23,21 @@ RUN apt-get purge -y build-essential && \
     rm -rf /var/lib/apt/lists/*
 
 
+
+
+FROM nvidia/cuda:12.9.0-cudnn-runtime-ubuntu24.04
+
 RUN useradd --uid 10000 --create-home --home-dir /opt/app-root --shell /sbin/nologin appuser
 
 ENV APP_HOME=/opt/app-root/src
 ENV VENV_DIR=/opt/app-root/src/venv
 ENV PATH=/opt/app-root/src/venv/bin:$PATH
 
-RUN chown -R 10000:0 /opt/app-root
-RUN chmod -R g+rwX /opt/app-root
-
-
-FROM nvidia/cuda:12.9.0-cudnn-runtime-ubuntu24.04
 
 COPY --from=builder /opt/app-root/src/venv /opt/app-root/src/venv
+
+RUN chown -R 10000:0 /opt/app-root
+RUN chmod -R g+rwX /opt/app-root
 
 USER 10000
 
