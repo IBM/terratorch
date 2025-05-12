@@ -120,3 +120,60 @@ def test_burnscars_predict(burnscars_image, model_name):
     preds = run_inference(config=config_path, checkpoint=checkpoint_path, image=burnscars_image)
 
     assert isinstance(preds, torch.Tensor), f"Expected predictions to be type torch.Tensor, got {type(preds)}"
+
+## Only run these tests after running test_finetune.py. 
+## Uses the recently created checkpoints to test if the 
+## current terratorch version runs inference successfully
+
+@pytest.mark.parametrize("config_name", ["smp_resnet34", "enc_dec_resnet34"])
+def test_current_terratorch_version_buildings_predict( config_name, buildings_image):
+    # Models trained with current terratorch version
+    config_path = f"/dccstor/terratorch/tmp/{config_name}/lightning_logs/version_0/config_deploy.yaml"
+
+    pattern = os.path.join(f"/dccstor/terratorch/tmp/{config_name}/", "best-state_dict-epoch=*.ckpt")
+    checkpoint_path = glob.glob(pattern)[0]
+
+    # deploy_config_path = create_deploy_config(config_path)
+    #ToDo: Remove after updating terratorch version and running fine-tune tests again.
+    update_grep_config_in_file(config_path=config_path, new_img_pattern="*.tif*")
+
+    preds = run_inference(config=config_path, checkpoint=checkpoint_path, image=buildings_image)
+
+    assert isinstance(preds, torch.Tensor), f"Expected predictions to be type torch.Tensor, got {type(preds)}"
+
+
+@pytest.mark.parametrize("config_name", ["eo_v1_100", "eo_v2_300", "eo_v2_600", "swinb", "swinl"])
+# Models trained with current terratorch version
+def test_current_terratorch_version_burnscars_predict(config_name, burnscars_image):
+    # config_path = f"configs/test_{config_name}.yaml"
+    config_path = f"/dccstor/terratorch/tmp/{config_name}/lightning_logs/version_0/config_deploy.yaml"
+
+    #ToDo: Remove after updating terratorch version and running fine-tune tests again.
+    update_grep_config_in_file(config_path=config_path, new_img_pattern="*.tif*")
+
+    pattern = os.path.join(f"/dccstor/terratorch/tmp/{config_name}/", "best-state_dict-epoch=*.ckpt")
+    checkpoint_path = glob.glob(pattern)[0]
+
+    preds = run_inference(config=config_path, checkpoint=checkpoint_path, image=burnscars_image)
+
+    assert isinstance(preds, torch.Tensor), f"Expected predictions to be type torch.Tensor, got {type(preds)}"
+
+
+@pytest.mark.parametrize(
+    "model_name", ["eo_v1_100", "eo_v2_300", "eo_v2_600", "swinb", "swinl", "smp_resnet34", "enc_dec_resnet34"]
+)
+def test_cleanup(model_name):
+    # Delete all folders creating during finetuning after running inference.
+    full_path = os.path.join("/dccstor/terratorch/tmp/", model_name)
+    print("Attempting to delete:", full_path)
+    try:
+        shutil.rmtree(full_path)
+        print(f"Deleted: {full_path}")
+    except FileNotFoundError:
+        print(f"Already deleted or missing: {full_path}")
+    except PermissionError:
+        print(f"Permission denied: {full_path}")
+    except Exception as e:
+        print(f"Error deleting {full_path}: {e}")
+
+    assert not os.path.exists(full_path)
