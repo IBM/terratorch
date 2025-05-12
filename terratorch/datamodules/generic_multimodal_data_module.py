@@ -5,9 +5,9 @@ This module contains generic data modules for instantiation at runtime.
 """
 import os
 import logging
+import warnings
 from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any, Iterator
 import albumentations as A
 import numpy as np
 import torch
@@ -115,6 +115,7 @@ class MultimodalNormalize(Callable):
                 msg = (f"Expected batch with 5 or 4 dimensions (B, C, (T,) H, W), sample with 3 dimensions (C, H, W) "
                        f"or a single channel, but got {len(image.shape)}")
                 raise Exception(msg)
+
             batch["image"][m] = (image - means) / stds
         return batch
 
@@ -129,7 +130,7 @@ class MultiModalBatchSampler(BatchSampler):
         self.sample_num_modalities = sample_num_modalities
         self.sample_replace = sample_replace
 
-    def __iter__(self) -> Iterator[list[int]]:
+    def __iter__(self) -> Iterable[list[int]]:
         """
         Code similar to BatchSampler but samples tuples in the format (idx, ["m1", "m2", ...])
         """
@@ -211,7 +212,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         channel_position: int = -3,
         concat_bands: bool = False,
         check_stackability: bool = True,
-        **kwargs: Any,
+        img_grep: str | dict[str, str] | None = None,
     ) -> None:
         """Constructor
 
@@ -333,7 +334,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         else:
             raise ValueError(f"Unknown task {task}, only segmentation and regression are supported.")
 
-        super().__init__(dataset_class, batch_size, num_workers, **kwargs)
+        super().__init__(dataset_class, batch_size, num_workers)
         self.num_classes = num_classes
         self.class_names = class_names
         self.modalities = modalities
@@ -341,6 +342,12 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.non_image_modalities = list(set(self.modalities) - set(self.image_modalities))
         if task == "scalar":
             self.non_image_modalities += ["label"]
+
+        if img_grep is not None:
+            warnings.warn(f'img_grep was renamed to image_grep and will be removed in a future version.',
+                          DeprecationWarning)
+            image_grep = img_grep
+
         if isinstance(image_grep, dict):
             self.image_grep = {m: image_grep[m] if m in image_grep else "*" for m in modalities}
         else:
@@ -353,6 +360,16 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.val_label_data_root = val_label_data_root
         self.test_label_data_root = test_label_data_root
         self.predict_root = predict_data_root
+
+        assert not train_data_root or all(m in train_data_root for m in modalities), \
+            f"predict_data_root is missing paths to some modalities {modalities}: {train_data_root}"
+        assert not val_data_root or all(m in val_data_root for m in modalities), \
+            f"predict_data_root is missing paths to some modalities {modalities}: {val_data_root}"
+        assert not test_data_root or all(m in test_data_root for m in modalities), \
+            f"predict_data_root is missing paths to some modalities {modalities}: {test_data_root}"
+        assert not predict_data_root or all(m in predict_data_root for m in modalities), \
+            f"predict_data_root is missing paths to some modalities {modalities}: {predict_data_root}"
+
         self.train_split = train_split
         self.val_split = val_split
         self.test_split = test_split
@@ -512,6 +529,9 @@ class GenericMultiModalDataModule(NonGeoDataModule):
             self.predict_dataset = self.dataset_class(
                 data_root=self.predict_root,
                 num_classes=self.num_classes,
+                image_grep=self.image_grep,
+                label_grep=self.label_grep,
+                allow_missing_modalities=True,
                 allow_substring_file_names=self.allow_substring_file_names,
                 dataset_bands=self.predict_dataset_bands,
                 output_bands=self.predict_output_bands,
@@ -527,6 +547,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 channel_position=self.channel_position,
                 data_with_sample_dim=self.data_with_sample_dim,
                 concat_bands=self.concat_bands,
+                prediction_mode=True,
             )
             logger.info(f"Predict dataset: {len(self.predict_dataset)}")
 

@@ -6,8 +6,7 @@ trainer:
   devices: auto
   num_nodes: 1
   precision: 16-mixed
-  logger: true
-               
+  logger: true             
   callbacks:
     - class_path: RichProgressBar
     - class_path: LearningRateMonitor
@@ -21,17 +20,16 @@ trainer:
      # ---- Early stop endif ----
     - class_path: ModelCheckpoint
       init_args:
-        dirpath: /dccstor/terratorch/
+        dirpath: /dccstor/terratorch/tmp/eo_v1_100/
         mode: min
         monitor: val/loss
         filename: best-state_dict-{epoch:02d}
         save_weights_only: True
-      
   max_epochs: 2
   check_val_every_n_epoch: 1
   log_every_n_steps: 50
   enable_checkpointing: true
-  default_root_dir: /dccstor/terratorch/
+  default_root_dir: /dccstor/terratorch/tmp/eo_v1_100/
 
 data:
   class_path: terratorch.datamodules.GenericNonGeoSegmentationDataModule
@@ -104,8 +102,8 @@ model:
   init_args:
     model_args:
       backbone_pretrained: true 
-      backbone: prithvi_eo_v2_300
-      # backbone_ckpt_path: /terratorch/gfm_models/prithvi_eo_v2_300/Prithvi_EO_V2_300M.pt 
+      backbone: prithvi_eo_v1_100
+      # backbone_ckpt_path: /terratorch/gfm_models/prithvi_eo_v1_100/Prithvi_EO_V1_100M.pt 
       backbone_drop_path: 0.1 
       backbone_bands:
         - '0'
@@ -115,10 +113,9 @@ model:
         - '4'
         - '5'
 
-
       necks: 
         - name: SelectIndices
-          indices: [5, 11, 17, 23]  # 300M models
+          indices: [2, 5, 8, 11] # 100M models
         - name: ReshapeTokensToImage # required
         - name: LearnedInterpolateToPyramidal 
       decoder: UNetDecoder

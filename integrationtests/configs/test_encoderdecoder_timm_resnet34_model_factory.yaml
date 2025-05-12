@@ -15,7 +15,7 @@ trainer:
         mode: min
         monitor: val/loss
         filename: best-state_dict-{epoch:02d}
-        dirpath: /dccstor/terratorch/
+        dirpath: /dccstor/terratorch/tmp/enc_dec_resnet34/
         save_weights_only: true
     - class_path: EarlyStopping
       init_args:
@@ -25,7 +25,7 @@ trainer:
   check_val_every_n_epoch: 1
   log_every_n_steps: 5
   enable_checkpointing: true
-  default_root_dir: /dccstor/terratorch/
+  default_root_dir: /dccstor/terratorch/tmp/enc_dec_resnet34/
   logger: true
 
 data:

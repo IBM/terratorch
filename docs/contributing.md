@@ -15,7 +15,9 @@ automatically execute
 a pipeline with hundreds of unit and integration tests to verify that the package have not broken after the
 modification be merged to `main`. In this way, when an user wants to modify
 `terratorch` for adding new features or bufixes, this are the best practices. 
-
+* This repository uses `pre-commit`, a tool which automatically runs basic
+    steps before sending modifications to the remote (as linting, for example).
+    See how to configure it [here](https://pre-commit.com/#installation). 
 * If you are an user outside the IBM org, create a fork to add your modifications. If you are inside the IBM
     org or have received writing provileges, create a branch for it. 
 * If you are adding new features, we ask you to also add tests for it. These tests are defined in the
