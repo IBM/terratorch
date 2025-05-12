@@ -21,7 +21,8 @@ class MoELayer(Module):
         binary_selection: bool = False,
         load_balancing: bool = False,
         hidden_size: Optional[int] = None,
-        use_reshaping: bool = False
+        use_reshaping: bool = False,
+        is_pixelwise: bool = True,
     ) -> None:
         """A layer to execute Mixture of Experts
 
@@ -50,11 +51,17 @@ class MoELayer(Module):
         self.k = k 
         self.alpha = alpha 
         self.use_reshaping = use_reshaping
+        self.is_pixelwise = is_pixelwise
 
         if torch.cuda.is_available():
             self.device = "cuda"
         else:
             self.device = "cpu"
+
+        if self.is_pixelwise:
+            self.unsqueeze_weight = lambda x: x.unsqueeze(2).unsqueeze(3)
+        else:
+            self.unsqueeze_weight = lambda x: x
 
         # Gating (classifier) network/object
         # The default gating network is a single-layer fully-connected network
@@ -219,12 +226,13 @@ class MoELayer(Module):
             torch.Tensor: The output of the MoE evaluation.
         """
 
+        input_data = input_data.to(self.device)
         input_data_gate = self.reshaping(input_data)
         gating_weights_ = self.gate(input_data_gate)
         counts = self.count_assigned_tokens(gating_weights_)
         gating_weights_ = self.adjust_weights(gating_weights_, counts)
 
-        gating_weights = [g[...] for g in torch.split(gating_weights_, 1, dim=1)]
+        gating_weights = [self.unsqueeze_weight(g) for g in torch.split(gating_weights_, 1, dim=1)]
 
         def _forward(worker = None) -> torch.Tensor:
             return worker.forward(input_data, *args, **kwargs)
