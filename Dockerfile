@@ -16,9 +16,9 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 WORKDIR /opt/app-root/src
 
 # Create venv and install terratorch
+USER 10000
 RUN python3 -m venv /opt/app-root/src/venv
 RUN chmod 755 /opt/app-root/src/venv/bin/activate
-USER 10000
 RUN . /opt/app-root/src/venv/bin/activate && pip install  --no-cache-dir --upgrade pip && pip install  --no-cache-dir terratorch
 USER root
 RUN pip cache purge
