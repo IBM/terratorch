@@ -11,6 +11,16 @@ import gc
 from terratorch.cli_tools import LightningInferenceModel
 
 
+@pytest.fixture
+def data_path(request):
+    env = request.config.getoption("--env")
+    if env == "oc":
+        return "/mnt/data"
+    elif env == "ccc":
+        return "/dccstor/terratorch/tmp/"
+    else:
+        return ""
+
 @pytest.mark.parametrize(
     "model_name",
     [
@@ -168,11 +178,11 @@ def test_burnscars_predict(burnscars_image, model_name):
 
 
 @pytest.mark.parametrize("config_name", ["smp_resnet34", "enc_dec_resnet34"])
-def test_current_terratorch_version_buildings_predict(config_name, buildings_image):
+def test_current_terratorch_version_buildings_predict(config_name, buildings_image, data_path):
     # Models trained with current terratorch version
-    config_path = f"/dccstor/terratorch/tmp/{config_name}/lightning_logs/version_0/config_deploy.yaml"
+    config_path = f"{data_path}{config_name}/lightning_logs/version_0/config_deploy.yaml"
 
-    pattern = os.path.join(f"/dccstor/terratorch/tmp/{config_name}/", "best-state_dict-epoch=*.ckpt")
+    pattern = os.path.join(f"{data_path}{config_name}/", "best-state_dict-epoch=*.ckpt")
     checkpoint_path = glob.glob(pattern)[0]
 
     # deploy_config_path = create_deploy_config(config_path)
@@ -188,14 +198,14 @@ def test_current_terratorch_version_buildings_predict(config_name, buildings_ima
 
 @pytest.mark.parametrize("config_name", ["eo_v1_100", "eo_v2_300", "eo_v2_600", "swinb", "swinl"])
 # Models trained with current terratorch version
-def test_current_terratorch_version_burnscars_predict(config_name, burnscars_image):
+def test_current_terratorch_version_burnscars_predict(config_name, burnscars_image, data_path):
     # config_path = f"configs/test_{config_name}.yaml"
-    config_path = f"/dccstor/terratorch/tmp/{config_name}/lightning_logs/version_0/config_deploy.yaml"
+    config_path = f"{data_path}{config_name}/lightning_logs/version_0/config_deploy.yaml"
 
     # ToDo: Remove after updating terratorch version and running fine-tune tests again.
     # update_grep_config_in_file(config_path=config_path, new_img_pattern="*.tif*")
 
-    pattern = os.path.join(f"/dccstor/terratorch/tmp/{config_name}/", "best-state_dict-epoch=*.ckpt")
+    pattern = os.path.join(f"{data_path}{config_name}/", "best-state_dict-epoch=*.ckpt")
     checkpoint_path = glob.glob(pattern)[0]
 
     preds = run_inference(config=config_path, checkpoint=checkpoint_path, image=burnscars_image)
