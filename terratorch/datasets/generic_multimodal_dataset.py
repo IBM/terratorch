@@ -384,11 +384,11 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
             output[modality] = data
 
-        if self.reduce_zero_label:
-            output["mask"] -= 1
-
-        if self.scalar_label:
-            output["label"] = output.pop("mask")
+        if "mask" in output:
+            if self.reduce_zero_label:
+                output["mask"] -= 1
+            if self.scalar_label:
+                output["label"] = output.pop("mask")
 
         if self.transform:
             output = self.transform(output)
@@ -617,6 +617,7 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
 
     def __getitem__(self, index: int) -> dict[str, Any]:
         item = super().__getitem__(index)
+
         if not self.prediction_mode:
             item["mask"] = item["mask"].long()
 
@@ -821,8 +822,10 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
 
     def __getitem__(self, index: int) -> dict[str, Any]:
         item = super().__getitem__(index)
+
         if not self.prediction_mode:
             item["mask"] = item["mask"].float()
+
         return item
 
     def plot(
