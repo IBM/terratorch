@@ -1,12 +1,14 @@
 name: Build & Push Docker Image
 
 on:
-  push:
-    branches:
-      - main
-      - romeokienzler-patch-3
+  schedule:
+    - cron: '0 0 * * *'
+
+  workflow_dispatch:
+  
 jobs:
   build-and-push:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -28,4 +30,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/ibm/terratorch:stream
+          tags: ghcr.io/ibm/terratorch:nightly
