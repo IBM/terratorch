@@ -15,7 +15,7 @@ trainer:
 data:
   class_path: terratorch.datamodules.random.RandomDataModule
   init_args:
-    input_shape: [6, 1, 16, 16]
+    input_shape: [6, 1, 270, 270]
     batch_size: 32
     num_classes: 2
 
@@ -38,7 +38,7 @@ model:
       decoder: UNetDecoder
       decoder_channels: [3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072, 3072]
       head_dropout: 0.1
-      num_classes: 13
+      num_classes: 2
     loss: ce
     ignore_index: -1
     freeze_backbone: true
