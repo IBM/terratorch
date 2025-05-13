@@ -1,4 +1,5 @@
 # lightning.pytorch==2.1.1
+custom_modules_path: examples/custom_modules/
 seed_everything: 42
 trainer:
   accelerator: auto
@@ -20,6 +21,21 @@ trainer:
       init_args:
         monitor: val/loss
         patience: 100
+    - class_path: StateDictAwareModelCheckpoint
+      init_args:
+        filename: "{epoch}"
+        monitor: "val/loss"
+        every_n_epochs: 2
+        verbose: true
+        save_top_k: 1
+    - class_path: StateDictAwareModelCheckpoint
+      init_args:
+        filename: "{epoch}_state_dict"
+        save_weights_only: true
+        monitor: "val/loss"
+        every_n_epochs: 2
+        verbose: true
+        save_top_k: 1
   max_epochs: 1
   check_val_every_n_epoch: 1
   log_every_n_steps: 20
@@ -31,16 +47,16 @@ data:
     batch_size: 2
     num_workers: 4
     train_transform:
-      #- class_path: albumentations.HorizontalFlip
-      #  init_args:
-      #    p: 0.5      
-      #- class_path: albumentations.Rotate
-      #  init_args:
-      #    limit: 30
-      #    border_mode: 0 # cv2.BORDER_CONSTANT
-      #    value: 0
-      #    # mask_value: 1
-      #    p: 0.5
+      - class_path: albumentations.HorizontalFlip
+        init_args:
+          p: 0.5      
+      - class_path: albumentations.Rotate
+        init_args:
+          limit: 30
+          border_mode: 0 # cv2.BORDER_CONSTANT
+          value: 0
+          mask_value: 1
+          p: 0.5
       - class_path: ToTensorV2
     dataset_bands:
       - 0
@@ -65,6 +81,7 @@ data:
       - 2
       - 1
       - 0
+    check_stackability: false
     train_data_root: tests/resources/inputs
     train_label_data_root: tests/resources/inputs
     val_data_root: tests/resources/inputs
@@ -94,48 +111,18 @@ model:
   class_path: terratorch.tasks.PixelwiseRegressionTask
   init_args:
     model_args:
-      decoder: UperNetDecoder
-      pretrained: false
-      backbone: prithvi_eo_v2_600
-      # backbone_pretrained_cfg_overlay:
-      #   file: tests/prithvi_vit_300.pt
-      backbone_drop_path_rate: 0.3
-      # backbone_window_size: 8
-      decoder_channels: 64
-      num_frames: 1
-      in_channels: 6
-      bands:
-        - BLUE
-        - GREEN
-        - RED
-        - NIR_NARROW
-        - SWIR_1
-        - SWIR_2
+      decoder: IdentityDecoder
+      backbone: alexnet_encoder 
+      backbone_num_channels: 6
       head_dropout: 0.5708022831486758
       head_final_act: torch.nn.ReLU
       head_learned_upscale_layers: 2
+      decoder: IdentityDecoder
     loss: rmse
-    #aux_heads:
-    #  - name: aux_head
-    #    decoder: IdentityDecoder
-    #    decoder_args:
-    #      decoder_out_index: 2
-    #      head_dropout: 0,5
-    #      head_channel_list:
-    #        - 64
-    #      head_final_act: torch.nn.ReLU
-    #aux_loss:
-    #  aux_head: 0.4
     ignore_index: -1
     freeze_backbone: true
     freeze_decoder: false
-    model_factory: PrithviModelFactory
-    tiled_inference_parameters:
-      h_crop: 56
-      h_stride: 48
-      w_crop: 56
-      w_stride: 48
-      average_patches: true
+    model_factory: EncoderDecoderFactory
 optimizer:
   class_path: torch.optim.AdamW
   init_args:
