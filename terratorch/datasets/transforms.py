@@ -294,7 +294,8 @@ class MultimodalTransforms:
     def __call__(self, data: dict):
         if self.shared:
             # albumentations requires a key 'image' and treats all other keys as additional targets
-            image_modality = list(set(data.keys()) - set(self.non_image_modalities))[0]
+            # (+ don't select 'mask' as 'image')
+            image_modality = [k for k in data.keys() if k not in self.non_image_modalities + ['mask']][0]
             data['image'] = data.pop(image_modality)
             data = self.transforms(**data)
             data[image_modality] = data.pop('image')

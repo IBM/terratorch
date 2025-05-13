@@ -116,6 +116,15 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
                 ignore_extensions=ignore_split_file_extensions,
                 allow_substring=allow_substring_split_file,
             )
+
+        # We don't define a split file for prediction
+        if not self.split_file:
+            # When prediction is enabled, we don't have mask files, so
+            # we need to provide a way to run the dataloder in these cases.
+            if not self.segmentation_mask_files:
+                self.segmentation_mask_files = self.image_files
+                # The masks can be `None` since they won't be used in fact. 
+
         self.rgb_indices = [0, 1, 2] if rgb_indices is None else rgb_indices
 
         self.dataset_bands = generate_bands_intervals(dataset_bands)
@@ -160,13 +169,12 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
             image = image[..., self.filter_indices]
         output = {
             "image": image.astype(np.float32) * self.constant_scale,
-            "mask": self._load_file(self.segmentation_mask_files[index], nan_replace=self.no_label_replace).to_numpy()[
-                0
-            ],
         }
-
-        if self.reduce_zero_label:
-            output["mask"] -= 1
+        if self.segmentation_mask_files:
+            mask = self._load_file(self.segmentation_mask_files[index], nan_replace=self.no_label_replace)
+            output["mask"] = mask.to_numpy()[0]
+            if self.reduce_zero_label:
+                output["mask"] -= 1
         if self.transform:
             output = self.transform(**output)
         output["filename"] = self.image_files[index]
@@ -264,7 +272,8 @@ class GenericNonGeoSegmentationDataset(GenericPixelWiseDataset):
 
     def __getitem__(self, index: int) -> dict[str, Any]:
         item = super().__getitem__(index)
-        item["mask"] = item["mask"].long()
+        if "mask" in item:
+            item["mask"] = item["mask"].long()
         return item
 
     def plot(self, sample: dict[str, Tensor], suptitle: str | None = None, show_axes: bool | None = False) -> Figure:
@@ -430,7 +439,8 @@ class GenericNonGeoPixelwiseRegressionDataset(GenericPixelWiseDataset):
 
     def __getitem__(self, index: int) -> dict[str, Any]:
         item = super().__getitem__(index)
-        item["mask"] = item["mask"].float()
+        if "mask" in item:
+            item["mask"] = item["mask"].float()
         return item
 
     def plot(self, sample: dict[str, Tensor], suptitle: str | None = None, show_axes: bool | None = False) -> Figure:
