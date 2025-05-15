@@ -7,7 +7,7 @@ include = ["terratorch*"]
 
 [project]
 name = "terratorch"
-version = "1.0.1"
+version = "1.0.2"
 description = "TerraTorch - A model training toolkit for geospatial tasks"
 license = { "text" = "Apache License, Version 2.0" }
 readme = "README.md"
@@ -39,27 +39,27 @@ classifiers = [
 ]
 
 dependencies = [
-  "torch",
-  "torchvision",
-  "rioxarray",
+  "torch==2.7.0",
+  "torchvision==0.22.0",
+  "rioxarray==0.19.0",
   "albumentations==1.4.6",
   "albucore==0.0.16",
-  "rasterio",
-  "torchmetrics",
-  "geopandas",
-  "lightly",
+  "rasterio==1.4.3",
+  "torchmetrics==1.7.1",
+  "geopandas==1.0.1",
+  "lightly==1.5.20",
   "jsonargparse<=4.35.0",
-  "h5py",
-  "mlflow",
-  "lightning",
+  "h5py==3.13.0",
+  "mlflow==2.22.0",
+  "lightning==2.5.1.post0",
   "segmentation-models-pytorch<=0.4.0",
-  "jsonargparse",
-  "pytest",
-  "torchgeo",
-  "einops",
+  "jsonargparse==4.35.0",
+  "pytest==8.3.5",
+  "torchgeo==0.7.0",
+  "einops==0.8.1",
   "timm>=1.0.15",
   "huggingface_hub",
-  "tifffile"
+  "tifffile==2025.3.30",
 ]
 
 [project.optional-dependencies]
