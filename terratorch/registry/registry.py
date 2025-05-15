@@ -1,30 +1,48 @@
+import logging
 import typing
 from collections import OrderedDict
 from collections.abc import Callable, Mapping, Set
 from contextlib import suppress
 from reprlib import recursive_repr as _recursive_repr
-import logging
+
+from huggingface_hub import ModelCard
 
 logger = logging.getLogger(__name__)
+
+
+def explore_model_card(model_address):
+    from rich.console import Console
+    from rich.markdown import Markdown
+
+    console = Console()
+
+    metadata = ModelCard.load(model_address)
+    content = metadata.content
+    md = Markdown(content)
+    console.print(md)
+
 
 class BuildableRegistry(typing.Protocol):
     def __iter__(self): ...
     def __len__(self) -> int: ...
     def __contains__(self, name: str) -> bool: ...
     def build(self, name: str, *args, **kwargs):
-        """Should raise KeyError if model not found.
-        """
+        """Should raise KeyError if model not found."""
 
 
 class DecoderRegistry(BuildableRegistry, typing.Protocol):
     includes_head: bool
 
+
 T = typing.TypeVar("T", bound=BuildableRegistry)
+
+
 class MultiSourceRegistry(Mapping[str, T], typing.Generic[T]):
     """Registry that searches in multiple sources
 
-        Correct functioning of this class depends on registries raising a KeyError when the model is not found.
+    Correct functioning of this class depends on registries raising a KeyError when the model is not found.
     """
+
     def __init__(self, **sources) -> None:
         self._sources: OrderedDict[str, T] = OrderedDict(sources)
 
@@ -101,7 +119,7 @@ class MultiSourceRegistry(Mapping[str, T], typing.Generic[T]):
     @_recursive_repr()
     def __repr__(self):
         args = [f"{name}={source!r}" for name, source in self._sources.items()]
-        return f'{self.__class__.__name__}({", ".join(args)})'
+        return f"{self.__class__.__name__}({', '.join(args)})"
 
     def __str__(self):
         sources_str = str(" | ".join([f"{prefix}: {source!s}" for prefix, source in self._sources.items()]))
@@ -169,6 +187,7 @@ class Registry(Set):
 
     def __str__(self):
         return f"Registry with {len(self)} registered items"
+
 
 ## Declare library level registries below
 
