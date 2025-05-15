@@ -39,6 +39,8 @@ from terratorch.models.backbones.terramind.tokenizer.tokenizer_register import (
     terramind_v01_tokenizer_s1grd,
     terramind_v01_tokenizer_dem,
     terramind_v01_tokenizer_lulc,
+    terramind_v01_caption_tokenizer,
+    terramind_v1_coords_tokenizer,
 )
 
 
@@ -67,6 +69,7 @@ def build_modality_embeddings(modalities, img_size=None, dim=None, patch_size=No
                             .replace('s1', 'sen1')
                             .replace('text', 'caption')
                             .replace('coordinates', 'coords')
+                            .replace('location', 'coords')
                             )
 
         # Get modality key in MODALITY_INFO
@@ -89,9 +92,9 @@ def build_modality_embeddings(modalities, img_size=None, dim=None, patch_size=No
         elif 'ndvi' in modality_renamed:
             key = 'tok_ndvi@224'
         elif 'caption' in modality_renamed:
-            raise NotImplementedError('Captions are not yet supported.')
+            key = 'caption'
         elif 'coords' in modality_renamed:
-            raise NotImplementedError('Captions are not yet supported.')
+            key = 'coords'
         else:
             key = modality
 
@@ -115,6 +118,7 @@ def build_output_modality_embeddings(modalities, img_size=None, dim=None, patch_
                             .replace('s1', 'sen1')
                             .replace('text', 'caption')
                             .replace('coordinates', 'coords')
+                            .replace('location', 'coords')
                             )
 
         # Get modality key in MODALITY_INFO
@@ -131,9 +135,9 @@ def build_output_modality_embeddings(modalities, img_size=None, dim=None, patch_
         elif 'ndvi' in modality_renamed:
             key = 'tok_ndvi@224'
         elif 'caption' in modality_renamed:
-            raise NotImplementedError('Captions are not yet supported.')
+            key = 'caption'
         elif 'coords' in modality_renamed:
-            raise NotImplementedError('Captions are not yet supported.')
+            key = 'coords'
         else:
             key = modality
 
@@ -157,7 +161,8 @@ def build_tokenizer(input_modalities, output_modalities, pretrained, version='v1
             'tok_sen1grd@224': terramind_v1_tokenizer_s1grd,
             'tok_dem@224': terramind_v1_tokenizer_dem,
             'tok_lulc@224': terramind_v1_tokenizer_lulc,
-            'tok_ndvi@224': terramind_v1_tokenizer_ndvi
+            'tok_ndvi@224': terramind_v1_tokenizer_ndvi,
+            'coords': terramind_v1_coords_tokenizer,
         }
     elif version == 'v01':
         tokenizer_dict = {
@@ -165,6 +170,8 @@ def build_tokenizer(input_modalities, output_modalities, pretrained, version='v1
             'tok_sen1grd@224': terramind_v01_tokenizer_s1grd,
             'tok_dem@224': terramind_v01_tokenizer_dem,
             'tok_lulc@224': terramind_v01_tokenizer_lulc,
+            'coords':  terramind_v1_coords_tokenizer,
+            'caption': terramind_v01_caption_tokenizer,
         }
     else:
         raise NotImplementedError(f'Unsupported TerraMind Tokenizer version: {version}')
@@ -296,7 +303,7 @@ class TerraMindGeneration(nn.Module):
                                         if isinstance(value, ImageTokenDecoderEmbedding)]
         self.output_mod_name_mapping = {v: k for k, v in decoder_name_mapping.items()}
         self.standardize = standardize
-        self.offset = offset or {}
+        self.version = version
 
         if offset is not None:
             for mod, o in offset.items():
@@ -383,18 +390,19 @@ class TerraMindGeneration(nn.Module):
         standardize = standardize if standardize is not None else self.standardize
         if standardize:
             for mod, value in d.items():
-                d[mod] = ((value - self.pretraining_mean[self.mod_name_mapping[mod]]) /
-                          self.pretraining_std[self.mod_name_mapping[mod]])
+                if self.mod_name_mapping[mod] in self.pretraining_mean:
+                    d[mod] = ((value - self.pretraining_mean[self.mod_name_mapping[mod]]) /
+                              self.pretraining_std[self.mod_name_mapping[mod]])
 
         # Define the initial input
         input_dict = {}
         # Default values if no images are provided
         img_num_tokens, image_size = 196, (224, 224)
         for mod, value in d.items():
-            patch_size = self.encoder_embeddings[self.mod_name_mapping[mod]].patch_size
-            num_tokens = int((value.shape[-1] / patch_size[-1]) * (value.shape[-2] / patch_size[-2]))
-
             if self.mod_name_mapping[mod] in self.image_modalities:
+                # Get image size and num tokens
+                patch_size = self.encoder_embeddings[self.mod_name_mapping[mod]].patch_size
+                num_tokens = int((value.shape[-1] / patch_size[-1]) * (value.shape[-2] / patch_size[-2]))
                 img_num_tokens = num_tokens
                 image_size = (value.shape[-2], value.shape[-1])
 
@@ -402,10 +410,12 @@ class TerraMindGeneration(nn.Module):
             if self.mod_name_mapping[mod] in self.tokenizer:
                 if 'lulc' in self.mod_name_mapping[mod]:
                     # TODO Hack: One hot encoding for LULC classes. Generalize code.
+                    num_classes = 9 if self.version == 'v01' else 10
                     if len(value.shape) == 3:
-                        value = F.one_hot(value.to(int), num_classes=10).permute(0, 3, 1, 2).to(torch.float32)
+                        value = F.one_hot(value.to(int), num_classes=num_classes).permute(0, 3, 1, 2).to(torch.float32)
                     elif len(value.shape) == 4 and value.shape[1] == 1:
-                        value = F.one_hot(value.to(int).squeeze(1), num_classes=10).permute(0, 3, 1, 2).to(torch.float32)
+                        value = F.one_hot(value.to(int).squeeze(1),
+                                          num_classes=num_classes).permute(0, 3, 1, 2).to(torch.float32)
                     elif len(value.shape) == 4 and value.shape[1] == 10:
                         # Correct shape
                         pass
@@ -414,7 +424,11 @@ class TerraMindGeneration(nn.Module):
                             'Either with class indexes and shape [B, H, W] or one hot encoded [B, 10, H, W].')
 
                 # Tokenize
-                value = self.tokenizer[self.mod_name_mapping[mod]].encode(value)[2]
+                value = self.tokenizer[self.mod_name_mapping[mod]].encode(value, device)[-1]
+
+            if not self.mod_name_mapping[mod] in self.image_modalities:
+                # Get sequence length
+                num_tokens = value.shape[1]
 
             input_dict[self.mod_name_mapping[mod]] = {
                 "tensor": value,

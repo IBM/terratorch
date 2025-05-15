@@ -18,6 +18,10 @@ import torch
 import logging
 from terratorch.registry import TERRATORCH_FULL_MODEL_REGISTRY
 from huggingface_hub import hf_hub_download
+from terratorch.models.backbones.terramind.tokenizer.text.text_tokenizer import (
+    CoordsTokenizer,
+    CaptionTokenizer,
+)
 
 logger = logging.getLogger('terramind')
 
@@ -44,7 +48,8 @@ __all__ = [
     'terramind_v01_tokenizer_s1grd',
     'terramind_v01_tokenizer_dem',
     'terramind_v01_tokenizer_lulc',
-
+    'terramind_v01_caption_tokenizer',
+    'terramind_v1_coords_tokenizer',
 ]
 
 pretrained_weights = {
@@ -400,3 +405,19 @@ def terramind_v01_tokenizer_lulc(**kwargs):
     )
 
     return tokenizer
+
+
+def terramind_v01_caption_tokenizer(device=None, *args, **kwargs):
+    file = __file__.replace('tokenizer_register.py', 'text/text_tokenizer_terramind_v1_wordpiece_30k.json')
+    return CaptionTokenizer(
+        tokenizer_file=file,
+        *args, **kwargs
+    )
+
+
+def terramind_v1_coords_tokenizer(device=None, *args, **kwargs):
+    file = __file__.replace('tokenizer_register.py', 'text/text_tokenizer_terramind_v1_wordpiece_30k.json')
+    return CoordsTokenizer(
+        tokenizer_file=file,
+        *args, **kwargs
+    )
