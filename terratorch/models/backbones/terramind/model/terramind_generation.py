@@ -34,8 +34,13 @@ from terratorch.models.backbones.terramind.tokenizer.tokenizer_register import (
     terramind_v1_tokenizer_s1grd,
     terramind_v1_tokenizer_dem,
     terramind_v1_tokenizer_lulc,
-    terramind_v1_tokenizer_ndvi
+    terramind_v1_tokenizer_ndvi,
+    terramind_v01_tokenizer_s2l2a,
+    terramind_v01_tokenizer_s1grd,
+    terramind_v01_tokenizer_dem,
+    terramind_v01_tokenizer_lulc,
 )
+
 
 def build_modality_embeddings(modalities, img_size=None, dim=None, patch_size=None):
     mod_embeddings = {}
@@ -144,15 +149,26 @@ def build_output_modality_embeddings(modalities, img_size=None, dim=None, patch_
 
 
 
-def build_tokenizer(input_modalities, output_modalities, pretrained):
-    tokenizer_dict = {
-        'tok_sen2l2a@224': terramind_v1_tokenizer_s2l2a,
-        'tok_sen1rtc@224': terramind_v1_tokenizer_s1rtc,
-        'tok_sen1grd@224': terramind_v1_tokenizer_s1grd,
-        'tok_dem@224': terramind_v1_tokenizer_dem,
-        'tok_lulc@224': terramind_v1_tokenizer_lulc,
-        'tok_ndvi@224': terramind_v1_tokenizer_ndvi
-    }
+def build_tokenizer(input_modalities, output_modalities, pretrained, version='v1'):
+    if version == 'v1':
+        tokenizer_dict = {
+            'tok_sen2l2a@224': terramind_v1_tokenizer_s2l2a,
+            'tok_sen1rtc@224': terramind_v1_tokenizer_s1rtc,
+            'tok_sen1grd@224': terramind_v1_tokenizer_s1grd,
+            'tok_dem@224': terramind_v1_tokenizer_dem,
+            'tok_lulc@224': terramind_v1_tokenizer_lulc,
+            'tok_ndvi@224': terramind_v1_tokenizer_ndvi
+        }
+    elif version == 'v01':
+        tokenizer_dict = {
+            'tok_sen2l2a@224': terramind_v01_tokenizer_s2l2a,
+            'tok_sen1grd@224': terramind_v01_tokenizer_s1grd,
+            'tok_dem@224': terramind_v01_tokenizer_dem,
+            'tok_lulc@224': terramind_v01_tokenizer_lulc,
+        }
+    else:
+        raise NotImplementedError(f'Unsupported TerraMind Tokenizer version: {version}')
+
     # TODO: Add loading only encoder/decoder
     tokenizer = {}
     for modality in input_modalities:
@@ -236,6 +252,7 @@ class TerraMindGeneration(nn.Module):
             offset: dict[str, float] | None = None,
             pretraining_mean: dict[str, list] | None = None,
             pretraining_std: dict[str, list] | None = None,
+            version: str = 'v1',
     ):
         super().__init__()
 
@@ -316,7 +333,7 @@ class TerraMindGeneration(nn.Module):
 
         self.tokenizer = build_tokenizer(input_modalities=list(self.encoder_embeddings.keys()),
                                          output_modalities=list(self.decoder_embeddings.keys()),
-                                         pretrained=pretrained)
+                                         pretrained=pretrained, version=version)
 
     def to(self, device):
         super().to(device)
