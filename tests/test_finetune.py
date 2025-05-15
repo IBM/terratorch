@@ -27,10 +27,32 @@ def setup_and_cleanup(model_name):
 # others tests and don't need be tested here again
 @pytest.mark.parametrize("model_name",
                          ["terramind_v1_base", "prithvi_eo_v1_100", "prithvi_swin_L", "prithvi_eo_v2_600"])
-@pytest.mark.parametrize("case", ["fit", "test", "validate", "compute_statistics"])
+@pytest.mark.parametrize("case", ["fit", "test", "validate",
+                                  "compute_statistics"])
 def test_finetune_multiple_backbones(model_name, case):
+
     command_list = [case, "-c", f"tests/resources/configs/manufactured-finetune_{model_name}.yaml"]
     _ = build_lightning_cli(command_list)
+
+    gc.collect()
+
+@pytest.mark.parametrize("model_name",
+                         ["terramind_v1_base", "prithvi_eo_v1_100", "prithvi_swin_L", "prithvi_eo_v2_600"])
+def test_finetune_multiple_backbones_with_prediction(model_name):
+
+    command_list = ["fit", "-c", f"tests/resources/configs/manufactured-finetune_{model_name}.yaml"]
+    _ = build_lightning_cli(command_list)
+
+    gc.collect()
+
+    command_list_prediction = ["predict", "-c",
+                               f"tests/resources/configs/manufactured-finetune_{model_name}.yaml",
+                               "--ckpt_path",
+                               f"tests/all_ecos_random/version_0/checkpoints/epoch=0.ckpt",
+                               "--predict_output_dir", "/tmp",
+                               "--data.init_args.predict_data_root", "tests/resources/inputs"]
+
+    _ = build_lightning_cli(command_list_prediction)
 
     gc.collect()
 

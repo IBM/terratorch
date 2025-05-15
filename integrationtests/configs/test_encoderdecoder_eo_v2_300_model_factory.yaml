@@ -7,6 +7,7 @@ trainer:
   num_nodes: 1
   precision: 16-mixed
   logger: true
+  max_epochs: 2
                
   callbacks:
     - class_path: RichProgressBar
@@ -21,17 +22,15 @@ trainer:
      # ---- Early stop endif ----
     - class_path: ModelCheckpoint
       init_args:
-        dirpath: /dccstor/terratorch/
+        dirpath: /dccstor/terratorch/tmp/eo_v2_300/
         mode: min
         monitor: val/loss
         filename: best-state_dict-{epoch:02d}
         save_weights_only: True
-      
-  max_epochs: 2
   check_val_every_n_epoch: 1
   log_every_n_steps: 50
   enable_checkpointing: true
-  default_root_dir: /dccstor/terratorch/
+  default_root_dir: /dccstor/terratorch/tmp/eo_v2_300/
 
 data:
   class_path: terratorch.datamodules.GenericNonGeoSegmentationDataModule
@@ -48,6 +47,7 @@ data:
       - '3'
       - '4'
       - '5'
+
     output_bands:
       - '0'
       - '1'
@@ -55,10 +55,12 @@ data:
       - '3'
       - '4'
       - '5'
+
     rgb_indices:
       - 0
       - 1
       - 2
+
     train_data_root: /dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/training
     train_label_data_root: /dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/training
     val_data_root: /dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/validation
@@ -100,19 +102,11 @@ model:
   class_path: terratorch.tasks.SemanticSegmentationTask
   init_args:
     model_args:
-      # Old model version configurations
-      pretrained: true
-      backbone: prithvi_swin_B
-      # backbone_pretrained_cfg_overlay:
-        # file: /terratorch/gfm_models/prithvi_swin_B/epoch-100-loss-0.0923.pt
-      # backbone_temporal_encoding: true
-      backbone_drop_path_rate: 0.3
-      backbone_window_size: 7
-      num_frames: 1
-      head_channel_list:
-        - 256
-
-      bands:
+      backbone_pretrained: true 
+      backbone: prithvi_eo_v2_300
+      # backbone_ckpt_path: /terratorch/gfm_models/prithvi_eo_v2_300/Prithvi_EO_V2_300M.pt 
+      backbone_drop_path: 0.1 
+      backbone_bands:
         - '0'
         - '1'
         - '2'
@@ -120,15 +114,18 @@ model:
         - '4'
         - '5'
 
-       
+
+      necks: 
+        - name: SelectIndices
+          indices: [5, 11, 17, 23]  # 300M models
+        - name: ReshapeTokensToImage # required
+        - name: LearnedInterpolateToPyramidal 
       decoder: UNetDecoder
       #TODO user provided channels
       decoder_channels: [512, 256, 128, 64]
       num_classes: 2
       head_dropout: 0.1
-    
-    model_factory: PrithviModelFactory
-     
+    model_factory: EncoderDecoderFactory 
     loss: ce
     plot_on_val: 2
     ignore_index: -1

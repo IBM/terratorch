@@ -21,7 +21,7 @@ trainer:
      # ---- Early stop endif ----
     - class_path: ModelCheckpoint
       init_args:
-        dirpath: /dccstor/terratorch/
+        dirpath: /dccstor/terratorch/tmp/swinb/
         mode: min
         monitor: val/loss
         filename: best-state_dict-{epoch:02d}
@@ -31,7 +31,7 @@ trainer:
   check_val_every_n_epoch: 1
   log_every_n_steps: 50
   enable_checkpointing: true
-  default_root_dir: /dccstor/terratorch/
+  default_root_dir: /dccstor/terratorch/tmp/swinb/
 
 data:
   class_path: terratorch.datamodules.GenericNonGeoSegmentationDataModule
@@ -48,7 +48,6 @@ data:
       - '3'
       - '4'
       - '5'
-
     output_bands:
       - '0'
       - '1'
@@ -56,12 +55,10 @@ data:
       - '3'
       - '4'
       - '5'
-
     rgb_indices:
       - 0
       - 1
       - 2
-
     train_data_root: /dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/training
     train_label_data_root: /dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/training
     val_data_root: /dccstor/geofm-finetuning/fire-scars/finetune-data/6_bands_no_replant_extended/validation
@@ -105,9 +102,9 @@ model:
     model_args:
       # Old model version configurations
       pretrained: true
-      backbone: prithvi_swin_L
+      backbone: prithvi_swin_B
       # backbone_pretrained_cfg_overlay:
-        # file: /terratorch/gfm_models/prithvi_swin_L/epoch-94-loss-0.0918.pt
+        # file: /terratorch/gfm_models/prithvi_swin_B/epoch-100-loss-0.0923.pt
       # backbone_temporal_encoding: true
       backbone_drop_path_rate: 0.3
       backbone_window_size: 7
@@ -123,6 +120,7 @@ model:
         - '4'
         - '5'
 
+       
       decoder: UNetDecoder
       #TODO user provided channels
       decoder_channels: [512, 256, 128, 64]
