@@ -2,6 +2,7 @@
 """
 This module should be removed when PrithviModelFactory is removed. For now, this tests backwards compatibility.
 """
+import gc
 import pytest
 import torch
 
@@ -47,6 +48,7 @@ def test_create_classification_model(backbone, model_factory: PrithviModelFactor
     with torch.no_grad():
         assert model(model_input).output.shape == EXPECTED_CLASSIFICATION_OUTPUT_SHAPE
 
+    gc.collect()
 
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
 def test_create_classification_model_no_in_channels(backbone, model_factory: PrithviModelFactory, model_input):
