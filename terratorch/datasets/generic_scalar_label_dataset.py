@@ -6,8 +6,9 @@ import glob
 import os
 from abc import ABC
 from pathlib import Path
-from typing import Any
-
+from typing import Any, Tuple
+import PIL
+from PIL import Image
 import albumentations as A  # noqa: N812
 import numpy as np
 import rioxarray
@@ -19,6 +20,7 @@ from torch import Tensor
 from torchgeo.datasets import NonGeoDataset
 from torchgeo.datasets.utils import rasterio_loader
 from torchvision.datasets import ImageFolder
+import tifffile
 
 from terratorch.datasets.utils import HLSBands, default_transform, filter_valid_files, generate_bands_intervals
 
@@ -136,8 +138,38 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
     def __len__(self) -> int:
         return len(self.image_files)
 
+    def _loader(self, path: str | Path) -> Image.Image:
+
+        try:
+            with open(path, "rb") as f:
+                img = np.asarray(Image.open(f))
+        except PIL.UnidentifiedImageError:
+            # TIFF files containing floating-point values should be handled in
+            # another way.
+            if path.endswith(".tif") or path.endswith(".tiff"):
+                img = tifffile.imread(path)
+            else:
+                raise IOError(f"Could not open {path}. Unsupported format or configuration.")
+        return img
+
+    def __base_getitem__(self, index: int) -> Tuple[Any, Any]:
+
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            tuple: (sample, target) where target is class_index of the target class.
+        """
+        path, target = self.samples[index]
+        sample = self._loader(path)
+
+        return sample, target
+
     def __getitem__(self, index: int) -> dict[str, Any]:
-        image, label = ImageFolder.__getitem__(self, index)
+
+        image, label = self.__base_getitem__(index)
+
         if self.expand_temporal_dimension:
             image = rearrange(image, "h w (channels time) -> time h w channels", channels=len(self.output_bands))
         if self.filter_indices:

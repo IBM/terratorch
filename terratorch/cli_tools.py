@@ -7,6 +7,7 @@ import logging
 import os
 import shutil
 import sys
+import glob
 import tempfile
 import warnings
 from copy import deepcopy
@@ -107,7 +108,7 @@ def add_default_checkpointing_config(config):
         # A list for callbacks is usually expected.
         if callbacks:
             check_callbacks = [op for op in callbacks if "ModelCheckpoint" in op.class_path]
-        
+
             if len(check_callbacks) > 0:
                 there_is_checkpointing = True
             else:
@@ -134,7 +135,8 @@ def add_default_checkpointing_config(config):
     return config 
 
 def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16",
-                    suffix="pred"):
+                    suffix:str="pred", output_file_name:str | None=None):
+
     mask, metadata = open_tiff(input_file_name)
     mask = np.where(mask == metadata["nodata"], 1, 0)
     mask = np.max(mask, axis=0)
@@ -146,7 +148,12 @@ def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16",
     metadata["compress"] = "lzw"
     metadata["nodata"] = -1
     file_name = os.path.basename(input_file_name)
-    file_name_no_ext = os.path.splitext(file_name)[0]
+
+    if not output_file_name:
+        file_name_no_ext = os.path.splitext(file_name)[0]
+    else:
+        file_name_no_ext = output_file_name
+
     out_file_name = file_name_no_ext + f"_{suffix}.tif"
     logger.info(f"Saving output to {out_file_name} ...")
     write_tiff(result, os.path.join(out_dir, out_file_name), metadata)
@@ -164,10 +171,10 @@ def import_custom_modules(custom_modules_path: str | Path | None = None) -> None
             workdir = custom_modules_path.parents[0]
             module_dir = custom_modules_path.name
 
-            sys.path.append(workdir)
+            sys.path.insert(0, str(workdir))
 
             try:
-                importlib.import_module(module_dir)
+                module = importlib.import_module(module_dir)
                 logger.info(f"Found {custom_modules_path}")
             except ImportError:
                 raise ImportError(f"It was not possible to import modules from {custom_modules_path}.")
@@ -200,6 +207,14 @@ class CustomWriter(BasePredictionWriter):
         else:
             output_dir = self.output_dir
 
+        # Defining a prefix for the output files
+        if hasattr(trainer, "output_file_prefix"):
+            output_file_prefix = trainer.output_file_prefix
+        else:
+            output_file_prefix = None
+            msg = "As you don't defined a value for `--output_file_prefix` via comand line, we will use a name based on the input file names."
+            logger.info(msg)
+
         if not os.path.exists(output_dir):
             os.makedirs(output_dir, exist_ok=True)
 
@@ -211,6 +226,13 @@ class CustomWriter(BasePredictionWriter):
 
             pred_batch_, filename_batch = prediction
 
+            # In case of multimodal datasets, we have a dictionary
+            # with one file per modality. We need to use a file as 
+            # input in order to copy metadata. 
+            if type(filename_batch)==dict:
+                keys = list(filename_batch.keys())
+                filename_batch = filename_batch[keys[0]]
+
             # If we have just a single kind of output
             if isinstance(pred_batch_, tuple):
 
@@ -218,7 +240,8 @@ class CustomWriter(BasePredictionWriter):
 
                 for prediction, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
                     save_prediction(prediction, file_name, output_dir,
-                                    dtype=trainer.out_dtype, suffix=suffix)
+                                    dtype=trainer.out_dtype, suffix=suffix,
+                                    output_file_name=output_file_prefix)
 
             # If we are outputting more than one kind of variable, as
             # (predictions, probabilities), for segmentation
@@ -229,7 +252,8 @@ class CustomWriter(BasePredictionWriter):
 
                     for p, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
                         save_prediction(p, file_name, output_dir,
-                                        dtype=trainer.out_dtype, suffix=suffix)
+                                        dtype=trainer.out_dtype, suffix=suffix,
+                                        output_file_name=output_file_prefix)
 
         else:
             raise TypeError(f"Unknown type for prediction {type(prediction)}")
@@ -288,7 +312,11 @@ def clean_config_for_deployment_and_dump(config: dict[str, Any]):
             deploy_config["model"]["init_args"]["model_args"]["pretrained"] = False
         elif "backbone_pretrained" in deploy_config["model"]["init_args"]["model_args"]:
             deploy_config["model"]["init_args"]["model_args"]["backbone_pretrained"] = False
-
+            
+    # Set image_grep and label_grep to *tif* . 
+    # Fixes issue with inference not finding image named as the training image.
+    deploy_config['data']['init_args']['img_grep'] = "*tif*"
+    deploy_config['data']['init_args']['label_grep'] = "*tif*"
     return yaml.safe_dump(deploy_config)
 
 
@@ -450,6 +478,7 @@ class MyLightningCLI(LightningCLI):
 
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:
         parser.add_argument("--predict_output_dir", default=None)
+        parser.add_argument("--output_file_prefix", default=None)
         parser.add_argument("--out_dtype", default="int16")
         parser.add_argument("--deploy_config_file", type=bool, default=True)
         parser.add_argument("--custom_modules_path", type=str, default=None)
@@ -461,20 +490,11 @@ class MyLightningCLI(LightningCLI):
         # callback. 
         self.config = add_default_checkpointing_config(self.config)
 
-        super().instantiate_classes()
         # get the predict_output_dir. Depending on the value of run, it may be in the subcommand
         try:
             config = self.config.predict
         except AttributeError:
             config = self.config
-        if hasattr(config, "predict_output_dir"):
-            self.trainer.predict_output_dir = config.predict_output_dir
-
-        if hasattr(config, "out_dtype"):
-            self.trainer.out_dtype = config.out_dtype
-
-        if hasattr(config, "deploy_config_file"):
-            self.trainer.deploy_config = config.deploy_config_file
 
         # Custom modules path
         if hasattr(self.config, "fit") and hasattr(self.config.fit, "custom_modules_path"):
@@ -490,6 +510,20 @@ class MyLightningCLI(LightningCLI):
 
         import_custom_modules(custom_modules_path)
 
+        super().instantiate_classes()
+
+        if hasattr(config, "predict_output_dir"):
+            self.trainer.predict_output_dir = config.predict_output_dir
+
+        if hasattr(config, "output_file_prefix"):
+            self.trainer.output_file_prefix = config.output_file_prefix
+
+        if hasattr(config, "out_dtype"):
+            self.trainer.out_dtype = config.out_dtype
+
+        if hasattr(config, "deploy_config_file"):
+            self.trainer.deploy_config = config.deploy_config_file
+
     @staticmethod
     def subcommands() -> dict[str, set[str]]:
         existing_subcommands = LightningCLI.subcommands()
@@ -501,7 +535,7 @@ def build_lightning_cli(
     args: ArgsType = None,
     run=True,  # noqa: FBT002
 ) -> LightningCLI:
-    """Command-line interface to GeospatialCV."""
+    """Command-line interface to TerraTorch."""
     # Taken from https://github.com/pangeo-data/cog-best-practices
     rasterio_best_practices = {
         "GDAL_DISABLE_READDIR_ON_OPEN": "EMPTY_DIR",
@@ -652,7 +686,14 @@ class LightningInferenceModel:
         if data_root:
             self.datamodule.predict_root = data_root
         predictions = self.trainer.predict(model=self.model, datamodule=self.datamodule, return_predictions=True)
-        concat_predictions = torch.cat([batch[0] for batch in predictions])
+
+        # In some cases, the output has the format ((prediction_tensor,
+        # prediction_name), filename)
+        if all([type(j[0])==tuple for j in predictions]):
+            concat_predictions = torch.cat([batch[0][0] for batch in predictions])
+        else:
+            concat_predictions = torch.cat([batch[0] for batch in predictions])
+
         concat_file_names = flatten([batch[1] for batch in predictions])
 
         return concat_predictions, concat_file_names

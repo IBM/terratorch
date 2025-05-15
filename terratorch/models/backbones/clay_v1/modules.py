@@ -1,5 +1,6 @@
 import math
 import os
+import numpy as np
 import torch
 import torch.nn.functional as F
 from einops import rearrange, repeat
@@ -11,18 +12,41 @@ from terratorch.models.backbones.clay_v1.utils import posemb_sincos_1d, posemb_s
 os.environ["TORCH_CUDNN_V8_API_DISABLED"] = "1"
 
 # central wavelengths of pretrained model
-WAVELENGTHS = {
-    "blue": 0.493,
-    "green": 0.56,
-    "red": 0.665,
-    "rededge1": 0.704,
-    "rededge2": 0.74,
-    "rededge3": 0.783,
-    "nir": 0.842,
-    "nir08": 0.865,
-    "swir16": 1.61,
-    "swir22": 2.19,
-}
+WAVELENGTHS= {
+  "blue": 0.493,
+  "green": 0.56,
+  "red": 0.665,
+  "rededge1": 0.704,
+  "rededge2": 0.74,
+  "rededge3": 0.783,
+  "nir": 0.842,
+  "nir08": 0.865,
+  "swir16": 1.61,
+  "swir22": 2.19,
+  "COASTAL_AEROSOL": 0.44,
+  "BLUE": 0.49,
+  "GREEN": 0.56,
+  "RED": 0.665,
+  "RED_EDGE_1": 0.705,
+  "RED_EDGE_2": 0.74, 
+  "RED_EDGE_3": 0.783,
+  "NIR_BROAD": 0.832,
+  "NIR_NARROW": 0.864,
+  "WATER_VAPOR": 0.945,
+  "CIRRUS": 1.373,
+  "SWIR_1": 1.61,
+  "SWIR_2": 2.20,
+  "THEMRAL_INFRARED_1": 10.90,
+  "THEMRAL_INFRARED_12": 12.00, 
+  "VV": 5.405,
+  "VH": 5.405,
+  "ASC_VV": 5.405,
+  "ASC_VH": 5.405,
+  "DSC_VV": 5.405,
+  "DSC_VH": 5.405,
+  "VV-VH": 5.405
+  }
+
 
 
 class FeedForward(nn.Module):
@@ -70,10 +94,26 @@ class Attention(nn.Module):
 
 
 class Transformer(nn.Module):
-    def __init__(self, dim, depth, heads, dim_head, mlp_dim):
+    def __init__(self, dim, depth, heads, dim_head, mlp_dim, vpt: bool = False, vpt_n_tokens: int | None = None, vpt_dropout: float = 0.0):
         super().__init__()
         self.norm = nn.LayerNorm(dim)
         self.layers = nn.ModuleList([])
+        self.vpt = vpt
+        self.vpt_n_tokens = vpt_n_tokens
+        self.vpt_dropout = vpt_dropout
+        if self.vpt:
+            if self.vpt_n_tokens is None:
+                msg = "vpt_n_tokens must be provided when using VPT"
+                raise ValueError(msg)
+            self.vpt_prompt_embeddings = nn.ParameterList(
+                [nn.Parameter(torch.zeros(1, self.vpt_n_tokens, dim)) for _ in range(depth)]
+            )
+            self.vpt_dropout_layers = nn.ModuleList(
+                [nn.Dropout(vpt_dropout) for _ in range(depth)]
+            )
+            val = np.sqrt(6.0 / float(3 * 8**2 + dim))
+            for emb in self.vpt_prompt_embeddings:
+                nn.init.uniform_(emb, -val, val)
         for _ in range(depth):
             self.layers.append(nn.ModuleList([
                 Attention(dim, heads=heads, dim_head=dim_head),
@@ -81,10 +121,25 @@ class Transformer(nn.Module):
             ]))
 
     def forward(self, x) -> list[torch.Tensor]:
+        bs = x.shape[0]
         out = []
-        for attn, ff in self.layers:
+        for idx, (attn, ff) in enumerate(self.layers):
+            if self.vpt:
+                x = torch.cat(
+                (
+                    x[:, :1, :],
+                    self.vpt_dropout_layers[idx](self.vpt_prompt_embeddings[idx].expand(bs, -1, -1)),
+                    x[:, 1:, :],
+                ),
+                dim=1,
+            )  # (batch_size, cls_token + n_prompt + n_patches, hidden_dim)
             x = attn(x) + x
             x = ff(x) + x
+            if self.vpt:
+                x = torch.cat(
+                    (x[:, :1, :], x[:, (1 + self.vpt_n_tokens) :, :]),
+                    dim=1,
+                )  # (batch_size, cls_token + n_patches, hidden_dim)
             out.append(x.clone())
         x = self.norm(x)
         out[-1] = x.clone()
@@ -102,6 +157,9 @@ class Encoder(nn.Module):
         heads,
         dim_head,
         mlp_ratio,
+        vpt: bool = False,
+        vpt_n_tokens: int | None = None,
+        vpt_dropout: float = 0.0,
     ):
         super().__init__()
         self.mask_ratio = mask_ratio
@@ -124,6 +182,9 @@ class Encoder(nn.Module):
             heads=heads,
             dim_head=dim_head,
             mlp_dim=int(dim * mlp_ratio),
+            vpt=vpt,
+            vpt_n_tokens=vpt_n_tokens,
+            vpt_dropout=vpt_dropout,
         )
 
     def to_patch_embed(self, cube, waves):
@@ -296,6 +357,9 @@ class EmbeddingEncoder(Encoder):
         heads,
         dim_head,
         mlp_ratio,
+        vpt: bool = False,
+        vpt_n_tokens: int | None = None,
+        vpt_dropout: float = 0.0,
     ):
         super().__init__(
             mask_ratio=0.0,
@@ -306,6 +370,9 @@ class EmbeddingEncoder(Encoder):
             heads=heads,
             dim_head=dim_head,
             mlp_ratio=mlp_ratio,
+            vpt=vpt,
+            vpt_n_tokens=vpt_n_tokens,
+            vpt_dropout=vpt_dropout,
         )
         self.img_size = img_size
 
@@ -527,7 +594,10 @@ class Datacuber(nn.Module):
         return datacube
 
     def _parse_wavelengths(self, bands, channels):
-        if bands is not None and all([_ in WAVELENGTHS for _ in bands]):
-            return torch.tensor([WAVELENGTHS[_] for _ in bands])
-        else:
-            return torch.zeros(channels)
+        waves = torch.tensor([WAVELENGTHS[band] if band in WAVELENGTHS.keys() else 0.0 for band in bands])
+        print(waves)
+        return waves
+        # if bands is not None and all([_ in WAVELENGTHS for _ in bands]):
+        #     return torch.tensor([WAVELENGTHS[_] for _ in bands])
+        # else:
+        #     return torch.zeros(channels)

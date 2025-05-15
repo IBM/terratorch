@@ -3,12 +3,10 @@ import subprocess
 import tomllib
 
 def get_version():
-    with open("pyproject.toml", "rb") as f:
-        data = tomllib.load(f)
-    return data["tool"]["poetry"]["version"]
+    return '1.0.1'
 
 def pin_requirements():
-    subprocess.run(["python", "./release/pin_requirements.py"], check=True)
+    subprocess.run(["python", "./release/pin_dependencies.py"], check=True)
 
 def build_package():
     subprocess.run(["python", "-m", "build"], check=True)
