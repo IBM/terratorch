@@ -58,7 +58,7 @@ dependencies = [
   "torchgeo==0.7.0",
   "einops==0.8.1",
   "timm>=1.0.15",
-  "huggingface_hub",
+  "huggingface_hub==0.30.2",
   "tifffile==2025.3.30",
 ]
 
