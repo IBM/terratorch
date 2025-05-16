@@ -88,6 +88,7 @@ To get started, check out the [quick start guide](https://ibm.github.io/terrator
 
 Developers, check out the [architecture overview](https://ibm.github.io/terratorch/architecture).
 
+[TerraTorch: The Geospatial Foundation Models Toolkit on arXiv](https://arxiv.org/abs/2503.20563)
 ## Contributing
 
 This project welcomes contributions and suggestions. Ways to contribute or get involved:
