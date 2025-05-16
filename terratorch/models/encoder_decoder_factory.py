@@ -165,7 +165,8 @@ class EncoderDecoderFactory(ModelFactory):
                     "this is probably fine, but if you are training a model check the backbone_pretrained parameter."
                 )
                 warnings.warn(msg, stacklevel=1)
-
+            # The backbone is internally modified to support the peft
+            # algorithm.
             backbone = get_peft_backbone(peft_config, backbone)
 
         try:
