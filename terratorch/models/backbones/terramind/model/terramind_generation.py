@@ -26,7 +26,7 @@ from .encoder_embeddings import ImageEncoderEmbedding, ImageTokenEncoderEmbeddin
 from .decoder_embeddings import ImageTokenDecoderEmbedding
 from .tm_utils import LayerNorm
 from .modality_info import MODALITY_INFO
-from .generate import GenerationSampler, build_chained_generation_schedules
+from .generate import GenerationSampler, build_chained_generation_schedules, init_empty_target_modality
 from .terramind import TerraMind
 from terratorch.models.backbones.terramind.tokenizer.tokenizer_register import (
     terramind_v1_tokenizer_s2l2a,
@@ -183,7 +183,9 @@ def build_tokenizer(input_modalities, output_modalities, pretrained, version='v1
             tokenizer[modality] = tokenizer_dict[modality](pretrained=pretrained)
 
     for modality in output_modalities:
-        if modality in tokenizer_dict and modality not in tokenizer:
+        if modality in tokenizer:
+            pass
+        elif modality in tokenizer_dict:
             tokenizer[modality] = tokenizer_dict[modality](pretrained=pretrained)
         else:
             warnings.warn(f'Tokenizer for output modality {modality} not found.')
@@ -355,7 +357,6 @@ class TerraMindGeneration(nn.Module):
             self,
             d: dict[str, torch.Tensor] | torch.Tensor | None = None,
             standardize: bool | None = None,
-            offset: dict[str, float] | None = None,
             timesteps: int = None,
             verbose: bool = False,
             **kwargs
@@ -384,8 +385,8 @@ class TerraMindGeneration(nn.Module):
             d[key] = value
 
         # Get batch size and device
-        B = d[list(d.keys())[0]].shape[0]
-        device = d[list(d.keys())[0]].device
+        B = len(list(d.values())[0])
+        device = next(self.parameters()).device
 
         standardize = standardize if standardize is not None else self.standardize
         if standardize:
@@ -399,61 +400,68 @@ class TerraMindGeneration(nn.Module):
         # Default values if no images are provided
         img_num_tokens, image_size = 196, (224, 224)
         for mod, value in d.items():
-            if self.mod_name_mapping[mod] in self.image_modalities:
+            if self.mod_name_mapping[mod] in ['caption', 'coords']:
+                token_ids = self.tokenizer[self.mod_name_mapping[mod]].encode(value, device)
+                input_dict[self.mod_name_mapping[mod]] = token_ids
+            elif self.mod_name_mapping[mod] in self.image_modalities:
                 # Get image size and num tokens
                 patch_size = self.encoder_embeddings[self.mod_name_mapping[mod]].patch_size
                 num_tokens = int((value.shape[-1] / patch_size[-1]) * (value.shape[-2] / patch_size[-2]))
                 img_num_tokens = num_tokens
                 image_size = (value.shape[-2], value.shape[-1])
 
-            # Run tokenizer encoder for tokenized input modalities
-            if self.mod_name_mapping[mod] in self.tokenizer:
-                if 'lulc' in self.mod_name_mapping[mod]:
-                    # TODO Hack: One hot encoding for LULC classes. Generalize code.
-                    num_classes = 9 if self.version == 'v01' else 10
-                    if len(value.shape) == 3:
-                        value = F.one_hot(value.to(int), num_classes=num_classes).permute(0, 3, 1, 2).to(torch.float32)
-                    elif len(value.shape) == 4 and value.shape[1] == 1:
-                        value = F.one_hot(value.to(int).squeeze(1),
-                                          num_classes=num_classes).permute(0, 3, 1, 2).to(torch.float32)
-                    elif len(value.shape) == 4 and value.shape[1] == 10:
-                        # Correct shape
-                        pass
-                    else:
-                        raise ValueError('Expect LULC data with 10 classes. '
-                            'Either with class indexes and shape [B, H, W] or one hot encoded [B, 10, H, W].')
+                # Run tokenizer encoder for tokenized input modalities
+                if self.mod_name_mapping[mod] in self.tokenizer:
+                    if 'lulc' in self.mod_name_mapping[mod]:
+                        # TODO Hack: One hot encoding for LULC classes. Generalize code.
+                        num_classes = 9 if self.version == 'v01' else 10
+                        if len(value.shape) == 3:
+                            value = F.one_hot(value.to(int), num_classes=num_classes).permute(0, 3, 1, 2).to(torch.float32)
+                        elif len(value.shape) == 4 and value.shape[1] == 1:
+                            value = F.one_hot(value.to(int).squeeze(1),
+                                              num_classes=num_classes).permute(0, 3, 1, 2).to(torch.float32)
+                        elif len(value.shape) == 4 and value.shape[1] == 10:
+                            # Correct shape
+                            pass
+                        else:
+                            raise ValueError('Expect LULC data with 10 classes. '
+                                'Either with class indexes and shape [B, H, W] or one hot encoded [B, 10, H, W].')
 
-                # Tokenize
-                value = self.tokenizer[self.mod_name_mapping[mod]].encode(value, device)[-1]
+                    # Tokenize
+                    value = self.tokenizer[self.mod_name_mapping[mod]].encode(value, device)[-1]
 
-            if not self.mod_name_mapping[mod] in self.image_modalities:
-                # Get sequence length
-                num_tokens = value.shape[1]
+                input_dict[self.mod_name_mapping[mod]] = {
+                    "tensor": value,
+                    "input_mask": torch.zeros(B, num_tokens, dtype=torch.bool, device=device),
+                    "target_mask": torch.ones(B, num_tokens, dtype=torch.bool, device=device),
+                }
 
-            input_dict[self.mod_name_mapping[mod]] = {
-                "tensor": value,
-                "input_mask": torch.zeros(B, num_tokens, dtype=torch.bool, device=device),
-                "target_mask": torch.ones(B, num_tokens, dtype=torch.bool, device=device),
-            }
+            else:
+                raise ValueError(f"Unknown modality {mod}")
 
         # Initialize output modalities
         sum_tokens = 0
         for mod in self.output_modalities:
-            mod_num_tokens = img_num_tokens if mod in self.output_image_modalities else 196  # TODO: Not tested for sequence data.
+            if mod in self.output_image_modalities:
+                mod_num_tokens = img_num_tokens
+            else:
+                # Get max length from modality info for sequence data
+                mod_num_tokens = self.decoder_embeddings[mod].max_length
+
             sum_tokens += mod_num_tokens
 
             if mod in input_dict:
-                warnings.warn(f'The modality {mod} is used as input and output which is not possible for the same '
-                              f'patches. Random sampling 50% of tokens as input and output.')
-                input_dict[mod]['input_mask'] = torch.rand((B, mod_num_tokens), device=device) < 0.5
-                input_dict[mod]['target_mask'] = ~input_dict[mod]['input_mask']
-                input_dict[mod]['tensor'] = input_dict[mod]['tensor'].reshape(B, -1).to(torch.long)
-            else:
-                input_dict[mod] = {
-                    'tensor': torch.zeros((B, mod_num_tokens), dtype=torch.int64, device=device),
-                    'input_mask': torch.ones((B, mod_num_tokens), dtype=torch.bool, device=device),
-                    'target_mask': torch.zeros((B, mod_num_tokens), dtype=torch.bool, device=device),
-                }
+                raise ValueError('Input and output of the same modality. Not supported.')
+            #     warnings.warn(f'The modality {mod} is used as input and output which is not possible for the same '
+            #                   f'patches. Random sampling 50% of tokens as input and output.')
+            #     input_dict[mod]['input_mask'] = torch.rand((B, mod_num_tokens), device=device) < 0.5
+            #     input_dict[mod]['target_mask'] = ~input_dict[mod]['input_mask']
+            #     input_dict[mod]['tensor'] = input_dict[mod]['tensor'].reshape(B, -1).to(torch.long)
+
+
+            input_dict = init_empty_target_modality(
+                input_dict, MODALITY_INFO, mod, B, mod_num_tokens, device
+            )
 
         # Predict tokens of output modalities
         schedule = build_chained_generation_schedules(
@@ -478,6 +486,7 @@ class TerraMindGeneration(nn.Module):
             top_p=self.top_p,
             top_k=self.top_k,
             num_tokens=sum_tokens,
+            text_tokenizer=self.tokenizer['caption'].text_tokenizer if 'caption' in self.tokenizer else None, # Test for coords
         )
 
         # TODO Vary timesteps based on codebook diversity
@@ -489,16 +498,21 @@ class TerraMindGeneration(nn.Module):
                 patch_size = self.tokenizer[mod].patch_size
                 tok = rearrange(tok, "b (nh nw) -> b nh nw",
                                 nh=image_size[0] // patch_size, nw=image_size[1] // patch_size)
-            out[self.output_mod_name_mapping[mod]] = self.tokenizer[mod].decode_tokens(
-                tok,
-                image_size=image_size,
-                timesteps=timesteps,
-                verbose=verbose
-            )
+
+                out[self.output_mod_name_mapping[mod]] = self.tokenizer[mod].decode_tokens(
+                    tok,
+                    image_size=image_size,
+                    timesteps=timesteps,
+                    verbose=verbose
+                )
+
+            elif mod in self.output_modalities and mod in ['caption', 'coords']:
+                out[self.output_mod_name_mapping[mod]] = self.tokenizer[mod].decode_text(out_dict)
 
         if standardize:
             for mod, value in out.items():
-                out[mod] = (value * self.pretraining_std[self.mod_name_mapping[mod]] +
-                            self.pretraining_mean[self.mod_name_mapping[mod]])
+                if self.mod_name_mapping[mod] in self.pretraining_mean:
+                    out[mod] = (value * self.pretraining_std[self.mod_name_mapping[mod]] +
+                                self.pretraining_mean[self.mod_name_mapping[mod]])
 
         return out
