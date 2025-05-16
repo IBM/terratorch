@@ -1,14 +1,11 @@
 import math
 from collections import Counter
-
-import torch
-from torch.utils.data import DataLoader
-from tqdm import tqdm
-
 from typing import Dict, Union
 
 import numpy as np
 import torch
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 
 def compute_statistics(dataloader: DataLoader) -> dict[str, list[float]]:
@@ -74,6 +71,7 @@ def compute_float_mask_statistics(dataloader: DataLoader) -> dict[str, float]:
     std = math.sqrt(variance)
     return {"mean": mean, "std": std}
 
+
 # TODO remove it for future releases
 def remove_unexpected_prefix(state_dict):
     state_dict_ = {}
@@ -85,13 +83,14 @@ def remove_unexpected_prefix(state_dict):
             k_ = ".".join(keys)
         else:
             k_ = k
-        state_dict_[k_] = v 
+        state_dict_[k_] = v
     return state_dict_
+
 
 def view_api(
     module: torch.nn.Module = None,
-    input_data: Union[torch.nn.Module, np.ndarray] = None,
-    config: Dict = None,
+    input_data: torch.nn.Module | np.ndarray = None,
+    config: dict = None,
     save_dir: str = None,
 ):
     try:
@@ -119,8 +118,6 @@ def view_api(
 
     module_wrap = Module_wrap(module=module)
 
-    model_graph = draw_graph(
-        module_wrap, input_data=input_data, directory=save_dir, **config
-    )
+    model_graph = draw_graph(module_wrap, input_data=input_data, directory=save_dir, **config)
 
     return model_graph.visual_graph
