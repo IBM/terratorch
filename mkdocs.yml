@@ -1,19 +1,23 @@
-site_name: TerraTorch
+# Mkdocs documentation: https://squidfunk.github.io/mkdocs-material/reference/
+site_name: "TerraTorch"
 theme:
   name: material #readthedocs
-  logo: figs/logo_grey.png #https://github.com/user-attachments/assets/f8c9586f-6220-4a53-9669-2aee3300b492" 
+  logo: figs/logo_header.png
   font:
     text: Roboto
   palette:
-    # Palette toggle for light mode
-    - scheme: default
+    - scheme: default # Light mode
       toggle:
         icon: material/brightness-7
-      primary: black #white
-    - scheme: slate
+        name: Switch to dark mode
+      primary: black
+      accent: deep orange
+    - scheme: slate  # Dark mode
       toggle:
         icon: material/brightness-4
+        name: Switch to light mode
       primary: black
+      accent: deep orange
   features:
     - content.code.copy
     - content.code.select
@@ -27,24 +31,25 @@ theme:
     - content.tabs.link
     - content.tooltips
     - navigation.footer
-      #- navigation.indexes
+    # - navigation.indexes  # Adds pages to section headers
+    # - navigation.expand  # Show all subpages
+    - navigation.path  # Show path of current page. Does not work.
     - navigation.instant
-      #- navigation.expand
-    - navigation.path
     - navigation.instant.prefetch
     - navigation.instant.progress
-    # - navigation.prune
-    #- navigation.sections
-    - navigation.tabs
-      #- navigation.tabs.sticky
-    - navigation.top
+    - navigation.sections
+    # - navigation.prune  # Used for 100+ pages to reduce loading times
+    # - navigation.tabs  # Top menu bar
+    # - navigation.tabs.sticky  # Keep top menu bar
+    - navigation.top  # "Back to top" button
     - navigation.tracking
     - search.highlight
     - search.share
     - search.suggest
     - toc.follow
-      #- toc.integrate
-  user_color_mode_toggle: true 
+    - toc.integrate
+  user_color_mode_toggle: true
+
 plugins:
   - search 
   - autorefs
@@ -68,34 +73,49 @@ extra:
 site_url: https://ibm.github.io/terratorch/
 repo_url: https://github.com/IBM/terratorch
 nav:
-  - index.md
-  - License: license.md
   - Getting Started:
+    - index.md  # Home
     - quick_start.md
+  - User Guide:
+    - architecture.md
+    - Models: todo.md  # subpages for TerraMind, Prithvi etc
+    - Generic Datamodules: todo.md  # with subpages for class, seg, multimodal
+    - Tasks: todo.md
+    - Fine-tuning: todo.md
     - inference.md
-  - Contribution Guidelines: contributing.md
-  - Architecture Overview: architecture.md
-  - Components:
-    - Backbones: backbones.md
-    - Decoders: decoders.md
-    - Necks: necks.md
-    - Heads: heads.md
-    - Tasks: tasks.md
-    - Model Factories: model_factories.md
-    - Generic Datasets: generic_datasets.md
-    - Datasets: datasets.md
-    - Generic Datamodules: generic_datamodules.md
-    - Datamodules: datamodules.md
-    - Transforms: transforms.md
-  - Glossary: glossary.md
   - Tutorials:
-    - tutorials/the_yaml_config.md
-    - tutorials/basic_inference_burn_scars.md 
-    - tutorials/burn_scars_inference_simplified.md
-    - tutorials/using_datamodule_multitemporalclassificationModule.md
-    - tutorials/burn_scars_finetuning.md
-    - tutorials/adding_custom_modules.md
-  - Changelog: changelog.md
+    - YAML Config: tutorials/the_yaml_config.md
+    - Fine-tuning: tutorials/burn_scars_finetuning.md
+    - Basic Inference: tutorials/basic_inference_burn_scars.md
+    - Simple Inference: tutorials/burn_scars_inference_simplified.md
+    - Multi-temporal data: tutorials/using_datamodule_multitemporalclassificationModule.md
+    - Custom Modules: tutorials/adding_custom_modules.md
+  - Package Reference:
+    - Glossary: glossary.md
+    - Tasks: tasks.md
+    - Models:
+      - Model Factories: model_factories.md
+      - Backbones: backbones.md
+      - Decoders: decoders.md
+      - Necks: necks.md
+      - Heads: heads.md
+    - Data Modules:
+      - Generic Datamodules: generic_datamodules.md
+      - Specific Datamodules: datamodules.md
+    - Datasets:
+      - Generic Datasets: generic_datasets.md
+      - Specific Datasets: datasets.md
+      - Transforms: transforms.md
+  - Extras:
+    - Contribution Guidelines: contributing.md
+    - Changelog: changelog.md
+    - License: license.md
+    - Citation: citation.md
+
+
+hide:
+ - title
+
 markdown_extensions:
   - attr_list
   - toc:
@@ -110,6 +130,8 @@ markdown_extensions:
   - pymdownx.superfences
   - admonition
   - pymdownx.details
+
+# copyright: Copyright &copy; 2025 TerraTorch
 
 extra_css:
   - stylesheets/extra.css
