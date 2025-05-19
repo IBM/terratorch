@@ -31,7 +31,7 @@ theme:
     - content.tabs.link
     - content.tooltips
     - navigation.footer
-    # - navigation.indexes  # Adds pages to section headers
+    - navigation.indexes  # Adds pages to section headers
     # - navigation.expand  # Show all subpages
     - navigation.path  # Show path of current page. Does not work.
     - navigation.instant
@@ -76,10 +76,18 @@ nav:
   - Getting Started:
     - index.md  # Home
     - quick_start.md
+    - FAQs: todo.md
   - User Guide:
-    - architecture.md
-    - Models: todo.md  # subpages for TerraMind, Prithvi etc
-    - Generic Datamodules: todo.md  # with subpages for class, seg, multimodal
+    - architecture.md  # Rename to guide/index.md as overview page?
+    - Datasets: # Generic datasets with subpages for class, seg, multimodal
+      - todo.md # Overview
+      - Generic Datamodules: todo.md
+      - Custom Datasets: todo.md
+    - Models:
+      - todo.md  # Overview
+      - Model Registry: todo.md
+      - TerraMind: todo.md
+      - Prithvi: todo.md
     - Tasks: todo.md
     - Fine-tuning: todo.md
     - inference.md
@@ -87,19 +95,20 @@ nav:
     - YAML Config: tutorials/the_yaml_config.md
     - Fine-tuning: tutorials/burn_scars_finetuning.md
     - Basic Inference: tutorials/basic_inference_burn_scars.md
-    - Simple Inference: tutorials/burn_scars_inference_simplified.md
+    - Simplified Inference: tutorials/burn_scars_inference_simplified.md
     - Multi-temporal data: tutorials/using_datamodule_multitemporalclassificationModule.md
     - Custom Modules: tutorials/adding_custom_modules.md
   - Package Reference:
     - Glossary: glossary.md
     - Tasks: tasks.md
     - Models:
+      - Model Registry: todo.md
       - Model Factories: model_factories.md
       - Backbones: backbones.md
       - Decoders: decoders.md
       - Necks: necks.md
       - Heads: heads.md
-    - Data Modules:
+    - Datamodules:
       - Generic Datamodules: generic_datamodules.md
       - Specific Datamodules: datamodules.md
     - Datasets:
@@ -111,10 +120,7 @@ nav:
     - Changelog: changelog.md
     - License: license.md
     - Citation: citation.md
-
-
-hide:
- - title
+    - Related Packages: todo.md
 
 markdown_extensions:
   - attr_list
