@@ -126,7 +126,7 @@ markdown_extensions:
   - attr_list
   - toc:
       permalink: "#"
-      toc_depth: 6
+      toc_depth: 2
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
