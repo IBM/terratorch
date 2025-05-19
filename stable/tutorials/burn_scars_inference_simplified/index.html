@@ -238,9 +238,7 @@
 
 
 
-  
-
-<nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href="../.." title="TerraTorch" class="md-nav__button md-logo" aria-label="TerraTorch" data-md-component="logo">
       
@@ -1537,6 +1535,170 @@
               </div>
             
             
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#direct-inference-or-full-image-inference" class="md-nav__link">
+    <span class="md-ellipsis">
+      Direct inference (or full image inference).
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Direct inference (or full image inference).">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-directory-in-which-we-will-save-the-model-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      The directory in which we will save the model output.
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-path-to-the-configuration-yaml-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      The path to the configuration (YAML) file.
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-path-to-the-local-checkpoint-a-file-storing-the-model-weights" class="md-nav__link">
+    <span class="md-ellipsis">
+      The path to the local checkpoint (a file storing the model weights).
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-path-for-the-directory-containing-the-input-images" class="md-nav__link">
+    <span class="md-ellipsis">
+      The path for the directory containing the input images.
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#an-image-chosen-to-be-used-in-the-single-file-inference" class="md-nav__link">
+    <span class="md-ellipsis">
+      An image chosen to be used in the single-file inference.
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-list-indicating-the-bands-contained-in-the-input-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      A list indicating the bands contained in the input files.
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-subset-of-the-dataset-bands-to-be-used-as-input-for-the-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      A subset of the dataset bands to be used as input for the model.
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#creating-a-directory-to-store-the-output-when-it-does-not-exist" class="md-nav__link">
+    <span class="md-ellipsis">
+      Creating a directory to store the output (when it does not exist).
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#instantiating-the-model-from-the-config-file-and-the-others-arguments-defined-previously" class="md-nav__link">
+    <span class="md-ellipsis">
+      Instantiating the model from the config file and the others arguments defined previously.
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#performing-the-inference-for-a-single-file-the-output-is-a-tensor-torchtensor" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performing the inference for a single file. The output is a tensor (torch.Tensor).
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#visualizing-the-input-image" class="md-nav__link">
+    <span class="md-ellipsis">
+      Visualizing the input image.
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tiled-inference" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tiled Inference
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Tiled Inference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#notice-that-the-content-is-identical-to-the-other-yaml-file-but-the-addition-of-the-subfield" class="md-nav__link">
+    <span class="md-ellipsis">
+      Notice that the content is identical to the other YAML file, but the addition of the subfield:
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
           
           
             <div class="md-content" data-md-component="content">
@@ -1794,7 +1956,7 @@ to the variables sent to the field <code>model</code>. The variables containing 
     
     
       
-      <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.copy", "content.code.select", "announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "navigation.footer", "navigation.path", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.sections", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow", "toc.integrate"], "search": "../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"canonical_version": "stable", "default": "stable", "provider": "mike", "version_selector": true}}</script>
+      <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.copy", "content.code.select", "announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "navigation.footer", "navigation.path", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.sections", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"canonical_version": "stable", "default": "stable", "provider": "mike", "version_selector": true}}</script>
     
     
       <script src="../../assets/javascripts/bundle.13a4f30d.min.js"></script>
