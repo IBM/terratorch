@@ -6,7 +6,7 @@ import timm
 import torch
 import gc 
 from terratorch.models.backbones import scalemae
-from terratorch.registry import BACKBONE_REGISTRY
+from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY
 import terratorch.models.backbones.torchgeo_vit as torchgeo_vit
 
 NUM_CHANNELS = 6
@@ -18,6 +18,9 @@ IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "false") == "true"
 def input_224():
     return torch.ones((1, NUM_CHANNELS, 224, 224))
 
+@pytest.fixture
+def input_galileo():
+    return torch.ones((224, 224, 1, 2)) #NUM_CHANNELS))
 
 @pytest.fixture
 def input_512():
@@ -82,6 +85,32 @@ def test_vit_models_accept_multitemporal(model_name, input_224_multitemporal):
     backbone(input_224_multitemporal)
     gc.collect()
 
+@pytest.mark.parametrize("model_name", ["nano", "tiny", "base"])
+def test_galileo_encoders(model_name, input_galileo):
+
+    from galileo.data.utils import construct_galileo_input
+
+    backbone = BACKBONE_REGISTRY.build(f"galileo_{model_name}_encoder",
+                                       pretrained=True)
+    decoder = DECODER_REGISTRY.build("GalileoDecoder")
+
+    input_galileo_data = construct_galileo_input(s1=input_galileo)
+    input_galileo_data = input_galileo_data._asdict()
+
+    output = backbone(s_t_x=input_galileo_data["space_time_x"][None,...],
+                      sp_x=input_galileo_data["space_x"][None,...],
+                      t_x=input_galileo_data["time_x"][None,...],
+                      st_x=input_galileo_data["static_x"][None,...],
+                      s_t_m=input_galileo_data["space_time_mask"][None,...],
+                      sp_m=input_galileo_data["space_mask"][None,...],
+                      t_m=input_galileo_data["time_mask"][None,...],
+                      st_m=input_galileo_data["static_mask"][None,...],
+                      months=input_galileo_data["months"][None,...],
+                      patch_size=16)
+
+    output_decoder = decoder(*output)
+
+    gc.collect()
 
 @pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
 @pytest.mark.parametrize("patch_size", [8, 16])
