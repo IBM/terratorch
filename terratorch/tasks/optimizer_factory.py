@@ -64,6 +64,7 @@ def optimizer_factory(
             if k == "LambdaLR":
                 lr_lambda = v.get("lr_lambda", "linear_warmup")
                 #v["lr_lambda"] =  getattr(LambdaFns, lr_lambda) 
+                #defin lambd a funtcion as a partial???
                 def linear_warmup(current_step: int):
                     return float(current_step / 5)
                 v["lr_lambda"] = linear_warmup
