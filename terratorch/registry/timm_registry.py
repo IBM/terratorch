@@ -7,20 +7,6 @@ from torch import nn
 from terratorch.registry import BACKBONE_REGISTRY
 from terratorch.utils import remove_unexpected_prefix
 
-class TimmBackboneWrapper_(nn.Module):
-    def __init__(self, timm_module: nn.Module) -> None:
-        super().__init__()
-        self._timm_module = timm_module
-        # for backwards compatibility for times before necks
-        self.prepare_features_for_image_model = getattr(self._timm_module, "prepare_features_for_image_model", lambda x: x)
-
-    @property
-    def out_channels(self):
-        return self._timm_module.feature_info.channels()
-
-
-    def forward(self, *args, **kwargs) -> list[torch.Tensor]:
-        return self._timm_module(*args, **kwargs)
 
 class TimmBackboneWrapper(nn.Module):
     def __init__(self, timm_module: nn.Module) -> None:
