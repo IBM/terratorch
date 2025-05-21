@@ -1,13 +1,15 @@
 # Copyright contributors to the Terratorch project
 
+import glob
 import importlib.util
 import itertools
 import json
 import logging
 import os
+import random
 import shutil
+import string
 import sys
-import glob
 import tempfile
 import warnings
 from copy import deepcopy
@@ -21,9 +23,6 @@ import numpy as np
 import rasterio
 import torch
 
-import random
-import string
-
 # Allows classes to be referenced using only the class name
 import torchgeo.datamodules
 import yaml
@@ -35,12 +34,11 @@ from lightning.fabric.utilities.types import _PATH
 from lightning.pytorch import LightningDataModule, LightningModule, Trainer
 from lightning.pytorch.callbacks import BasePredictionWriter, ModelCheckpoint, RichProgressBar
 from lightning.pytorch.cli import ArgsType, LightningArgumentParser, LightningCLI, SaveConfigCallback
-from torchgeo.trainers import BaseTask
 from torch.utils.data import DataLoader
+from torchgeo.trainers import BaseTask
 from tqdm import tqdm
 
 import terratorch.datamodules
-from terratorch.utils import compute_mask_statistics, compute_statistics
 import terratorch.tasks  # noqa: F401
 from terratorch.datamodules import (  # noqa: F401
     GenericNonGeoClassificationDataModule,
@@ -63,10 +61,12 @@ from terratorch.tasks import (
     PixelwiseRegressionTask,  # noqa: F401
     SemanticSegmentationTask,  # noqa: F401
 )
+from terratorch.utils import compute_mask_statistics, compute_statistics
 
 logger = logging.getLogger("terratorch")
 
 from terratorch.utils import remove_unexpected_prefix
+
 
 def flatten(list_of_lists):
     return list(itertools.chain.from_iterable(list_of_lists))
@@ -84,12 +84,11 @@ def is_one_band(img):
 
 
 def write_tiff(img_wrt, filename, metadata):
-
-    # Adapting the number of bands to be compatible with the 
+    # Adapting the number of bands to be compatible with the
     # output dimensions.
     if not is_one_band(img_wrt):
         count = img_wrt.shape[0]
-        metadata['count'] = count
+        metadata["count"] = count
 
     with rasterio.open(filename, "w", **metadata) as dest:
         if is_one_band(img_wrt):
@@ -98,6 +97,7 @@ def write_tiff(img_wrt, filename, metadata):
         for i in range(img_wrt.shape[0]):
             dest.write(img_wrt[i, :, :], i + 1)
     return filename
+
 
 def add_default_checkpointing_config(config):
     subcommand = config.get("subcommand", None)
@@ -113,7 +113,7 @@ def add_default_checkpointing_config(config):
                 there_is_checkpointing = True
             else:
                 there_is_checkpointing = False
-        # However, if no callbacks list is provided, let's create one. 
+        # However, if no callbacks list is provided, let's create one.
         else:
             there_is_checkpointing = False
             callbacks = []
@@ -122,21 +122,32 @@ def add_default_checkpointing_config(config):
             if not there_is_checkpointing:
                 # Checkpointing is enabled, but no checkpoint rule was
                 # provided, so let's define some default choice for it.
-                model_checkpoint = Namespace(class_path="StateDictAwareModelCheckpoint",
-                                            init_args=Namespace(filename="{epoch}", monitor="val/loss"))
-                model_checkpoint_state_dict = Namespace(class_path="StateDictAwareModelCheckpoint",
-                                                   init_args=Namespace(filename="{epoch}_state_dict",
-                                                                       save_weights_only=True, monitor="val/loss"))
-                callbacks += [model_checkpoint, model_checkpoint_state_dict]   
+                model_checkpoint = Namespace(
+                    class_path="StateDictAwareModelCheckpoint",
+                    init_args=Namespace(filename="{epoch}", monitor="val/loss"),
+                )
+                model_checkpoint_state_dict = Namespace(
+                    class_path="StateDictAwareModelCheckpoint",
+                    init_args=Namespace(filename="{epoch}_state_dict", save_weights_only=True, monitor="val/loss"),
+                )
+                callbacks += [model_checkpoint, model_checkpoint_state_dict]
                 config[subcommand + ".trainer.callbacks"] = callbacks
             else:
-                logger.info("No extra checkpoint config will be added, since the user already defined it in the callbacks.")
+                logger.info(
+                    "No extra checkpoint config will be added, since the user already defined it in the callbacks."
+                )
 
-    return config 
+    return config
 
-def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16",
-                    suffix:str="pred", output_file_name:str | None=None):
 
+def save_prediction(
+    prediction,
+    input_file_name,
+    out_dir,
+    dtype: str = "int16",
+    suffix: str = "pred",
+    output_file_name: str | None = None,
+):
     mask, metadata = open_tiff(input_file_name)
     mask = np.where(mask == metadata["nodata"], 1, 0)
     mask = np.max(mask, axis=0)
@@ -160,13 +171,10 @@ def save_prediction(prediction, input_file_name, out_dir, dtype:str="int16",
 
 
 def import_custom_modules(custom_modules_path: str | Path | None = None) -> None:
-
     if custom_modules_path:
-
         custom_modules_path = Path(custom_modules_path)
 
         if custom_modules_path.is_dir():
-
             # Add 'custom_modules' folder to sys.path
             workdir = custom_modules_path.parents[0]
             module_dir = custom_modules_path.name
@@ -179,15 +187,17 @@ def import_custom_modules(custom_modules_path: str | Path | None = None) -> None
             except ImportError:
                 raise ImportError(f"It was not possible to import modules from {custom_modules_path}.")
         else:
-            raise ValueError(f"Modules path {custom_modules_path} isn't a directory. Check if you have defined it properly.")
+            raise ValueError(
+                f"Modules path {custom_modules_path} isn't a directory. Check if you have defined it properly."
+            )
     else:
         logger.debug("No custom module is being used.")
+
 
 class CustomWriter(BasePredictionWriter):
     """Callback class to write geospatial data to file."""
 
     def __init__(self, output_dir: str | None = None, write_interval: str = "epoch"):
-
         super().__init__(write_interval)
 
         self.output_dir = output_dir
@@ -219,41 +229,48 @@ class CustomWriter(BasePredictionWriter):
             os.makedirs(output_dir, exist_ok=True)
 
         if isinstance(prediction, torch.Tensor):
-            filename_batch = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+            filename_batch = "".join(random.choices(string.ascii_letters + string.digits, k=8))
             torch.save(prediction, os.path.join(output_dir, f"{filename_batch}.pt"))
 
         elif isinstance(prediction, tuple):
-
             pred_batch_, filename_batch = prediction
 
             # In case of multimodal datasets, we have a dictionary
-            # with one file per modality. We need to use a file as 
-            # input in order to copy metadata. 
-            if type(filename_batch)==dict:
+            # with one file per modality. We need to use a file as
+            # input in order to copy metadata.
+            if type(filename_batch) == dict:
                 keys = list(filename_batch.keys())
                 filename_batch = filename_batch[keys[0]]
 
             # If we have just a single kind of output
             if isinstance(pred_batch_, tuple):
-
                 pred_batch, suffix = pred_batch_
 
                 for prediction, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
-                    save_prediction(prediction, file_name, output_dir,
-                                    dtype=trainer.out_dtype, suffix=suffix,
-                                    output_file_name=output_file_prefix)
+                    save_prediction(
+                        prediction,
+                        file_name,
+                        output_dir,
+                        dtype=trainer.out_dtype,
+                        suffix=suffix,
+                        output_file_name=output_file_prefix,
+                    )
 
             # If we are outputting more than one kind of variable, as
             # (predictions, probabilities), for segmentation
             elif isinstance(pred_batch_, list):
-
                 for pred in pred_batch_:
                     pred_batch, suffix = pred
 
                     for p, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
-                        save_prediction(p, file_name, output_dir,
-                                        dtype=trainer.out_dtype, suffix=suffix,
-                                        output_file_name=output_file_prefix)
+                        save_prediction(
+                            p,
+                            file_name,
+                            output_dir,
+                            dtype=trainer.out_dtype,
+                            suffix=suffix,
+                            output_file_name=output_file_prefix,
+                        )
 
         else:
             raise TypeError(f"Unknown type for prediction {type(prediction)}")
@@ -312,11 +329,11 @@ def clean_config_for_deployment_and_dump(config: dict[str, Any]):
             deploy_config["model"]["init_args"]["model_args"]["pretrained"] = False
         elif "backbone_pretrained" in deploy_config["model"]["init_args"]["model_args"]:
             deploy_config["model"]["init_args"]["model_args"]["backbone_pretrained"] = False
-            
-    # Set image_grep and label_grep to *tif* . 
+
+    # Set image_grep and label_grep to *tif* .
     # Fixes issue with inference not finding image named as the training image.
-    deploy_config['data']['init_args']['img_grep'] = "*tif*"
-    deploy_config['data']['init_args']['label_grep'] = "*tif*"
+    deploy_config["data"]["init_args"]["img_grep"] = "*tif*"
+    deploy_config["data"]["init_args"]["label_grep"] = "*tif*"
     return yaml.safe_dump(deploy_config)
 
 
@@ -408,6 +425,7 @@ class StudioDeploySaveConfigCallback(SaveConfigCallback):
         if os.path.abspath(self.config_path_original) != os.path.abspath(self.config_path_new):
             shutil.copyfile(self.config_path_original, self.config_path_new)
 
+
 class StateDictAwareModelCheckpoint(ModelCheckpoint):
     # necessary as we wish to have one model checkpoint with only state dict and one with standard lightning checkpoints
     # for this, the state key needs to be different, and thus to include this save_weights_only parameter
@@ -470,8 +488,8 @@ class MyLightningCLI(LightningCLI):
         return super().subcommands + ["init"]
 
     def run(self):
-        subcommand = self.config['subcommand']
-        if subcommand == 'init':
+        subcommand = self.config["subcommand"]
+        if subcommand == "init":
             self.run_init()
         else:
             super().run()
@@ -484,10 +502,9 @@ class MyLightningCLI(LightningCLI):
         parser.add_argument("--custom_modules_path", type=str, default=None)
 
     def instantiate_classes(self) -> None:
-
-        # Adding default configuration for checkpoint saving when 
+        # Adding default configuration for checkpoint saving when
         # enable_checkpointing is True and no checkpointing is included as
-        # callback. 
+        # callback.
         self.config = add_default_checkpointing_config(self.config)
 
         # get the predict_output_dir. Depending on the value of run, it may be in the subcommand
@@ -646,12 +663,20 @@ class LightningInferenceModel:
         ]
 
         if predict_dataset_bands is not None:
-            arguments.extend([ "--data.init_args.predict_dataset_bands",
-            "[" + ",".join(predict_dataset_bands) + "]",])
+            arguments.extend(
+                [
+                    "--data.init_args.predict_dataset_bands",
+                    "[" + ",".join(predict_dataset_bands) + "]",
+                ]
+            )
 
         if predict_output_bands is not None:
-            arguments.extend([ "--data.init_args.predict_output_bands",
-            "[" + ",".join(predict_output_bands) + "]",])
+            arguments.extend(
+                [
+                    "--data.init_args.predict_output_bands",
+                    "[" + ",".join(predict_output_bands) + "]",
+                ]
+            )
 
         cli = build_lightning_cli(arguments, run=False)
         trainer = cli.trainer
@@ -689,7 +714,7 @@ class LightningInferenceModel:
 
         # In some cases, the output has the format ((prediction_tensor,
         # prediction_name), filename)
-        if all([type(j[0])==tuple for j in predictions]):
+        if all([type(j[0]) == tuple for j in predictions]):
             concat_predictions = torch.cat([batch[0][0] for batch in predictions])
         else:
             concat_predictions = torch.cat([batch[0] for batch in predictions])
