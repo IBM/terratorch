@@ -74,23 +74,24 @@ site_url: https://ibm.github.io/terratorch/
 repo_url: https://github.com/IBM/terratorch
 nav:
   - Getting Started:
-    - index.md  # Home
-    - quick_start.md
+    - getting_started/index.md  # Home
+    - getting_started/quick_start.md
     - FAQs: todo.md
   - User Guide:
-    - architecture.md  # Rename to guide/index.md as overview page?
+    - guide/architecture.md  # Rename to guide/index.md as overview page?
     - Datasets: # Generic datasets with subpages for class, seg, multimodal
-      - todo.md # Overview
+      - guide/data.md # Overview
       - Generic Datamodules: todo.md
-      - Custom Datasets: todo.md
+      - Custom Datasets: guide/custom_datasets.md
     - Models:
-      - todo.md  # Overview
+      - guide/models.md  # Overview
       - Model Registry: todo.md
+      - guide/encoder_decoder_factory.md
       - TerraMind: todo.md
       - Prithvi: todo.md
     - Tasks: todo.md
     - Fine-tuning: todo.md
-    - inference.md
+    - Inference: guide/inference.md
   - Tutorials:
     - YAML Config: tutorials/the_yaml_config.md
     - Fine-tuning: tutorials/burn_scars_finetuning.md
@@ -99,28 +100,33 @@ nav:
     - Multi-temporal data: tutorials/using_datamodule_multitemporalclassificationModule.md
     - Custom Modules: tutorials/adding_custom_modules.md
   - Package Reference:
-    - Glossary: glossary.md
-    - Tasks: tasks.md
+    - Glossary: package/glossary.md
+    - Tasks: package/tasks.md
     - Models:
-      - Model Registry: todo.md
-      - Model Factories: model_factories.md
-      - Backbones: backbones.md
-      - Decoders: decoders.md
-      - Necks: necks.md
-      - Heads: heads.md
+      - Model Registries: package/registry.md
+      - Model Factories: package/model_factories.md
+      - Backbones: package/backbones.md
+      - Decoders: package/decoders.md
+      - Necks: package/necks.md
+      - Heads: package/heads.md
     - Datamodules:
-      - Generic Datamodules: generic_datamodules.md
-      - Specific Datamodules: datamodules.md
+      - Generic Datamodules: package/generic_datamodules.md
+      - Specific Datamodules: package/datamodules.md
     - Datasets:
-      - Generic Datasets: generic_datasets.md
-      - Specific Datasets: datasets.md
-      - Transforms: transforms.md
+      - Generic Datasets: package/generic_datasets.md
+      - Specific Datasets: package/datasets.md
+      - Transforms: package/transforms.md
+    - Others:
+      - Meta Models: package/meta_models.md
+      - Extra Model Structures: package/extra_model_structures.md
+      - Loss Handler: package/loss.md
+
   - Extras:
-    - Contribution Guidelines: contributing.md
-    - Changelog: changelog.md
-    - License: license.md
-    - Citation: citation.md
-    - Related Packages: todo.md
+    - Contribution Guidelines: extras/contributing.md
+    - Changelog: extras/changelog.md
+    - License: extras/license.md
+    - Citation: extras/citation.md
+    - Related Packages: extras/related_packages.mk
 
 markdown_extensions:
   - attr_list

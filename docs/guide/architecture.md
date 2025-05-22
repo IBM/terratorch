@@ -70,7 +70,7 @@ concentrating efforts on the EncoderDecoderFactory, which intends to be more gen
 With that in mind, we dive deeper into it [here](encoder_decoder_factory.md).
 
 ### Loss
-For convenience, we provide a [loss handler](loss.md) that can be used to compute the full loss (from the main head and auxiliary heads as well).
+For convenience, we provide a [loss handler](../package/loss.md) that can be used to compute the full loss (from the main head and auxiliary heads as well).
 
 ### Generic datasets / datamodules
 Refer to the section on [data](data.md)
