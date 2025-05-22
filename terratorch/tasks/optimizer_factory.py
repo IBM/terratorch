@@ -67,7 +67,7 @@ def optimizer_factory(
         for i, key, value in enumerate(scheduler_hparams_no_interval["schedulers"].items()):
             if key == "LambdaLR":
                 lr_lambda = value.get("lr_lambda", "linear_warmup")
-                milestone = scheduler_hparams_no_interval["milestones"][0]
+                milestone = scheduler_hparams_no_interval["milestones"][i]
                 v["lr_lambda"] = LambdaFns(milestone, lr_lambda)
             nested_scheduler = getattr(torch.optim.lr_scheduler, key)
             nested_scheduler = nested_scheduler(optimizer, **value)
