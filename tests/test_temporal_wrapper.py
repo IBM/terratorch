@@ -2,6 +2,7 @@ import pytest
 import torch
 from torch import nn
 from terratorch.models.encoder_decoder_factory import TemporalWrapper
+from terratorch.registry import BACKBONE_REGISTRY
 
 # Define a dummy encoder for testing
 class DummyEncoder(nn.Module):
@@ -16,6 +17,34 @@ class DummyEncoder(nn.Module):
 @pytest.fixture
 def dummy_encoder():
     return DummyEncoder()
+
+def test_temporal_wrapper_swin_forward_shapes(dummy_encoder):
+
+    # Built-in Swin
+    NUM_CHANNELS = 6
+    encoder = BACKBONE_REGISTRY.build("prithvi_swin_B",
+                                      out_indices=[0,1,2,3])
+
+    wrapper = TemporalWrapper(encoder)
+    batch_size = 2
+
+    # Test case 2: Valid input shape
+    x = torch.randn(batch_size, NUM_CHANNELS, 4, 224, 224)  # [B, C, T, H, W]
+    output = wrapper(x)
+    assert [o.shape for o in output] == [torch.Size([2, 56, 56, 128]), torch.Size([2, 28, 28, 256]), torch.Size([2, 14, 14, 512]), torch.Size([2, 7, 7, 1024])]
+
+    # Satlas Swin
+    NUM_CHANNELS = 6
+    encoder = BACKBONE_REGISTRY.build("satlas_swin_b_sentinel2_si_ms",
+                                      model_bands=[0,1,2,3,4,5], out_indices=[1,3,5,7])
+
+    wrapper = TemporalWrapper(encoder)
+    batch_size = 2
+
+    # Test case 2: Valid input shape
+    x = torch.randn(batch_size, NUM_CHANNELS, 4, 224, 224)  # [B, C, T, H, W]
+    output = wrapper(x)
+    assert [o.shape for o in output] == [torch.Size([2, 56, 56, 128]), torch.Size([2, 28, 28, 256]), torch.Size([2, 14, 14, 512]), torch.Size([2, 7, 7, 1024])]
 
 def test_temporal_wrapper_initialization(dummy_encoder):
     # Test valid initialization with default parameters
