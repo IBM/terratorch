@@ -72,7 +72,10 @@ class TemporalWrapper(nn.Module):
             feat = self.encoder(x[:, :, t, :, :])  # Extract features at timestamp t
 
             if not isinstance(feat, list):  # If the encoder outputs a single feature map, convert to list
-                feat = [feat]
+                if isinstance(feat, tuple):
+                    feat = list(feat)
+                else:
+                    feat = [feat]
 
             if num_feature_maps is None:
                 num_feature_maps = len(feat)  # Determine how many feature maps the encoder produces
