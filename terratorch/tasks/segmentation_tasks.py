@@ -231,37 +231,46 @@ class SemanticSegmentationTask(TerraTorchTask):
         class_names = self.hparams["class_names"]
         metrics = MetricCollection(
             {
-                "Multiclass_Accuracy": MulticlassAccuracy(
+                "mIoU": MulticlassJaccardIndex(
                     num_classes=num_classes,
                     ignore_index=ignore_index,
-                    multidim_average="global",
+                    average="macro",
+                ),
+                "mIoU_Micro": MulticlassJaccardIndex(
+                    num_classes=num_classes,
+                    ignore_index=ignore_index,
                     average="micro",
                 ),
-                "Multiclass_Accuracy_Class": ClasswiseWrapper(
-                    MulticlassAccuracy(
+                "F1_Score": MulticlassF1Score(
+                    num_classes=num_classes,
+                    ignore_index=ignore_index,
+                    average="macro",
+                ),
+                "Accuracy": MulticlassAccuracy(
+                    num_classes=num_classes,
+                    ignore_index=ignore_index,
+                    average="macro",
+                ),
+                "Pixel_Accuracy": MulticlassAccuracy(
+                    num_classes=num_classes,
+                    ignore_index=ignore_index,
+                    average="micro",
+                ),
+                "IoU": ClasswiseWrapper(
+                    MulticlassJaccardIndex(
                         num_classes=num_classes,
                         ignore_index=ignore_index,
-                        multidim_average="global",
-                        average=None,
+                        average=None
                     ),
                     labels=class_names,
                 ),
-                "Multiclass_Jaccard_Index_Micro": MulticlassJaccardIndex(
-                    num_classes=num_classes, ignore_index=ignore_index, average="micro"
-                ),
-                "Multiclass_Jaccard_Index": MulticlassJaccardIndex(
-                    num_classes=num_classes,
-                    ignore_index=ignore_index,
-                ),
-                "Multiclass_Jaccard_Index_Class": ClasswiseWrapper(
-                    MulticlassJaccardIndex(num_classes=num_classes, ignore_index=ignore_index, average=None),
+                "Class_Accuracy": ClasswiseWrapper(
+                    MulticlassAccuracy(
+                        num_classes=num_classes,
+                        ignore_index=ignore_index,
+                        average=None,
+                    ),
                     labels=class_names,
-                ),
-                "Multiclass_F1_Score": MulticlassF1Score(
-                    num_classes=num_classes,
-                    ignore_index=ignore_index,
-                    multidim_average="global",
-                    average="micro",
                 ),
             }
         )

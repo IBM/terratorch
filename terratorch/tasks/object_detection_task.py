@@ -111,9 +111,19 @@ class ObjectDetectionTask(BaseTask):
         Configure metrics for the task.
         """
         if self.framework == 'mask-rcnn':
-            metrics = MetricCollection([MeanAveragePrecision(iou_type=('bbox', 'segm'))])
+            metrics = MetricCollection({
+                "mAP": MeanAveragePrecision(
+                    iou_type=('bbox', 'segm'),
+                    average='macro'
+                )
+            })
         else:
-            metrics = MetricCollection([MeanAveragePrecision(average='macro')])
+            metrics = MetricCollection({
+                "mAP": MeanAveragePrecision(
+                    iou_type=('bbox'),
+                    average='macro'
+                )
+            })
 
         self.train_metrics = metrics.clone(prefix='train_')
         self.val_metrics = metrics.clone(prefix='val_')

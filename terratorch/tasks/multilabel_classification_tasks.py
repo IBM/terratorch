@@ -7,7 +7,11 @@ from torch import Tensor
 from torchmetrics import MetricCollection
 from torchmetrics.classification import (
     MultilabelAccuracy,
-    MultilabelFBetaScore,
+    MultilabelF1Score,
+    MultilabelAveragePrecision,
+    MultilabelPrecision,
+    MultilabelRecall,
+    MultilabelAUROC,
 )
 
 from terratorch.models.model import ModelOutput
@@ -40,16 +44,57 @@ class MultiLabelClassificationTask(ClassificationTask):
             super().configure_losses()
 
     def configure_metrics(self) -> None:
+        """Initialize the performance metrics."""
+        num_classes: int = self.hparams["model_args"]["num_classes"]
+        ignore_index: int = self.hparams["ignore_index"]
+        class_names = self.hparams["class_names"]
         metrics = MetricCollection(
             {
-                "Overall_Accuracy": MultilabelAccuracy(
-                    num_labels=self.hparams["model_args"]["num_classes"], average="micro"
+                "Multilabel_Accuracy": MultilabelAccuracy(
+                    num_labels=num_classes,
+                    ignore_index=ignore_index,
+                    average="macro"
                 ),
-                "Average_Accuracy": MultilabelAccuracy(
-                    num_labels=self.hparams["model_args"]["num_classes"], average="macro"
+                "Multilabel_Accuracy_Micro": MultilabelAccuracy(
+                    num_labels=num_classes,
+                    ignore_index=ignore_index,
+                    average="micro"
                 ),
-                "Multilabel_F1_Score": MultilabelFBetaScore(
-                    num_labels=self.hparams["model_args"]["num_classes"], beta=1.0, average="micro"
+                "Multilabel_F1_Score": MultilabelF1Score(
+                    num_labels=num_classes,
+                    ignore_index=ignore_index,
+                    average="macro"
+                ),
+                "Multilabel_Precision": MultilabelPrecision(
+                    num_labels=num_classes,
+                    ignore_index=ignore_index,
+                    average="macro",
+                ),
+                "Multilabel_Recall": MultilabelRecall(
+                    num_labels=num_classes,
+                    ignore_index=ignore_index,
+                    average="macro",
+                ),
+                "Multilabel_AUROC": MultilabelAUROC(
+                    num_labels=num_classes,
+                    ignore_index=ignore_index,
+                    average="macro",
+                ),
+                "Class_Accuracy": ClasswiseWrapper(
+                    MultilabelAccuracy(
+                        num_labels=num_classes,
+                        ignore_index=ignore_index,
+                        average=None,
+                    ),
+                    labels=class_names,
+                ),
+                "Class_F1": ClasswiseWrapper(
+                    MultilabelF1Score(
+                        num_labels=num_classes,
+                        ignore_index=ignore_index,
+                        average=None,
+                    ),
+                    labels=class_names,
                 ),
             }
         )

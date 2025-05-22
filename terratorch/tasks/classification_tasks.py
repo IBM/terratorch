@@ -9,7 +9,7 @@ from functools import partial
 from torch import Tensor, nn
 from torchgeo.datasets.utils import unbind_samples
 from torchmetrics import ClasswiseWrapper, MetricCollection
-from torchmetrics.classification import MulticlassAccuracy, MulticlassFBetaScore, MulticlassJaccardIndex
+from torchmetrics.classification import MulticlassAccuracy, MulticlassF1Score, MulticlassPrecision, MulticlassRecall
 
 from terratorch.models.model import AuxiliaryHead, Model, ModelOutput
 from terratorch.registry.registry import MODEL_FACTORY_REGISTRY
@@ -169,17 +169,32 @@ class ClassificationTask(TerraTorchTask):
         class_names = self.hparams["class_names"]
         metrics = MetricCollection(
             {
-                "Overall_Accuracy": MulticlassAccuracy(
-                    num_classes=num_classes,
-                    ignore_index=ignore_index,
-                    average="micro",
-                ),
-                "Average_Accuracy": MulticlassAccuracy(
+                "Accuracy": MulticlassAccuracy(
                     num_classes=num_classes,
                     ignore_index=ignore_index,
                     average="macro",
                 ),
-                "Multiclass_Accuracy_Class": ClasswiseWrapper(
+                "Accuracy_Micro": MulticlassAccuracy(
+                    num_classes=num_classes,
+                    ignore_index=ignore_index,
+                    average="micro",
+                ),
+                "F1_Score": MulticlassF1Score(
+                    num_classes=num_classes,
+                    ignore_index=ignore_index,
+                    average="macro",
+                ),
+                "Precision": MulticlassPrecision(
+                    num_classes=num_classes,
+                    ignore_index=ignore_index,
+                    average="macro",
+                ),
+                "Recall": MulticlassRecall(
+                    num_classes=num_classes,
+                    ignore_index=ignore_index,
+                    average="macro",
+                ),
+                "Class_Accuracy": ClasswiseWrapper(
                     MulticlassAccuracy(
                         num_classes=num_classes,
                         ignore_index=ignore_index,
@@ -187,17 +202,13 @@ class ClassificationTask(TerraTorchTask):
                     ),
                     labels=class_names,
                 ),
-                "Multiclass_Jaccard_Index": MulticlassJaccardIndex(num_classes=num_classes, ignore_index=ignore_index),
-                "Multiclass_Jaccard_Index_Class": ClasswiseWrapper(
-                    MulticlassJaccardIndex(num_classes=num_classes, ignore_index=ignore_index, average=None),
+                "Class_F1": ClasswiseWrapper(
+                    MulticlassF1Score(
+                        num_classes=num_classes,
+                        ignore_index=ignore_index,
+                        average=None,
+                    ),
                     labels=class_names,
-                ),
-                # why FBetaScore
-                "Multiclass_F1_Score": MulticlassFBetaScore(
-                    num_classes=num_classes,
-                    ignore_index=ignore_index,
-                    beta=1.0,
-                    average="micro",
                 ),
             }
         )
