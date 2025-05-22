@@ -22,11 +22,11 @@ You will see the outputs being saved in the `outputs` directory.
 
 ### Input image (RGB components)
 
-![](figs/input.png)
+![](../figs/input.png)
 
 ### Predicted mask
 
-![](figs/mask.png)}
+![](../figs/mask.png)}
 
 # More examples
 

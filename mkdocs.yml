@@ -73,8 +73,8 @@ extra:
 site_url: https://ibm.github.io/terratorch/
 repo_url: https://github.com/IBM/terratorch
 nav:
+  - index.md  # Home
   - Getting Started:
-    - getting_started/index.md  # Home
     - getting_started/quick_start.md
     - FAQs: todo.md
   - User Guide:
