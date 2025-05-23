@@ -11,7 +11,7 @@ import math
 import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
-
+from terratorch.models.utils import pad_images
 
 
 @dataclass
@@ -46,7 +46,7 @@ def get_blend_mask(
     y = torch.ones_like(y_pos, dtype=torch.float)
     if overlap_h:
         # ramp = (torch.cos(math.pi * (y_pos[:overlap_w] + 1) / (overlap_w + 1) / 2))
-        ramp = torch.cos(math.pi * (y_pos[:overlap_h]+1)/(overlap_h+1)) / 2 + 0.5
+        ramp = torch.cos(math.pi * (y_pos[:overlap_h] + 1) / (overlap_h + 1)) / 2 + 0.5
         y[:overlap_h] = ramp.flip(0)  # top edge
         y[-overlap_h:] = ramp  # bottom edge
 
@@ -55,7 +55,7 @@ def get_blend_mask(
     x = torch.ones_like(x_pos, dtype=torch.float)
     if overlap_w:
         # ramp = (torch.cos(math.pi * (x_pos[:overlap_w] + 1) / (overlap_w + 1) / 2))
-        ramp = torch.cos(math.pi * (x_pos[:overlap_w]+1)/(overlap_w+1)) / 2 + 0.5
+        ramp = torch.cos(math.pi * (x_pos[:overlap_w] + 1) / (overlap_w + 1)) / 2 + 0.5
         x[:overlap_w] = ramp.flip(0)  # left edge
         x[-overlap_w:] = ramp  # right edge
 
@@ -68,7 +68,6 @@ def get_blend_mask(
     return mask
 
 
-
 @dataclass
 class InferenceInput:
     batch: int
@@ -78,68 +77,21 @@ class InferenceInput:
     output_crop: None | tuple[slice, slice]
 
 
-def tiled_inference(
-    model_forward: Callable,
-    input_batch: torch.Tensor,
-    out_channels: int,
-    inference_parameters: TiledInferenceParameters = None,
-    h_crop: int = 224,
-    w_crop: int = 224,
-    h_stride: int = 200,
-    w_stride: int = 200,
-    delta: int = 4,
-    average_patches: bool = True,
-    blend_overlaps: bool = True,
-    batch_size: int = 16,
-    verbose: bool = False,
-    **kwargs
-) -> torch.Tensor:
+def get_input_chips_wo_padding(
+        input_batch, h_crop, h_stride, w_crop, w_stride, delta, blend_overlaps
+) -> list[InferenceInput]:
     """
-    Divide an image into (potentially) overlapping tiles and perform inference on them.
-    Additionally, rebatch for increased GPU utilization.
-
-    Args:
-        model_forward (Callable): Callable that return the output of the model.
-        input_batch (torch.Tensor): Input batch to be processed
-        out_channels (int): Number of output channels
-        inference_parameters (TiledInferenceParameters): Parameters to be used for inference.
-            Deprecated, please us directly pass the parameters to tiled_inference.
-        h_crop (int): height of the smaller chips. Defaults to 224.
-        w_crop (int): width of the smaller chips. Defaults to 224.
-        h_stride (int): size of the stride on the y-axis. Defaults to 200.
-        w_stride (int): size of the stride on the x-axis. Defaults to 200.
-        delta (int): size of the border cropped from each chip. Defaults to 4.
-        average_patches (bool): Whether to average the overlapping regions. Defaults to True.
-        batch_size (int): Number of chips per forward pass. Defaults to 16.
-    Returns:
-        torch.Tensor: The result of the inference
+    Create input chips of type InferenceInput for tiled inference. These contain:
+      0. batch
+      1. Coordinates where this should end up in the preds
+      2. output/input
+      3. Blend mask for weighting the edges of the chips
+      4. Optionally, for inputs, how to crop the output
     """
+    input_batch_size = input_batch.shape[0]
+    h_img, w_img = input_batch.shape[-2:]
 
-    if inference_parameters is None:
-        warnings.warn("Using inference_parameters and ignoring other parameters."
-                      "The parameter `inference_parameters` is deprecated and is removed in a future version, "
-                      "please pass the parameters directly to `tiled_inference`. ", DeprecationWarning)
-        h_crop = inference_parameters.h_crop
-        h_stride = inference_parameters.h_stride
-        w_crop = inference_parameters.w_crop
-        w_stride = inference_parameters.w_stride
-        delta = inference_parameters.delta
-        average_patches = inference_parameters.average_patches
-        blend_overlaps = inference_parameters.blend_overlaps
-        verbose = inference_parameters.verbose
-
-    shape = input_batch.shape
-    device = input_batch.device
-    # Move inputs to CPU to avoid out-of-memory errors
-    input_batch = input_batch.cpu()
-
-    input_batch_size = shape[0]
-    # omit bands and take last two dimensions
-    h_img, w_img = shape[-2], shape[-1]
-
-    preds = input_batch.new_zeros((input_batch_size, out_channels, h_img, w_img))
-
-    # Weight overlapping areas to blend predictions
+    # Blend overlapping areas using weighted masks
     if blend_overlaps:
         full_blend_mask = get_blend_mask(h_crop, h_stride, w_crop, w_stride)
         cropped_blend_mask = get_blend_mask(h_crop, h_stride, w_crop, w_stride, delta)
@@ -147,19 +99,11 @@ def tiled_inference(
         full_blend_mask = torch.ones((h_crop, w_crop), device='cpu', dtype=torch.float)
         cropped_blend_mask = torch.ones((h_crop - 2 * delta, w_crop - 2 * delta), device='cpu', dtype=torch.float)
 
-    # this list will contain tuples. Inside the tuples:
-    #   0. batch
-    #   1. Coordinates where this should end up in the preds
-    #   2. output/input
-    #   3. Blend mask for weighting the edges of the chips
-    #   4. Optionally, for inputs, how to crop the output
-    # it is important this allocation follows the same order as in the original code
-
     # Stage 1: deal with border patches
     # Deal with patches near the right border
     coordinates_and_inputs: list[InferenceInput] = []
-    for i in range(0, h_img - h_crop -1 , h_stride):
-        patch = input_batch[..., i : i + h_crop, w_img - w_crop : w_img]
+    for i in range(0, h_img - h_crop - 1, h_stride):
+        patch = input_batch[..., i: i + h_crop, w_img - w_crop: w_img]
         coordinates_and_inputs += [
             InferenceInput(
                 b,
@@ -173,7 +117,7 @@ def tiled_inference(
 
     # Deal with patches near the bottom of the image
     for i in range(0, w_img - w_crop - 1, w_stride):
-        patch = input_batch[..., h_img - h_crop : h_img, i : i + w_crop]
+        patch = input_batch[..., h_img - h_crop: h_img, i: i + w_crop]
         coordinates_and_inputs += [
             InferenceInput(
                 b,
@@ -186,7 +130,7 @@ def tiled_inference(
         ]
 
     # Deal with last patches at the right bottom of the image
-    patch = input_batch[..., h_img - h_crop : h_img, w_img - w_crop : w_img]
+    patch = input_batch[..., h_img - h_crop: h_img, w_img - w_crop: w_img]
     coordinates_and_inputs += [
         InferenceInput(
             b,
@@ -202,7 +146,7 @@ def tiled_inference(
     nc = w_img
     for row in range(0, nr - h_crop - 1, h_stride):
         for col in range(0, nc - w_crop - 1, w_stride):
-            patch = input_batch[..., row : row + h_crop, col : col + w_crop]
+            patch = input_batch[..., row: row + h_crop, col: col + w_crop]
             if row == 0 or col == 0:
                 # Add patches along the left and top of the image
                 coordinates_and_inputs += [
@@ -228,11 +172,79 @@ def tiled_inference(
                     for b in range(input_batch_size)
                 ]
 
+    return coordinates_and_inputs
+
+
+def tiled_inference(
+        model_forward: Callable,
+        input_batch: torch.Tensor,
+        out_channels:  int = None,
+        inference_parameters: TiledInferenceParameters = None,
+        h_crop: int = 224,
+        w_crop: int = 224,
+        h_stride: int = 200,
+        w_stride: int = 200,
+        delta: int = 4,
+        average_patches: bool = True,
+        blend_overlaps: bool = True,
+        batch_size: int = 16,
+        verbose: bool = False,
+        **kwargs
+) -> torch.Tensor:
+    """
+    Divide an image into (potentially) overlapping tiles and perform inference on them.
+    Additionally, rebatch for increased GPU utilization.
+
+    Args:
+        model_forward (Callable): Callable that return the output of the model.
+        input_batch (torch.Tensor): Input batch to be processed
+        out_channels (int): Number of output channels
+        inference_parameters (TiledInferenceParameters): Parameters to be used for inference.
+            Deprecated, please us directly pass the parameters to tiled_inference.
+        h_crop (int): height of the smaller chips. Defaults to 224.
+        w_crop (int): width of the smaller chips. Defaults to 224.
+        h_stride (int): size of the stride on the y-axis. Defaults to 200.
+        w_stride (int): size of the stride on the x-axis. Defaults to 200.
+        delta (int): size of the border cropped from each chip. Defaults to 4.
+        average_patches (bool): Whether to average the overlapping regions. Defaults to True.
+        batch_size (int): Number of chips per forward pass. Defaults to 16.
+    Returns:
+        torch.Tensor: The result of the inference
+    """
+
+    if inference_parameters is not None:
+        warnings.warn("Using inference_parameters and ignoring other parameters."
+                      "The parameter `inference_parameters` is deprecated and is removed in a future version, "
+                      "please pass the parameters directly to `tiled_inference`. ", DeprecationWarning)
+        h_crop = inference_parameters.h_crop
+        h_stride = inference_parameters.h_stride
+        w_crop = inference_parameters.w_crop
+        w_stride = inference_parameters.w_stride
+        delta = inference_parameters.delta
+        average_patches = inference_parameters.average_patches
+        blend_overlaps = inference_parameters.blend_overlaps
+        verbose = inference_parameters.verbose
+
+    device = input_batch.device
+    # Move inputs to CPU to avoid out-of-memory errors
+    input_batch = input_batch.cpu()
+
+    input_batch_size = input_batch.shape[0]
+    h_img, w_img = input_batch.shape[-2:]
+
+    if out_channels is not None:
+        warnings.warn("out_channels is deprecated and automatically selected after first forward pass.",
+                      DeprecationWarning)
+    preds = None  # Preds is initialized after the forward pass
+
+    coordinates_and_inputs = get_input_chips_wo_padding(input_batch, h_crop, h_stride, w_crop, w_stride, delta,
+                                                        blend_overlaps)
+
     # NOTE: the output may be SLIGHTLY different using batched inputs because of layers such as nn.LayerNorm
     # During inference, these layers compute batch statistics that affect the output.
     # However, this should still be correct.
     with torch.no_grad():
-        preds_count = input_batch.new_zeros(input_batch_size, preds.shape[-2], preds.shape[-1])
+        preds_count = input_batch.new_zeros(input_batch_size, h_img, w_img)
         for start in tqdm.tqdm(range(0, len(coordinates_and_inputs), batch_size),
                                desc="Tiled inference", disable=not verbose):
             end = min(len(coordinates_and_inputs), start + batch_size)
@@ -242,21 +254,25 @@ def tiled_inference(
             output = model_forward(tensor_input, **kwargs).cpu()
             output = [output[i] for i in range(len(batch))]
             for batch_input, predicted in zip(batch, output, strict=True):
+                if preds is None:
+                    # Initialize preds based on first outputh
+                    out_channels = predicted.shape[0]
+                    preds = input_batch.new_zeros((input_batch_size, out_channels, h_img, w_img))
                 if batch_input.output_crop is not None:
                     predicted = predicted[..., batch_input.output_crop[0], batch_input.output_crop[1]]
                 if average_patches:
                     preds[
-                        batch_input.batch,
-                        :,
-                        batch_input.input_coords[0],
-                        batch_input.input_coords[1],
+                    batch_input.batch,
+                    :,
+                    batch_input.input_coords[0],
+                    batch_input.input_coords[1],
                     ] += predicted * batch_input.blend_mask
                 else:
                     preds[
-                        batch_input.batch,
-                        :,
-                        batch_input.input_coords[0],
-                        batch_input.input_coords[1],
+                    batch_input.batch,
+                    :,
+                    batch_input.input_coords[0],
+                    batch_input.input_coords[1],
                     ] = predicted
 
                 preds_count[
