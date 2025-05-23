@@ -178,7 +178,7 @@ def get_input_chips_wo_padding(
 def tiled_inference(
         model_forward: Callable,
         input_batch: torch.Tensor,
-        out_channels:  int = None,
+        out_channels:  int | None = None,
         inference_parameters: TiledInferenceParameters = None,
         h_crop: int = 224,
         w_crop: int = 224,
@@ -255,8 +255,8 @@ def tiled_inference(
             output = [output[i] for i in range(len(batch))]
             for batch_input, predicted in zip(batch, output, strict=True):
                 if preds is None:
-                    # Initialize preds based on first outputh
-                    out_channels = predicted.shape[0]
+                    # Initialize preds based on first output
+                    out_channels = 1 if len(predicted.shape) == 2 else predicted.shape[0]
                     preds = input_batch.new_zeros((input_batch_size, out_channels, h_img, w_img))
                 if batch_input.output_crop is not None:
                     predicted = predicted[..., batch_input.output_crop[0], batch_input.output_crop[1]]
