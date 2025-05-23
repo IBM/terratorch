@@ -1,5 +1,5 @@
 # Copyright contributors to the Terratorch project
-
+import gc
 import os
 
 import pytest
@@ -199,9 +199,13 @@ class TestGenericSegmentationDataset:
     def test_file_discovery_generic_segmentation_dataset(self, segmentation_dataset):
         assert len(segmentation_dataset) == 5
 
+        gc.collect()
+
     def test_data_type_regression_float_long(self, segmentation_dataset):
         assert torch.is_floating_point(segmentation_dataset[0]["image"])
         assert not torch.is_floating_point(segmentation_dataset[0]["mask"])
+
+        gc.collect()
 
     @pytest.fixture(scope="class")
     def segmentation_dataset_with_HLS_bands(self, data_root_segmentation, split_file_path):
@@ -264,3 +268,4 @@ class TestGenericSegmentationDataset:
     def test_correct_filter(self, dataset, request):
         fixture, expected = request.getfixturevalue(dataset)
         assert fixture.filter_indices == expected
+        gc.collect()
