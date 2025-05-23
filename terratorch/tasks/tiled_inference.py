@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from terratorch.models.utils import pad_images
 
 
+# TODO: Remove TiledInferenceParameters in version 1.3.
 @dataclass
 class TiledInferenceParameters:
     """
@@ -199,11 +200,13 @@ def tiled_inference(
         input_batch: torch.Tensor,
         out_channels:  int | None = None,
         inference_parameters: TiledInferenceParameters = None,
-        h_crop: int = 224,
-        w_crop: int = 224,
-        h_stride: int = 200,
-        w_stride: int = 200,
-        delta: int = 4,
+        crop: int = 224,
+        stride: int = 192,
+        delta: int = 8,
+        h_crop: int | None = None,
+        w_crop: int | None = None,
+        h_stride: int | None = None,
+        w_stride: int | None = None,
         average_patches: bool = True,
         blend_overlaps: bool = True,
         batch_size: int = 16,
@@ -212,8 +215,9 @@ def tiled_inference(
         **kwargs
 ) -> torch.Tensor:
     """
-    Divide an image into (potentially) overlapping tiles and perform inference on them.
-    Additionally, rebatch for increased GPU utilization.
+    Divide an image into (potentially) overlapping chips and perform inference on them.
+    Additionally, re-batch for varibale GPU utilization defined by crop size and batch_size.
+    The overlap between chips is defined with: crop - stride - 2 * delta.
 
     Args:
         model_forward (Callable): Callable that return the output of the model.
@@ -221,11 +225,13 @@ def tiled_inference(
         out_channels (int): Number of output channels
         inference_parameters (TiledInferenceParameters): Parameters to be used for inference.
             Deprecated, please us directly pass the parameters to tiled_inference.
-        h_crop (int): height of the smaller chips. Defaults to 224.
-        w_crop (int): width of the smaller chips. Defaults to 224.
-        h_stride (int): size of the stride on the y-axis. Defaults to 200.
-        w_stride (int): size of the stride on the x-axis. Defaults to 200.
-        delta (int): size of the border cropped from each chip. Defaults to 4.
+        crop (int): height and width of the smaller chips. Ignored if h_crop or w_crop is provided. Defaults to 224.
+        stride (int): size of the stride. Ignored if h_stride or w_stride is provided. Defaults to 192.
+        delta (int): size of the border cropped from each chip. Defaults to 8.
+        h_crop (int, optional): height of the smaller chips.
+        w_crop (int, optional): width of the smaller chips.
+        h_stride (int, optional): size of the stride on the y-axis.
+        w_stride (int, optional): size of the stride on the x-axis.
         average_patches (bool): Whether to average the overlapping regions. Defaults to True.
         batch_size (int): Number of chips per forward pass. Defaults to 16.
         padding (str | bool): Padding mode for input image to reduce artefacts on edges. Deactivate padding with False.
@@ -235,8 +241,9 @@ def tiled_inference(
     """
 
     if inference_parameters is not None:
+        # TODO: Remove inference_parameters in later version 1.3.
         warnings.warn("Using inference_parameters and ignoring other parameters."
-                      "The parameter `inference_parameters` is deprecated and is removed in a future version, "
+                      "The parameter `inference_parameters` is deprecated and is removed in version 1.3, "
                       "please pass the parameters directly to `tiled_inference`. ", DeprecationWarning)
         h_crop = inference_parameters.h_crop
         h_stride = inference_parameters.h_stride
@@ -253,6 +260,11 @@ def tiled_inference(
 
     input_batch_size = input_batch.shape[0]
     h_img, w_img = input_batch.shape[-2:]
+
+    h_crop = h_crop or crop
+    w_crop = w_crop or crop
+    h_stride = h_stride or stride
+    w_stride = w_stride or stride
 
     if (h_crop - h_stride) // 2 < delta or (w_crop - w_stride) // 2 < delta:
         # Ensure that every pixel is covered
