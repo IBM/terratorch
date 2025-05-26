@@ -121,12 +121,12 @@ nav:
       - Extra Model Structures: package/extra_model_structures.md
       - Loss Handler: package/loss.md
 
-  - Extras:
-    - Contribution Guidelines: extras/contributing.md
-    - Changelog: extras/changelog.md
-    - License: extras/license.md
-    - Citation: extras/citation.md
-    - Related Packages: extras/related_packages.mk
+  - About:
+    - Contribution Guidelines: about/contributing.md
+    - Changelog: about/changelog.md
+    - License: about/license.md
+    - Citation: about/citation.md
+    - Related Packages: about/related_packages.md
 
 markdown_extensions:
   - attr_list
@@ -143,7 +143,7 @@ markdown_extensions:
   - admonition
   - pymdownx.details
 
-# copyright: Copyright &copy; 2025 TerraTorch
+copyright: Copyright &copy; 2024-2025 TerraTorch Developers.
 
 extra_css:
   - stylesheets/extra.css

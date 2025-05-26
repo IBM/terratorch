@@ -35,8 +35,8 @@ modification be merged to `main`. In this way, when an user wants to modify
 * It is recommended to add a label to your PR. For example `bug`, when it solves some issue or `enhancement`
     when it adds new features. 
 
-**NOTICE**: The PR will not be merged if the automatic tests are failing and the user which has sent the PR is
-    responsible for fixing it. 
+!!! caution
+    The PR will not be merged if the automatic tests are failing and the user which has sent the PR is responsible for fixing it. 
 
 ## Contributing with documentation
 

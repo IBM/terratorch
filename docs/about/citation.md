@@ -1,8 +1,8 @@
 # Citation
 
-We outlined the idea of TerraTorch and the overall architecture in a [pre-print](https://arxiv.org/abs/2503.20563).
+We outlined the idea of TerraTorch and the overall architecture in our [paper](https://arxiv.org/abs/2503.20563).
 
-If you are using TerraTorch, consider citing the paper with:
+If you are using TerraTorch, consider citing it with:
 ```text
 @article{gomes2025terratorch,
   title={TerraTorch: The Geospatial Foundation Models Toolkit},
