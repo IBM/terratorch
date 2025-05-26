@@ -6,8 +6,12 @@ import torch.nn.functional as F
 from einops import rearrange
 from torch import nn
 import math
+from torchvision.ops import FeaturePyramidNetwork
 
 from terratorch.registry import NECK_REGISTRY, TERRATORCH_NECK_REGISTRY
+
+from collections import OrderedDict
+import pdb
 
 
 class Neck(ABC, nn.Module):
@@ -229,8 +233,38 @@ class LearnedInterpolateToPyramidal(Neck):
         scaled_inputs.append(self.fpn4(features[3]))
         return scaled_inputs
 
-    def process_channel_list(self, channel_list: list[int]) -> list[int]:
+    def process_channel_list(self, channel_list: list[int]=None) -> list[int]:
         return [channel_list[0] // 4, channel_list[1] // 2, channel_list[2], channel_list[3]]
+
+
+@TERRATORCH_NECK_REGISTRY.register
+class FeaturePyramidNetworkNeck(Neck):
+    """Uses feature pyramid network from torchvision
+    """
+
+    def __init__(self, channel_list: list[int], out_channel: int=256, output_ordered_dict: bool= True):
+
+        super().__init__(channel_list)
+        self.out_channel = out_channel
+        self.fpn = FeaturePyramidNetwork(self.channel_list, self.out_channel)
+        self.output_ordered_dict = output_ordered_dict
+
+    def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
+        
+        if type(features) != "OrderedDict":
+            keys = [f'feat{str(i)}' for i, x in enumerate(features)]
+            features = OrderedDict(zip(keys, features))
+                    
+        reconstructed_features = self.fpn(features)
+
+        if self.output_ordered_dict == False:
+            reconstructed_features = list(reconstructed_features.values())
+    
+        return reconstructed_features
+
+    def process_channel_list(self, channel_list: list[int]) -> list[int]:
+        channel_list = len(channel_list)*[self.out_channel]
+        return channel_list
 
 
 def build_neck_list(ops: list[dict], channel_list: list[int]) -> tuple[list[Neck], list[int]]:
@@ -241,6 +275,7 @@ def build_neck_list(ops: list[dict], channel_list: list[int]) -> tuple[list[Neck
             cur_op["name"], cur_channel_list, **{k: v for k, v in cur_op.items() if k != "name"}
         )
         cur_channel_list = op.process_channel_list(cur_channel_list)
+        op.channel_list = cur_channel_list
         neck_list.append(op)
 
     return neck_list, cur_channel_list
