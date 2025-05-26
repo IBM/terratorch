@@ -1,4 +1,6 @@
+# Transforms
+
 :::terratorch.datasets.transforms
     options:
-        show_source: false
-
+        show_root_heading: false        
+        show_root_toc_entry: false

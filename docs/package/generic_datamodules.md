@@ -1,7 +1,9 @@
-:::terratorch.datamodules.generic_pixel_wise_data_module
-    options:
-        show_source: false
-:::terratorch.datamodules.generic_scalar_label_data_module
-    options:
-        show_source: false
-:::terratorch.datamodules.generic_multimodal_data_module
+# Generic Datamodules
+
+:::terratorch.datamodules.generic_pixel_wise_data_module.GenericNonGeoSegmentationDataModule
+
+:::terratorch.datamodules.generic_pixel_wise_data_module.GenericNonGeoPixelwiseRegressionDataModule
+
+:::terratorch.datamodules.generic_scalar_label_data_module.GenericNonGeoClassificationDataModule
+
+:::terratorch.datamodules.generic_multimodal_data_module.GenericMultiModalDataModule

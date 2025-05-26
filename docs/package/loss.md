@@ -1,6 +1,5 @@
-#### :::terratorch.tasks.loss_handler
+# Loss handler
+
+:::terratorch.tasks.loss_handler.LossHandler
     options:
-        show_source: false
-
-
-
+        heading_level: 4

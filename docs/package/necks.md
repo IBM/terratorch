@@ -1,26 +1,24 @@
+# Necks
+
+Necks reshape the output of an encoder into a format suitable for the decoder. By combining different necks, you can combine any backbone with any decoder.
+
+
+
+
 :::terratorch.models.necks.Neck
-    options:
-        show_source: false
+
 :::terratorch.models.necks.SelectIndices
-    options:
-        show_source: false
-:::terratorch.models.necks.PermuteDims
-    options:
-        show_source: false
-:::terratorch.models.necks.InterpolateToPyramidal
-    options:
-        show_source: false
-:::terratorch.models.necks.MaxpoolToPyramidal
-    options:
-        show_source: false
+
 :::terratorch.models.necks.ReshapeTokensToImage
-    options:
-        show_source: false
-:::terratorch.models.necks.AddBottleneckLayer
-    options:
-        show_source: false
+
+:::terratorch.models.necks.InterpolateToPyramidal
+
 :::terratorch.models.necks.LearnedInterpolateToPyramidal
-    options:
-        show_source: false
+
+:::terratorch.models.necks.PermuteDims
+
+:::terratorch.models.necks.MaxpoolToPyramidal
+
+:::terratorch.models.necks.AddBottleneckLayer
 
 

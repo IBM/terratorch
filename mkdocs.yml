@@ -57,9 +57,11 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
-          paths: [src] # search packages in the src folde
+          paths: [src]  # search packages in the src folder
           options:
             show_root_heading: true
+            heading_level: 3
+            show_symbol_type_heading: true  # shows colored `class`, `meth` etc.
   - git-revision-date-localized:
       type: date
 
@@ -77,6 +79,7 @@ nav:
   - Getting Started:
     - getting_started/quick_start.md
     - FAQs: todo.md
+
   - User Guide:
     - guide/architecture.md  # Rename to guide/index.md as overview page?
     - Datasets: # Generic datasets with subpages for class, seg, multimodal
@@ -92,6 +95,8 @@ nav:
     - Tasks: todo.md
     - Fine-tuning: todo.md
     - Inference: guide/inference.md
+    - Glossary: guide/glossary.md
+
   - Tutorials:
     - YAML Config: tutorials/the_yaml_config.md
     - Fine-tuning: tutorials/burn_scars_finetuning.md
@@ -99,11 +104,11 @@ nav:
     - Simplified Inference: tutorials/burn_scars_inference_simplified.md
     - Multi-temporal data: tutorials/using_datamodule_multitemporalclassificationModule.md
     - Custom Modules: tutorials/adding_custom_modules.md
+
   - Package Reference:
-    - Glossary: package/glossary.md
     - Tasks: package/tasks.md
     - Models:
-      - Model Registries: package/registry.md
+      - Model Registries: package/registry.md  # done
       - Model Factories: package/model_factories.md
       - Backbones: package/backbones.md
       - Decoders: package/decoders.md
@@ -132,7 +137,7 @@ markdown_extensions:
   - attr_list
   - toc:
       permalink: "#"
-      toc_depth: 2
+      toc_depth: 3
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
