@@ -15,6 +15,7 @@ automatically execute
 a pipeline with hundreds of unit and integration tests to verify that the package have not broken after the
 modification be merged to `main`. In this way, when an user wants to modify
 `terratorch` for adding new features or bufixes, this are the best practices. 
+
 * This repository uses `pre-commit`, a tool which automatically runs basic
     steps before sending modifications to the remote (as linting, for example).
     See how to configure it [here](https://pre-commit.com/#installation). 
