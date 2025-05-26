@@ -75,7 +75,7 @@ extra:
 site_url: https://ibm.github.io/terratorch/
 repo_url: https://github.com/IBM/terratorch
 nav:
-  - index.md  # Home
+  - "Home": index.md  # Home
   - Getting Started:
     - getting_started/quick_start.md
     - FAQs: todo.md
@@ -147,9 +147,15 @@ markdown_extensions:
   - pymdownx.superfences
   - admonition
   - pymdownx.details
+  - md_in_html
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 copyright: Copyright &copy; 2024-2025 TerraTorch Developers.
 
 extra_css:
   - stylesheets/extra.css
 
+extra_javascript:
+  - js/logo.js

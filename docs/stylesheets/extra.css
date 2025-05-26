@@ -31,20 +31,21 @@
   color: #EE4B2B !important;
 }
 
-/* Ensure logo is visible on all screen sizes */
-.md-header__button.md-logo {
-  display: flex !important;
-  align-items: center;
-}
-
-/* Hide the site_name "TerraTorch" in the sidebar */
-.md-nav__title {
-  display: none !important;
-}
-
 /* Hide the site_name "TerraTorch" in the header */
-.md-header__title .md-header__topic:first-child {
-  display: none !important;
+@media screen and (min-width: 1220px) {
+  .md-header__title .md-header__topic:first-child {
+    display: none !important;
+  }
+}
+
+/* Hide the site_name "TerraTorch" in the header and sidebar */
+@media screen and (min-width: 1220px) {
+  .md-header__title .md-header__topic:first-child {
+    display: none !important;
+  }
+  .md-nav__title {
+    display: none !important;
+  }
 }
 
 /* Style section headers */
@@ -52,4 +53,19 @@
   font-size: 0.8rem;
   margin-top: 1.5rem;
   margin-bottom: 0.5rem;
+}
+
+
+/* Change color of tip admonitions to TerraTorch color */
+.md-typeset .admonition.tip,
+.md-typeset details.tip {
+  border-color: rgb(238, 75, 43);
+}
+.md-typeset .tip > .admonition-title,
+.md-typeset .tip > summary {
+  background-color: rgba(238, 75, 43, 0.1);
+}
+.md-typeset .tip > .admonition-title::before,
+.md-typeset .tip > summary::before {
+  background-color: rgb(238, 75, 43);
 }
