@@ -69,3 +69,19 @@
 .md-typeset .tip > summary::before {
   background-color: rgb(238, 75, 43);
 }
+
+/* Change color of tip admonitions to TerraTorch color */
+.md-typeset .admonition.faq,
+.md-typeset details.faq {
+  border-color: rgb(200, 200, 200);
+}
+.md-typeset .faq > .admonition-title,
+.md-typeset .faq > summary {
+  background-color: rgba(200, 200, 200, 0.1);
+}
+.md-typeset .faq > .admonition-title::before,
+.md-typeset .faq > summary::before {
+  background-color: rgb(200, 200, 200);
+  -webkit-mask-image: var(--md-admonition-icon--question);
+          mask-image: var(--md-admonition-icon--question);
+}

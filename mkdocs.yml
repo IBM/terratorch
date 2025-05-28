@@ -75,26 +75,27 @@ extra:
 site_url: https://ibm.github.io/terratorch/
 repo_url: https://github.com/IBM/terratorch
 nav:
-  - "Home": index.md  # Home
+  - Home: index.md  # Home
   - Getting Started:
-    - getting_started/quick_start.md
-    - FAQs: todo.md
+    - Quick Start: getting_started/quick_start.md
+    - FAQs: getting_started/faqs.md
 
   - User Guide:
-    - guide/architecture.md  # Rename to guide/index.md as overview page?
+    - Architecture: guide/architecture.md
     - Datasets: # Generic datasets with subpages for class, seg, multimodal
       - guide/data.md # Overview
-      - Generic Datamodules: todo.md
+      - Generic Datamodules: guide/generic_datasets.md
       - Custom Datasets: guide/custom_datasets.md
     - Models:
       - guide/models.md  # Overview
-      - Model Registry: todo.md
+      - Model Registry: guide/registry.md
       - guide/encoder_decoder_factory.md
-      - TerraMind: todo.md
-      - Prithvi: todo.md
-    - Tasks: todo.md
-    - Fine-tuning: todo.md
+      - TerraMind: guide/terramind.md
+      - Prithvi EO: guide/prithvi_eo.md
+    - Tasks: guide/tasks.md
+    - Fine-tuning: guide/finetuning.md
     - Inference: guide/inference.md
+    - Iterate: guide/iterate.md
     - Glossary: guide/glossary.md
 
   - Tutorials:
