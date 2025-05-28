@@ -53,10 +53,6 @@ def create_era5_dummy_data(base_dir: str = '.', filename: str = 'era5dummy.nc') 
 
     file_path = os.path.join(base_dir, filename)
     ds.to_netcdf(file_path)
-    print(f"Dummy ERA5 dataset saved to '{file_path}'")
-
-
-
 
 def test_era5_datamodule():
     create_era5_dummy_data() 
@@ -65,13 +61,12 @@ def test_era5_datamodule():
     os.environ["WORLD_SIZE"] = "1"
     os.environ["MASTER_ADDR"] = "localhost"
     os.environ["MASTER_PORT"] = "12355"
-    try:
-        dist.init_process_group(
-            backend="gloo",
-            init_method="env://",
-        )
-    except RuntimeError as e:
-        print(f"Dist init skipped or failed: {e}")
+
+    dist.init_process_group(
+        backend="gloo",
+        init_method="env://",
+    )
+
 
     datamodule = ERA5DataModule(
         train_data_path=".",
@@ -86,7 +81,6 @@ def test_era5_datamodule():
     train_loader = datamodule.train_dataloader()
 
     batch = next(iter(train_loader))
-    print(f"Fetched batch keys: {list(batch.keys())}")
     assert "x" in batch
     assert "y" in batch
     assert "target" in batch
@@ -99,11 +93,19 @@ def test_era5_datamodule():
     assert batch["static"].shape == (2, 3, 64, 128)
     gc.collect()
 
+    datamodule.setup("predict")
+    
+    predict_dataloader = datamodule.predict_dataloader()
+    next(iter(predict_dataloader))
+
+    val_dataloader = datamodule.val_dataloader()
+    next(iter(val_dataloader))
+    gc.collect()
+
     try:
         os.remove('era5dummy.nc')
-        print("Dummy ERA5 dataset removed after test")
     except FileNotFoundError:
-        print("Dummy ERA5 dataset file not found during cleanup")
+        pass
 
     if dist.is_initialized():
         dist.destroy_process_group()
