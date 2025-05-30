@@ -118,7 +118,6 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             rgb_modality (str, optional): Modality used for RGB plots. Defaults to first modality in data_root.keys().
             rgb_indices (list[str], optional): Indices of RGB channels. Defaults to [0, 1, 2].
             allow_missing_modalities (bool, optional): Allow missing modalities during data loading. Defaults to False.
-                TODO: Currently not implemented on a data module level!
             allow_substring_file_names (bool, optional): Allow substrings during sample identification by adding
                 image or label grep to the sample prefixes. If False, treats sample prefixes as full file names.
                 If True and no split file is provided, considers the file stem as prefix, otherwise the full file name.
@@ -203,8 +202,6 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             image_files = {}
             for m, m_paths in data_root.items():
                 image_files[m] = sorted(glob.glob(os.path.join(m_paths, image_grep[m])))
-            if label_data_root is not None:
-                image_files["mask"] = sorted(glob.glob(os.path.join(label_data_root, label_grep)))
 
             def get_file_id(file_name, mod):
                 glob_as_regex = '^' + ''.join('(.*?)' if ch == '*' else re.escape(ch)
@@ -541,7 +538,6 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
             rgb_modality (str, optional): Modality used for RGB plots. Defaults to first modality in data_root.keys().
             rgb_indices (list[str], optional): Indices of RGB channels. Defaults to [0, 1, 2].
             allow_missing_modalities (bool, optional): Allow missing modalities during data loading. Defaults to False.
-                TODO: Currently not implemented on a data module level!
             allow_substring_file_names (bool, optional): Allow substrings during sample identification by adding
                 image or label grep to the sample prefixes. If False, treats sample prefixes as full file names.
                 If True and no split file is provided, considers the file stem as prefix, otherwise the full file name.
@@ -748,7 +744,6 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
             rgb_modality (str, optional): Modality used for RGB plots. Defaults to first modality in data_root.keys().
             rgb_indices (list[str], optional): Indices of RGB channels. Defaults to [0, 1, 2].
             allow_missing_modalities (bool, optional): Allow missing modalities during data loading. Defaults to False.
-                TODO: Currently not implemented on a data module level!
             allow_substring_file_names (bool, optional): Allow substrings during sample identification by adding
                 image or label grep to the sample prefixes. If False, treats sample prefixes as full file names.
                 If True and no split file is provided, considers the file stem as prefix, otherwise the full file name.
@@ -942,7 +937,6 @@ class GenericMultimodalScalarDataset(GenericMultimodalDataset):
             rgb_modality (str, optional): Modality used for RGB plots. Defaults to first modality in data_root.keys().
             rgb_indices (list[str], optional): Indices of RGB channels. Defaults to [0, 1, 2].
             allow_missing_modalities (bool, optional): Allow missing modalities during data loading. Defaults to False.
-                TODO: Currently not implemented on a data module level!
             allow_substring_file_names (bool, optional): Allow substrings during sample identification by adding
                 image or label grep to the sample prefixes. If False, treats sample prefixes as full file names.
                 If True and no split file is provided, considers the file stem as prefix, otherwise the full file name.
