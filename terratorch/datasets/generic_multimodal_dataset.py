@@ -158,8 +158,6 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
         if prediction_mode:
             label_data_root = None
-        else:
-            label_data_root = label_data_root or data_root
 
         super().__init__()
 
