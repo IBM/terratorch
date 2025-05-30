@@ -532,7 +532,6 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 num_classes=self.num_classes,
                 image_grep=self.image_grep,
                 label_grep=self.label_grep,
-                allow_missing_modalities=True,
                 allow_substring_file_names=self.allow_substring_file_names,
                 dataset_bands=self.predict_dataset_bands,
                 output_bands=self.predict_output_bands,

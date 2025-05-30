@@ -9,17 +9,18 @@ def dummy_multimodal_data(tmp_path: Path) -> Path:
     root = tmp_path / "generic_multimodal"
     root.mkdir(parents=True, exist_ok=True)
     train_data_dir = root / "train" / "mod1"
-    val_data_dir   = root / "val"   / "mod1"
-    test_data_dir  = root / "test"  / "mod1"
-    for p in [train_data_dir, val_data_dir, test_data_dir]:
+    val_data_dir = root / "val" / "mod1"
+    test_data_dir = root / "test" / "mod1"
+    predict_data_dir = root / "predict" / "mod1"
+    for p in [train_data_dir, val_data_dir, test_data_dir, predict_data_dir]:
         p.mkdir(parents=True, exist_ok=True)
     train_label_dir = root / "train" / "labels"
-    val_label_dir   = root / "val"   / "labels"
-    test_label_dir  = root / "test"  / "labels"
+    val_label_dir = root / "val" / "labels"
+    test_label_dir = root / "test" / "labels"
     for p in [train_label_dir, val_label_dir, test_label_dir]:
         p.mkdir(parents=True, exist_ok=True)
-    shape_img = (3, 16, 16)
-    shape_mask = (1, 16, 16)
+    shape_img = (16, 16, 3)
+    shape_mask = (16, 16, 1)
     pixel_values_image = [0, 50, 100, 200]
     pixel_values_label = [0, 1]
 
@@ -35,6 +36,11 @@ def dummy_multimodal_data(tmp_path: Path) -> Path:
     )
     create_dummy_tiff(
         path=str(test_data_dir / "sample1.tif"),
+        shape=shape_img,
+        pixel_values=pixel_values_image
+    )
+    create_dummy_tiff(
+        path=str(predict_data_dir / "sample1.tif"),
         shape=shape_img,
         pixel_values=pixel_values_image
     )
@@ -61,14 +67,14 @@ def test_generic_multimodal_datamodule(dummy_multimodal_data: Path):
     from terratorch.datamodules.generic_multimodal_data_module import GenericMultiModalDataModule
 
     train_data_root = {"mod1": str(dummy_multimodal_data / "train" / "mod1")}
-    val_data_root   = {"mod1": str(dummy_multimodal_data / "val"   / "mod1")}
-    test_data_root  = {"mod1": str(dummy_multimodal_data / "test"  / "mod1")}
+    val_data_root = {"mod1": str(dummy_multimodal_data / "val" / "mod1")}
+    test_data_root = {"mod1": str(dummy_multimodal_data / "test" / "mod1")}
     predict_data_root = {"mod1": str(dummy_multimodal_data / "predict" / "mod1")}
     train_label_root = str(dummy_multimodal_data / "train" / "labels")
-    val_label_root   = str(dummy_multimodal_data / "val"   / "labels")
-    test_label_root  = str(dummy_multimodal_data / "test"  / "labels")
+    val_label_root = str(dummy_multimodal_data / "val" / "labels")
+    test_label_root = str(dummy_multimodal_data / "test" / "labels")
     means = {"mod1": [0.0, 0.0, 0.0]}
-    stds  = {"mod1": [1.0, 1.0, 1.0]}
+    stds = {"mod1": [1.0, 1.0, 1.0]}
 
     dm = GenericMultiModalDataModule(
         modalities=["mod1"],
@@ -106,5 +112,9 @@ def test_generic_multimodal_datamodule(dummy_multimodal_data: Path):
     test_batch = next(iter(test_loader))
     assert "image" in test_batch, "Missing key 'image' in test batch"
     assert "mask" in test_batch, "Missing key 'mask' in test batch"
+    dm.setup("predict")
+    predict_loader = dm.predict_dataloader()
+    predict_batch = next(iter(predict_loader))
+    assert "image" in predict_batch, "Missing key 'image' in test batch"
 
     gc.collect()
