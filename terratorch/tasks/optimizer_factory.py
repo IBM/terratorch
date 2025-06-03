@@ -11,7 +11,6 @@ def LambdaFns(
     warmup_type: str = "linear_warmup"
 ):
     def linear_warmup(current_step: int):
-        print(f"\n\nstep: {current_step} milestone: {milestone} linear value:{float((current_step+1) / milestone)}")
         return float((current_step+1) / milestone)
     #add cosine warmup fn
     

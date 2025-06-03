@@ -103,14 +103,12 @@ def test_warmup_sequential_scheduling(
         pre_step_lr = scheduler.get_last_lr()
         training_step(optimizer, scheduler, model, loss_fn)
         post_step_lr = scheduler.get_last_lr()
-        print(f"i: {i} pre_step_lr: {pre_step_lr} post_step_lr: {post_step_lr}")
         if i < scheduler_hparams["milestones"][0]-1:
             assert pre_step_lr < post_step_lr, "LR is not increasing during warmup stage"
         elif i == scheduler_hparams["milestones"][0]-1:
             assert pre_step_lr == post_step_lr, "LR does not match expected LR at this point"
         else:
             assert pre_step_lr > post_step_lr, "LR is not decreasing during decay stage"
-
 
 #add tests for repeated (cyclic) warmup and decay
 
