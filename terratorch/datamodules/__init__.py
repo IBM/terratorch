@@ -45,8 +45,8 @@ from terratorch.datamodules.generic_multimodal_data_module import GenericMultiMo
 
 
 # miscellaneous datamodules
+from terratorch.datamodules.geobench_v2_data_module import GeoBenchV2SegmentationDataModule, GeoBenchV2ObjectDetectionDataModule, GeoBenchV2ClassificationDataModule
 from terratorch.datamodules.openearthmap import OpenEarthMapNonGeoDataModule
-
 from terratorch.datamodules.burn_intensity import BurnIntensityNonGeoDataModule
 from terratorch.datamodules.carbonflux import CarbonFluxNonGeoDataModule
 from terratorch.datamodules.landslide4sense import Landslide4SenseNonGeoDataModule
@@ -79,6 +79,9 @@ __all__ = (
     "MultiTemporalCropClassificationDataModule",
     "TorchGeoDataModule",
     "TorchNonGeoDataModule",
+    "GeoBenchV2SegmentationDataModule", 
+    "GeoBenchV2ObjectDetectionDataModule",
+    "GeoBenchV2ClassificationDataModule",
     "MEuroSATNonGeoDataModule",
     "MBigEarthNonGeoDataModule",
     "MBrickKilnNonGeoDataModule",
