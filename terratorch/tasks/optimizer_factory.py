@@ -11,7 +11,7 @@ def LambdaFns(
     warmup_type: str = "linear_warmup"
 ):
     def linear_warmup(current_step: int):
-        return float(current_step / milestone)
+        return float((current_step+1) / milestone)
     #add cosine warmup fn
     
     if warmup_type == "linear_warmup":
@@ -63,6 +63,11 @@ def optimizer_factory(
             assert "milestones" in scheduler_hparams_no_interval, "Please provide milestones for SequentialLR"
             expected_milestones = num_schedulers - 1
             assert len(scheduler_hparams_no_interval["milestones"]) == expected_milestones, "Please provide 1 milestone for each transition"
+            assert scheduler_hparams_no_interval["milestones"]>=1, "The first milestone must be greater than 0"
+            if expected_milestones > 1:
+                check_progression = [expected_milestones[i] < expected_milestones[i+1] for i in range(expected_milestones-1)]
+                assert all(check_progression), "Each milestone must be greater than the previous one"
+
         schedule_sequence = []
         for i, key, value in enumerate(scheduler_hparams_no_interval["schedulers"].items()):
             if key == "LambdaLR":
