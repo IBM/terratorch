@@ -12,3 +12,4 @@ import terratorch.models.backbones.torchgeo_vit
 import terratorch.models.backbones.multimae_register
 from terratorch.models.backbones.unet import UNet
 import terratorch.models.backbones.terramind
+import terratorch.models.backbones.panopticon
