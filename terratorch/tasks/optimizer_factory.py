@@ -11,6 +11,7 @@ def LambdaFns(
     warmup_type: str = "linear_warmup"
 ):
     def linear_warmup(current_step: int):
+        print(f"\n\nstep: {current_step} milestone: {milestone} linear value:{float((current_step+1) / milestone)}")
         return float((current_step+1) / milestone)
     #add cosine warmup fn
     
@@ -63,17 +64,17 @@ def optimizer_factory(
             assert "milestones" in scheduler_hparams_no_interval, "Please provide milestones for SequentialLR"
             expected_milestones = num_schedulers - 1
             assert len(scheduler_hparams_no_interval["milestones"]) == expected_milestones, "Please provide 1 milestone for each transition"
-            assert scheduler_hparams_no_interval["milestones"]>=1, "The first milestone must be greater than 0"
+            assert scheduler_hparams_no_interval["milestones"][0] >= 1, "The first milestone must be greater than 0"
             if expected_milestones > 1:
                 check_progression = [expected_milestones[i] < expected_milestones[i+1] for i in range(expected_milestones-1)]
                 assert all(check_progression), "Each milestone must be greater than the previous one"
 
         schedule_sequence = []
-        for i, key, value in enumerate(scheduler_hparams_no_interval["schedulers"].items()):
+        for i, (key, value) in enumerate(scheduler_hparams_no_interval["schedulers"].items()):
             if key == "LambdaLR":
                 lr_lambda = value.get("lr_lambda", "linear_warmup")
                 milestone = scheduler_hparams_no_interval["milestones"][i]
-                v["lr_lambda"] = LambdaFns(milestone, lr_lambda)
+                value["lr_lambda"] = LambdaFns(milestone, lr_lambda)
             nested_scheduler = getattr(torch.optim.lr_scheduler, key)
             nested_scheduler = nested_scheduler(optimizer, **value)
             schedule_sequence.append(nested_scheduler)
