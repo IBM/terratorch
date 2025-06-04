@@ -25,7 +25,7 @@ def model_input() -> torch.Tensor:
     return torch.ones((1, NUM_CHANNELS, 224, 224))
 
 
-@pytest.mark.parametrize("backbone", ["timm-regnetx_002"])
+@pytest.mark.parametrize("backbone", ["timm-regnetx_002", "tu-convnext_atto.d2_in1k"])
 @pytest.mark.parametrize("model", ["Unet", "DeepLabV3"])
 def test_create_segmentation_model(backbone, model, model_factory: SMPModelFactory, model_input):
     model = model_factory.build_model(
@@ -44,7 +44,7 @@ def test_create_segmentation_model(backbone, model, model_factory: SMPModelFacto
 
     gc.collect()
 
-@pytest.mark.parametrize("backbone", ["timm-regnetx_002"])
+@pytest.mark.parametrize("backbone", ["timm-regnetx_002", "tu-convnext_atto.d2_in1k"])
 @pytest.mark.parametrize("model", ["Unet", "DeepLabV3"])
 def test_create_segmentation_model_no_in_channels(backbone, model, model_factory: SMPModelFactory, model_input):
     model = model_factory.build_model(
@@ -62,7 +62,7 @@ def test_create_segmentation_model_no_in_channels(backbone, model, model_factory
 
     gc.collect()
 
-@pytest.mark.parametrize("backbone", ["timm-regnetx_002"])
+@pytest.mark.parametrize("backbone", ["timm-regnetx_002", "tu-convnext_atto.d2_in1k"])
 @pytest.mark.parametrize("model", ["Unet", "DeepLabV3"])
 def test_create_model_with_extra_bands(backbone, model, model_factory: SMPModelFactory):
     model = model_factory.build_model(
