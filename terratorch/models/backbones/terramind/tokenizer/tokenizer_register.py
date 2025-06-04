@@ -11,12 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import warnings
 
+import os
+import warnings
 import torch
 import logging
 from terratorch.registry import TERRATORCH_FULL_MODEL_REGISTRY
 from huggingface_hub import hf_hub_download
+from terratorch.models.backbones.terramind.tokenizer.text.text_tokenizer import (
+    CoordsTokenizer,
+    CaptionTokenizer,
+)
 
 logger = logging.getLogger('terramind')
 
@@ -39,6 +44,12 @@ __all__ = [
     'terramind_v1_tokenizer_dem',
     'terramind_v1_tokenizer_lulc',
     'terramind_v1_tokenizer_ndvi',
+    'terramind_v01_tokenizer_s2l2a',
+    'terramind_v01_tokenizer_s1grd',
+    'terramind_v01_tokenizer_dem',
+    'terramind_v01_tokenizer_lulc',
+    'terramind_v01_caption_tokenizer',
+    'terramind_v1_coords_tokenizer',
 ]
 
 pretrained_weights = {
@@ -65,6 +76,22 @@ pretrained_weights = {
     "terramind_v1_tokenizer_ndvi": {
         "hf_hub_id": "ibm-esa-geospatial/TerraMind-1.0-Tokenizer-NDVI",
         "hf_hub_filename": "TerraMind_Tokenizer_NDVI.pt",
+    },
+    "terramind_v01_tokenizer_s2l2a": {
+        "hf_hub_id": "FAST-EO/TerraMind-v0.1-Tokenizer-S2L2A",
+        "hf_hub_filename": "TerraMind_v01_Tokenizer_S2L2A.pt",
+    },
+    "terramind_v01_tokenizer_s1grd": {
+        "hf_hub_id": "FAST-EO/TerraMind-v0.1-Tokenizer-S1GRD",
+        "hf_hub_filename": "TerraMind_v01_Tokenizer_S1GRD.pt",
+    },
+    "terramind_v01_tokenizer_dem": {
+        "hf_hub_id": "FAST-EO/TerraMind-v0.1-Tokenizer-DEM",
+        "hf_hub_filename": "TerraMind_v01_Tokenizer_DEM.pt",
+    },
+    "terramind_v01_tokenizer_lulc": {
+        "hf_hub_id": "FAST-EO/TerraMind-v0.1-Tokenizer-LULC",
+        "hf_hub_filename": "TerraMind_v01_Tokenizer_LULC.pt",
     },
 }
 
@@ -260,3 +287,137 @@ def terramind_v1_tokenizer_ndvi(**kwargs):
     )
 
     return tokenizer
+
+
+@TERRATORCH_FULL_MODEL_REGISTRY.register
+def terramind_v01_tokenizer_s2l2a(**kwargs):
+    """
+    S2L2A Tokenizer for TerraMind v0.1.
+
+    This tokenizer was pre-trained using the SSL4EO-S12 v1.1 samples.
+    """
+    if kwargs.get('pretrained', False):
+        if not os.getenv('HF_TOKEN', None):
+            warnings.warn('TerraMind v0.1 models require a HF_TOKEN with access to model weights.')
+
+    tokenizer = build_vqvae(
+        variant='terramind_v01_tokenizer_s2l2a',
+        image_size=256,
+        n_channels=12,
+        encoder_type='vit_b_enc',
+        decoder_type='unet_patched',
+        prediction_type='sample',
+        post_mlp=True,
+        patch_size=16,
+        quant_type='fsq',
+        codebook_size='8-8-8-6-5',
+        latent_dim=5,
+        **kwargs
+    )
+
+    return tokenizer
+
+
+@TERRATORCH_FULL_MODEL_REGISTRY.register
+def terramind_v01_tokenizer_s1grd(**kwargs):
+    """
+    S1GRD Tokenizer for TerraMind v0.1.
+
+    This tokenizer was pre-trained using the SSL4EO-S12 v1.1 samples.
+    """
+    if kwargs.get('pretrained', False):
+        if not os.getenv('HF_TOKEN', None):
+            warnings.warn('TerraMind v0.1 models require a HF_TOKEN with access to model weights.')
+
+    tokenizer = build_vqvae(
+        variant='terramind_v01_tokenizer_s1grd',
+        image_size=256,
+        n_channels=2,
+        encoder_type='vit_b_enc',
+        decoder_type='unet_patched',
+        prediction_type='sample',
+        post_mlp=True,
+        patch_size=16,
+        quant_type='fsq',
+        codebook_size='8-8-8-6-5',
+        latent_dim=5,
+        **kwargs
+    )
+
+    return tokenizer
+
+
+@TERRATORCH_FULL_MODEL_REGISTRY.register
+def terramind_v01_tokenizer_dem(**kwargs):
+    """
+    DEM Tokenizer for TerraMind v0.1.
+
+    This tokenizer was pre-trained on the SSL4EO-S12 v1.1 locations.
+    """
+    if kwargs.get('pretrained', False):
+        if not os.getenv('HF_TOKEN', None):
+            warnings.warn('TerraMind v0.1 models require a HF_TOKEN with access to model weights.')
+
+    tokenizer = build_vqvae(
+        variant='terramind_v01_tokenizer_dem',
+        image_size=256,
+        n_channels=1,
+        encoder_type='vit_b_enc',
+        decoder_type='unet_patched',
+        prediction_type='sample',
+        post_mlp=True,
+        patch_size=16,
+        quant_type='fsq',
+        codebook_size='8-8-8-6-5',
+        latent_dim=5,
+        **kwargs
+    )
+
+    return tokenizer
+
+
+@TERRATORCH_FULL_MODEL_REGISTRY.register
+def terramind_v01_tokenizer_lulc(**kwargs):
+    """
+    LULC Tokenizer for TerraMind v0.1.
+
+    This tokenizer was pre-trained on the SSL4EO-S12 v1.1 locations using the nine DynamicWorld classes,
+    not with ESRI LULC as v1.0.
+    """
+    if kwargs.get('pretrained', False):
+        if not os.getenv('HF_TOKEN', None):
+            warnings.warn('TerraMind v0.1 models require a HF_TOKEN with access to model weights.')
+
+    tokenizer = build_vqvae(
+        model_type='vqvae',
+        variant='terramind_v01_tokenizer_lulc',
+        image_size=256,
+        n_channels=9,
+        encoder_type='vit_b_enc',
+        decoder_type='vit_b_dec',
+        prediction_type='sample',
+        post_mlp=True,
+        patch_size=16,
+        quant_type='fsq',
+        codebook_size='7-5-5-5-5',
+        latent_dim=5,
+        **kwargs
+    )
+
+    return tokenizer
+
+
+def terramind_v01_caption_tokenizer(device=None, *args, **kwargs):
+    file = __file__.replace('tokenizer_register.py', 'text/text_tokenizer_terramind_v1_wordpiece_30k.json')
+    return CaptionTokenizer(
+        tokenizer_file=file,
+        *args, **kwargs
+    )
+
+
+def terramind_v1_coords_tokenizer(device=None, *args, **kwargs):
+    file = __file__.replace('tokenizer_register.py', 'text/text_tokenizer_terramind_v1_wordpiece_30k.json')
+    return CoordsTokenizer(
+        tokenizer_file=file,
+        *args, **kwargs
+    )
