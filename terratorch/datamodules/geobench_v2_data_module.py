@@ -63,11 +63,12 @@ class GeoBenchV2ClassificationDataModule(GeoBenchClassificationDataModule):
             **kwargs (Any): Arguments passed to instantiate `cls`.
         """
         if isinstance(train_augmentations, str):
-            assert train_augmentations in ["default", "multi_temporal_default"], 
-            "If train_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            msg = "If train_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            assert train_augmentations in ["default", "multi_temporal_default"], msg
+            
         if isinstance(eval_augmentations, str):
-            assert eval_augmentations in ["default", "multi_temporal_default"],
-            "If eval_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            msg = "If eval_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            assert eval_augmentations in ["default", "multi_temporal_default"], msg
 
         kwargs["img_size"] = img_size
         kwargs["band_order"] = band_order
@@ -156,11 +157,12 @@ class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
             **kwargs (Any): Arguments passed to instantiate `cls`.
         """
         if isinstance(train_augmentations, str):
-            assert train_augmentations in ["default", "multi_temporal_default"], 
-            "If train_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            msg = "If train_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            assert train_augmentations in ["default", "multi_temporal_default"], msg
+            
         if isinstance(eval_augmentations, str):
-            assert eval_augmentations in ["default", "multi_temporal_default"],
-            "If eval_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            msg = "If eval_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            assert eval_augmentations in ["default", "multi_temporal_default"], msg
 
         kwargs["img_size"] = img_size
         kwargs["band_order"] = band_order
@@ -256,11 +258,12 @@ class GeoBenchV2SegmentationDataModule(GeoBenchSegmentationDataModule):
             **kwargs (Any): Arguments passed to instantiate `cls`.
         """
         if isinstance(train_augmentations, str):
-            assert train_augmentations in ["default", "multi_temporal_default"], 
-            "If train_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            msg = "If train_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            assert train_augmentations in ["default", "multi_temporal_default"], msg
+            
         if isinstance(eval_augmentations, str):
-            assert eval_augmentations in ["default", "multi_temporal_default"],
-            "If eval_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            msg = "If eval_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            assert eval_augmentations in ["default", "multi_temporal_default"], msg
             
         kwargs["img_size"] = img_size
         kwargs["band_order"] = band_order
