@@ -48,8 +48,8 @@ class GeoBenchV2ClassificationDataModule(GeoBenchClassificationDataModule):
         band_order: list | dict,
         batch_size: int | None = None,
         num_workers: int = 0,
-        train_augmentations: None | list[GeometricAugmentationBase2D] | str = "default",
-        eval_augmentations: None | list[GeometricAugmentationBase2D] | str = "default",
+        train_augmentations: None | list[GeometricAugmentationBase2D, K.VideoSequential] | str = "default",
+        eval_augmentations: None | list[GeometricAugmentationBase2D, K.VideoSequential] | str = "default",
         **kwargs: Any,
     ):
         """Constructor
@@ -58,7 +58,7 @@ class GeoBenchV2ClassificationDataModule(GeoBenchClassificationDataModule):
             cls (type[GeoBenchClassificationDataModule]): geobench_v2 Classification DataModule class to be instantiated
             batch_size (int | None, optional): batch_size. Defaults to None.
             num_workers (int, optional): num_workers. Defaults to 0.
-            transforms (None | list[GeometricAugmentationBase2D], optional): List of Albumentations Transforms.
+            transforms (None | list[GeometricAugmentationBase2D, K.VideoSequential], optional): List of Albumentations Transforms.
                 Should enc with ToTensorV2. Defaults to None.
             **kwargs (Any): Arguments passed to instantiate `cls`.
         """
@@ -141,8 +141,8 @@ class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
         band_order: list,
         batch_size: int | None = None,
         num_workers: int = 0,
-        train_augmentations: None | list[GeometricAugmentationBase2D] | str = "default",
-        eval_augmentations: None | list[GeometricAugmentationBase2D] | str = "default",
+        train_augmentations: None | list[GeometricAugmentationBase2D, K.VideoSequential] | str = "default",
+        eval_augmentations: None | list[GeometricAugmentationBase2D, K.VideoSequential] | str = "default",
         **kwargs: Any,
     ):
         """Constructor
@@ -151,7 +151,7 @@ class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
             cls (type[GeoBenchObjectDetectionDataModule]): geobench_v2 Object Detection DataModule class to be instantiated
             batch_size (int | None, optional): batch_size. Defaults to None.
             num_workers (int, optional): num_workers. Defaults to 0.
-            transforms (None | list[GeometricAugmentationBase2D], optional): List of Albumentations Transforms.
+            transforms (None | list[GeometricAugmentationBase2D, K.VideoSequential], optional): List of Albumentations Transforms.
                 Should enc with ToTensorV2. Defaults to None.
             **kwargs (Any): Arguments passed to instantiate `cls`.
         """
@@ -241,8 +241,8 @@ class GeoBenchV2SegmentationDataModule(GeoBenchSegmentationDataModule):
         band_order: list,
         batch_size: int | None = None,
         num_workers: int = 0,
-        train_augmentations: None | list[GeometricAugmentationBase2D] | str = "default",
-        eval_augmentations: None | list[GeometricAugmentationBase2D] | str = "default",
+        train_augmentations: None | list[GeometricAugmentationBase2D, K.VideoSequential] | str = "default",
+        eval_augmentations: None | list[GeometricAugmentationBase2D, K.VideoSequential] | str = "default",
         **kwargs: Any,
     ):
         """Constructor
@@ -251,7 +251,7 @@ class GeoBenchV2SegmentationDataModule(GeoBenchSegmentationDataModule):
             cls (type[GeoDataModule]): geobench_v2 Segmentation DataModule class to be instantiated
             batch_size (int | None, optional): batch_size. Defaults to None.
             num_workers (int, optional): num_workers. Defaults to 0.
-            transforms (None | list[GeometricAugmentationBase2D], optional): List of Kornia Transforms.
+            transforms (None | list[GeometricAugmentationBase2D, K.VideoSequential], optional): List of Kornia Transforms.
                 Should enc with ToTensorV2. Defaults to None.
             **kwargs (Any): Arguments passed to instantiate `cls`.
         """
