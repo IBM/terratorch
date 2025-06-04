@@ -75,12 +75,10 @@ extra:
 site_url: https://ibm.github.io/terratorch/
 repo_url: https://github.com/IBM/terratorch
 nav:
-  - Home: index.md  # Home
-  - Getting Started:
-    - Quick Start: getting_started/quick_start.md
-    - FAQs: getting_started/faqs.md
+  - Welcome: index.md
 
   - User Guide:
+    - Get started: guide/quick_start.md
     - Architecture: guide/architecture.md
     - Datasets: # Generic datasets with subpages for class, seg, multimodal
       - guide/data.md # Overview
@@ -97,6 +95,7 @@ nav:
     - Inference: guide/inference.md
     - Iterate: guide/iterate.md
     - Glossary: guide/glossary.md
+    - FAQs: guide/faqs.md
 
   - Tutorials:
     - YAML Config: tutorials/the_yaml_config.md
