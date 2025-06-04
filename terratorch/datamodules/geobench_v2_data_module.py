@@ -17,18 +17,18 @@
 from collections.abc import Callable
 from typing import Any
 from functools import partial
-
-
-
 import numpy as np
 from torch import Tensor
 from torch.utils.data import default_collate
 import kornia.augmentation as K
 from kornia.augmentation._2d.geometric.base import GeometricAugmentationBase2D
-
-
-from geobench_v2.datamodules import GeoBenchClassificationDataModule, GeoBenchSegmentationDataModule, GeoBenchObjectDetectionDataModule
-
+from typing import Union
+from geobench_v2.datamodules import (
+    GeoBenchClassificationDataModule, 
+    GeoBenchSegmentationDataModule, 
+    GeoBenchObjectDetectionDataModule,
+    MultiTemporalSegmentationAugmentation
+    )
 from terratorch.datasets.transforms import kornia_augmentations_to_callable_with_dict
 
 
@@ -48,8 +48,8 @@ class GeoBenchV2ClassificationDataModule(GeoBenchClassificationDataModule):
         band_order: list | dict,
         batch_size: int | None = None,
         num_workers: int = 0,
-        train_augmentations: None | list[GeometricAugmentationBase2D, K.VideoSequential] | str = "default",
-        eval_augmentations: None | list[GeometricAugmentationBase2D, K.VideoSequential] | str = "default",
+        train_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential]] | str = "default",
+        eval_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential]] | str = "default",
         **kwargs: Any,
     ):
         """Constructor
@@ -58,7 +58,7 @@ class GeoBenchV2ClassificationDataModule(GeoBenchClassificationDataModule):
             cls (type[GeoBenchClassificationDataModule]): geobench_v2 Classification DataModule class to be instantiated
             batch_size (int | None, optional): batch_size. Defaults to None.
             num_workers (int, optional): num_workers. Defaults to 0.
-            transforms (None | list[GeometricAugmentationBase2D, K.VideoSequential], optional): List of Albumentations Transforms.
+            transforms (None | list[Union[GeometricAugmentationBase2D, K.VideoSequential]], optional): List of Albumentations Transforms.
                 Should enc with ToTensorV2. Defaults to None.
             **kwargs (Any): Arguments passed to instantiate `cls`.
         """
@@ -77,12 +77,12 @@ class GeoBenchV2ClassificationDataModule(GeoBenchClassificationDataModule):
             kwargs["batch_size"] = batch_size
 
         if not train_augmentations in [None, "default", "multi_temporal_default"]:
-            kwargs["train_augmentations"] =kornia_augmentations_to_callable_with_dict(train_augmentations)
+            kwargs["train_augmentations"] = kornia_augmentations_to_callable_with_dict(train_augmentations)
         else:
             kwargs["train_augmentations"] = train_augmentations
             
         if not eval_augmentations in [None, "default", "multi_temporal_default"]:
-            kwargs["eval_augmentations"] =kornia_augmentations_to_callable_with_dict(eval_augmentations)
+            kwargs["eval_augmentations"] = kornia_augmentations_to_callable_with_dict(eval_augmentations)
         else:
             kwargs["eval_augmentations"] = eval_augmentations
         
@@ -142,8 +142,8 @@ class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
         band_order: list,
         batch_size: int | None = None,
         num_workers: int = 0,
-        train_augmentations: None | list[GeometricAugmentationBase2D, K.VideoSequential] | str = "default",
-        eval_augmentations: None | list[GeometricAugmentationBase2D, K.VideoSequential] | str = "default",
+        train_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential]]| str = "default",
+        eval_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential]] | str = "default",
         **kwargs: Any,
     ):
         """Constructor
@@ -152,7 +152,7 @@ class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
             cls (type[GeoBenchObjectDetectionDataModule]): geobench_v2 Object Detection DataModule class to be instantiated
             batch_size (int | None, optional): batch_size. Defaults to None.
             num_workers (int, optional): num_workers. Defaults to 0.
-            transforms (None | list[GeometricAugmentationBase2D, K.VideoSequential], optional): List of Albumentations Transforms.
+            transforms (None | list[Union[GeometricAugmentationBase2D, K.VideoSequential]], optional): List of Albumentations Transforms.
                 Should enc with ToTensorV2. Defaults to None.
             **kwargs (Any): Arguments passed to instantiate `cls`.
         """
@@ -171,7 +171,7 @@ class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
             kwargs["batch_size"] = batch_size
 
         if not train_augmentations in [None, "default", "multi_temporal_default"]:
-            kwargs["train_augmentations"] =kornia_augmentations_to_callable_with_dict(train_augmentations)
+            kwargs["train_augmentations"] = kornia_augmentations_to_callable_with_dict(train_augmentations)
         else:
             kwargs["train_augmentations"] = train_augmentations
             
@@ -243,8 +243,8 @@ class GeoBenchV2SegmentationDataModule(GeoBenchSegmentationDataModule):
         band_order: list,
         batch_size: int | None = None,
         num_workers: int = 0,
-        train_augmentations: None | list[GeometricAugmentationBase2D, K.VideoSequential] | str = "default",
-        eval_augmentations: None | list[GeometricAugmentationBase2D, K.VideoSequential] | str = "default",
+        train_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential]] | str = "default",
+        eval_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential]] | str = "default",
         **kwargs: Any,
     ):
         """Constructor
@@ -253,7 +253,7 @@ class GeoBenchV2SegmentationDataModule(GeoBenchSegmentationDataModule):
             cls (type[GeoDataModule]): geobench_v2 Segmentation DataModule class to be instantiated
             batch_size (int | None, optional): batch_size. Defaults to None.
             num_workers (int, optional): num_workers. Defaults to 0.
-            transforms (None | list[GeometricAugmentationBase2D, K.VideoSequential], optional): List of Kornia Transforms.
+            transforms (None | list[Union[GeometricAugmentationBase2D, K.VideoSequential]], optional): List of Kornia Transforms.
                 Should enc with ToTensorV2. Defaults to None.
             **kwargs (Any): Arguments passed to instantiate `cls`.
         """
@@ -272,12 +272,20 @@ class GeoBenchV2SegmentationDataModule(GeoBenchSegmentationDataModule):
             kwargs["batch_size"] = batch_size
 
         if not train_augmentations in [None, "default", "multi_temporal_default"]:
-            kwargs["train_augmentations"] = kornia_augmentations_to_callable_with_dict(train_augmentations)
+            if isinstance(train_augmentations[0], K.VideoSequential):
+                train_augmentations = kornia_augmentations_to_callable_with_dict(train_augmentations)
+                kwargs["train_augmentations"] = MultiTemporalSegmentationAugmentation(transforms=train_augmentations)
+            else:
+                kwargs["train_augmentations"] = kornia_augmentations_to_callable_with_dict(train_augmentations)
         else:
             kwargs["train_augmentations"] = train_augmentations
             
         if not eval_augmentations in [None, "default", "multi_temporal_default"]:
-            kwargs["eval_augmentations"] = kornia_augmentations_to_callable_with_dict(eval_augmentations)
+            if isinstance(eval_augmentations[0], K.VideoSequential):
+                eval_augmentations = kornia_augmentations_to_callable_with_dict(eval_augmentations)
+                kwargs["eval_augmentations"] = MultiTemporalSegmentationAugmentation(transforms=eval_augmentations)
+            else:
+                kwargs["eval_augmentations"] = kornia_augmentations_to_callable_with_dict(eval_augmentations)
         else:
             kwargs["eval_augmentations"] = eval_augmentations
 

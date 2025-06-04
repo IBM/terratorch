@@ -21,7 +21,7 @@ def kornia_augmentations_to_callable_with_dict(augmentations: list[GeometricAugm
             keepdim=True,
             )
     def fn(data):
-        return augmentations(**data)
+        return augmentations(data)
     return fn
 
 def albumentations_to_callable_with_dict(albumentation: list[BasicTransform] | None = None):
