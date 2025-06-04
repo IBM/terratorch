@@ -31,7 +31,6 @@ from geobench_v2.datamodules import GeoBenchClassificationDataModule, GeoBenchSe
 
 from terratorch.datasets.transforms import kornia_augmentations_to_callable_with_dict
 
-ALBUMENTATIONS_TARGETS = ["image", "mask"]
 
 class GeoBenchV2ClassificationDataModule(GeoBenchClassificationDataModule):
     """Proxy object for using Classification DataModules defined by geobench_v2.
