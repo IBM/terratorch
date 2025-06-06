@@ -78,8 +78,7 @@ def get_data_cube():
         dtype="float32",
         rescale=False,
         fill_value=np.float32(0.0),  # now matches float32
-        assets=["blue", "green", "red", "nir"],
-        resampling=Resampling.nearest,
+        assets=["blue", "green", "red", "rededge1", "rededge2", "rededge3", "nir", "nir08", "swir16", "swir22"],
     )
 
     # Extract mean, std, and wavelengths from metadata
@@ -184,6 +183,8 @@ def test_create_model():
 
     clay_model = Clay1_5ModelFactory().build_model(None, None, None, **model_args)
     data_cube = get_data_cube()
+    print(f"Data cube: {data_cube.keys()}")
+    print(f"Data cube pixels shape: {data_cube['pixels'].shape}")
     clay_model.forward(data_cube)
     #clay_model.forward(torch.randn(1, 3, 224, 224))
 
