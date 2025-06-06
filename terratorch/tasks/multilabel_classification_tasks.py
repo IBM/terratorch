@@ -13,7 +13,7 @@ from torchmetrics.classification import (
     MultilabelRecall,
     MultilabelAUROC,
 )
-
+from torchmetrics.wrappers import ClasswiseWrapper
 from terratorch.models.model import ModelOutput
 from terratorch.tasks import ClassificationTask
 
