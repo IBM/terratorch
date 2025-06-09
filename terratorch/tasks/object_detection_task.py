@@ -60,6 +60,10 @@ class ObjectDetectionTask(BaseTask):
 
         iou_threshold: float = 0.5,
         score_threshold: float = 0.5,
+        
+        boxes_field: str = 'boxes',
+        labels_field: str = 'labels',
+        masks_field: str = 'masks',
 
     ) -> None:
        
@@ -79,6 +83,9 @@ class ObjectDetectionTask(BaseTask):
             class_names (list[str] | None, optional): List of class names. Defaults to None.
             iou_threshold (float, optional): Intersection over union threshold for evaluation. Defaults to 0.5.
             score_threshold (float, optional): Score threshold for evaluation. Defaults to 0.5.
+            boxes_field (str): The field containing the bbox information in the sample. Deafult is boxes
+            labels_field (str): The field containing the labels information in the sample. Deafult is labels
+            masks_field (str): The field containing the masks information in the sample. Deafult is masks
 
         Returns:
             None
@@ -101,7 +108,9 @@ class ObjectDetectionTask(BaseTask):
                 self.lr = float(self.hparams["optimizer_hparams"]["lr"])
                 del self.hparams["optimizer_hparams"]["lr"]
                 
-
+        self.boxes_field = boxes_field
+        self.labels_field = labels_field
+        self.masks_field = masks_field
 
     def configure_models(self) -> None:
         """
@@ -171,13 +180,13 @@ class ObjectDetectionTask(BaseTask):
 
         if 'masks' in batch.keys():
             y = [
-                {'boxes': batch['boxes'][i], 'labels': batch['labels'][i], 'masks': torch.cat([x[None].to(torch.uint8) for x in batch['masks'][i]])}
+                {'boxes': batch[self.boxes_field][i], 'labels': batch[self.labels_field][i], 'masks': torch.cat([x[None].to(torch.uint8) for x in batch[self.masks_field][i]])}
                 for i in range(batch_size)
             ]
         else:
 
             y = [
-                {'boxes': batch['boxes'][i], 'labels': batch['labels'][i]}
+                {'boxes': batch[self.boxes_field][i], 'labels': batch[self.labels_field][i]}
                 for i in range(batch_size)
             ]
 
@@ -275,7 +284,7 @@ class ObjectDetectionTask(BaseTask):
         y_hat = self(x)
         if isinstance(y_hat, dict) is False:
             y_hat = y_hat.output
-
+    
         y_hat = self.apply_nms_batch(y_hat, batch_size)
 
         if self.framework == 'mask-rcnn':
@@ -302,7 +311,15 @@ class ObjectDetectionTask(BaseTask):
             and hasattr(self.logger.experiment, 'add_figure')
         ):
 
-            dataset = self.trainer.datamodule.val_dataset
+            if 'boxes' not in batch.keys():
+                batch['boxes'] = batch.pop(self.boxes_field)
+            if 'labels' not in batch.keys():
+                batch['labels'] = batch.pop(self.labels_field)
+            if self.framework == 'mask-rcnn':
+                if 'masks' not in batch.keys():
+                    batch['masks'] = batch.pop(self.labels_field)
+            
+            # dataset = self.trainer.datamodule.val_dataset
             batch['prediction_boxes'] = [b['boxes'].cpu() for b in y_hat]
             batch['prediction_labels'] = [b['labels'].cpu() for b in y_hat]
             batch['prediction_scores'] = [b['scores'].cpu() for b in y_hat]
@@ -316,7 +333,14 @@ class ObjectDetectionTask(BaseTask):
             sample = unbind_samples(batch)[0]
             fig: Figure | None = None
             try:
-                fig = dataset.plot(sample)
+                if hasattr(self.trainer.datamodule, 'val_dataset'):
+                    if (hasattr(self.trainer.datamodule.val_dataset, 'plot') and hasattr(self.trainer.datamodule.val_dataset, 'plot')):
+                        fig = self.trainer.datamodule.val_dataset.plot(sample)
+                    elif hasattr(self.trainer.datamodule, 'plot') and callable(getattr(self.trainer.datamodule, 'plot')):
+                        fig = self.trainer.datamodule.plot(sample)
+                elif hasattr(self.trainer.datamodule, 'plot') and callable(getattr(self.trainer.datamodule, 'plot')):
+                    fig = self.trainer.datamodule.plot(sample)
+
             except RGBBandsMissingError:
                 pass
 
