@@ -25,7 +25,7 @@ import warnings
 
 ```python
 if not os.path.isfile('multi-temporal-crop-classification-subset.tar.gz'):
-    !gdown 1LL6thkuKA0kVyMI39PxgsrJ1FJJDV7-u
+    !gdown 1SycflNslu47yfMg2i_z8FqYkhZQv7JQM
 
 if not os.path.isdir('multi-temporal-crop-classification-subset/'):
     !tar -xzvf multi-temporal-crop-classification-subset.tar.gz
