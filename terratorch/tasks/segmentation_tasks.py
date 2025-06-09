@@ -65,7 +65,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         freeze_head: bool = False, 
         plot_on_val: bool | int = 10,
         class_names: list[str] | None = None,
-        tiled_inference_parameters: TiledInferenceParameters = None,
+        tiled_inference_parameters: dict = None,
         test_dataloaders_names: list[str] | None = None,
         lr_overrides: dict[str, float] | None = None,
         output_on_inference: str | list[str] = "prediction",
@@ -109,7 +109,7 @@ class SemanticSegmentationTask(TerraTorchTask):
             If true, log every epoch. Defaults to 10. If int, will plot every plot_on_val epochs.
             class_names (list[str] | None, optional): List of class names passed to metrics for better naming.
                 Defaults to numeric ordering.
-            tiled_inference_parameters (TiledInferenceParameters | None, optional): Inference parameters
+            tiled_inference_parameters (dict | None, optional): Inference parameters
                 used to determine if inference is done on the whole image or through tiling.
             test_dataloaders_names (list[str] | None, optional): Names used to differentiate metrics when
                 multiple dataloaders are returned by test_dataloader in the datamodule. Defaults to None,
@@ -231,37 +231,46 @@ class SemanticSegmentationTask(TerraTorchTask):
         class_names = self.hparams["class_names"]
         metrics = MetricCollection(
             {
-                "Multiclass_Accuracy": MulticlassAccuracy(
+                "mIoU": MulticlassJaccardIndex(
                     num_classes=num_classes,
                     ignore_index=ignore_index,
-                    multidim_average="global",
+                    average="macro",
+                ),
+                "mIoU_Micro": MulticlassJaccardIndex(
+                    num_classes=num_classes,
+                    ignore_index=ignore_index,
                     average="micro",
                 ),
-                "Multiclass_Accuracy_Class": ClasswiseWrapper(
-                    MulticlassAccuracy(
+                "F1_Score": MulticlassF1Score(
+                    num_classes=num_classes,
+                    ignore_index=ignore_index,
+                    average="macro",
+                ),
+                "Accuracy": MulticlassAccuracy(
+                    num_classes=num_classes,
+                    ignore_index=ignore_index,
+                    average="macro",
+                ),
+                "Pixel_Accuracy": MulticlassAccuracy(
+                    num_classes=num_classes,
+                    ignore_index=ignore_index,
+                    average="micro",
+                ),
+                "IoU": ClasswiseWrapper(
+                    MulticlassJaccardIndex(
                         num_classes=num_classes,
                         ignore_index=ignore_index,
-                        multidim_average="global",
-                        average=None,
+                        average=None
                     ),
                     labels=class_names,
                 ),
-                "Multiclass_Jaccard_Index_Micro": MulticlassJaccardIndex(
-                    num_classes=num_classes, ignore_index=ignore_index, average="micro"
-                ),
-                "Multiclass_Jaccard_Index": MulticlassJaccardIndex(
-                    num_classes=num_classes,
-                    ignore_index=ignore_index,
-                ),
-                "Multiclass_Jaccard_Index_Class": ClasswiseWrapper(
-                    MulticlassJaccardIndex(num_classes=num_classes, ignore_index=ignore_index, average=None),
+                "Class_Accuracy": ClasswiseWrapper(
+                    MulticlassAccuracy(
+                        num_classes=num_classes,
+                        ignore_index=ignore_index,
+                        average=None,
+                    ),
                     labels=class_names,
-                ),
-                "Multiclass_F1_Score": MulticlassF1Score(
-                    num_classes=num_classes,
-                    ignore_index=ignore_index,
-                    multidim_average="global",
-                    average="micro",
                 ),
             }
         )
@@ -395,8 +404,7 @@ class SemanticSegmentationTask(TerraTorchTask):
             y_hat: Tensor = tiled_inference(
                 model_forward,
                 x,
-                self.hparams["model_args"]["num_classes"],
-                self.tiled_inference_parameters,
+                **self.tiled_inference_parameters,
                 **rest,
             )
         else:

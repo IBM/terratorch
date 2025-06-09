@@ -91,8 +91,7 @@ class TerraTorchTask(BaseTask):
                     y_hat: Tensor = tiled_inference(
                         model_forward,
                         x,
-                        num_categories, 
-                        self.tiled_inference_parameters,
+                        **self.tiled_inference_parameters,
                         **rest,
                     )
                     model_output = ModelOutput(output=y_hat)

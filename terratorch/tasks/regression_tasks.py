@@ -12,7 +12,7 @@ import torch.nn.functional as F
 from lightning.pytorch.callbacks import Callback
 from torch import Tensor, nn
 from torchgeo.datasets.utils import unbind_samples
-from torchmetrics import MeanAbsoluteError, MeanSquaredError, MetricCollection
+from torchmetrics import MeanAbsoluteError, MeanSquaredError, MetricCollection, R2Score
 from torchmetrics.metric import Metric
 from torchmetrics.wrappers.abstract import WrapperMetric
 
@@ -154,7 +154,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
         freeze_decoder: bool = False,  # noqa: FBT001, FBT002
         freeze_head: bool = False,  # noqa: FBT001, FBT002
         plot_on_val: bool | int = 10,
-        tiled_inference_parameters: TiledInferenceParameters | None = None,
+        tiled_inference_parameters: dict | None = None,
         test_dataloaders_names: list[str] | None = None,
         lr_overrides: dict[str, float] | None = None,
         tiled_inference_on_testing: bool = None,
@@ -192,7 +192,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
             freeze_head (bool, optional): Whether to freeze the segmentation head. Defaults to False.
             plot_on_val (bool | int, optional): Whether to plot visualizations on validation.
                 If true, log every epoch. Defaults to 10. If int, will plot every plot_on_val epochs.
-            tiled_inference_parameters (TiledInferenceParameters | None, optional): Inference parameters
+            tiled_inference_parameters (dict | None, optional): Inference parameters
                 used to determine if inference is done on the whole image or through tiling.
             test_dataloaders_names (list[str] | None, optional): Names used to differentiate metrics when
                 multiple dataloaders are returned by test_dataloader in the datamodule. Defaults to None,
@@ -200,9 +200,9 @@ class PixelwiseRegressionTask(TerraTorchTask):
             lr_overrides (dict[str, float] | None, optional): Dictionary to override the default lr in specific
                 parameters. The key should be a substring of the parameter names (it will check the substring is
                 contained in the parameter name)and the value should be the new lr. Defaults to None.
-            tiled_inference_on_testing (bool): A boolean to the fine if tiled inference will be used when full inference 
-                fails during the test step. 
-            path_to_record_metrics (str): A path to save the file containing the metrics log. 
+            tiled_inference_on_testing (bool): A boolean to the fine if tiled inference will be used when full inference
+                fails during the test step.
+            path_to_record_metrics (str): A path to save the file containing the metrics log.
         """
 
         self.tiled_inference_parameters = tiled_inference_parameters
@@ -264,6 +264,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
                 "RMSE": MeanSquaredError(squared=False),
                 "MSE": MeanSquaredError(squared=True),
                 "MAE": MeanAbsoluteError(),
+                "R2_Score": R2Score(),
             }
 
         def wrap_metrics_with_ignore_index(metrics):
@@ -394,11 +395,10 @@ class PixelwiseRegressionTask(TerraTorchTask):
         rest = {k: batch[k] for k in other_keys}
 
         def model_forward(x, **kwargs):
-            return self(x).output
+            return self(x, **kwargs).output
 
         if self.tiled_inference_parameters:
-            # TODO: tiled inference does not work with additional input data (**rest)
-            y_hat: Tensor = tiled_inference(model_forward, x, 1, self.tiled_inference_parameters, **rest)
+            y_hat: Tensor = tiled_inference(model_forward, x, **self.tiled_inference_parameters, **rest)
         else:
             y_hat: Tensor = self(x, **rest).output
         return y_hat, file_names
