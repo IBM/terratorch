@@ -4,46 +4,27 @@ from dataclasses import dataclass
 from torch import nn
 import pdb
 from terratorch.models.model import (
-    AuxiliaryHead,
-    AuxiliaryHeadWithDecoderWithoutInstantiatedHead,
     Model,
     ModelFactory,
 )
-from terratorch.models.necks import Neck, build_neck_list
-# from terratorch.models.pixel_wise_model import PixelWiseModel
+from terratorch.models.necks import build_neck_list
 from terratorch.models.model import ModelOutput
 from terratorch.models.utils import extract_prefix_keys
-from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY, MODEL_FACTORY_REGISTRY
+from terratorch.registry import MODEL_FACTORY_REGISTRY
 
 import torchvision.models.detection
-from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
 from torchvision.models.detection.retinanet import RetinaNetHead
 from torchvision.models.detection.rpn import AnchorGenerator
-from torchvision.ops import MultiScaleRoIAlign, feature_pyramid_network, misc
-
-from terratorch.tasks.loss_handler import LossHandler
-from terratorch.tasks.optimizer_factory import optimizer_factory
+from torchvision.ops import MultiScaleRoIAlign
 
 import numpy as np
 from functools import partial
 import torch
 import pdb
+from .utils import _get_backbone
+
 SUPPORTED_TASKS = ['object_detection']
 
-def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
-    """
-    Instantiate the backbone network.
-
-    Args:
-        backbone: str | nn.Module: Name of the backbone network or a pre-instantiated backbone network.
-        **backbone_kwargs: Additional keyword arguments for the backbone network.
-    
-    Return:
-        Instantiated backbone network.
-    """
-    if isinstance(backbone, nn.Module):
-        return backbone
-    return BACKBONE_REGISTRY.build(backbone, **backbone_kwargs)
 
 def _check_all_args_used(kwargs):
     """
