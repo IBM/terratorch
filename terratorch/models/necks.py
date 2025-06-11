@@ -125,7 +125,9 @@ class MaxpoolToPyramidal(Neck):
 
 @TERRATORCH_NECK_REGISTRY.register
 class ReshapeTokensToImage(Neck):
-    def __init__(self, channel_list: list[int], remove_cls_token=True, effective_time_dim: int = 1):  # noqa: FBT002
+    def __init__(
+        self, channel_list: list[int], remove_cls_token=True, effective_time_dim: int = 1, h: int | None = None
+    ):
         """Reshape output of transformer encoder so it can be passed to a conv net.
 
         Args:
@@ -142,10 +144,14 @@ class ReshapeTokensToImage(Neck):
                 - A model which processes 12 frames with a tubelet size of 4 has an effective_time_dim of 3.
                     The embedding produced by this model has an embedding size embed_dim * 3.
                 Defaults to 1.
+            h (int | None):
+                You can choose a value for the height of the reshaped image.
+                The embedding size will be implicitly discovered from it.
         """
         super().__init__(channel_list)
         self.remove_cls_token = remove_cls_token
         self.effective_time_dim = effective_time_dim
+        self.h = h
 
     def collapse_dims(self, x):
         """
@@ -203,7 +209,7 @@ class ReshapeTokensToImage(Neck):
             tokens_per_timestep = number_of_tokens // self.effective_time_dim
 
             # Adaptation to use non-square images
-            h = math.sqrt(tokens_per_timestep)
+            h = self.h or math.sqrt(tokens_per_timestep)
             if h - int(h) == 0:
                 h = int(h)
             else:
