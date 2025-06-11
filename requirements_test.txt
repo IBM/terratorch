@@ -3,3 +3,4 @@ pytest-coverage
 coverage
 peft>=0.15.0
 diffusers>=0.30.0
+dask
