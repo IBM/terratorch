@@ -333,7 +333,7 @@ class VQ(nn.Module, PyTorchModelHubMixin):
         return x
 
     def encode(
-        self, x: torch.Tensor
+        self, x: torch.Tensor, *args, **kwargs,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.LongTensor]:
         """Encodes an input image tensor and quantizes the latent code.
 
