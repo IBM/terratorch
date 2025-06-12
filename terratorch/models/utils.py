@@ -75,7 +75,7 @@ def subtract_along_dim2(tensor: torch.Tensor):
 
 
 class TemporalWrapper(nn.Module):
-    def __init__(self, encoder: nn.Module, pooling="mean", concat=False, n_timestamps=None):
+    def __init__(self, encoder: nn.Module, pooling="mean", concat=False, n_timestamps=None, feature_format):
         """
         Wrapper for applying a temporal encoder across multiple time steps.
 
@@ -148,7 +148,7 @@ class TemporalWrapper(nn.Module):
                 features_per_map[i] = torch.stack(features_per_map[i], dim=2)  # Shape: [B, C', T, H', W']
             except RuntimeError as e:
                 raise
-
+                
         # Apply pooling or concatenation
         if self.concat:
             features_per_map_agg = [feat.view(batch_size, -1, feat.shape[-2], feat.shape[-1]) if len(feat.shape) == 5 else feat.view(batch_size, feat.shape[-3], -1) for feat in features_per_map]
@@ -159,16 +159,3 @@ class TemporalWrapper(nn.Module):
         else:
             features_per_map_agg = [torch.mean(feat, dim=2) for feat in features_per_map]
         return features_per_map_agg
-#         print("original ", features_per_map[0].shape)
-#         features_per_map_agg = [feat.view(batch_size, -1, feat.shape[-2], feat.shape[-1]) if len(feat.shape) == 5 else feat.view(batch_size, feat.shape[-3], -1) for feat in features_per_map]
-#         print("concat ", features_per_map_agg[0].shape)
-#         features_per_map_agg = [torch.max(feat, dim=2)[0] for feat in features_per_map]  # Max pooling across T
-#         print("max ", features_per_map_agg[0].shape)
-#         features_per_map_agg = [feat[:, :, 0, ...] - feat[:, :, 1, ...] for feat in features_per_map]
-#         print("diff ", features_per_map_agg[0].shape)
-#         features_per_map_agg = [torch.mean(feat, dim=2) for feat in features_per_map]
-#         print("mean ", features_per_map_agg[0].shape)
-
-#         pdb.set_trace()
-#         return features_per_map_agg
-        
