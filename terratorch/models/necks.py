@@ -1,17 +1,16 @@
+import math
+import pdb
 from abc import ABC, abstractmethod
+from collections import OrderedDict
 
 import numpy as np
 import torch
 import torch.nn.functional as F
 from einops import rearrange
 from torch import nn
-import math
 from torchvision.ops import FeaturePyramidNetwork
 
 from terratorch.registry import NECK_REGISTRY, TERRATORCH_NECK_REGISTRY
-
-from collections import OrderedDict
-import pdb
 
 
 class Neck(ABC, nn.Module):
@@ -51,6 +50,7 @@ class SelectIndices(Neck):
         channel_list = [channel_list[i] for i in self.indices]
         return channel_list
 
+
 @TERRATORCH_NECK_REGISTRY.register
 class PermuteDims(Neck):
     def __init__(self, channel_list: list[int], new_order: list[int]):
@@ -68,6 +68,7 @@ class PermuteDims(Neck):
 
     def process_channel_list(self, channel_list: list[int]) -> list[int]:
         return super().process_channel_list(channel_list)
+
 
 @TERRATORCH_NECK_REGISTRY.register
 class InterpolateToPyramidal(Neck):
@@ -124,7 +125,9 @@ class MaxpoolToPyramidal(Neck):
 
 @TERRATORCH_NECK_REGISTRY.register
 class ReshapeTokensToImage(Neck):
-    def __init__(self, channel_list: list[int], remove_cls_token=True, effective_time_dim: int = 1):  # noqa: FBT002
+    def __init__(
+        self, channel_list: list[int], remove_cls_token=True, effective_time_dim: int = 1, h: int | None = None
+    ):
         """Reshape output of transformer encoder so it can be passed to a conv net.
 
         Args:
@@ -141,15 +144,19 @@ class ReshapeTokensToImage(Neck):
                 - A model which processes 12 frames with a tubelet size of 4 has an effective_time_dim of 3.
                     The embedding produced by this model has an embedding size embed_dim * 3.
                 Defaults to 1.
+            h (int | None):
+                You can choose a value for the height of the reshaped image.
+                The embedding size will be implicitly discovered from it.
         """
         super().__init__(channel_list)
         self.remove_cls_token = remove_cls_token
         self.effective_time_dim = effective_time_dim
+        self.h = h
 
     def collapse_dims(self, x):
         """
-        When the encoder output has more than 3 dimensions, is necessary to 
-        reshape it. 
+        When the encoder output has more than 3 dimensions, is necessary to
+        reshape it.
         """
         shape = x.shape
         batch = x.shape[0]
@@ -157,6 +164,38 @@ class ReshapeTokensToImage(Neck):
         collapsed_dim = np.prod(x.shape[1:-1])
 
         return x.reshape(batch, collapsed_dim, e)
+
+    @staticmethod
+    def is_prime(n):
+        if n <= 1:
+            return False
+        for i in range(2, int(math.sqrt(n)) + 1):
+            if n % i == 0:
+                return False
+        return True
+
+    def factorize_to_get_h(self, tokens_per_timestep):
+        primes = [2, 3, 5, 7, 11]
+        j = primes[0]
+        i = 0
+        value = tokens_per_timestep
+        dividers = []
+        status = 0
+
+        while not status:
+            if self.is_prime(value):
+                status = 1
+            else:
+                if value % j == 0:
+                    value //= j
+                    dividers.append(j)
+                else:
+                    i += 1
+                    j = primes[i]
+
+                status = 0
+
+        return int(np.prod(dividers) / 2)
 
     def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
         out = []
@@ -168,7 +207,13 @@ class ReshapeTokensToImage(Neck):
             x_no_token = self.collapse_dims(x_no_token)
             number_of_tokens = x_no_token.shape[1]
             tokens_per_timestep = number_of_tokens // self.effective_time_dim
-            h = int(math.sqrt(tokens_per_timestep))
+
+            # Adaptation to use non-square images
+            h = self.h or math.sqrt(tokens_per_timestep)
+            if h - int(h) == 0:
+                h = int(h)
+            else:
+                h = self.factorize_to_get_h(tokens_per_timestep)
 
             encoded = rearrange(
                 x_no_token,
@@ -177,11 +222,13 @@ class ReshapeTokensToImage(Neck):
                 t=self.effective_time_dim,
                 h=h,
             )
+
             out.append(encoded)
         return out
 
     def process_channel_list(self, channel_list: list[int]) -> list[int]:
         return super().process_channel_list(channel_list)
+
 
 @TERRATORCH_NECK_REGISTRY.register
 class AddBottleneckLayer(Neck):
@@ -192,7 +239,7 @@ class AddBottleneckLayer(Neck):
 
     def __init__(self, channel_list: list[int]):
         super().__init__(channel_list)
-        self.bottleneck = nn.Conv2d(channel_list[-1], channel_list[-1]//2, kernel_size=1)
+        self.bottleneck = nn.Conv2d(channel_list[-1], channel_list[-1] // 2, kernel_size=1)
 
     def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
         new_embedding = self.bottleneck(features[-1])
@@ -201,6 +248,7 @@ class AddBottleneckLayer(Neck):
 
     def process_channel_list(self, channel_list: list[int]) -> list[int]:
         return [*channel_list, channel_list[-1] // 2]
+
 
 @TERRATORCH_NECK_REGISTRY.register
 class LearnedInterpolateToPyramidal(Neck):
@@ -233,37 +281,34 @@ class LearnedInterpolateToPyramidal(Neck):
         scaled_inputs.append(self.fpn4(features[3]))
         return scaled_inputs
 
-    def process_channel_list(self, channel_list: list[int]=None) -> list[int]:
+    def process_channel_list(self, channel_list: list[int] = None) -> list[int]:
         return [channel_list[0] // 4, channel_list[1] // 2, channel_list[2], channel_list[3]]
 
 
 @TERRATORCH_NECK_REGISTRY.register
 class FeaturePyramidNetworkNeck(Neck):
-    """Uses feature pyramid network from torchvision
-    """
+    """Uses feature pyramid network from torchvision"""
 
-    def __init__(self, channel_list: list[int], out_channel: int=256, output_ordered_dict: bool= True):
-
+    def __init__(self, channel_list: list[int], out_channel: int = 256, output_ordered_dict: bool = True):
         super().__init__(channel_list)
         self.out_channel = out_channel
         self.fpn = FeaturePyramidNetwork(self.channel_list, self.out_channel)
         self.output_ordered_dict = output_ordered_dict
 
     def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
-        
         if type(features) != "OrderedDict":
-            keys = [f'feat{str(i)}' for i, x in enumerate(features)]
-            features = OrderedDict(zip(keys, features))
-                    
+            keys = [f"feat{i!s}" for i, x in enumerate(features)]
+            features = OrderedDict(zip(keys, features, strict=False))
+
         reconstructed_features = self.fpn(features)
 
         if self.output_ordered_dict == False:
             reconstructed_features = list(reconstructed_features.values())
-    
+
         return reconstructed_features
 
     def process_channel_list(self, channel_list: list[int]) -> list[int]:
-        channel_list = len(channel_list)*[self.out_channel]
+        channel_list = len(channel_list) * [self.out_channel]
         return channel_list
 
 

@@ -1,4 +1,6 @@
 # Changelog
+## **1.0.2**
+<https://github.com/IBM/terratorch/releases/tag/1.0.2>
 ## **1.0.1**
 <https://github.com/IBM/terratorch/releases/tag/1.0.1>
 ## **1.0**
