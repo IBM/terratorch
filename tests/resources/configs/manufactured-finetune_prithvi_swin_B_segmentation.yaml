@@ -103,6 +103,7 @@ model:
       - probabilities
       - prediction
       - logits
+      - confidence
     tiled_inference_on_testing: true
     loss: ce
     #aux_heads:
