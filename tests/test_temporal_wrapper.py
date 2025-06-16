@@ -162,6 +162,8 @@ def test_temporal_wrapper_pooling_modes(dummy_encoder):
     assert len(diff_output) == 5
     assert diff_output[0].shape == (batch_size, encoder.out_channels[0], 112, 112)
 
+    gc.collect()
+
     ### transformer-like features
     encoder = BACKBONE_REGISTRY.build("clay_v1_base")
     n_channels = 6
@@ -196,6 +198,8 @@ def test_temporal_wrapper_pooling_modes(dummy_encoder):
     assert isinstance(diff_output, list)
     assert len(diff_output) == 12
     assert diff_output[0].shape == (batch_size, n_tokens, encoder.out_channels[0])
+
+    gc.collect()
 
     ### Swin-like features
     encoder = BACKBONE_REGISTRY.build(
