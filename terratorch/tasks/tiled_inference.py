@@ -256,6 +256,7 @@ def tiled_inference(
 
     device = input_batch.device
     # Move inputs to CPU to avoid out-of-memory errors
+    original_device = input_batch.get_device()
     input_batch = input_batch.cpu()
 
     input_batch_size = input_batch.shape[0]
@@ -336,5 +337,8 @@ def tiled_inference(
         msg = "Some pixels did not receive a classification!"
         raise RuntimeError(msg)
     if average_patches:
-        return preds / preds_count.unsqueeze(1)
-    return preds
+        output = preds / preds_count.unsqueeze(1)
+        output = output.to(original_device)
+        return output
+    output = preds.to(original_device)
+    return output

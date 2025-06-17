@@ -90,8 +90,8 @@ class TerraTorchTask(BaseTask):
                 raise Exception(f"Inference on testing failed due to insufficient {device}. Try to pass `tiled_inference_on_testing` or `tiled_inference_on_validation` as `True`, to use tiled inference for it.")
 
         else:
-            logger.info("Running tiled inference.")
-            logger.info("Notice that the tiled inference WON'T produce the exactly same result as the full inference.")
+            logger.debug("Running tiled inference.")
+            logger.debug("Notice that the tiled inference WON'T produce the exactly same result as the full inference.")
             if self.tiled_inference_parameters:
                 # Even when tiled inference is chosen and we have a config
                 # defined for it, we can have a memory issue when this
