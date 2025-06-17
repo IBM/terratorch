@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import torch
 import logging
+import warnings
 from torch import nn
 from functools import partial
 from .terramind import TerraMind
@@ -36,6 +38,7 @@ __all__ = [
     'terramind_v1_large_tim',
     'terramind_v1_base_mae',
     'terramind_v1_large_mae',
+    'terramind_v01_base_generate',
     'terramind_v1_base_generate',
     'terramind_v1_large_generate',
 ]
@@ -432,6 +435,10 @@ def terramind_v1_base_tim(**kwargs):
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def terramind_v01_base(**kwargs):
+    if kwargs.get('pretrained', False):
+        if not os.getenv('HF_TOKEN', None):
+            warnings.warn('TerraMind v0.1 models require a HF_TOKEN with access to model weights.')
+
     model = build_terrammind_vit(
         variant='terramind_v01_base',
         encoder_depth=12,
@@ -493,6 +500,10 @@ def terramind_v1_large_tim(**kwargs):
 
 @TERRATORCH_FULL_MODEL_REGISTRY.register
 def terramind_v1_base_mae(**kwargs):
+    assert 'encoder_embeddings' in kwargs and 'decoder_embeddings' in kwargs and 'modality_info' in kwargs, \
+        ("TerraMind MAE expects encoder_embeddings, decoder_embeddings, and modality_info. "
+         "For generation, use the terramind_v1_base_generate model.")
+
     model = build_terrammind_mae(
         variant='terramind_v1_base',
         encoder_depth=12,
@@ -506,7 +517,6 @@ def terramind_v1_base_mae(**kwargs):
         norm_layer=partial(LayerNorm, eps=1e-6, bias=False),
         act_layer=nn.SiLU,
         gated_mlp=True,
-        pretrained_bands=PRETRAINED_BANDS,
         **kwargs
     )
     return model
@@ -514,6 +524,10 @@ def terramind_v1_base_mae(**kwargs):
 
 @TERRATORCH_FULL_MODEL_REGISTRY.register
 def terramind_v1_large_mae(**kwargs):
+    assert 'encoder_embeddings' in kwargs and 'decoder_embeddings' in kwargs and 'modality_info' in kwargs, \
+        ("TerraMind MAE expects encoder_embeddings, decoder_embeddings, and modality_info. "
+         "For generation, use the terramind_v1_large_generate model.")
+
     model = build_terrammind_mae(
         variant='terramind_v1_large',
         encoder_depth=24,
@@ -527,7 +541,7 @@ def terramind_v1_large_mae(**kwargs):
         norm_layer=partial(LayerNorm, eps=1e-6, bias=False),
         act_layer=nn.SiLU,
         gated_mlp=True,
-        pretrained_bands=PRETRAINED_BANDS,
+        # pretrained_bands=PRETRAINED_BANDS,
         **kwargs
     )
     return model
@@ -535,6 +549,10 @@ def terramind_v1_large_mae(**kwargs):
 
 @TERRATORCH_FULL_MODEL_REGISTRY.register
 def terramind_v01_base_generate(**kwargs):
+    if kwargs.get('pretrained', False):
+        if not os.getenv('HF_TOKEN', None):
+            warnings.warn('TerraMind v0.1 models require a HF_TOKEN with access to model weights.')
+
     model = build_terrammind_generate(
         variant='terramind_v01_base',
         encoder_depth=12,
@@ -550,6 +568,7 @@ def terramind_v01_base_generate(**kwargs):
         gated_mlp=True,
         pretraining_mean=v01_pretraining_mean,
         pretraining_std=v01_pretraining_std,
+        version='v01',
         **kwargs
     )
     return model
@@ -572,6 +591,7 @@ def terramind_v1_base_generate(**kwargs):
         gated_mlp=True,
         pretraining_mean=v1_pretraining_mean,
         pretraining_std=v1_pretraining_std,
+        version='v1',
         **kwargs
     )
     return model
@@ -594,6 +614,7 @@ def terramind_v1_large_generate(**kwargs):
         gated_mlp=True,
         pretraining_mean=v1_pretraining_mean,
         pretraining_std=v1_pretraining_std,
+        version='v1',
         **kwargs
     )
     return model
