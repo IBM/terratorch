@@ -612,7 +612,6 @@ def terramind_v1_tiny(**kwargs):
     model = build_terrammind_vit(
         variant="terramind_v1_tiny",
         encoder_depth=12,
-        decoder_depth=4,
         dim=192,
         num_heads=3,
         mlp_ratio=4,
