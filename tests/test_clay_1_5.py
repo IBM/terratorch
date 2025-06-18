@@ -52,9 +52,11 @@ def test_create_model():
     clay_model = Clay1_5ModelFactory().build_model(None, None, None, **model_args)
     data_cube = {
         "pixels": torch.randn(64, 10, 64, 64), 
-        "time": torch.zeros(64,64),
+        "time": torch.stack([torch.zeros(4) for _ in range(64)]),
         "platform": ["sentinel-2-l2a"],
-        "latlon": torch.zeros(64,64),
+        "latlon": torch.zeros(64,4),
+        "waves": torch.zeros(4),
+        "gsd": torch.tensor(10),
     }
 
     clay_model.forward(data_cube)

@@ -52,7 +52,12 @@ class ModelWrapper(nn.Module):
         datacube['timestep'] = None
         datacube['platform'] = ['sentinel-2-l2a']
         datacube['latlon'] = None
-        return self.model.forward(args, **kwargs)
+        return_value = self.model.forward(args, **kwargs)
+        print('r----------------------------------')
+        print(return_value.keys())
+        print('----------------------------------')
+        return_value['image'] = return_value['pixels']
+        return return_value
 
 @MODEL_FACTORY_REGISTRY.register
 class Clay1_5ModelFactory(ModelFactory):
