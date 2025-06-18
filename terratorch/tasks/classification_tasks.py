@@ -201,6 +201,7 @@ class ClassificationTask(TerraTorchTask):
                         average=None,
                     ),
                     labels=class_names,
+                    prefix='Class_Accuracy_'
                 ),
                 "Class_F1": ClasswiseWrapper(
                     MulticlassF1Score(
@@ -209,6 +210,7 @@ class ClassificationTask(TerraTorchTask):
                         average=None,
                     ),
                     labels=class_names,
+                    prefix='Class_F1_'
                 ),
             }
         )

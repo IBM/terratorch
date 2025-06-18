@@ -263,6 +263,7 @@ class SemanticSegmentationTask(TerraTorchTask):
                         average=None
                     ),
                     labels=class_names,
+                    prefix='IoU_'
                 ),
                 "Class_Accuracy": ClasswiseWrapper(
                     MulticlassAccuracy(
@@ -271,6 +272,7 @@ class SemanticSegmentationTask(TerraTorchTask):
                         average=None,
                     ),
                     labels=class_names,
+                    prefix='Class_Accuracy_',
                 ),
             }
         )

@@ -87,6 +87,7 @@ class MultiLabelClassificationTask(ClassificationTask):
                         average=None,
                     ),
                     labels=class_names,
+                    prefix='Class_Accuracy_'
                 ),
                 "Class_F1": ClasswiseWrapper(
                     MultilabelF1Score(
@@ -95,6 +96,7 @@ class MultiLabelClassificationTask(ClassificationTask):
                         average=None,
                     ),
                     labels=class_names,
+                    prefix='Class_F1_'
                 ),
             }
         )
