@@ -8,13 +8,13 @@
       
       
       
-        <link rel="canonical" href="https://ibm.github.io/terratorch/stable/tutorials/adding_custom_modules/">
+        <link rel="canonical" href="https://ibm.github.io/terratorch/stable/about/contributing/">
       
       
-        <link rel="prev" href="../using_datamodule_multitemporalclassificationModule/">
+        <link rel="prev" href="../../package/loss/">
       
       
-        <link rel="next" href="../../package/tasks/">
+        <link rel="next" href="../changelog/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -22,7 +22,7 @@
     
     
       
-        <title>Custom Modules - TerraTorch</title>
+        <title>Contribution Guidelines - TerraTorch</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#how-to-add-custom-modules-to-terratorch" class="md-skip">
+        <a href="#contributing-to-terratorch" class="md-skip">
           Skip to content
         </a>
       
@@ -117,7 +117,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Custom Modules
+              Contribution Guidelines
             
           </span>
         </div>
@@ -619,10 +619,8 @@
       
   
   
-    
   
   
-  
     
     
       
@@ -647,11 +645,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           
           <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
@@ -667,7 +665,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Tutorials
@@ -681,7 +679,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../the_yaml_config/" class="md-nav__link">
+      <a href="../../tutorials/the_yaml_config/" class="md-nav__link">
         
   
   
@@ -704,7 +702,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../burn_scars_finetuning/" class="md-nav__link">
+      <a href="../../tutorials/burn_scars_finetuning/" class="md-nav__link">
         
   
   
@@ -727,7 +725,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../basic_inference_burn_scars/" class="md-nav__link">
+      <a href="../../tutorials/basic_inference_burn_scars/" class="md-nav__link">
         
   
   
@@ -750,7 +748,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../burn_scars_inference_simplified/" class="md-nav__link">
+      <a href="../../tutorials/burn_scars_inference_simplified/" class="md-nav__link">
         
   
   
@@ -773,7 +771,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../using_datamodule_multitemporalclassificationModule/" class="md-nav__link">
+      <a href="../../tutorials/using_datamodule_multitemporalclassificationModule/" class="md-nav__link">
         
   
   
@@ -793,32 +791,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    Custom Modules
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../tutorials/adding_custom_modules/" class="md-nav__link">
         
   
   
@@ -829,71 +805,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#prerequisites" class="md-nav__link">
-    <span class="md-ellipsis">
-      Prerequisites
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-1-create-your-custom-module-files" class="md-nav__link">
-    <span class="md-ellipsis">
-      Step 1: Create Your Custom Module File(s)
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-2-inform-terratorch-about-your-custom-module-directory" class="md-nav__link">
-    <span class="md-ellipsis">
-      Step 2: Inform TerraTorch About Your Custom Module Directory
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#step-3-use-your-custom-component-in-the-configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      Step 3: Use Your Custom Component in the Configuration
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#summary" class="md-nav__link">
-    <span class="md-ellipsis">
-      Summary
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1520,8 +1431,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -1544,11 +1457,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
           <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
@@ -1564,7 +1477,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             About
@@ -1575,10 +1488,32 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../about/contributing/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Contribution Guidelines
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1589,6 +1524,53 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#contributing-with-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      Contributing with code
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contributing-with-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Contributing with documentation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contributing-by-reporting-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Contributing by reporting issues
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1601,7 +1583,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../about/changelog/" class="md-nav__link">
+      <a href="../changelog/" class="md-nav__link">
         
   
   
@@ -1624,7 +1606,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../about/license/" class="md-nav__link">
+      <a href="../license/" class="md-nav__link">
         
   
   
@@ -1647,7 +1629,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../about/citation/" class="md-nav__link">
+      <a href="../citation/" class="md-nav__link">
         
   
   
@@ -1670,7 +1652,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../about/related_packages/" class="md-nav__link">
+      <a href="../related_packages/" class="md-nav__link">
         
   
   
@@ -1709,7 +1691,7 @@
 
 
   
-    <a href="https://github.com/IBM/terratorch/edit/master/docs/tutorials/adding_custom_modules.md" title="Edit this page" class="md-content__button md-icon">
+    <a href="https://github.com/IBM/terratorch/edit/master/docs/about/contributing.md" title="Edit this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -1718,144 +1700,68 @@
     
       
     
-    <a href="https://github.com/IBM/terratorch/raw/master/docs/tutorials/adding_custom_modules.md" title="View source of this page" class="md-content__button md-icon">
+    <a href="https://github.com/IBM/terratorch/raw/master/docs/about/contributing.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
     </a>
   
 
 
-<h1 id="how-to-add-custom-modules-to-terratorch">How to Add Custom Modules to TerraTorch<a class="headerlink" href="#how-to-add-custom-modules-to-terratorch" title="Permanent link">#</a></h1>
-<p>TerraTorch is designed to be extensible, allowing you to integrate your own custom components, such as models (backbones, decoders), tasks, datamodules, callbacks, or augmentation transforms, into the fine-tuning pipeline. This is primarily achieved by making your custom Python code discoverable by TerraTorch and then referencing your custom classes within the YAML configuration file.</p>
-<p>This tutorial outlines the steps required to add and use a custom module. We'll use a simple custom model component as an example.</p>
-<h2 id="prerequisites">Prerequisites<a class="headerlink" href="#prerequisites" title="Permanent link">#</a></h2>
+<h1 id="contributing-to-terratorch">Contributing to TerraTorch<a class="headerlink" href="#contributing-to-terratorch" title="Permanent link">#</a></h1>
+<p>Contributions to an open source project can came in different ways, but we could summarize them in three main
+components: adding code (as new models, tasks and
+auxiliary algorithms or even addressing the solution of a bug), examples using the software (scripts, yaml files and notebooks showcasing the package) and documentation.
+All these ways are valid for TerraTorch
+and the users are welcome to contribute in any of these fronts. However, some recommendations and rules are
+necessary in order to facilitate and organize his process. And this is the matter of the next paragraphs. </p>
+<h2 id="contributing-with-code">Contributing with code<a class="headerlink" href="#contributing-with-code" title="Permanent link">#</a></h2>
+<p>It is not a trivial task to determine how a modification in the source code will impact already implemented
+and established features, in this way, for any modification in the core source code (<code>terratorch/</code>) we
+automatically execute
+a pipeline with hundreds of unit and integration tests to verify that the package have not broken after the
+modification be merged to <code>main</code>. In this way, when an user wants to modify
+<code>terratorch</code> for adding new features or bufixes, this are the best practices. 
+* This repository uses <code>pre-commit</code>, a tool which automatically runs basic
+    steps before sending modifications to the remote (as linting, for example).
+    See how to configure it <a href="https://pre-commit.com/#installation">here</a>. 
+* If you are an user outside the IBM org, create a fork to add your modifications. If you are inside the IBM
+    org or have received writing provileges, create a branch for it. 
+* If you are adding new features, we ask you to also add tests for it. These tests are defined in the
+    directory <code>tests/</code> and are fundamental to check if your feature is working as expected and not breaking
+    anything. If your feature is something more complex, as a new model or auxiliary algorithm, you can also
+    (optionally) to add a complete example, as a notebook, demonstrating how the feature works.
+* After finishing your modifications, we recommend you to test locally using <code>pytest</code>, for example:
+    <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pytest -s -v tests/
+</span></code></pre></div>
+* If all the tests are passing, you can open a PR to <code>terratorch:main</code> describing what you are adding and why
+    that is important to be merged. You
+    do not need to choose a reviewer, since the maintainers will check the new open PR and request review for it by themselves.<br />
+* The PR will pass through the tests in GitHub Actions and if the reviewer approve it, it will soon be merged. 
+* It is recommended to add a label to your PR. For example <code>bug</code>, when it solves some issue or <code>enhancement</code>
+    when it adds new features. </p>
+<div class="admonition caution">
+<p class="admonition-title">Caution</p>
+<p>The PR will not be merged if the automatic tests are failing and the user which has sent the PR is responsible for fixing it. </p>
+</div>
+<h2 id="contributing-with-documentation">Contributing with documentation<a class="headerlink" href="#contributing-with-documentation" title="Permanent link">#</a></h2>
+<p>Documentation is core for any project, however, most part of the time, the developers do not have the time (or
+patience) to carefully document all the codebase, in this way, contributions from interested users are always
+welcome. 
+To add documentation to TerraTorch, you need to be familiar with Markdown, a clean markup language, and
+MkDocs, a framework which relies on Markdown in order to create webpages as this you are reading. </p>
 <ul>
-<li>A working installation of TerraTorch.</li>
-<li>Your custom Python code (e.g., a new model architecture implemented as a <code>torch.nn.Module</code>).</li>
+<li>Install the MkDocs dependencies. Install as a developer <code>pip install terratorch[dev]</code> to include them or manually using <a href="https://github.com/IBM/terratorch/blob/cdb130dd0be3db053c8858d69e8f02197d42c567/pyproject.toml#L66">this list</a>.</li>
+<li>Clone the branch dedicated to documentation to a local branch:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>    git fetch origin improve/docs
+</span></code></pre></div></li>
+<li>Add your modifications and open a PR to <code>improve/docs</code>. It is recommended to add the label <code>documentation</code> to your PR. </li>
+<li>The PR will be reviewed and approved if it is considered relevant by the maintainers. </li>
 </ul>
-<h2 id="step-1-create-your-custom-module-files">Step 1: Create Your Custom Module File(s)<a class="headerlink" href="#step-1-create-your-custom-module-files" title="Permanent link">#</a></h2>
-<p>First, organize your custom code into Python files (<code>.py</code>). It's recommended to place these files within a dedicated directory. For example, let's create a directory named <code>custom_modules</code> in your project's working directory and place our custom model definition inside a file named <code>my_custom_model.py</code>:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>my_project_root/
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>├── custom_modules/
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>│   ├── __init__.py       &lt;-- **Required** to make the directory a Python package
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>│   └── my_custom_model.py
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>├── my_config.yaml
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>└── ... (other project files)
-</span></code></pre></div>
-<p>Inside <code>custom_modules/my_custom_model.py</code>, define your custom class. If you intend for TerraTorch's factories to discover this module (e.g., to use it as a backbone or decoder selected by name), you <strong>must</strong> register it using the appropriate registry decorator.</p>
-<p>For instance, to register a simple custom CNN as a backbone:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># custom_modules/my_custom_model.py</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">import</span> <span class="nn">torch</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Import the relevant registry</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="kn">from</span> <span class="nn">terratorch.registry</span> <span class="kn">import</span> <span class="n">TERRATORCH_BACKBONE_REGISTRY</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># Register the class with the backbone registry</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="nd">@TERRATORCH_BACKBONE_REGISTRY</span><span class="o">.</span><span class="n">register</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="k">class</span> <span class="nc">MySimpleCNN</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="c1"># Note: Backbones typically don&#39;t take num_classes directly in __init__</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="c1"># They output features which are then processed by a decoder/head.</span>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="c1"># This example is simplified for demonstration.</span>
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">out_features</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">512</span><span class="p">):</span> <span class="c1"># Example: output feature size</span>
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">relu</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">()</span>
-</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">pool</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">AdaptiveAvgPool2d</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span> <span class="c1"># Example pooling</span>
-</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">fc</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">out_features</span><span class="p">)</span> <span class="c1"># Example final layer</span>
-</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initialized MySimpleCNN backbone with in_channels=</span><span class="si">{</span><span class="n">in_channels</span><span class="si">}</span><span class="s2">, out_features=</span><span class="si">{</span><span class="n">out_features</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>
-</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span> <span class="c1"># Backbones often return a list of features</span>
-</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>        <span class="c1"># Return as a list, mimicking multi-stage feature outputs</span>
-</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>        <span class="k">return</span> <span class="p">[</span><span class="n">x</span><span class="p">]</span>
-</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>
-</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="c1"># You could also define custom tasks, datamodules, decoders (registering with TERRATORCH_DECODER_REGISTRY), etc. here</span>
-</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="c1"># from terratorch.tasks import SemanticSegmentationTask</span>
-</span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="c1"># class MyCustomTask(SemanticSegmentationTask):</span>
-</span><span id="__span-1-33"><a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="c1">#     # ... override methods ...</span>
-</span><span id="__span-1-34"><a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a><span class="c1">#     pass</span>
-</span></code></pre></div>
-<p>The <code>@TERRATORCH_BACKBONE_REGISTRY.register</code> line makes <code>MySimpleCNN</code> available to be selected by name (i.e., <code>"MySimpleCNN"</code>) in the <code>backbone</code> field of your model configuration. Similar registries exist for decoders (<code>TERRATORCH_DECODER_REGISTRY</code>), necks, and full models.</p>
-<p>Make sure your custom classes inherit from appropriate base classes if needed (e.g., <code>torch.nn.Module</code> for models, <code>lightning.pytorch.LightningModule</code> or <code>terratorch.tasks.BaseTask</code> for tasks, <code>lightning.pytorch.LightningDataModule</code> for datamodules).</p>
-<h2 id="step-2-inform-terratorch-about-your-custom-module-directory">Step 2: Inform TerraTorch About Your Custom Module Directory<a class="headerlink" href="#step-2-inform-terratorch-about-your-custom-module-directory" title="Permanent link">#</a></h2>
-<p>TerraTorch needs to know where to find your custom code. You can specify the path to your custom modules directory using the <code>custom_modules_path</code> argument either in your YAML configuration file or directly via the command line.</p>
-<p><strong>Option A: In YAML Configuration (<code>my_config.yaml</code>)</strong></p>
-<p>Add the <code>custom_modules_path</code> key at the top level of your configuration:</p>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># my_config.yaml</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nt">custom_modules_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./custom_modules</span><span class="w">  </span><span class="c1"># Path relative to where you run terratorch</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># ... rest of your configuration ...</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="nt">model</span><span class="p">:</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">  </span><span class="c1"># ... other model config ...</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="nt">data</span><span class="p">:</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">  </span><span class="c1"># ... data config ...</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="nt">trainer</span><span class="p">:</span>
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">  </span><span class="c1"># ... trainer config ...</span>
-</span></code></pre></div>
-<p><strong>Option B: Via Command Line</strong></p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>terratorch<span class="w"> </span>fit<span class="w"> </span>--config<span class="w"> </span>my_config.yaml<span class="w"> </span>--custom_modules_path<span class="w"> </span>./custom_modules
-</span></code></pre></div>
-<p>When provided, TerraTorch will add the specified directory (<code>./custom_modules</code> in this case) to Python's <code>sys.path</code>, making the modules within it importable.</p>
-<h2 id="step-3-use-your-custom-component-in-the-configuration">Step 3: Use Your Custom Component in the Configuration<a class="headerlink" href="#step-3-use-your-custom-component-in-the-configuration" title="Permanent link">#</a></h2>
-<p>Now that TerraTorch can find and import your custom code, you can reference your custom classes in the YAML configuration.</p>
-<ul>
-<li>
-<p><strong>For registered components (Recommended for backbones, decoders, etc.):</strong> If you registered your class (like <code>MySimpleCNN</code> above), you can simply use its class name as the identifier:</p>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># my_config.yaml</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nt">custom_modules_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./custom_modules</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="nt">model</span><span class="p">:</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">terratorch.models.EncoderDecoder</span><span class="w"> </span><span class="c1"># Example using a standard factory</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span><span class="nt">init_args</span><span class="p">:</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="nt">backbone</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;MySimpleCNN&quot;</span><span class="w"> </span><span class="c1"># Reference the registered custom backbone by name</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="nt">decoder</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;UNetDecoder&quot;</span><span class="w"> </span><span class="c1"># Example using a standard decoder</span>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">    </span><span class="nt">model_args</span><span class="p">:</span>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">      </span><span class="nt">backbone_in_channels</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span><span class="w"> </span><span class="c1"># Passed to MySimpleCNN.__init__</span>
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">      </span><span class="c1"># backbone_out_features: 512 # Default or specify if needed</span>
-</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">      </span><span class="nt">decoder_num_classes</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span><span class="w"> </span><span class="c1"># Example number of output classes</span>
-</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">      </span><span class="c1"># ... other args for backbone/decoder if needed</span>
-</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="c1"># ... rest of config</span>
-</span></code></pre></div>
-</li>
-<li>
-<p><strong>For components not using the registry or for full class path reference:</strong> You can always reference a class using its full Python path: <code>&lt;directory_name&gt;.&lt;filename&gt;.&lt;ClassName&gt;</code>. This is useful for custom tasks, callbacks, or if you choose not to register a model component and instead specify its full path.</p>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># my_config.yaml</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nt">custom_modules_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./custom_modules</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># Example: Using the custom model directly via class_path (less common for backbones/decoders)</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="c1"># model:</span>
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="c1">#   class_path: custom_modules.my_custom_model.MySimpleCNN # Using full path</span>
-</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="c1">#   init_args:</span>
-</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="c1">#     in_channels: 3</span>
-</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="c1">#     out_features: 512</span>
-</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>
-</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="c1"># Example: Using a custom task</span>
-</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="nt">task</span><span class="p">:</span>
-</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="w">  </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">custom_modules.my_custom_task_module.MyCustomTask</span><span class="w"> </span><span class="c1"># Assuming it&#39;s defined elsewhere</span>
-</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="w">  </span><span class="nt">init_args</span><span class="p">:</span>
-</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="w">    </span><span class="c1"># ... task args ...</span>
-</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>
-</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="c1"># Example: Using a custom callback</span>
-</span><span id="__span-5-18"><a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="nt">trainer</span><span class="p">:</span>
-</span><span id="__span-5-19"><a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a><span class="w">  </span><span class="nt">callbacks</span><span class="p">:</span>
-</span><span id="__span-5-20"><a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">custom_modules.my_custom_callbacks.MyCallback</span>
-</span><span id="__span-5-21"><a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a><span class="w">      </span><span class="nt">init_args</span><span class="p">:</span>
-</span><span id="__span-5-22"><a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a><span class="w">        </span><span class="c1"># ... callback args ...</span>
-</span><span id="__span-5-23"><a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a><span class="c1"># ... rest of config</span>
-</span></code></pre></div>
-</li>
-</ul>
-<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">#</a></h2>
-<p>By following these steps:
-1.  Creating your custom Python code in a dedicated directory.
-2.  Specifying the path to this directory using <code>custom_modules_path</code>.
-3.  Referencing your custom classes via their full Python path in the YAML configuration.</p>
-<p>You can seamlessly integrate your own modules into the TerraTorch framework. </p>
+<h2 id="contributing-by-reporting-issues">Contributing by reporting issues<a class="headerlink" href="#contributing-by-reporting-issues" title="Permanent link">#</a></h2>
+<p>The users also can contribute by reporting issues they observed during their experiments. When reporting an issue, provide the more details as possible about the problem, as the configuration of your system,
+the terminal output and even the files required to reproduce it. To
+illustrate it, take a
+look on an example of <a href="https://github.com/IBM/terratorch/issues/506">a good issue</a>. </p>
 
 
 
@@ -1876,7 +1782,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="April 23, 2025 05:32:14">April 23, 2025</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="May 26, 2025 14:42:08">May 26, 2025</span>
   </span>
 
     
@@ -1914,7 +1820,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../using_datamodule_multitemporalclassificationModule/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Multi-temporal data">
+          <a href="../../package/loss/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Loss Handler">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1924,20 +1830,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Multi-temporal data
+                Loss Handler
               </div>
             </div>
           </a>
         
         
           
-          <a href="../../package/tasks/" class="md-footer__link md-footer__link--next" aria-label="Next: Tasks">
+          <a href="../changelog/" class="md-footer__link md-footer__link--next" aria-label="Next: Changelog">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Tasks
+                Changelog
               </div>
             </div>
             <div class="md-footer__button md-icon">
