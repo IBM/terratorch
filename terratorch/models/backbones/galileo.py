@@ -4,6 +4,7 @@ from torch import nn
 import huggingface_hub
 from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
 
+from galileo.galileo import GalileoWrapper
 
 def load_weights(model: nn.Module, ckpt_data: dict, **kwargs) -> nn.Module:
 
@@ -41,7 +42,7 @@ def galileo_tiny_encoder(pretrained:bool=None, ckpt_data: str | None = None, **k
     if not ckpt_data:
       ckpt_data = remote_checkpoint_path
 
-    model = Galileo(**kwargs)
+    model = GalileoWrapper(**kwargs)
 
     if pretrained:
       model = load_weights(model, ckpt_data)
@@ -61,7 +62,7 @@ def galileo_base_encoder(pretrained:bool=None, ckpt_data: str | None = None, **k
     if not ckpt_data:
       ckpt_data = remote_checkpoint_path
 
-    model = Galileo(**kwargs)
+    model = GalileoWrapper(**kwargs)
 
     if pretrained:
       model = load_weights(model, ckpt_data)
@@ -81,45 +82,11 @@ def galileo_nano_encoder(pretrained:bool=None, ckpt_data: str | None = None, **k
     if not ckpt_data:
       ckpt_data = remote_checkpoint_path
 
-    model = Galileo(**kwargs)
+    model = GalileoWrapper(**kwargs)
 
     if pretrained:
       model = load_weights(model, ckpt_data)
 
     return model 
 
-class Galileo(torch.nn.Module):
 
-  def __init__(self,
-              max_patch_size: int = 8,
-              embedding_size: int = 128,
-              depth=2,
-              mlp_ratio=2,
-              num_heads=8,
-              max_sequence_length=24,
-              freeze_projections: bool = False,
-              drop_path: float = 0.0,
-            ):
-
-      super(Galileo, self).__init__()
-
-      # Checking if the package galileo is installed.
-      try:
-          from galileo.galileo import Encoder
-      except ModuleNotFoundError:
-          raise Exception("It's necessary to install the package `galileo` to access these models: `pip install terratorch[galileo]`")
-
-      self.encoder = Encoder(max_patch_size = max_patch_size,
-                          embedding_size = embedding_size,
-                          depth=depth,
-                          mlp_ratio=mlp_ratio,
-                          num_heads=num_heads,
-                          max_sequence_length=max_sequence_length,
-                          freeze_projections=freeze_projections,
-                          drop_path = drop_path,
-                  )
-      self.out_channels = [embedding_size]
-
-  def forward(self,*args, **kwargs):
-
-    return self.encoder(*args, **kwargs)

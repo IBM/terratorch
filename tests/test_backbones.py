@@ -20,7 +20,7 @@ def input_224():
 
 @pytest.fixture
 def input_galileo():
-    return torch.ones((224, 224, 1, 2)) #NUM_CHANNELS))
+    return torch.ones((5, 224, 224, 1, 2)) #NUM_CHANNELS))
 
 @pytest.fixture
 def input_512():
@@ -85,31 +85,15 @@ def test_vit_models_accept_multitemporal(model_name, input_224_multitemporal):
     backbone(input_224_multitemporal)
     gc.collect()
 
+@pytest.mark.parametrize("do_pool", ["False", "True"])
 @pytest.mark.parametrize("model_name", ["nano", "tiny", "base"])
-def test_galileo_encoders(model_name, input_galileo):
-
-    from galileo.data.utils import construct_galileo_input
+def test_galileo_encoders(do_pool, model_name, input_galileo):
 
     backbone = BACKBONE_REGISTRY.build(f"galileo_{model_name}_encoder",
-                                       pretrained=True)
-    decoder = DECODER_REGISTRY.build("GalileoDecoder")
+                                       pretrained=True, do_pool=do_pool)
 
-    input_galileo_data = construct_galileo_input(s1=input_galileo)
-    input_galileo_data = input_galileo_data._asdict()
-
-    output = backbone(s_t_x=input_galileo_data["space_time_x"][None,...],
-                      sp_x=input_galileo_data["space_x"][None,...],
-                      t_x=input_galileo_data["time_x"][None,...],
-                      st_x=input_galileo_data["static_x"][None,...],
-                      s_t_m=input_galileo_data["space_time_mask"][None,...],
-                      sp_m=input_galileo_data["space_mask"][None,...],
-                      t_m=input_galileo_data["time_mask"][None,...],
-                      st_m=input_galileo_data["static_mask"][None,...],
-                      months=input_galileo_data["months"][None,...],
-                      patch_size=16)
-
-    output_decoder = decoder(*output)
-
+    output = backbone(s1=input_galileo)
+    print(output.shape)
     gc.collect()
 
 @pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
@@ -143,6 +127,7 @@ def test_vit_models_different_patch_tubelet_sizes(model_name, patch_size, patch_
         {backbone.embed_dim} = {expected_t * backbone.embed_dim} but was {e.shape[1]}"
 
     gc.collect()
+
 @pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
 def test_out_indices(model_name, input_224):
     out_indices = (2, 4, 8, 10)
