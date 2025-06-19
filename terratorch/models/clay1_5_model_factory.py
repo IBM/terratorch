@@ -20,6 +20,7 @@ from terratorch.models.scalar_output_model import ScalarOutputModel
 from terratorch.models.utils import DecoderNotFoundError, extract_prefix_keys
 from terratorch.registry import MODEL_FACTORY_REGISTRY
 from claymodel.model import ClayMAE
+from box import Box
 
 PIXEL_WISE_TASKS = ["segmentation", "regression"]
 SCALAR_TASKS = ["classification"]
@@ -31,10 +32,12 @@ class DecoderNotFoundError(Exception):
 
 class ModelWrapper(nn.Module):
 
-    def __init__(self, model: nn.Module = None) -> None:
+    def __init__(self, batch_size, bands, platform, model: nn.Module = None) -> None:
 
         super(ModelWrapper, self).__init__()
-
+        self.batch_size = batch_size
+        self.bands = bands
+        self.platform = platform
         self.model = model
 
         #self.embedding_shape = self.model.state_dict()['decoder.embed_to_pixels.dem.bias'].shape[0]
@@ -49,15 +52,12 @@ class ModelWrapper(nn.Module):
     def forward(self, args, **kwargs):
         datacube = {}
         datacube['pixels'] = args
-        datacube['timestep'] = None
-        datacube['platform'] = ['sentinel-2-l2a']
-        datacube['latlon'] = None
-        return_value = self.model.forward(args, **kwargs)
-        print('r----------------------------------')
-        print(return_value.keys())
-        print('----------------------------------')
-        return_value['image'] = return_value['pixels']
-        return return_value
+        datacube['time'] = torch.zeros(self.batch_size, 4)
+        datacube['platform'] = self.platform
+        datacube['latlon'] = torch.zeros(self.batch_size, 4)
+        datacube['waves'] = torch.zeros(4)
+        datacube['gsd'] = torch.tensor(10)
+        return self.model.forward(datacube, **kwargs)
 
 @MODEL_FACTORY_REGISTRY.register
 class Clay1_5ModelFactory(ModelFactory):
@@ -77,4 +77,7 @@ class Clay1_5ModelFactory(ModelFactory):
         checkpoint_path: str = None,
         **kwargs,
     ) -> Model:
-        return ModelWrapper(ClayMAE(**kwargs))
+        batch_size = kwargs.get("batch_size", 1)
+        platform = kwargs.get("platform")
+        kwargs["metadata"] = Box(kwargs["metadata"])
+        return ModelWrapper(batch_size, bands, platform, ClayMAE(**kwargs))

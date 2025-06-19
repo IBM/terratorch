@@ -14,6 +14,8 @@ from terratorch.models.smp_model_factory import SMPModelFactory
 from terratorch.models.timm_model_factory import TimmModelFactory
 from terratorch.models.object_detection_model_factory import ObjectDetectionModelFactory
 from terratorch.models.full_model_factory import FullModelFactory
+from terratorch.models.clay1_5_model_factory import Clay1_5ModelFactory
+
 try:
     granitewcx = True
     from terratorch.models.wxc_model_factory import WxCModelFactory
@@ -32,7 +34,8 @@ __all__ = (
     "WxCModelFactory",
     "EncoderDecoderFactory",
     "FullModelFactory",
-    "ObjectDetectionModelFactory"
+    "ObjectDetectionModelFactory",
+    "Clay1_5ModelFactory",
 )
 
 if granitewcx:
