@@ -14,9 +14,10 @@ TorchGeo offers two primary classes to suit different data formats:
   Opt for this class if your data comes in the form of large GeoTiff files from which you need to sample during training. `GeoDataset` automatically aligns your input data with corresponding labels and supports a range of geo-aware sampling techniques.
 
 
-In addition to these specialized TorchGeo datasets, TerraTorch offers generic datasets and data modules designed to work with directory-based data structures, similar to those used in MMLab libraries. These generic tools simplify data loading when your data is organized in conventional file directories:
+In addition to these specialized TorchGeo datasets, TerraTorch offers **generic datasets and data modules** designed to work with directory-based data structures, similar to those used in MMLab libraries. These generic tools simplify data loading when your data is organized in conventional file directories:
 - The Generic Pixel-wise Dataset is ideal for tasks where each pixel represents a sample (e.g., segmentation or dense prediction problems).
 - The Generic Scalar Label Dataset is best suited for classification tasks where each sample is associated with a single label.
+- The Generic Multimodal Dataset can handle multimodal data for classification, segmentation, and regression tasks.
 
 TerraTorch also provides corresponding generic data modules that bundle the dataset with training, validation, and testing splits, integrating seamlessly with PyTorch Lightning. This arrangement makes it easy to manage data loading, batching, and preprocessing with minimal configuration.
 
@@ -25,6 +26,7 @@ While generic datasets offer a quick start for common data structures, many proj
 For additional examples on fine-tuning a TerraTorch model using these components, please refer to the [Prithvi EO Examples](https://github.com/NASA-IMPACT/Prithvi-EO-2.0) repository.
 
 ## Data curation
+
 Generally speaking, all the datamodules work by collecting sets of files and concatenating them into batches
 with a size determined by the user. TerraTorch automatically checks the dimensionality of the files in order
 to guarantee that they are stackable, otherwise a stackability error will be raised. If you are sure that your
@@ -80,16 +82,16 @@ You can also do this outside of config files! Simply instantiate the data module
 
 ## Generic datasets and data modules
 
-For the `NonGeoDataset` case, we also provide "generic" [datasets](generic_datasets.md) and
-[datamodules](generic_datamodules.md).
+For the `NonGeoDataset` case, we also provide "generic" [datasets](../package/generic_datasets.md) and
+[datamodules](../datasets/generic_datamodules.md).
 These can be used when you would like to load data from given directories, in a style similar to the [MMLab](https://github.com/open-mmlab) libraries.
 
 ## Custom datasets and data modules
-Our [custom datasets](datasets.md) and [data modules](datamodules.md) are crafted to handle specific data, offering enhanced control and flexibility throughout the workflow. 
+Our [custom datasets](../package/datasets.md) and [data modules](../package/datamodules.md) are crafted to handle specific data, offering enhanced control and flexibility throughout the workflow. 
 In case you want to use TerraTorch on your specific data, we invite you to develop your own dataset and data module classes by following the examples below. 
 
 ## Transforms
-The [transforms module](transforms.md) provides a set of specialized image transformations designed to manipulate spatial, temporal, and multimodal data efficiently. 
+The [transforms module](../package/transforms.md) provides a set of specialized image transformations designed to manipulate spatial, temporal, and multimodal data efficiently. 
 These transformations allow for greater flexibility when working with multi-temporal, multi-channel, and multi-modal datasets, ensuring that data can be formatted appropriately for different model architectures.
 
 

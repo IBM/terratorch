@@ -33,7 +33,7 @@ model:
     ...
     tiled_inference_parameters:
       crop: 224
-      stride: 129
+      stride: 192
 ```
 
 Next, you can run:

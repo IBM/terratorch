@@ -80,20 +80,25 @@ nav:
   - User Guide:
     - Get started: guide/quick_start.md
     - Architecture: guide/architecture.md
-    - Datasets: # Generic datasets with subpages for class, seg, multimodal
-      - guide/data.md # Overview
-      - Generic Datamodules: guide/generic_datasets.md
-      - Custom Datasets: guide/custom_datasets.md
+    - Datasets: guide/data.md
+# TODO Write intro for generic datasets
+#      - guide/data.md # Overview
+#      - Generic Datamodules: guide/generic_datasets.md
+#      - Custom Datasets: guide/custom_datasets.md
     - Models:
       - guide/models.md  # Overview
       - Model Registry: guide/registry.md
       - guide/encoder_decoder_factory.md
-      - TerraMind: guide/terramind.md
-      - Prithvi EO: guide/prithvi_eo.md
-    - Tasks: guide/tasks.md
-    - Fine-tuning: guide/finetuning.md
+# TODO Add guide for TerraMind and Prithvi
+#      - TerraMind: guide/terramind.md
+#      - Prithvi EO: guide/prithvi_eo.md
+# TODO Add guide for a general approach to a new use case
+#    - New Use Case: guide/new_use_case.md
+# TODO Add guide for fine-tuning
+#    - Fine-tuning: guide/finetuning.md
     - Inference: guide/inference.md
-    - Iterate: guide/iterate.md
+# TODO Add docs for iterate
+#    - Iterate: guide/iterate.md
     - Glossary: guide/glossary.md
     - FAQs: guide/faqs.md
 
@@ -104,11 +109,12 @@ nav:
     - Simplified Inference: tutorials/burn_scars_inference_simplified.md
     - Multi-temporal data: tutorials/using_datamodule_multitemporalclassificationModule.md
     - Custom Modules: tutorials/adding_custom_modules.md
+# TODO Add tutorial for compute statistics
+#    - Compute data statistics: tutorials/compute_statistics.md
 
   - Package Reference:
     - Tasks: package/tasks.md
     - Models:
-      - Model Registries: package/registry.md  # done
       - Model Factories: package/model_factories.md
       - Backbones: package/backbones.md
       - Decoders: package/decoders.md

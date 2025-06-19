@@ -62,13 +62,9 @@ DECODER_REGISTRY.keys()
 
 If a prefix is not added, the `MultiSourceRegistry` will search each registry in the order it was added (starting with the `TERRATORCH_` registry) until it finds the first match.
 
-For both of these registries, only `TERRATORCH_X_REGISTRY` is mutable. To register backbones or decoders to terratorch, you should decorate the constructor function (or the model class itself) with `@TERRATORCH_DECODER_REGISTRY.register`, `@TERRATORCH_BACKBONE_REGISTRY.register`, or `@TERRATORCH_FULL_MODEL_REGISTRY.register`.
+For all of these registries, only `TERRATORCH_X_REGISTRY` is mutable. To register backbones, decoders, or standalone models to TerraTorch, you should decorate the constructor function (or the model class itself) with `@TERRATORCH_DECODER_REGISTRY.register`, `@TERRATORCH_BACKBONE_REGISTRY.register`, or `@TERRATORCH_FULL_MODEL_REGISTRY.register`.
 
 To add a new registry to these top level registries, you should use the `.register` method, taking the register and the prefix that will be used for it.
-
-:::terratorch.registry.registry.MultiSourceRegistry
-
-:::terratorch.registry.registry.Registry
 
 ## Other Registries
 
