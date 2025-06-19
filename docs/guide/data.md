@@ -83,7 +83,7 @@ You can also do this outside of config files! Simply instantiate the data module
 ## Generic datasets and data modules
 
 For the `NonGeoDataset` case, we also provide "generic" [datasets](../package/generic_datasets.md) and
-[datamodules](../datasets/generic_datamodules.md).
+[datamodules](../package/generic_datamodules.md).
 These can be used when you would like to load data from given directories, in a style similar to the [MMLab](https://github.com/open-mmlab) libraries.
 
 ## Custom datasets and data modules

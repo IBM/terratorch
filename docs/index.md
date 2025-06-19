@@ -15,7 +15,7 @@
 
     Run `pip install terratorch` and get started in minutes. 
 
-    [:octicons-arrow-right-24: Quick start](getting_started%2Fquick_start.md)
+    [:octicons-arrow-right-24: Quick start](guide%2Fquick_start.md)
 
 -   :material-book-open-variant-outline:{ .lg .middle } __Overview__
 
@@ -56,4 +56,4 @@ This library provides:
 
 A good starting place is familiarization with [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/), which this project is built on. 
 [TorchGeo](https://torchgeo.readthedocs.io/en/stable/) is also an important complementary reference with many available models and specific datasets.
-If you have any open questions, please check the [FAQs](getting_started/faqs.md) or open an issue in [GitHub](https://github.com/IBM/terratorch/issues).
+If you have any open questions, please check the [FAQs](guide/faqs.md) or open an issue in [GitHub](https://github.com/IBM/terratorch/issues).

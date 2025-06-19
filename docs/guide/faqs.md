@@ -21,7 +21,7 @@ If you don't find your question in the FAQs or the user guide, feel free to open
 ??? faq "How do I configure a YAML file for my experiment?"
     YAML files define the trainer, data, model, optimizer, and lr_scheduler sections. 
     The model section specifies the task type (like SemanticSegmentationTask) and model architecture parameters, while the data section configures the DataModule for loading your datasets.
-    Please check this [tutorial](tutorials/the_yaml_config.md) for details.
+    Please check this [tutorial](../tutorials/the_yaml_config.md) for details.
 
 
 ??? faq "What data formats does TerraTorch support?"
@@ -55,18 +55,18 @@ If you don't find your question in the FAQs or the user guide, feel free to open
     However, TerraTorch models automatically apply padding to make it work with any input size. 
     If the automatic padding does not work, pass `patch_size: 16` or similar to the model.
 
-    During inference, you can use [tiled inference](guide/inference.md) that can process full satellite tiles if needed.
+    During inference, you can use [tiled inference](inference.md) that can process full satellite tiles if needed.
 
  
 ??? faq "How does the model architecture work?"
-    TerraTorch uses an encoder-decoder architecture where models are constructed by combining backbones, necks, decoders, and heads through model factories like [`EncoderDecoderFactory`](guide/encoder_decoder_factory.md).
+    TerraTorch uses an encoder-decoder architecture where models are constructed by combining backbones, necks, decoders, and heads through model factories like [`EncoderDecoderFactory`](encoder_decoder_factory.md).
     Tasks coordinate training and inference while delegating model construction to these factories.
 
 
 ??? faq "How do I perform inference on new data?"
     Use the `terratorch predict ...` command with your trained model checkpoint and specify the input data directory. 
     For programmatic inference, you can use the `LightningInferenceModel` class to load models and perform inference on directories or individual files.
-    See the [inference](guide/inference.md) guide for details.
+    See the [inference](inference.md) guide for details.
 
 
 ??? faq "How can I on-board new datasets?"
@@ -81,7 +81,7 @@ If you don't find your question in the FAQs or the user guide, feel free to open
     custom_modules_path: <your/folder>
     ```
 
-    See this [tutorial](tutorials/adding_custom_modules.md) for details.
+    See this [tutorial](../tutorials/adding_custom_modules.md) for details.
 
 
 ??? faq "Can I customize a model or task? E.g., I want to use another loss or another decoder."
@@ -91,7 +91,7 @@ If you don't find your question in the FAQs or the user guide, feel free to open
 
 ??? faq "I get an error during inference that is related to some size mismatches?"
     This can happen when the padding is not working correctly. 
-    An easy fix is to add tiled inference to your config or pipeline as described in [Inference](guide/inference.md). 
+    An easy fix is to add tiled inference to your config or pipeline as described in [Inference](inference.md). 
 
 
 ??? faq "My training just stops after one epoch without a stack trace. What is wrong?"

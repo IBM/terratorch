@@ -22,7 +22,7 @@ To add a new backbone, simply create a class and annotate it (or a constructor f
 The model will be registered with the same name as the function. To create many model variants from the same class, the recommended approach is to annotate a constructor function from each with a fully descriptive name.
 
 Your backbone is required to have an attribute `self.out_channels` that defines a list of the model outputs with the embedding dimension.
-The output of the `forward` function should return a list of tensors (ideally the outputs from all layers of your model). See [Encoders]([encoder_decoder_factory.md](encoder_decoder_factory.md)#Encoders) for an example.
+The output of the `forward` function should return a list of tensors (ideally the outputs from all layers of your model). See Encoders in [EncoderDecoderFactory](encoder_decoder_factory.md) for an example.
 
 ```python
 from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY, BACKBONE_REGISTRY

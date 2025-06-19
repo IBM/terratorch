@@ -24,7 +24,7 @@ For a stable point-release, use `pip install terratorch`.
 If you prefer to get the most recent version of the main branch, install the library with `pip install git+https://github.com/IBM/terratorch.git`.
 
 To install as a developer (e.g., to extend the library), fork the [repo](https://github.com/IBM/terratorch) and clone your repo with `git clone https://github.com/<your_username>/terratorch.git`. Then run `pip install -e .`.
-We welcome contributions from the community and provide some [guidelines](about/contributing.md) for you.
+We welcome contributions from the community and provide some [guidelines](../about/contributing.md) for you.
 
 ## Creating Backbones
 
@@ -112,7 +112,7 @@ model = model_factory.build_model(
 You might wonder what `necks` are. Different model architectures like CNNs or ViTs return outputs in different formats while different decoders expect other input shapes. 
 Therefore, we use necks to reshape the backbone output into the correct format for the decoder input.
 In this case, we select intermediate model outputs for the UNet, reshape the 1D tokens of Prithvi into a 2D grid, and upscale the intermediate outputs as the UNet decoder expects hierarchical inputs.  
-You can simply use a backbone-neck-decoder combination from one of the provided examples or check the [necks](package/necks.md) page in the user guide for more details.
+You can simply use a backbone-neck-decoder combination from one of the provided examples or check the [necks](../package/necks.md) page in the user guide for more details.
 
 ## Training with Lightning Tasks
 
