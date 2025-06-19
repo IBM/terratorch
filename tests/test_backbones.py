@@ -85,7 +85,7 @@ def test_vit_models_accept_multitemporal(model_name, input_224_multitemporal):
     backbone(input_224_multitemporal)
     gc.collect()
 
-@pytest.mark.parametrize("do_pool", ["False", "True"])
+@pytest.mark.parametrize("do_pool", [False, True])
 @pytest.mark.parametrize("model_name", ["nano", "tiny", "base"])
 def test_galileo_encoders(do_pool, model_name, input_galileo):
 
@@ -93,7 +93,7 @@ def test_galileo_encoders(do_pool, model_name, input_galileo):
                                        pretrained=True, do_pool=do_pool)
 
     output = backbone(s1=input_galileo)
-    print(output.shape)
+
     gc.collect()
 
 @pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
