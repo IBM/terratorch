@@ -1,7 +1,7 @@
 .md-grid {
   max-width: 1400px;
 }
-"""
+
 /*Define content width*/
 .md-content {
   max-width: 900px;
@@ -30,14 +30,14 @@
 .md-nav__link--active:hover {
   color: #EE4B2B !important;
 }
-
+"""
 /* Hide the site_name "TerraTorch" in the header */
 @media screen and (min-width: 1220px) {
   .md-header__title .md-header__topic:first-child {
     display: none !important;
   }
 }
-
+"""
 /* Hide the site_name "TerraTorch" in the header and sidebar */
 @media screen and (min-width: 1220px) {
   .md-header__title .md-header__topic:first-child {
@@ -85,4 +85,3 @@
   -webkit-mask-image: var(--md-admonition-icon--question);
           mask-image: var(--md-admonition-icon--question);
 }
-"""
