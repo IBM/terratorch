@@ -1,5 +1,6 @@
 # Copyright contributors to the Terratorch project
 
+import torch
 from typing import List
 import warnings
 import logging
@@ -18,15 +19,12 @@ from terratorch.models.scalar_output_model import ScalarOutputModel
 from terratorch.models.utils import extract_prefix_keys
 from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY, MODEL_FACTORY_REGISTRY
 
+from .utils import _get_backbone
+
+
 PIXEL_WISE_TASKS = ["segmentation", "regression"]
 SCALAR_TASKS = ["classification"]
 SUPPORTED_TASKS = PIXEL_WISE_TASKS + SCALAR_TASKS
-
-
-def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
-    if isinstance(backbone, nn.Module):
-        return backbone
-    return BACKBONE_REGISTRY.build(backbone, **backbone_kwargs)
 
 
 def _get_decoder_and_head_kwargs(
@@ -90,7 +88,7 @@ class EncoderDecoderFactory(ModelFactory):
         num_classes: int | None = None,
         necks: list[dict] | None = None,
         aux_decoders: list[AuxiliaryHead] | None = None,
-        rescale: bool = True,  # noqa: FBT002, FBT001
+        rescale: bool = True,  # noqa: FBT002, FBT001,
         peft_config: dict | None = None,
         **kwargs,
     ) -> Model:
@@ -146,6 +144,7 @@ class EncoderDecoderFactory(ModelFactory):
             backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")
 
         backbone = _get_backbone(backbone, **backbone_kwargs)
+
 
         # If patch size is not provided in the config or by the model, it might lead to errors due to irregular images.
         patch_size = backbone_kwargs.get("patch_size", None)

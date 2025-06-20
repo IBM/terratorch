@@ -3,11 +3,11 @@
 """
 This module contains generic data modules for instantiation at runtime.
 """
-import os
+
 import logging
+import warnings
 from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any, Iterator
 import albumentations as A
 import numpy as np
 import torch
@@ -115,6 +115,7 @@ class MultimodalNormalize(Callable):
                 msg = (f"Expected batch with 5 or 4 dimensions (B, C, (T,) H, W), sample with 3 dimensions (C, H, W) "
                        f"or a single channel, but got {len(image.shape)}")
                 raise Exception(msg)
+
             batch["image"][m] = (image - means) / stds
         return batch
 
@@ -129,7 +130,7 @@ class MultiModalBatchSampler(BatchSampler):
         self.sample_num_modalities = sample_num_modalities
         self.sample_replace = sample_replace
 
-    def __iter__(self) -> Iterator[list[int]]:
+    def __iter__(self) -> Iterable[list[int]]:
         """
         Code similar to BatchSampler but samples tuples in the format (idx, ["m1", "m2", ...])
         """
@@ -206,12 +207,13 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         num_workers: int = 0,
         pin_memory: bool = False,
         data_with_sample_dim: bool = False,
+        allow_missing_modalities: bool = False,
         sample_num_modalities: int | None = None,
         sample_replace: bool = False,
         channel_position: int = -3,
         concat_bands: bool = False,
         check_stackability: bool = True,
-        **kwargs: Any,
+        img_grep: str | dict[str, str] | None = None,
     ) -> None:
         """Constructor
 
@@ -311,6 +313,8 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 returning them. Defaults to False.
             data_with_sample_dim (bool): Use a specific collate function to concatenate samples along a existing sample
                 dimension instead of stacking the samples. Defaults to False.
+            allow_missing_modalities (bool): Experimental feature! Allow missing modalities during data loading.
+                Defaults to False.
             sample_num_modalities (int, optional): Load only a subset of modalities per batch. Defaults to None.
             sample_replace (bool): If sample_num_modalities is set, sample modalities with replacement.
                 Defaults to False.
@@ -333,7 +337,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         else:
             raise ValueError(f"Unknown task {task}, only segmentation and regression are supported.")
 
-        super().__init__(dataset_class, batch_size, num_workers, **kwargs)
+        super().__init__(dataset_class, batch_size, num_workers)
         self.num_classes = num_classes
         self.class_names = class_names
         self.modalities = modalities
@@ -341,6 +345,12 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.non_image_modalities = list(set(self.modalities) - set(self.image_modalities))
         if task == "scalar":
             self.non_image_modalities += ["label"]
+
+        if img_grep is not None:
+            warnings.warn(f'img_grep was renamed to image_grep and will be removed in a future version.',
+                          DeprecationWarning)
+            image_grep = img_grep
+
         if isinstance(image_grep, dict):
             self.image_grep = {m: image_grep[m] if m in image_grep else "*" for m in modalities}
         else:
@@ -353,6 +363,19 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.val_label_data_root = val_label_data_root
         self.test_label_data_root = test_label_data_root
         self.predict_root = predict_data_root
+
+        # Check paths and modalities
+        for name, data_root in [("train", train_data_root), ("val", val_data_root), ("test", test_data_root),
+                                ("predict", predict_data_root)]:
+            if data_root is None:
+                pass
+            elif allow_missing_modalities:
+                if not set(data_root.keys()) <= set(modalities):
+                    raise ValueError(f"Modalities {modalities} do not match {name}_data_root: {data_root}")
+            else:
+                if not set(data_root.keys()) == set(modalities):
+                    raise ValueError(f"Paths in {name}_data_root do not match modalities {modalities}: {data_root}")
+
         self.train_split = train_split
         self.val_split = val_split
         self.test_split = test_split
@@ -362,8 +385,13 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.no_label_replace = no_label_replace
         self.drop_last = drop_last
         self.pin_memory = pin_memory
+        self.allow_missing_modalities = allow_missing_modalities
         self.sample_num_modalities = sample_num_modalities
-        self.sample_replace = sample_replace        
+        self.sample_replace = sample_replace
+        if allow_missing_modalities and batch_size > 1:
+            warnings.warn("allow_missing_modalities is set to True. This is an experimental feature."
+                          "Stacking is currently not supported, setting batch_size to 1.")
+            self.batch_size = 1
 
         self.dataset_bands = dataset_bands
         self.output_bands = output_bands
@@ -376,8 +404,6 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.reduce_zero_label = reduce_zero_label
         self.channel_position = channel_position
         self.concat_bands = concat_bands
-        if not concat_bands and check_stackability:
-            logger.debug(f"Cannot check stackability if bands are not concatenated.")
         self.check_stackability = check_stackability
 
         if isinstance(train_transform, dict):
@@ -441,6 +467,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 label_grep=self.label_grep,
                 label_data_root=self.train_label_data_root,
                 split=self.train_split,
+                allow_missing_modalities=self.allow_missing_modalities,
                 allow_substring_file_names=self.allow_substring_file_names,
                 dataset_bands=self.dataset_bands,
                 output_bands=self.output_bands,
@@ -466,6 +493,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 label_grep=self.label_grep,
                 label_data_root=self.val_label_data_root,
                 split=self.val_split,
+                allow_missing_modalities=self.allow_missing_modalities,
                 allow_substring_file_names=self.allow_substring_file_names,
                 dataset_bands=self.dataset_bands,
                 output_bands=self.output_bands,
@@ -491,6 +519,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 label_grep=self.label_grep,
                 label_data_root=self.test_label_data_root,
                 split=self.test_split,
+                allow_missing_modalities=self.allow_missing_modalities,
                 allow_substring_file_names=self.allow_substring_file_names,
                 dataset_bands=self.dataset_bands,
                 output_bands=self.output_bands,
@@ -511,7 +540,11 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         if stage in ["predict"] and self.predict_root:
             self.predict_dataset = self.dataset_class(
                 data_root=self.predict_root,
+                label_data_root=None,  # Prediction mode
                 num_classes=self.num_classes,
+                image_grep=self.image_grep,
+                label_grep=self.label_grep,
+                allow_missing_modalities=self.allow_missing_modalities,
                 allow_substring_file_names=self.allow_substring_file_names,
                 dataset_bands=self.predict_dataset_bands,
                 output_bands=self.predict_output_bands,
@@ -546,7 +579,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         dataset = self._valid_attribute(f"{split}_dataset", "dataset")
         batch_size = self._valid_attribute(f"{split}_batch_size", "batch_size")
 
-        if self.check_stackability:
+        if self.check_stackability and batch_size > 1:
             logger.info(f'Checking dataset stackability for {split} split')
             if self.concat_bands:
                 batch_size = check_dataset_stackability(dataset, batch_size)

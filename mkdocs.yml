@@ -35,7 +35,7 @@ theme:
     - navigation.instant.progress
     # - navigation.prune
     #- navigation.sections
-    - navigation.tabs
+    #- navigation.tabs
       #- navigation.tabs.sticky
     - navigation.top
     - navigation.tracking
@@ -70,7 +70,9 @@ repo_url: https://github.com/IBM/terratorch
 nav:
   - index.md
   - License: license.md
-  - Getting Started: quick_start.md
+  - Getting Started:
+    - quick_start.md
+    - inference.md
   - Contribution Guidelines: contributing.md
   - Architecture Overview: architecture.md
   - Components:

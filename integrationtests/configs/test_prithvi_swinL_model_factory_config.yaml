@@ -7,7 +7,7 @@ trainer:
   num_nodes: 1
   precision: 16-mixed
   logger: true
-  max_epochs: 2
+  max_epochs: 1
                
   callbacks:
     - class_path: RichProgressBar
@@ -22,7 +22,7 @@ trainer:
      # ---- Early stop endif ----
     - class_path: ModelCheckpoint
       init_args:
-        dirpath: /dccstor/terratorch/tmp/
+        dirpath: /dccstor/terratorch/tmp/swinl/
         mode: min
         monitor: val/loss
         filename: best-state_dict-{epoch:02d}
@@ -32,7 +32,7 @@ trainer:
   check_val_every_n_epoch: 1
   log_every_n_steps: 50
   enable_checkpointing: true
-  default_root_dir: /dccstor/terratorch/tmp/
+  default_root_dir: /dccstor/terratorch/tmp/swinl/
 
 data:
   class_path: terratorch.datamodules.GenericNonGeoSegmentationDataModule
@@ -104,11 +104,19 @@ model:
   class_path: terratorch.tasks.SemanticSegmentationTask
   init_args:
     model_args:
-      backbone_pretrained: true 
-      backbone: prithvi_eo_v2_300
-      # backbone_ckpt_path: /terratorch/gfm_models/prithvi_eo_v2_300/Prithvi_EO_V2_300M.pt 
-      backbone_drop_path: 0.1 
-      backbone_bands:
+      # Old model version configurations
+      pretrained: true
+      backbone: prithvi_swin_L
+      # backbone_pretrained_cfg_overlay:
+        # file: /terratorch/gfm_models/prithvi_swin_L/epoch-94-loss-0.0918.pt
+      # backbone_temporal_encoding: true
+      backbone_drop_path_rate: 0.3
+      backbone_window_size: 7
+      num_frames: 1
+      head_channel_list:
+        - 256
+
+      bands:
         - '0'
         - '1'
         - '2'
@@ -116,18 +124,14 @@ model:
         - '4'
         - '5'
 
-
-      necks: 
-        - name: SelectIndices
-          indices: [5, 11, 17, 23]  # 300M models
-        - name: ReshapeTokensToImage # required
-        - name: LearnedInterpolateToPyramidal 
       decoder: UNetDecoder
       #TODO user provided channels
       decoder_channels: [512, 256, 128, 64]
       num_classes: 2
       head_dropout: 0.1
-    model_factory: EncoderDecoderFactory 
+    
+    model_factory: PrithviModelFactory
+     
     loss: ce
     plot_on_val: 2
     ignore_index: -1
