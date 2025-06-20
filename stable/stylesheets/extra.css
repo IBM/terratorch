@@ -1,14 +1,14 @@
 .md-grid {
   max-width: 1400px;
 }
-
+"""
 /*Define content width*/
 .md-content {
   max-width: 900px;
   margin-left: 0;
   margin-right: auto;
 }
-"""
+
 /* center the content without sidebar*/
 @media screen and (max-width: 1220px) {
   .md-content {
