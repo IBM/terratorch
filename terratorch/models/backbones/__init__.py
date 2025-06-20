@@ -4,7 +4,6 @@
 import terratorch.models.backbones.clay_v1
 import terratorch.models.backbones.dofa_vit
 import terratorch.models.backbones.galileo
-import terratorch.models.backbones.multimae_register
 import terratorch.models.backbones.prithvi_swin
 import terratorch.models.backbones.prithvi_vit
 import terratorch.models.backbones.scalemae
