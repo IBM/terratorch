@@ -8,7 +8,7 @@
   margin-left: 0;
   margin-right: auto;
 }
-
+"""
 /* center the content without sidebar*/
 @media screen and (max-width: 1220px) {
   .md-content {
@@ -85,3 +85,4 @@
   -webkit-mask-image: var(--md-admonition-icon--question);
           mask-image: var(--md-admonition-icon--question);
 }
+"""
