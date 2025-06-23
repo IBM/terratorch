@@ -57,7 +57,7 @@ model:
       num_classes: 10
       decoder: FCNDecoder
       backbone_pretrained: true
-      backbone: prithvi_eo_v2_300
+      backbone: clay15
       backbone_in_channels: 6
       # ENCODER
       dim: 192
