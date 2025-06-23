@@ -129,19 +129,24 @@ data:
         init_args:
           height: 64
           width: 64
+      - class_path: ToTensorV2
     cls: torchgeo.datamodules.EuroSATDataModule
-    batch_size: 32
+    batch_size: 64
     num_workers: 8
   dict_kwargs:
     root: ./EuroSat
     download: True
     bands:
-      - B02
-      - B03
-      - B04
-      - B8A
-      - B11
-      - B12
+      - B02   # Blue, 10 m
+      - B03   # Green, 10 m
+      - B04   # Red, 10 m
+      - B05   # Red Edge 1, 20 m
+      - B06   # Red Edge 2, 20 m
+      - B07   # Red Edge 3, 20 m
+      - B08   # NIR wide, 10 m
+      - B8A   # NIR narrow, 20 m
+      - B11   # SWIR 1, 20 m
+      - B12   # SWIR 2, 20 m
 
 model:
   class_path: terratorch.tasks.ClassificationTask
