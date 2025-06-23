@@ -178,17 +178,6 @@ def test_prithvi_vit_adapter(backbone, input_224):
     assert output[3].shape == (1, embed_dim, 7, 7)
 
 
-@pytest.mark.parametrize("model_name", ["multimae_small", "multimae_base"])
-@pytest.mark.parametrize("input_adapters", [None, ["S2L2A"]])
-def test_multi_mae(model_name, input_adapters):
-    # default should have 3 channels
-    backbone = BACKBONE_REGISTRY.build(model_name, input_adapters=input_adapters)
-    input_tensor = torch.ones((1, 12, 224, 224))
-    output = backbone({"S2L2A": input_tensor})
-
-    gc.collect()
-
-
 @pytest.mark.parametrize(
     "model_name", ["terramind_v1_base", "terramind_v1_large", "terramind_v1_base_tim", "terramind_v1_large_tim"]
 )

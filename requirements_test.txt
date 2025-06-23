@@ -7,3 +7,4 @@ dask
 pystac_client
 stackstac
 geopandas
+wandb
