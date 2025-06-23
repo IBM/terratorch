@@ -77,7 +77,7 @@ class Clay1_5ModelFactory(ModelFactory):
         checkpoint_path: str = None,
         **kwargs,
     ) -> Model:
-        batch_size = kwargs.get("batch_size", 1)
+        batch_size = kwargs.get("batch_size")
         platform = kwargs.get("platform")
         kwargs["metadata"] = Box(kwargs["metadata"])
         return ModelWrapper(batch_size, bands, platform, ClayMAE(**kwargs))

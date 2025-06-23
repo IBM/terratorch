@@ -46,21 +46,23 @@ def test_create_model():
         "teacher": "vit_large_patch14_reg4_dinov2.lvd142m",
         "dolls": [16, 32, 64, 128, 256, 768, 1024],
         "doll_weights": [1, 1, 1, 1, 1, 1, 1],
-        "in_channels": None
+        "in_channels": None,
+        "batch_size":1,
+        "platform":["sentinel-2-l2a"],
     }
 
-    clay_model = Clay1_5ModelFactory().build_model(None, None, None, **model_args)
-    data_cube = {
-        "pixels": torch.randn(64, 10, 64, 64), 
-        "time": torch.stack([torch.zeros(4) for _ in range(64)]),
-        "platform": ["sentinel-2-l2a"],
-        "latlon": torch.zeros(64,4),
-        "waves": torch.zeros(4),
-        "gsd": torch.tensor(10),
-    }
+    clay_model = Clay1_5ModelFactory().build_model(1, 3, ["sentinel-2-l2a"], **model_args)
+    # data_cube = {
+    #     "pixels": torch.randn(64, 10, 64, 64), 
+    #     "time": torch.stack([torch.zeros(4) for _ in range(64)]),
+    #     "platform": ["sentinel-2-l2a"],
+    #     "latlon": torch.zeros(64,4),
+    #     "waves": torch.zeros(4),
+    #     "gsd": torch.tensor(10),
+    # }
 
-    clay_model.forward(data_cube)
-    #clay_model.forward(torch.randn(1, 3, 224, 224))
+    # clay_model.forward(data_cube)
+    clay_model.forward(torch.randn(1, 10, 224, 224))
 
     gc.collect()
 
