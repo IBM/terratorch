@@ -172,7 +172,7 @@ def get_input_chips(
                     InferenceInput(
                         b,
                         (slice(row + delta, row + h_crop - delta), slice(col + delta, col + w_crop - delta))
-                        if padding else (slice(row, row), slice(col, col + w_crop)),
+                        if padding else (slice(row, row + h_crop), slice(col, col + w_crop)),
                         patch[b],
                         border_blend_mask,
                         border_output_crop,
