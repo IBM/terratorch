@@ -8,3 +8,5 @@ pystac_client
 stackstac
 geopandas
 wandb
+granitewxc
+claymodel

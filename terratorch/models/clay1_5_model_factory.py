@@ -6,6 +6,7 @@ import logging
 import timm
 import torch
 from torch import nn
+import logging
 
 import terratorch.models.decoders as decoder_registry
 from terratorch.models.backbones.clay_v1.embedder import Embedder
@@ -19,7 +20,6 @@ from terratorch.models.pixel_wise_model import PixelWiseModel
 from terratorch.models.scalar_output_model import ScalarOutputModel
 from terratorch.models.utils import DecoderNotFoundError, extract_prefix_keys
 from terratorch.registry import MODEL_FACTORY_REGISTRY
-from claymodel.model import ClayMAE
 from box import Box
 
 PIXEL_WISE_TASKS = ["segmentation", "regression"]
@@ -77,6 +77,12 @@ class Clay1_5ModelFactory(ModelFactory):
         checkpoint_path: str = None,
         **kwargs,
     ) -> Model:
+        try:
+            from claymodel.model import ClayMAE
+        except ImportError:
+            message = "clay v1.5 not installed, please use pip install claimodel"
+            logging.getLogger("terratorch").debug(message)
+            raise Exception(message)
         batch_size = kwargs.get("batch_size")
         platform = kwargs.get("platform")
         kwargs["metadata"] = Box(kwargs["metadata"])

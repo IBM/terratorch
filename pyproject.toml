@@ -97,6 +97,10 @@ wxc = [
   "granitewxc"
 ]
 
+clay = [
+  "claymodel"
+]
+
 visualize = [
   "torchview",
   "graphviz"
