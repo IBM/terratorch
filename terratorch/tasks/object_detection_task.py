@@ -26,6 +26,16 @@ import warnings
 from torchvision.ops import nms
 
 
+def get_batch_size(x):
+    if isinstance(x, torch.Tensor):
+        batch_size = x.shape[0]
+    elif isinstance(x, dict):
+        batch_size = list(x.values())[0].shape[0]
+    else:
+        raise ValueError(f"Expect x to be torch.Tensor or dict, got {type(x)}")
+    return batch_size
+
+
 class ObjectDetectionTask(BaseTask):
 
     ignore = None
@@ -111,9 +121,19 @@ class ObjectDetectionTask(BaseTask):
         Configure metrics for the task.
         """
         if self.framework == 'mask-rcnn':
-            metrics = MetricCollection([MeanAveragePrecision(iou_type=('bbox', 'segm'))])
+            metrics = MetricCollection({
+                "mAP": MeanAveragePrecision(
+                    iou_type=('bbox', 'segm'),
+                    average='macro'
+                )
+            })
         else:
-            metrics = MetricCollection([MeanAveragePrecision(average='macro')])
+            metrics = MetricCollection({
+                "mAP": MeanAveragePrecision(
+                    iou_type=('bbox'),
+                    average='macro'
+                )
+            })
 
         self.train_metrics = metrics.clone(prefix='train_')
         self.val_metrics = metrics.clone(prefix='val_')
@@ -227,7 +247,7 @@ class ObjectDetectionTask(BaseTask):
         """
 
         x = batch['image']
-        batch_size = x.shape[0]
+        batch_size = get_batch_size(x)
         y = self.reformat_batch(batch, batch_size)
         loss_dict = self(x, y)
         if isinstance(loss_dict, dict) is False:
@@ -250,7 +270,7 @@ class ObjectDetectionTask(BaseTask):
         """
         
         x = batch['image']
-        batch_size = x.shape[0]
+        batch_size = get_batch_size(x)
         y = self.reformat_batch(batch, batch_size)
         y_hat = self(x)
         if isinstance(y_hat, dict) is False:
@@ -318,7 +338,7 @@ class ObjectDetectionTask(BaseTask):
         """
 
         x = batch['image']
-        batch_size = x.shape[0]
+        batch_size = get_batch_size(x)
         y = self.reformat_batch(batch, batch_size)
         y_hat = self(x)
         if isinstance(y_hat, dict) is False:
@@ -355,7 +375,7 @@ class ObjectDetectionTask(BaseTask):
             Output predicted bounding boxes, classes and masks.
         """
         x = batch['image']
-        batch_size = x.shape[0]
+        batch_size = get_batch_size(x)
         y_hat: list[dict[str, Tensor]] = self(x)
         if isinstance(y_hat, dict) is False:
             y_hat = y_hat.output

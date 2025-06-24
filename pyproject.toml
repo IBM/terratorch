@@ -8,14 +8,15 @@ include = ["terratorch*"]
 [project]
 name = "terratorch"
 version = "1.0.2"
-description = "TerraTorch - A model training toolkit for geospatial tasks"
+description = "TerraTorch - The geospatial foundatoin model fine-tuning toolkit"
 license = { "text" = "Apache License, Version 2.0" }
 readme = "README.md"
 requires-python = ">=3.10"
 keywords = ["fine-tuning", "geospatial foundation models", "artificial intelligence"]
 authors = [
-  { name = "Carlos Gomes", email = "carlos.gomes@ibm.com" },
-  { name = "Joao Lucas de Sousa Almeida", email = "joao.lucas.sousa.almeida@ibm.com"},
+  { email = "terratorch@ibm.com"},
+  { name = "Carlos Gomes"},
+  { name = "Joao Lucas de Sousa Almeida"},
   { name = "Romeo Kienzler"},
   { name = "Benedikt Blumenstiel"},
   { name = "Francesc Martí Escofet"},
@@ -80,8 +81,8 @@ test = [
   "pytest-coverage",
   "coverage-badge",
   "peft>=0.15.0",
-  "diffusers>=0.30.0"
-
+  "diffusers>=0.30.0",
+  "dask",
 ]
 
 mmseg = [
