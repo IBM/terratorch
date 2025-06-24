@@ -14,6 +14,8 @@ from terratorch.models.smp_model_factory import SMPModelFactory
 from terratorch.models.timm_model_factory import TimmModelFactory
 from terratorch.models.object_detection_model_factory import ObjectDetectionModelFactory
 from terratorch.models.full_model_factory import FullModelFactory
+from terratorch.models.clay1_5_model_factory import Clay1_5ModelFactory
+
 
 try:
     granitewcx = True
@@ -21,13 +23,6 @@ try:
 except ImportError:
     logging.getLogger("terratorch").debug("granitewxc not installed, please use pip install granitewxc")
     granitewcx = False
-
-try:
-    clay15 = True
-    from terratorch.models.clay1_5_model_factory import Clay1_5ModelFactory
-except ImportError:
-    logging.getLogger("terratorch").debug("clay v1.5 not installed, please use pip install claimodel")
-    clay15 = False
 
 __all__ = (
     "PrithviModelFactory",
@@ -46,4 +41,3 @@ __all__ = (
 
 if granitewcx:
     __all__.__add__((WxCModelFactory,))
-    __all__.__add__((Clay1_5ModelFactory,))
