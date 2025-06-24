@@ -98,14 +98,6 @@ wxc = [
   "granitewxc"
 ]
 
-clay = [
-  "claymodel",
-  "dask",
-  "pystac_client",
-  "stackstac",
-  "geopandas",
-]
-
 visualize = [
   "torchview",
   "graphviz"

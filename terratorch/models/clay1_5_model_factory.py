@@ -12,7 +12,6 @@ import terratorch.models.decoders as decoder_registry
 from terratorch.models.backbones.clay_v1.embedder import Embedder
 from terratorch.models.model import (
     AuxiliaryHead,
-    AuxiliaryHeadWithDecoderWithoutInstantiatedHead,
     Model,
     ModelFactory,
 )
@@ -21,6 +20,7 @@ from terratorch.models.scalar_output_model import ScalarOutputModel
 from terratorch.models.utils import DecoderNotFoundError, extract_prefix_keys
 from terratorch.registry import MODEL_FACTORY_REGISTRY
 from box import Box
+from terratorch.models.backbones.clay_v15.model import ClayMAE
 
 PIXEL_WISE_TASKS = ["segmentation", "regression"]
 SCALAR_TASKS = ["classification"]
@@ -77,12 +77,12 @@ class Clay1_5ModelFactory(ModelFactory):
         checkpoint_path: str = None,
         **kwargs,
     ) -> Model:
-        try:
-            from claymodel.model import ClayMAE
-        except ImportError:
-            message = "clay v1.5 not installed, please use pip install claimodel"
-            logging.getLogger("terratorch").debug(message)
-            raise Exception(message)
+        # try:
+        #     from claymodel.model import ClayMAE
+        # except ImportError:
+        #     message = "clay v1.5 not installed, please use pip install claimodel"
+        #     logging.getLogger("terratorch").debug(message)
+        #    raise Exception(message)
         batch_size = kwargs.get("batch_size")
         platform = kwargs.get("platform")
         kwargs["metadata"] = Box(kwargs["metadata"])
