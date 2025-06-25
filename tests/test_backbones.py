@@ -22,8 +22,13 @@ def input_224():
 
 
 @pytest.fixture
-def input_galileo():
-    return torch.ones((5, 224, 224, 1, 2))  # NUM_CHANNELS))
+def input_galileo_s1():
+    return torch.ones((5, 224, 224, 1, 2))
+
+
+@pytest.fixture
+def input_galileo_s2():
+    return torch.ones((5, 224, 224, 1, 13))
 
 
 @pytest.fixture
@@ -99,10 +104,20 @@ def test_vit_models_accept_multitemporal(model_name, input_224_multitemporal):
 
 @pytest.mark.parametrize("do_pool", [False, True])
 @pytest.mark.parametrize("model_name", ["nano", "tiny", "base"])
-def test_galileo_encoders(do_pool, model_name, input_galileo):
+def test_galileo_encoders_s1(do_pool, model_name, input_galileo_s1):
     backbone = BACKBONE_REGISTRY.build(f"galileo_{model_name}_encoder", pretrained=True, do_pool=do_pool)
 
-    output = backbone(s1=input_galileo)
+    output = backbone(s1=input_galileo_s1)
+
+    gc.collect()
+
+
+@pytest.mark.parametrize("do_pool", [False, True])
+@pytest.mark.parametrize("model_name", ["nano", "tiny", "base"])
+def test_galileo_encoders_s2(do_pool, model_name, input_galileo_s2):
+    backbone = BACKBONE_REGISTRY.build(f"galileo_{model_name}_encoder", pretrained=True, do_pool=do_pool)
+
+    output = backbone(s2=input_galileo_s2)
 
     gc.collect()
 
