@@ -329,11 +329,7 @@ def clean_config_for_deployment_and_dump(config: dict[str, Any]):
             deploy_config["model"]["init_args"]["model_args"]["pretrained"] = False
         elif "backbone_pretrained" in deploy_config["model"]["init_args"]["model_args"]:
             deploy_config["model"]["init_args"]["model_args"]["backbone_pretrained"] = False
-
-    # Set image_grep and label_grep to *tif* .
-    # Fixes issue with inference not finding image named as the training image.
-    deploy_config["data"]["init_args"]["img_grep"] = "*tif*"
-    deploy_config["data"]["init_args"]["label_grep"] = "*tif*"
+            
     return yaml.safe_dump(deploy_config)
 
 

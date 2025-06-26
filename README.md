@@ -60,7 +60,7 @@ TerraTorch’s main purpose is to provide a flexible fine-tuning framework for G
 
 ## Install
 ### Pip
-In order to use th file `pyproject.toml` it is necessary to guarantee `pip>=21.8`. If necessary upgrade `pip` using `python -m pip install --upgrade pip`. 
+In order to use the file `pyproject.toml` it is necessary to guarantee `pip>=21.8`. If necessary upgrade `pip` using `python -m pip install --upgrade pip`. 
 
 For a stable point-release, use `pip install terratorch==<version>`.
 
