@@ -5,6 +5,8 @@ from terratorch.tasks.segmentation_tasks import SemanticSegmentationTask
 from terratorch.tasks.multilabel_classification_tasks import MultiLabelClassificationTask
 from terratorch.tasks.reconstruction_tasks import ReconstructionTask
 from terratorch.tasks.base_task import TerraTorchTask
+from terratorch.tasks.object_detection_task import ObjectDetectionTask
+
 try:
     wxc_present = True
     from terratorch.tasks.wxc_downscaling_task import WxCDownscalingTask 
@@ -20,8 +22,9 @@ __all__ = (
     "SemanticSegmentationTask",
     "PixelwiseRegressionTask",
     "ClassificationTask",
-    "MultiLabelClassificationTask",
+    "MultiLabelClassificationTask"
     "ReconstructionTask",
+    "ObjectDetectionTask",
 )
 
 if wxc_present:

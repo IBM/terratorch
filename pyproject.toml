@@ -7,34 +7,35 @@ include = ["terratorch*"]
 
 [project]
 name = "terratorch"
-version = "1.0.1"
-description = "TerraTorch - A model training toolkit for geospatial tasks"
+version = "1.0.2"
+description = "TerraTorch - The geospatial foundatoin model fine-tuning toolkit"
 license = { "text" = "Apache License, Version 2.0" }
 readme = "README.md"
 requires-python = ">=3.10"
 keywords = ["fine-tuning", "geospatial foundation models", "artificial intelligence"]
 authors = [
-  { name = "Joao Lucas de Sousa Almeida", email = "joao.lucas.sousa.almeida@ibm.com"},
+  { email = "terratorch@ibm.com"},
+  { name = "Carlos Gomes"},
+  { name = "Joao Lucas de Sousa Almeida"},
   { name = "Romeo Kienzler"},
   { name = "Benedikt Blumenstiel"},
-  { name = "Carlos Gomes" },
   { name = "Francesc Martí Escofet"},
   { name = "Paolo Fraccaro"},
   { name = "Pedro Henrique Conrado"},
   { name = "Jaione Tirapu Azpiroz"},
-  { name = "Bianca Zadrozny"},
   { name = "Daniela Szwarcman"},
+  { name = "Bianca Zadrozny"},
   { name = "Þorsteinn Elí Gíslason"},
   { name = "Raunak Bhansali"},
   { name = "Takao Moriyama"},
+  { name = "Þorsteinn Elí Gíslason"}
 ]
-
 classifiers = [
 #  "Development Status :: 2 - Pre-Alpha",
 #  "Programming Language :: Python",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
 #  "Programming Language :: Python :: Implementation :: CPython",
 ]
 
@@ -52,15 +53,18 @@ dependencies = [
   "h5py",
   "mlflow",
   "lightning",
-  "segmentation-models-pytorch<=0.4.0",
+  "segmentation-models-pytorch<=0.4",
   "jsonargparse",
   "pytest",
   "torchgeo",
   "einops",
   "timm>=1.0.15",
+  "pycocotools",
   "huggingface_hub",
   "tifffile"
+
 ]
+
 
 [project.optional-dependencies]
 dev = [
@@ -77,7 +81,8 @@ test = [
   "pytest-coverage",
   "coverage-badge",
   "peft>=0.15.0",
-  "diffusers>=0.30.0"
+  "diffusers>=0.30.0",
+  "dask",
 ]
 
 mmseg = [

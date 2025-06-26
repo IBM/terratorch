@@ -3,7 +3,6 @@ from typing import List
 import logging 
 import torch
 import torch.nn.functional as F  # noqa: N812
-import torchvision.transforms as transforms
 from segmentation_models_pytorch.base import SegmentationModel
 from torch import nn
 
@@ -87,6 +86,10 @@ class PixelWiseModel(Model, SegmentationModel):
 
     def freeze_head(self):
         freeze_module(self.head)
+
+    # TODO: do this properly
+    def check_input_shape(self, x: torch.Tensor) -> bool:  # noqa: ARG002
+        return True
 
     @staticmethod
     def _check_for_single_channel_and_squeeze(x):
