@@ -330,9 +330,6 @@ def clean_config_for_deployment_and_dump(config: dict[str, Any]):
         elif "backbone_pretrained" in deploy_config["model"]["init_args"]["model_args"]:
             deploy_config["model"]["init_args"]["model_args"]["backbone_pretrained"] = False
             
-    # Set label_grep to *tif* . 
-    # Img_grep kept as is. Geostudio downloads images as expected.
-    deploy_config['data']['init_args']['label_grep'] = "*tif*"
     return yaml.safe_dump(deploy_config)
 
 
