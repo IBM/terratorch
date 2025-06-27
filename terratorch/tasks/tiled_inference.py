@@ -115,6 +115,39 @@ def tiled_inference(
     else:
         raise ValueError("input for tiled inference must be either a torch.Tensor or a dict of torch.Tensors")
 
+    if isinstance(input_batch, dict):
+        # Handle dict inputs for tiled inference
+        modalities, tensors = list(input_batch.keys()), list(input_batch.values())
+
+        # Check that all values in dict are tensors and have a same image shape
+        if not all(isinstance(t, torch.Tensor) for t in tensors):
+            raise ValueError("input for tiled inference must be either a torch.Tensor or a dict of torch.Tensors")
+        img_shapes = [t.shape[-2:] for t in tensors]
+        if len(set(img_shapes)) != 1:
+            raise ValueError(f"Tensors in input dict must have the same height and width for tiled inference, "
+                             f"found {dict(zip(modalities, img_shapes))}")
+        t_dims = [len(t.shape) for t in tensors]
+        if len(set(t_dims)) != 1:
+            raise ValueError(f"Tensors in input dict must have the same number of dimensions for tiled inference, "
+                             f"found {dict(zip(modalities, t_dims))}")
+
+        # Tiled inference is implemented for single tensors.
+        # We concatenate all tensors and reshape them before the model forward
+        channel_length = [t.shape[-3] for t in tensors]
+        channel_start = torch.tensor([0] + channel_length).cumsum(0)
+        input_batch = torch.concat(tensors, dim=-3)
+
+        def tensor_reshape(t):
+            # Convert tensor back to dict of tensors
+            t = {m: t[..., s:s+l, :, :] for m, s, l in zip(modalities, channel_start, channel_length)}
+            return t
+
+    elif isinstance(input_batch, torch.Tensor):
+        # Dummy function if input is a tensor
+        tensor_reshape = lambda x: x
+    else:
+        raise ValueError("input for tiled inference must be either a torch.Tensor or a dict of torch.Tensors")
+
     device = input_batch.device
     # Move inputs to CPU to avoid out-of-memory errors
     input_batch = input_batch.cpu()
