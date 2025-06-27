@@ -67,6 +67,54 @@ def tiled_inference(
     """
 
     shape = input_batch.shape
+    # Comment this out as was introduced in later terratorch version not used in studio atm 
+    # if inference_parameters is not None:
+    #     # TODO: Remove inference_parameters in later version 1.3.
+    #     warnings.warn("Using inference_parameters and ignoring other parameters."
+    #                   "The parameter `inference_parameters` is deprecated and is removed in version 1.3, "
+    #                   "please pass the parameters directly to `tiled_inference`. ", DeprecationWarning)
+    #     h_crop = inference_parameters.h_crop
+    #     h_stride = inference_parameters.h_stride
+    #     w_crop = inference_parameters.w_crop
+    #     w_stride = inference_parameters.w_stride
+    #     delta = inference_parameters.delta
+    #     average_patches = inference_parameters.average_patches
+    #     blend_overlaps = inference_parameters.blend_overlaps
+    #     verbose = inference_parameters.verbose
+
+    if isinstance(input_batch, dict):
+        # Handle dict inputs for tiled inference
+        modalities, tensors = list(input_batch.keys()), list(input_batch.values())
+
+        # Check that all values in dict are tensors and have a same image shape
+        if not all(isinstance(t, torch.Tensor) for t in tensors):
+            raise ValueError("input for tiled inference must be either a torch.Tensor or a dict of torch.Tensors")
+        img_shapes = [t.shape[-2:] for t in tensors]
+        if len(set(img_shapes)) != 1:
+            raise ValueError(f"Tensors in input dict must have the same height and width for tiled inference, "
+                             f"found {dict(zip(modalities, img_shapes))}")
+        t_dims = [len(t.shape) for t in tensors]
+        if len(set(t_dims)) != 1:
+            raise ValueError(f"Tensors in input dict must have the same number of dimensions for tiled inference, "
+                             f"found {dict(zip(modalities, t_dims))}")
+
+        # Tiled inference is implemented for single tensors.
+        # We concatenate all tensors and reshape them before the model forward
+        channel_length = [t.shape[-3] for t in tensors]
+        channel_start = torch.tensor([0] + channel_length).cumsum(0)
+        input_batch = torch.concat(tensors, dim=-3)
+
+        def tensor_reshape(t):
+            # Convert tensor back to dict of tensors
+            t = {m: t[..., s:s+l, :, :] for m, s, l in zip(modalities, channel_start, channel_length)}
+            return t
+
+    elif isinstance(input_batch, torch.Tensor):
+        # Dummy function if input is a tensor
+        tensor_reshape = lambda x: x
+    else:
+        raise ValueError("input for tiled inference must be either a torch.Tensor or a dict of torch.Tensors")
+
     device = input_batch.device
     # Move inputs to CPU to avoid out-of-memory errors
     input_batch = input_batch.cpu()
@@ -176,6 +224,7 @@ def tiled_inference(
             batch = coordinates_and_inputs[start:end]
             tensor_input = torch.stack([b.input_data for b in batch], dim=0)
             tensor_input = tensor_input.to(device)
+            tensor_input = tensor_reshape(tensor_input)  # Optional reshaping for inputs other than plain tensors
             output = model_forward(tensor_input, **kwargs).cpu()
             output = [output[i] for i in range(len(batch))]
             for batch_input, predicted in zip(batch, output, strict=True):
