@@ -8,7 +8,7 @@ import timm
 import torch
 
 from terratorch.models.backbones import scalemae, torchgeo_vit
-from terratorch.registry import BACKBONE_REGISTRY
+from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY
 
 NUM_CHANNELS = 6
 NUM_FRAMES = 4
@@ -19,6 +19,16 @@ IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "false") == "true"
 @pytest.fixture
 def input_224():
     return torch.ones((1, NUM_CHANNELS, 224, 224))
+
+
+@pytest.fixture
+def input_galileo_s1():
+    return torch.ones((5, 224, 224, 1, 2))
+
+
+@pytest.fixture
+def input_galileo_s2():
+    return torch.ones((5, 224, 224, 1, 13))
 
 
 @pytest.fixture
@@ -89,6 +99,26 @@ def test_can_create_backbones_from_registry_torchgeo_vit(model_name, input_224):
 def test_vit_models_accept_multitemporal(model_name, input_224_multitemporal):
     backbone = BACKBONE_REGISTRY.build(model_name, pretrained=False, num_frames=NUM_FRAMES)
     backbone(input_224_multitemporal)
+    gc.collect()
+
+
+@pytest.mark.parametrize("do_pool", [False, True])
+@pytest.mark.parametrize("model_name", ["nano", "tiny", "base"])
+def test_galileo_encoders_s1(do_pool, model_name, input_galileo_s1):
+    backbone = BACKBONE_REGISTRY.build(f"galileo_{model_name}_encoder", pretrained=True, do_pool=do_pool)
+
+    output = backbone(s1=input_galileo_s1)
+
+    gc.collect()
+
+
+@pytest.mark.parametrize("do_pool", [False, True])
+@pytest.mark.parametrize("model_name", ["nano", "tiny", "base"])
+def test_galileo_encoders_s2(do_pool, model_name, input_galileo_s2):
+    backbone = BACKBONE_REGISTRY.build(f"galileo_{model_name}_encoder", pretrained=True, do_pool=do_pool)
+
+    output = backbone(s2=input_galileo_s2)
+
     gc.collect()
 
 
