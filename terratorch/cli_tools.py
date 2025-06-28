@@ -272,6 +272,9 @@ class CustomWriter(BasePredictionWriter):
                             output_file_name=output_file_prefix,
                         )
 
+        elif not prediction:
+            logger.info("Prediction output is `None` for this case.")
+
         else:
             raise TypeError(f"Unknown type for prediction {type(prediction)}")
 
