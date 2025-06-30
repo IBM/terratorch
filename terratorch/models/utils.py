@@ -75,7 +75,7 @@ def subtract_along_dim2(tensor: torch.Tensor):
 
 
 class TemporalWrapper(nn.Module):
-    def __init__(self, encoder: nn.Module, pooling="mean", concat=False, n_timestamps=None, feature_format):
+    def __init__(self, encoder: nn.Module, pooling="mean", concat=False, n_timestamps=None, features_permute_op = None):
         """
         Wrapper for applying a temporal encoder across multiple time steps.
 
@@ -84,12 +84,14 @@ class TemporalWrapper(nn.Module):
             pooling (str): Type of pooling ('mean', 'max', 'diff') with 'diff' working only with 2 timestamps.
             concat (bool): Whether to concatenate features instead of pooling.
             n_timestamps (int): Number of timestamps. Necessary in case of concat.
+            features_permute_op (list): Permutation operation to perform on the features before aggregation. This is in case the features to do not match either 'BCHW' or 'BLC' formats. It is reversed once aggregation has happened.
         """
         super().__init__()
         self.encoder = encoder
         self.concat = concat
         self.pooling_type = pooling
         self.n_timestamps = n_timestamps
+        self.features_permute_op = features_permute_op
 
         if pooling not in ["mean", "max", "diff"]:
             raise ValueError("Pooling must be 'mean', 'max' or 'diff'")
@@ -99,6 +101,7 @@ class TemporalWrapper(nn.Module):
             self.out_channels = encoder.out_channels * (1 if not concat else self.n_timestamps)
         else:
             raise AttributeError("Encoder must have an `out_channels` attribute.")
+
 
     def forward(self, x: torch.Tensor) -> list[torch.Tensor]:
         """
@@ -110,22 +113,22 @@ class TemporalWrapper(nn.Module):
         Returns:
             List[Tensor]: A list of processed tensors, one per feature map.
         """
-        
+
         if x.dim() != 5:
             raise ValueError(f"Expected input shape [B, C, T, H, W], but got {x.shape}")
-            
+
         if (self.pooling_type == 'diff') & (x.shape[2] != 2):
             raise ValueError(f"Expected 2 timestamps for aggregation method 'diff'")
 
-        batch_size, channels, timesteps, height, width = x.shape
+        batch_size, _, timesteps, _, _ = x.shape
 
         # Initialize lists to store feature maps at each timestamp
         num_feature_maps = None  # Will determine dynamically
         features_per_map = []  # Stores feature maps across timestamps
-        
+
         for t in range(timesteps):
             feat = self.encoder(x[:, :, t, :, :])  # Extract features at timestamp t
-
+                
             if not isinstance(feat, list):  # If the encoder outputs a single feature map, convert to list
                 if isinstance(feat, tuple):
                     feat = list(feat)
@@ -140,22 +143,37 @@ class TemporalWrapper(nn.Module):
                     features_per_map.append([])  # Create list for each feature map
 
                 feature_map = feature_map[0] if isinstance(feature_map, tuple) else feature_map
+                if self.features_permute_op is not None:
+                    if len(self.features_permute_op) != len(feature_map.shape):
+                        ValueError(f"Expected features_permute_op to have same number of dimensions of features, but got {len(self.features_permute_op)} and {len(feature_map.shape)}")
+                    # print('Old shape:', feature_map.shape)
+                    feature_map = torch.permute(feature_map, self.features_permute_op)
+                    # print('New shape:', feature_map.shape)
+                    
                 features_per_map[i].append(feature_map)  # Store feature map at time t
-
+                    
         # Stack features along the temporal dimension
         for i in range(num_feature_maps):
             try:
                 features_per_map[i] = torch.stack(features_per_map[i], dim=2)  # Shape: [B, C', T, H', W']
             except RuntimeError as e:
                 raise
-                
+
         # Apply pooling or concatenation
         if self.concat:
-            features_per_map_agg = [feat.view(batch_size, -1, feat.shape[-2], feat.shape[-1]) if len(feat.shape) == 5 else feat.view(batch_size, feat.shape[-3], -1) for feat in features_per_map]
+            features_per_map_agg = [feat.reshape(batch_size, -1, feat.shape[-2], feat.shape[-1]) if len(feat.shape) == 5 else feat.reshape(batch_size, feat.shape[-3], -1) for feat in features_per_map]
         elif self.pooling_type == "max":
             features_per_map_agg = [torch.max(feat, dim=2)[0] for feat in features_per_map]  # Max pooling across T
         elif self.pooling_type == "diff":
             features_per_map_agg = [feat[:, :, 0, ...] - feat[:, :, 1, ...] for feat in features_per_map]
         else:
             features_per_map_agg = [torch.mean(feat, dim=2) for feat in features_per_map]
+        
+        if self.features_permute_op is not None:
+            # use position in the permutation op as the value of the permuation and the original value of permutation as the index
+            reverse_permuation_op = [None] * len(self.features_permute_op)
+            for i in range(len(self.features_permute_op)):
+                reverse_permuation_op[self.features_permute_op[i]] = i
+            features_per_map_agg = [torch.permute(feat, reverse_permuation_op) for feat in features_per_map_agg]
+
         return features_per_map_agg
