@@ -26,8 +26,9 @@ for ff in files:
     data = tifffile.imread(ff)
     mask = np.random.choice([0, 1], data.shape[:-1], p=np.array([0.6, 0.4]))
     output = mask[..., None] * data
-    output = output.transpose(1, 2, 0)
-
+    print(output.shape)
+    output = output.transpose(2, 1, 0)
+    print(output.shape)
     with rasterio.open(
         ff_mod,
         "w",
