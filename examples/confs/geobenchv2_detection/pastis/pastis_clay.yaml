@@ -1,0 +1,92 @@
+# lightning.pytorch==2.1.1
+seed_everything: 0
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: 16-mixed
+  logger:
+    class_path: TensorBoardLogger
+    init_args:
+      save_dir: /opt/app-root/src/fm-geospatial/pf/logs/geobench-v2-pastis
+      name: clay
+  callbacks:
+    # - class_path: RichProgressBar
+    - class_path: LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+    # - class_path: ModelCheckpoint
+    #   init_args:
+    #       # dirpath: output/agb/checkpoints
+    #       mode: max
+    #       monitor: val_map
+    #       filename: best-{epoch:02d}
+
+  max_epochs: 100
+  check_val_every_n_epoch: 1
+  log_every_n_steps: 50
+  enable_checkpointing: true
+  default_root_dir: /opt/app-root/src/fm-geospatial/pf/logs/geobench-v2-pastis
+    
+data:   
+  class_path: PASTISDataModule
+  init_args:
+    batch_size: 8
+    num_workers: 4
+    data_root: /opt/app-root/src/fm-geospatial/data/PASTIS/PASTIS-R
+    target: semantic
+    satellites: [S2]
+
+model:
+  class_path: terratorch.tasks.SemanticSegmentationTask 
+  init_args:
+    model_factory: EncoderDecoderFactory
+    model_args:
+      backbone: clay_v1_base  
+      backbone_pretrained: true
+      # backbone_out_indices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9 , 10, 11]
+      # backbone_img_size: 512
+      backbone_use_temporal: true
+      backbone_temporal_pooling: 'diff'
+      backbone_temporal_concat: false
+      backbone_bands:
+        - COASTAL_AEROSOL
+        - BLUE
+        - GREEN
+        - RED
+        - RED_EDGE_1
+        - RED_EDGE_2
+        - RED_EDGE_3
+        # - NIR_BROAD
+        - NIR_NARROW
+        # - CIRRUS
+        - SWIR_1
+        - SWIR_2
+      # in_channels: 3
+      necks:
+        - name: SelectIndices
+          indices: [2, 5, 8, 11]
+        - name: ReshapeTokensToImage
+        - name: LearnedInterpolateToPyramidal
+      decoder: UNetDecoder
+      decoder_channels: [512, 256, 128, 64]
+      head_channel_list: [256]
+      head_dropout: 0.1
+      num_classes: 5
+    loss: dice
+    ignore_index: -1
+    freeze_backbone: false
+    freeze_decoder: false
+
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 1.e-4
+    weight_decay: 0.1
+lr_scheduler:
+  class_path: ReduceLROnPlateau
+  init_args:
+    monitor: val/loss
+    patience: 5
+    factor: 0.5
