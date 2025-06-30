@@ -32,6 +32,11 @@ def input_galileo_s2():
 
 
 @pytest.fixture
+def input_galileo_s2_less_bands():
+    return torch.ones((5, 224, 224, 1, 6))
+
+
+@pytest.fixture
 def input_512():
     return torch.ones((1, NUM_CHANNELS, 512, 512))
 
@@ -118,6 +123,22 @@ def test_galileo_encoders_s2(do_pool, model_name, input_galileo_s2):
     backbone = BACKBONE_REGISTRY.build(f"galileo_{model_name}_encoder", pretrained=True, kind="s2", do_pool=do_pool)
 
     output = backbone(input_galileo_s2)
+
+    gc.collect()
+
+
+@pytest.mark.parametrize("do_pool", [False, True])
+@pytest.mark.parametrize("model_name", ["nano"])
+def test_galileo_encoders_s2_less_bands(do_pool, model_name, input_galileo_s2_less_bands):
+    backbone = BACKBONE_REGISTRY.build(
+        f"galileo_{model_name}_encoder",
+        pretrained=True,
+        kind="s2",
+        model_bands=["B2", "B3", "B4", "B5", "B6", "B7"],
+        do_pool=do_pool,
+    )
+
+    output = backbone(input_galileo_s2_less_bands)
 
     gc.collect()
 
