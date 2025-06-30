@@ -267,7 +267,7 @@ class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
         .. versionadded:: 0.4
         """
         assert show_feats in {'boxes', 'masks', 'both'}
-        
+
         image = sample['image']
         
         image = image[-1] if len(image.shape) == 4 else image
@@ -276,7 +276,7 @@ class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
         if image.mean() > 1:
             image = image / 10000
         
-        image = percentile_normalization(sample['image'].permute(1, 2, 0).numpy())
+        image = percentile_normalization(image.permute(1, 2, 0).numpy())
 
         if show_feats != 'boxes':
             skimage = lazy_import('skimage')
