@@ -10,7 +10,7 @@ trainer:
     class_path: TensorBoardLogger
     init_args:
       save_dir: /opt/app-root/src/fm-geospatial/pf/logs/geobench-v2-nzcattle
-      name: clay
+      name: terramind_b
   callbacks:
     # - class_path: RichProgressBar
     - class_path: LearningRateMonitor
@@ -51,20 +51,18 @@ model:
     model_factory: ObjectDetectionModelFactory
     model_args:
       framework: faster-rcnn
-      backbone: clay_v1_base  
+      backbone: terramind_v1_base
       backbone_pretrained: true
       num_classes: 2
-      backbone_img_size: 512
       framework_min_size: 512
       framework_max_size: 512
-      backbone_bands:
-        - RED
-        - GREEN
-        - BLUE
+      backbone_modalities: [RGB]
+      in_channels: 3
       necks:
         - name: SelectIndices
           indices: [2, 5, 8, 11]
         - name: ReshapeTokensToImage
+          remove_cls_token: False
         - name: LearnedInterpolateToPyramidal
         - name: FeaturePyramidNetworkNeck
         

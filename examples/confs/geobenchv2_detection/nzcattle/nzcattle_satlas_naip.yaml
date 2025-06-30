@@ -10,7 +10,7 @@ trainer:
     class_path: TensorBoardLogger
     init_args:
       save_dir: /opt/app-root/src/fm-geospatial/pf/logs/geobench-v2-nzcattle
-      name: clay
+      name: satlas_naip
   callbacks:
     # - class_path: RichProgressBar
     - class_path: LearningRateMonitor
@@ -51,21 +51,19 @@ model:
     model_factory: ObjectDetectionModelFactory
     model_args:
       framework: faster-rcnn
-      backbone: clay_v1_base  
+      backbone: satlas_swin_b_naip_si_rgb
       backbone_pretrained: true
+      backbone_out_indices: [1,3,5,7]
       num_classes: 2
-      backbone_img_size: 512
       framework_min_size: 512
       framework_max_size: 512
-      backbone_bands:
+      backbone_model_bands:
         - RED
         - GREEN
         - BLUE
       necks:
-        - name: SelectIndices
-          indices: [2, 5, 8, 11]
-        - name: ReshapeTokensToImage
-        - name: LearnedInterpolateToPyramidal
+        - name: PermuteDims
+          new_order: [0,3,1,2]
         - name: FeaturePyramidNetworkNeck
         
     freeze_backbone: false

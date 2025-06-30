@@ -10,7 +10,7 @@ trainer:
     class_path: TensorBoardLogger
     init_args:
       save_dir: /opt/app-root/src/fm-geospatial/pf/logs/geobench-v2-nzcattle
-      name: clay
+      name: dofa
   callbacks:
     # - class_path: RichProgressBar
     - class_path: LearningRateMonitor
@@ -23,7 +23,7 @@ trainer:
     #       monitor: val_map
     #       filename: best-{epoch:02d}
 
-  max_epochs: 50
+  max_epochs: 100
   check_val_every_n_epoch: 1
   log_every_n_steps: 50
   enable_checkpointing: false
@@ -43,7 +43,7 @@ data:
     collate_fn: geobench_v2.datamodules.nzcattle.nzcattle_collate_fn
     categories: [Background, Cattle]
     plot_indexes: [0,1,2]
-      
+
 
 model:
   class_path: terratorch.tasks.ObjectDetectionTask
@@ -51,19 +51,21 @@ model:
     model_factory: ObjectDetectionModelFactory
     model_args:
       framework: faster-rcnn
-      backbone: clay_v1_base  
+      backbone: dofav2_large_patch14_224
       backbone_pretrained: true
+      backbone_ckpt_data: https://hf.co/earthflow/DOFA/resolve/main/dofav2_vit_large_e150.pth
+      backbone_pos_interpolation_mode: bicubic
+      backbone_convert_patch_14_to_16: True
       num_classes: 2
       backbone_img_size: 512
       framework_min_size: 512
       framework_max_size: 512
-      backbone_bands:
+      backbone_model_bands:
         - RED
         - GREEN
         - BLUE
+      backbone_out_indices: [5, 11, 17, 23]
       necks:
-        - name: SelectIndices
-          indices: [2, 5, 8, 11]
         - name: ReshapeTokensToImage
         - name: LearnedInterpolateToPyramidal
         - name: FeaturePyramidNetworkNeck
