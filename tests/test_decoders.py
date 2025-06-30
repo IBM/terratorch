@@ -81,8 +81,8 @@ def test_galileo_decoders(do_pool, model_name, input_galileo):
     decoder = DECODER_REGISTRY.build("FCNDecoder", embed_dim=[128])
     neck = NECK_REGISTRY.build("ReshapeTokensToImage", channel_list=[128], remove_cls_token=False)
 
-    output = backbone(s1=input_galileo)
-    reshaped_output = neck([output])
+    output = backbone(input_galileo)
+    reshaped_output = neck(output)
     out = decoder(reshaped_output)
 
     gc.collect()
