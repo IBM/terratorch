@@ -33,7 +33,7 @@ trainer:
         every_n_epochs: 2
         verbose: true
         save_top_k: 1
-  max_epochs: 1
+  max_epochs: 2
   check_val_every_n_epoch: 1
   log_every_n_steps: 20
   enable_checkpointing: true
@@ -93,7 +93,6 @@ data:
     - 1067.641
     no_label_replace: -1
     no_data_replace: 0
-
 model:
   class_path: terratorch.tasks.PixelwiseRegressionTask
   init_args:
@@ -112,12 +111,8 @@ model:
         - B5
         - B6
         - B7
-          #decoder_embed_dim:
-          #- 128
       necks:
         - name: ReshapeTokensToImage
-          #channel_list: 
-          #  - 128
           remove_cls_token: false
       head_dropout: 0.5708022831486758
       head_final_act: torch.nn.ReLU
