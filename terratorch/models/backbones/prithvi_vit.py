@@ -9,12 +9,10 @@ from torch import Tensor, nn
 
 from terratorch.datasets import HLSBands
 from terratorch.datasets.utils import generate_bands_intervals
-from terratorch.models.backbones.prithvi_mae import PrithviViT, PrithviMAE
+from terratorch.models.backbones.prithvi_mae import PrithviMAE, PrithviViT
 from terratorch.models.backbones.prithvi_vit_adapter import PrithviViTAdapter
 from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
 from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY, TERRATORCH_FULL_MODEL_REGISTRY
-from huggingface_hub import hf_hub_download
-
 
 logger = logging.getLogger(__name__)
 
@@ -168,7 +166,7 @@ def checkpoint_filter_fn_vit(
             clean_dict[k.replace("encoder.", "")] = v  # Convert Prithvi MAE to Prithvi ViT
         else:
             clean_dict[k] = v
-    
+
     for k, v in model.state_dict().items():
         if "vpt_prompt_embeddings" in k:
             clean_dict[k] = v
@@ -240,7 +238,7 @@ def checkpoint_filter_fn_vit_adapter(
 
 def _create_prithvi(
     variant: str,
-    pretrained: bool = False,  # noqa: FBT001, FBT002    
+    pretrained: bool = False,  # noqa: FBT001, FBT002
     model_bands: list[HLSBands | int] | None = None,
     ckpt_path: str = None,
     pretrained_bands: list[HLSBands | str | int] | None = None,
@@ -348,7 +346,7 @@ def _create_prithvi(
     elif ckpt_path is not None:
         logger.warning(f"ckpt_path is provided but pretrained is set to False, ignoring ckpt_path {ckpt_path}.")
 
-    # TODO Renanme to model.bands? 
+    # TODO Renanme to model.bands?
     model.model_bands = model_bands
     model.pretrained_bands = pretrained_bands
 
@@ -397,7 +395,6 @@ def prithvi_eo_v1_100(
     )
 
 
-
 @TERRATORCH_BACKBONE_REGISTRY.register
 def prithvi_eo_v2_300(
     pretrained: bool = False,  # noqa: FBT001, FBT002
@@ -433,7 +430,7 @@ def prithvi_eo_v2_300_tl(
         "prithvi_eo_v2_300_tl", pretrained=pretrained, vit_adapter=vit_adapter, **dict({"model_bands": bands}), **kwargs
     )
 
-  
+
 @TERRATORCH_BACKBONE_REGISTRY.register
 def prithvi_eo_v2_600_tl(
     pretrained: bool = False,  # noqa: FBT001, FBT002
@@ -446,7 +443,7 @@ def prithvi_eo_v2_600_tl(
     )
 
 
-@ TERRATORCH_FULL_MODEL_REGISTRY.register
+@TERRATORCH_FULL_MODEL_REGISTRY.register
 def prithvi_eo_v1_100_mae(
     pretrained: bool = False,  # noqa: FBT001, FBT002
     bands: list[HLSBands] | None = None,
@@ -455,81 +452,86 @@ def prithvi_eo_v1_100_mae(
 ) -> PrithviMAE:
     if encoder_only:
         raise ValueError("Please use 'prithvi_eo_v1_100' for encoder only models.")
-    model_bands = kwargs.get('model_bands', bands)
+    model_bands = kwargs.get("model_bands", bands)
 
-    return _create_prithvi("prithvi_eo_v1_100", pretrained=pretrained, bands=bands, encoder_only=encoder_only,
-                           **kwargs)
+    return _create_prithvi("prithvi_eo_v1_100", pretrained=pretrained, bands=bands, encoder_only=encoder_only, **kwargs)
 
 
 @TERRATORCH_FULL_MODEL_REGISTRY.register
 def prithvi_eo_v1_100_mae(
-        pretrained: bool = False,  # noqa: FBT001, FBT002
-        bands: list[HLSBands] | None = None,
-        encoder_only: bool = False,
-        **kwargs,
+    pretrained: bool = False,  # noqa: FBT001, FBT002
+    bands: list[HLSBands] | None = None,
+    encoder_only: bool = False,
+    **kwargs,
 ) -> PrithviMAE:
     if encoder_only:
         raise ValueError("Please use 'prithvi_eo_v1_100' for encoder only models.")
-    model_bands = kwargs.get('model_bands', bands)
+    model_bands = kwargs.get("model_bands", bands)
 
-    return _create_prithvi("prithvi_eo_v1_100", pretrained=pretrained, model_bands=model_bands, encoder_only=encoder_only,
-                           **kwargs)
+    return _create_prithvi(
+        "prithvi_eo_v1_100", pretrained=pretrained, model_bands=model_bands, encoder_only=encoder_only, **kwargs
+    )
 
 
 @TERRATORCH_FULL_MODEL_REGISTRY.register
 def prithvi_eo_v2_300_mae(
-        pretrained: bool = False,
-        bands: list[HLSBands] | None = None,
-        encoder_only: bool = False,
-        **kwargs,
+    pretrained: bool = False,
+    bands: list[HLSBands] | None = None,
+    encoder_only: bool = False,
+    **kwargs,
 ) -> PrithviMAE:
     if encoder_only:
-        raise ValueError("Please use 'prithvi_eo_v2_300' for encoder only models.")        
-    model_bands = kwargs.get('model_bands', bands)
+        raise ValueError("Please use 'prithvi_eo_v2_300' for encoder only models.")
+    model_bands = kwargs.get("model_bands", bands)
 
-    return _create_prithvi("prithvi_eo_v2_300", pretrained=pretrained, model_bands=model_bands, encoder_only=encoder_only,
-                           **kwargs)
+    return _create_prithvi(
+        "prithvi_eo_v2_300", pretrained=pretrained, model_bands=model_bands, encoder_only=encoder_only, **kwargs
+    )
 
 
 @TERRATORCH_FULL_MODEL_REGISTRY.register
 def prithvi_eo_v2_300_tl_mae(
-        pretrained: bool = False,
-        bands: list[HLSBands] | None = None,
-        encoder_only: bool = False,
-        **kwargs,
+    pretrained: bool = False,
+    bands: list[HLSBands] | None = None,
+    encoder_only: bool = False,
+    **kwargs,
 ) -> PrithviMAE:
     if encoder_only:
         raise ValueError("Please use 'prithvi_eo_v2_300_tl' for encoder only models.")
-    model_bands = kwargs.get('model_bands', bands)
+    model_bands = kwargs.get("model_bands", bands)
 
-    return _create_prithvi("prithvi_eo_v2_300_tl", pretrained=pretrained, model_bands=model_bands, encoder_only=encoder_only,
-                           **kwargs)
+    return _create_prithvi(
+        "prithvi_eo_v2_300_tl", pretrained=pretrained, model_bands=model_bands, encoder_only=encoder_only, **kwargs
+    )
 
 
 @TERRATORCH_FULL_MODEL_REGISTRY.register
 def prithvi_eo_v2_600_mae(
-        pretrained: bool = False,
-        bands: list[HLSBands] | None = None,
-        encoder_only: bool = False,
-        **kwargs,
+    pretrained: bool = False,
+    bands: list[HLSBands] | None = None,
+    encoder_only: bool = False,
+    **kwargs,
 ) -> PrithviMAE:
     if encoder_only:
         raise ValueError("Please use 'prithvi_eo_v2_600' for encoder only models.")
-    model_bands = kwargs.get('model_bands', bands)
+    model_bands = kwargs.get("model_bands", bands)
 
-    return _create_prithvi("prithvi_eo_v2_600", pretrained=pretrained, model_bands=model_bands, encoder_only=encoder_only,
-                           **kwargs)
+    return _create_prithvi(
+        "prithvi_eo_v2_600", pretrained=pretrained, model_bands=model_bands, encoder_only=encoder_only, **kwargs
+    )
+
 
 @TERRATORCH_FULL_MODEL_REGISTRY.register
 def prithvi_eo_v2_600_tl_mae(
-        pretrained: bool = False,
-        bands: list[HLSBands] | None = None,
-        encoder_only: bool = False,
-        **kwargs,
+    pretrained: bool = False,
+    bands: list[HLSBands] | None = None,
+    encoder_only: bool = False,
+    **kwargs,
 ) -> PrithviMAE:
     if encoder_only:
         raise ValueError("Please use 'prithvi_eo_v2_600_tl' for encoder only models.")
-    model_bands = kwargs.get('model_bands', bands)
+    model_bands = kwargs.get("model_bands", bands)
 
-    return _create_prithvi("prithvi_eo_v2_600_tl", pretrained=pretrained, model_bands=model_bands, encoder_only=encoder_only,
-                           **kwargs)
+    return _create_prithvi(
+        "prithvi_eo_v2_600_tl", pretrained=pretrained, model_bands=model_bands, encoder_only=encoder_only, **kwargs
+    )
