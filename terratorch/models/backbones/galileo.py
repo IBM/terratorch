@@ -105,10 +105,17 @@ def galileo_nano_encoder(
 
 # Built-in wrapper for Galileo FM
 class Galileo(nn.Module):
-    def __init__(self, kind: str = "s1", bands: list = None, model_bands: list = None, **kwargs):
+    def __init__(
+        self, kind: str = "s1", transpose: bool = False, bands: list = None, model_bands: list = None, **kwargs
+    ):
         super().__init__()
 
         self.kind = kind
+
+        if transpose:
+            self.modify_batch = self.modify_batch_
+        else:
+            self.modify_batch = lambda x: x
 
         if self.kind == "s1":
             self.model_bands_default = S1_BANDS
@@ -120,14 +127,21 @@ class Galileo(nn.Module):
 
         self.model = GalileoWrapper(**kwargs)
 
+        self.out_channels = [self.model.encoder.embedding_size]
+
+    def modify_batch_(self, x):
+        dims = x.shape
+
+        if len(dims) == 5:
+            return x.permute(0, 2, 3, 4, 1)
+        elif len(dims) == 4:
+            return x.permute(0, 2, 3, 1)
+
     def prepare_input_tensor(self, x):
-        if len(x.shape) == 5:
-            b, h, w, t, n_bands = x.shape
-        elif len(x.shape) == 4:
-            b, h, w, n_bands = x.shape
+        x = self.modify_batch(x)
 
         dims = x.shape[:-1] + (len(self.model_bands_default),)
-        x_ext = torch.zeros(*dims)
+        x_ext = torch.zeros(*dims).to(x.device)
 
         for j, band in enumerate(self.model_bands):
             i = self.bands.index(band)
@@ -139,4 +153,6 @@ class Galileo(nn.Module):
     def forward(self, x):
         x = self.prepare_input_tensor(x)
 
-        return self.model(**{f"{self.kind}": x})
+        output = self.model(**{f"{self.kind}": x})
+
+        return [output]
