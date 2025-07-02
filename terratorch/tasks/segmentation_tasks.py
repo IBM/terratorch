@@ -59,7 +59,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         optimizer_hparams: dict | None = None,
         scheduler: str | None = None,
         scheduler_hparams: dict | None = None,
-        #
+        #i
         freeze_backbone: bool = False,  # noqa: FBT001, FBT002
         freeze_decoder: bool = False,  # noqa: FBT002, FBT001
         freeze_head: bool = False, 
@@ -192,6 +192,9 @@ class SemanticSegmentationTask(TerraTorchTask):
         else:
             raise ValueError(f"The value {output_on_inference} isn't supported for `output_on_inference`.")
 
+    def squeeze_ground_truth(self, x):
+        return torch.squeeze(x, 1)
+
     def configure_losses(self) -> None:
         """Initialize the loss criterion.
 
@@ -295,7 +298,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         """
         # Testing because of failures.
         x = batch["image"]
-        y = batch["mask"]
+        y = self.squeeze_ground_truth(batch["mask"])
         other_keys = batch.keys() - {"image", "mask", "filename"}
 
         rest = {k: batch[k] for k in other_keys}
@@ -316,7 +319,7 @@ class SemanticSegmentationTask(TerraTorchTask):
             dataloader_idx: Index of the current dataloader.
         """
         x = batch["image"]
-        y = batch["mask"]
+        y = self.squeeze_ground_truth(batch["mask"])
         other_keys = batch.keys() - {"image", "mask", "filename"}
 
         rest = {k: batch[k] for k in other_keys}
@@ -345,7 +348,7 @@ class SemanticSegmentationTask(TerraTorchTask):
             dataloader_idx: Index of the current dataloader.
         """
         x = batch["image"]
-        y = batch["mask"]
+        y = self.squeeze_ground_truth(batch["mask"])
 
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
