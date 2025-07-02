@@ -178,7 +178,7 @@ class ObjectDetectionTask(BaseTask):
             Reformated batch
         """
 
-        if 'masks' in batch.keys():
+        if (('masks' in batch.keys()) | ('mask' in batch.keys()) | (self.masks_field in batch.keys())):
             y = [
                 {'boxes': batch[self.boxes_field][i], 'labels': batch[self.labels_field][i], 'masks': torch.cat([x[None].to(torch.uint8) for x in batch[self.masks_field][i]])}
                 for i in range(batch_size)
@@ -317,7 +317,7 @@ class ObjectDetectionTask(BaseTask):
                 batch['labels'] = batch.pop(self.labels_field)
             if self.framework == 'mask-rcnn':
                 if 'masks' not in batch.keys():
-                    batch['masks'] = batch.pop(self.labels_field)
+                    batch['masks'] = batch.pop(self.masks_field)
             
             # dataset = self.trainer.datamodule.val_dataset
             batch['prediction_boxes'] = [b['boxes'].cpu() for b in y_hat]
