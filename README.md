@@ -106,6 +106,9 @@ git commit -s -m <message>
 ```
 It will sign the commit with your ID and the check will be met. 
 
+## Credits
+
+TerraTorch is supported by the EU’s Horizon Europe program under Grant Agreement number 101131841 and also received funding from the Swiss State Secretariat for Education, Research and Innovation (SERI) and the UK Research and Innovation (UKRI).
 
 
 ## License
