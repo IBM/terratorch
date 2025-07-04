@@ -10,7 +10,7 @@ trainer:
     class_path: TensorBoardLogger
     init_args:
       save_dir: /opt/app-root/src/fm-geospatial/pf/logs/geobench-v2-pastis
-      name: clay
+      name: decur
   callbacks:
     # - class_path: RichProgressBar
     - class_path: LearningRateMonitor
@@ -23,12 +23,12 @@ trainer:
     #       monitor: val_map
     #       filename: best-{epoch:02d}
 
-  max_epochs: 100
+  max_epochs: 50
   check_val_every_n_epoch: 1
   log_every_n_steps: 50
   enable_checkpointing: false
   default_root_dir: /opt/app-root/src/fm-geospatial/pf/logs/geobench-v2-pastis
-    
+  
 data:   
   class_path: GeoBenchV2ObjectDetectionDataModule
   init_args:
@@ -50,7 +50,8 @@ data:
     # temporal_aggregation: median
     train_augmentations: null
     temporal_output_format: CTHW
-
+      
+      
 
 model:
   class_path: terratorch.tasks.ObjectDetectionTask
@@ -58,17 +59,17 @@ model:
     model_factory: ObjectDetectionModelFactory
     model_args:
       framework: mask-rcnn
-      backbone: clay_v1_base  
+      backbone: ssl4eos12_resnet50_sentinel2_all_decur
+      backbone_out_indices: [0,1,2,3,4]
       backbone_pretrained: true
       backbone_use_temporal: true
-      backbone_temporal_pooling: 'mean'
+      # backbone_temporal_pooling: 'mean'
       backbone_temporal_concat: true
       backbone_temporal_n_timestamps: 12
-      backbone_img_size: 128
       framework_min_size: 128
       framework_max_size: 128
       num_classes: 20
-      backbone_bands:
+      backbone_model_bands:
         - BLUE
         - GREEN
         - RED
@@ -79,11 +80,8 @@ model:
         - NIR_NARROW
         - SWIR_1
         - SWIR_2
+
       necks:
-        - name: SelectIndices
-          indices: [2, 5, 8, 11]
-        - name: ReshapeTokensToImage
-        - name: LearnedInterpolateToPyramidal
         - name: FeaturePyramidNetworkNeck
         
     freeze_backbone: false
@@ -104,3 +102,5 @@ lr_scheduler:
   class_path: CosineAnnealingLR
   init_args:
     T_max: 20
+
+
