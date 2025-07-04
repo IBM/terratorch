@@ -26,67 +26,81 @@ trainer:
   max_epochs: 100
   check_val_every_n_epoch: 1
   log_every_n_steps: 50
-  enable_checkpointing: true
+  enable_checkpointing: false
   default_root_dir: /opt/app-root/src/fm-geospatial/pf/logs/geobench-v2-pastis
     
 data:   
-  class_path: PASTISDataModule
+  class_path: GeoBenchV2ObjectDetectionDataModule
   init_args:
+    cls: geobench_v2.datamodules.GeoBenchPASTISDataModule
+  dict_kwargs:
+    img_size: 128
+    num_workers: 8
     batch_size: 8
-    num_workers: 4
-    data_root: /opt/app-root/src/fm-geospatial/data/PASTIS/PASTIS-R
-    target: semantic
-    satellites: [S2]
+    eval_batch_size: 8
+    root: /opt/app-root/src/fm-geospatial/data/PASTIS/
+    collate_fn: geobench_v2.datamodules.pastis.pastis_collate_fn
+    categories: [Background, Meadow, Soft_winter_wheat, Corn, Winter_barley, Winter_rapeseed,Spring_barley, Sunflower, Grapevine, Beet, Winter_triticale, Winter_durum_wheat, Fruits_vegetables_flowers, Potatoes, Leguminous_fodder, Soybeans, Orchard, Mixed_cereal, Sorghum, Void_label]
+    plot_indexes: [2,1,0]
+    num_time_steps: 12
+    return_stacked_image: true
+    label_type: instance_seg
+    band_order:
+        - s2: [B02,B03,B04,B05,B06,B07,B08,B8A,B11,B12]
+    # temporal_aggregation: median
+    train_augmentations: null
+    temporal_output_format: CTHW
+
 
 model:
-  class_path: terratorch.tasks.SemanticSegmentationTask 
+  class_path: terratorch.tasks.ObjectDetectionTask
   init_args:
-    model_factory: EncoderDecoderFactory
+    model_factory: ObjectDetectionModelFactory
     model_args:
+      framework: mask-rcnn
       backbone: clay_v1_base  
       backbone_pretrained: true
-      # backbone_out_indices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9 , 10, 11]
-      # backbone_img_size: 512
       backbone_use_temporal: true
-      backbone_temporal_pooling: 'diff'
-      backbone_temporal_concat: false
+      backbone_temporal_pooling: 'mean'
+      backbone_temporal_concat: true
+      backbone_temporal_n_timestamps: 12
+      backbone_img_size: 128
+      framework_min_size: 128
+      framework_max_size: 128
+      num_classes: 20
       backbone_bands:
-        - COASTAL_AEROSOL
         - BLUE
         - GREEN
         - RED
         - RED_EDGE_1
         - RED_EDGE_2
         - RED_EDGE_3
-        # - NIR_BROAD
+        - NIR_BROAD
         - NIR_NARROW
-        # - CIRRUS
         - SWIR_1
         - SWIR_2
-      # in_channels: 3
       necks:
         - name: SelectIndices
           indices: [2, 5, 8, 11]
         - name: ReshapeTokensToImage
         - name: LearnedInterpolateToPyramidal
-      decoder: UNetDecoder
-      decoder_channels: [512, 256, 128, 64]
-      head_channel_list: [256]
-      head_dropout: 0.1
-      num_classes: 5
-    loss: dice
-    ignore_index: -1
+        - name: FeaturePyramidNetworkNeck
+        
     freeze_backbone: false
     freeze_decoder: false
+    class_names: [Background, Meadow, Soft_winter_wheat, Corn, Winter_barley, Winter_rapeseed,Spring_barley, Sunflower, Grapevine, Beet, Winter_triticale, Winter_durum_wheat, Fruits_vegetables_flowers, Potatoes, Leguminous_fodder, Soybeans, Orchard, Mixed_cereal, Sorghum, Void_label]
+    
+    boxes_field: 'boxes'
+    labels_field: 'label'
+    masks_field: 'mask'
 
 optimizer:
   class_path: torch.optim.AdamW
   init_args:
-    lr: 1.e-4
-    weight_decay: 0.1
+    lr: 1e-4
+    weight_decay: 0.05
+
 lr_scheduler:
-  class_path: ReduceLROnPlateau
+  class_path: CosineAnnealingLR
   init_args:
-    monitor: val/loss
-    patience: 5
-    factor: 0.5
+    T_max: 20
