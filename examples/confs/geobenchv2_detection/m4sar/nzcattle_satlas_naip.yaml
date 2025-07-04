@@ -1,0 +1,87 @@
+# lightning.pytorch==2.1.1
+seed_everything: 0
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: 16-mixed
+  logger:
+    class_path: TensorBoardLogger
+    init_args:
+      save_dir: /opt/app-root/src/fm-geospatial/pf/logs/geobench-v2-nzcattle
+      name: satlas_naip
+  callbacks:
+    # - class_path: RichProgressBar
+    - class_path: LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+    # - class_path: ModelCheckpoint
+    #   init_args:
+    #       # dirpath: output/agb/checkpoints
+    #       mode: max
+    #       monitor: val_map
+    #       filename: best-{epoch:02d}
+
+  max_epochs: 50
+  check_val_every_n_epoch: 1
+  log_every_n_steps: 50
+  enable_checkpointing: false
+  default_root_dir: /opt/app-root/src/fm-geospatial/pf/logs/geobench-v2-nzcattle
+  
+data:   
+  class_path: GeoBenchV2ObjectDetectionDataModule
+  init_args:
+    cls: geobench_v2.datamodules.GeoBenchNZCattleDataModule
+  dict_kwargs:
+    # batch_size: 8
+    # eval_batch_size: 8
+    num_workers: 32
+    img_size: 512
+    root: '/opt/app-root/src/fm-geospatial/data/GEO-Bench_V2'
+    band_order: [RED, GREEN, BLUE]
+    collate_fn: geobench_v2.datamodules.nzcattle.nzcattle_collate_fn
+    categories: [Background, Cattle]
+    plot_indexes: [0,1,2]
+      
+
+model:
+  class_path: terratorch.tasks.ObjectDetectionTask
+  init_args:
+    model_factory: ObjectDetectionModelFactory
+    model_args:
+      framework: faster-rcnn
+      backbone: satlas_swin_b_naip_si_rgb
+      backbone_pretrained: true
+      backbone_out_indices: [1,3,5,7]
+      num_classes: 2
+      framework_min_size: 512
+      framework_max_size: 512
+      backbone_model_bands:
+        - RED
+        - GREEN
+        - BLUE
+      necks:
+        - name: PermuteDims
+          new_order: [0,3,1,2]
+        - name: FeaturePyramidNetworkNeck
+        
+    freeze_backbone: false
+    freeze_decoder: false
+    class_names: [Background, Cattle]
+    
+    boxes_field: 'bbox_xyxy'
+    labels_field: 'label'
+
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 1e-4
+    weight_decay: 0.05
+
+lr_scheduler:
+  class_path: CosineAnnealingLR
+  init_args:
+    T_max: 20
+
+
