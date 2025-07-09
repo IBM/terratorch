@@ -271,6 +271,18 @@ class CustomWriter(BasePredictionWriter):
                             suffix=suffix,
                             output_file_name=output_file_prefix,
                         )
+            # If there is no suffix to append in the output filename
+            elif isinstance(pred_batch_, torch.Tensor):
+                pred_batch = pred_batch_
+
+                for p, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
+                    save_prediction(
+                        p,
+                        file_name,
+                        output_dir,
+                        dtype=trainer.out_dtype,
+                        output_file_name=output_file_prefix,
+                    )
 
         else:
             raise TypeError(f"Unknown type for prediction {type(prediction)}")
@@ -329,7 +341,7 @@ def clean_config_for_deployment_and_dump(config: dict[str, Any]):
             deploy_config["model"]["init_args"]["model_args"]["pretrained"] = False
         elif "backbone_pretrained" in deploy_config["model"]["init_args"]["model_args"]:
             deploy_config["model"]["init_args"]["model_args"]["backbone_pretrained"] = False
-            
+
     return yaml.safe_dump(deploy_config)
 
 
