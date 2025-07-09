@@ -283,6 +283,10 @@ class CustomWriter(BasePredictionWriter):
                         dtype=trainer.out_dtype,
                         output_file_name=output_file_prefix,
                     )
+            else:
+                raise ValueError(
+                    f"`pred_batch_` is expected to be in `[tuple, list, torch.Tensor]` but received {type(pred_batch_)}."
+                )
 
         elif not prediction:
             logger.info("Prediction output is `None` for this case.")
