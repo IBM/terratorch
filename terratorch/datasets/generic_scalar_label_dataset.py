@@ -1,26 +1,27 @@
 # Copyright contributors to the Terratorch project
 
-"""Module containing generic dataset classes
-"""
+"""Module containing generic dataset classes"""
+
 import glob
 import os
 from abc import ABC
 from pathlib import Path
 from typing import Any, Tuple
-import PIL
-from PIL import Image
+
 import albumentations as A  # noqa: N812
 import numpy as np
+import PIL
 import rioxarray
+import tifffile
 import torch
 import xarray as xr
 from einops import rearrange
 from matplotlib.figure import Figure
+from PIL import Image
 from torch import Tensor
 from torchgeo.datasets import NonGeoDataset
 from torchgeo.datasets.utils import rasterio_loader
 from torchvision.datasets import ImageFolder
-import tifffile
 
 from terratorch.datasets.utils import HLSBands, default_transform, filter_valid_files, generate_bands_intervals
 
@@ -75,6 +76,9 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
                 Defaults to False.
         """
         self.split_file = split
+
+        if self.split_file == "predict" or not self.split_file:
+            self.find_classes = self.find_classes_
 
         self.image_files = sorted(glob.glob(os.path.join(data_root, "**"), recursive=True))
         self.image_files = [f for f in self.image_files if not os.path.isdir(f)]
@@ -133,13 +137,21 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
         import warnings
 
         import rasterio
+
         warnings.filterwarnings("ignore", category=rasterio.errors.NotGeoreferencedWarning)
 
     def __len__(self) -> int:
         return len(self.image_files)
 
-    def _loader(self, path: str | Path) -> Image.Image:
+    def find_classes_(self, directory: str | Path) -> tuple[list[str], dict[str, int]]:
+        """Finds the class folders in a dataset.
 
+        See :class:`DatasetFolder` for details.
+        """
+        classes = ["class"]
+        return classes, {"classes": 0}
+
+    def _loader(self, path: str | Path) -> Image.Image:
         try:
             with open(path, "rb") as f:
                 img = np.asarray(Image.open(f))
@@ -149,11 +161,10 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
             if path.endswith(".tif") or path.endswith(".tiff"):
                 img = tifffile.imread(path)
             else:
-                raise IOError(f"Could not open {path}. Unsupported format or configuration.")
+                raise OSError(f"Could not open {path}. Unsupported format or configuration.")
         return img
 
-    def __base_getitem__(self, index: int) -> Tuple[Any, Any]:
-
+    def __base_getitem__(self, index: int) -> tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -167,7 +178,6 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
         return sample, target
 
     def __getitem__(self, index: int) -> dict[str, Any]:
-
         image, label = self.__base_getitem__(index)
 
         if self.expand_temporal_dimension:
@@ -183,7 +193,7 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
         output = {
             "image": image,
             "label": label,  # samples is an attribute of ImageFolder. Contains a tuple of (Path, Target)
-            "filename": self.image_files[index]
+            "filename": self.image_files[index],
         }
 
         return output
