@@ -43,13 +43,6 @@ data:
     collate_fn: geobench_v2.datamodules.wind_turbine.wind_turbine_collate_fn
     categories: [Background, WindTurbine]
     plot_indexes: [0,1,2]
-    transforms: 
-        class_path: terratorch.datasets.transforms.AddConstantToLabels
-        init_args:
-          label_key: label
-          constant: 1
-
-      
 
 model:
   class_path: terratorch.tasks.ObjectDetectionTask
