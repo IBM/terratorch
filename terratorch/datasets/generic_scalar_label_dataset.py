@@ -184,11 +184,17 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
         if self.transforms:
             image = self.transforms(image=image)["image"]  # albumentations returns dict
 
-        output = {
-            "image": image,
-            "label": label,  # samples is an attribute of ImageFolder. Contains a tuple of (Path, Target)
-            "filename": self.image_files[index],
-        }
+        if label:
+            output = {
+                "image": image,
+                "label": label,  # samples is an attribute of ImageFolder. Contains a tuple of (Path, Target)
+                "filename": self.image_files[index],
+            }
+        else:
+            output = {
+                "image": image,
+                "filename": self.image_files[index],
+            }
 
         return output
 
@@ -283,7 +289,8 @@ class GenericNonGeoClassificationDataset(GenericScalarLabelDataset):
 
     def __getitem__(self, index: int) -> dict[str, Any]:
         item = super().__getitem__(index)
-        item["label"] = torch.tensor(item["label"]).long()
+        if "label" in item:
+            item["label"] = torch.tensor(item["label"]).long()
         return item
 
     def plot(self, sample: dict[str, Tensor], suptitle: str | None = None) -> Figure:
