@@ -36,6 +36,7 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
         self,
         data_root: Path,
         split: Path | None = None,
+        require_label: bool = True,
         ignore_split_file_extensions: bool = True,  # noqa: FBT001, FBT002
         allow_substring_split_file: bool = True,  # noqa: FBT001, FBT002
         rgb_indices: list[int] | None = None,
@@ -76,6 +77,8 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
                 Defaults to False.
         """
         self.split_file = split
+        self.split = split
+        self.require_label = require_label
         self.image_files = sorted(glob.glob(os.path.join(data_root, "**"), recursive=True))
         self.image_files = [f for f in self.image_files if not os.path.isdir(f)]
         self.constant_scale = constant_scale
@@ -184,7 +187,7 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
         if self.transforms:
             image = self.transforms(image=image)["image"]  # albumentations returns dict
 
-        if label:
+        if self.require_label:
             output = {
                 "image": image,
                 "label": label,  # samples is an attribute of ImageFolder. Contains a tuple of (Path, Target)
@@ -232,6 +235,7 @@ class GenericNonGeoClassificationDataset(GenericScalarLabelDataset):
         data_root: Path,
         num_classes: int,
         split: Path | None = None,
+        require_label: bool = True,
         ignore_split_file_extensions: bool = True,  # noqa: FBT001, FBT002
         allow_substring_split_file: bool = True,  # noqa: FBT001, FBT002
         rgb_indices: list[str] | None = None,
@@ -274,6 +278,7 @@ class GenericNonGeoClassificationDataset(GenericScalarLabelDataset):
         super().__init__(
             data_root,
             split=split,
+            require_label=require_label,
             ignore_split_file_extensions=ignore_split_file_extensions,
             allow_substring_split_file=allow_substring_split_file,
             rgb_indices=rgb_indices,
