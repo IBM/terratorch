@@ -31,15 +31,19 @@ __all__ = [
     # pre-trained models
     "terramind_v01_base",
     "terramind_v1_tiny",
+    "terramind_v1_small",
     "terramind_v1_base",
     "terramind_v1_large",
     "terramind_v1_tiny_tim",
+    "terramind_v1_small_tim",
     "terramind_v1_base_tim",
     "terramind_v1_large_tim",
     "terramind_v1_tiny_encdec",
+    "terramind_v1_small_encdec",
     "terramind_v1_base_encdec",
     "terramind_v1_large_encdec",
     "terramind_v1_tiny_generate",
+    "terramind_v1_small_generate",
     "terramind_v1_base_generate",
     "terramind_v1_large_generate",
 ]
@@ -52,6 +56,10 @@ pretrained_weights = {
         "terramind_v1_tiny": {
             "hf_hub_id": "FAST-EO/TerraMind-1.0-tiny",
             "hf_hub_filename": "TerraMind_v1_tiny.pt",
+        },
+        "terramind_v1_small": {
+            "hf_hub_id": "FAST-EO/TerraMind-1.0-small",
+            "hf_hub_filename": "TerraMind_v1_small.pt",
         },
         "terramind_v1_base": {
             "hf_hub_id": "ibm-esa-geospatial/TerraMind-1.0-base",
@@ -677,6 +685,90 @@ def terramind_v1_tiny_generate(**kwargs):
         decoder_depth=4,
         dim=192,
         num_heads=3,
+        mlp_ratio=4,
+        qkv_bias=True,
+        proj_bias=True,
+        mlp_bias=True,
+        norm_layer=partial(LayerNorm, eps=1e-6, bias=False),
+        act_layer=nn.GELU,
+        gated_mlp=False,
+        pretraining_mean=v1_pretraining_mean,
+        pretraining_std=v1_pretraining_std,
+        **kwargs
+    )
+    return model
+
+
+@TERRATORCH_BACKBONE_REGISTRY.register
+def terramind_v1_small(**kwargs):
+    model = build_terrammind_vit(
+        variant="terramind_v1_small",
+        encoder_depth=12,
+        dim=384,
+        num_heads=6,
+        mlp_ratio=4,
+        qkv_bias=True,
+        proj_bias=True,
+        mlp_bias=True,
+        norm_layer=partial(LayerNorm, eps=1e-6, bias=False),
+        act_layer=nn.GELU,
+        gated_mlp=False,
+        pretrained_bands=PRETRAINED_BANDS,
+        **kwargs
+    )
+    return model
+
+
+@TERRATORCH_BACKBONE_REGISTRY.register
+def terramind_v1_small_tim(**kwargs):
+    model = build_terrammind_tim(
+        variant="terramind_v1_small",
+        encoder_depth=12,
+        decoder_depth=6,
+        dim=384,
+        num_heads=6,
+        mlp_ratio=4,
+        qkv_bias=True,
+        proj_bias=True,
+        mlp_bias=True,
+        norm_layer=partial(LayerNorm, eps=1e-6, bias=False),
+        act_layer=nn.GELU,
+        gated_mlp=False,
+        pretrained_bands=PRETRAINED_BANDS,
+        **kwargs
+    )
+    return model
+
+
+@TERRATORCH_FULL_MODEL_REGISTRY.register
+def terramind_v1_small_encdec(**kwargs):
+    model = build_terrammind_encdec(
+        variant="terramind_v1_small",
+        encoder_depth=12,
+        decoder_depth=6,
+        dim=384,
+        num_heads=6,
+        mlp_ratio=4,
+        qkv_bias=True,
+        proj_bias=True,
+        mlp_bias=True,
+        norm_layer=partial(LayerNorm, eps=1e-6, bias=False),
+        act_layer=nn.GELU,
+        gated_mlp=False,
+        pretrained_bands=PRETRAINED_BANDS,
+        **kwargs
+    )
+    return model
+
+
+@TERRATORCH_FULL_MODEL_REGISTRY.register
+def terramind_v1_small_generate(**kwargs):
+    model = build_terrammind_generate(
+        variant="terramind_v1_small",
+        encoder_depth=12,
+        decoder_depth=6,
+        dim=384,
+        num_heads=6,
         mlp_ratio=4,
         qkv_bias=True,
         proj_bias=True,
