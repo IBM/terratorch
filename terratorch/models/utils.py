@@ -2,6 +2,9 @@ from torch import nn, Tensor
 import torch 
 from terratorch.registry import BACKBONE_REGISTRY
 import pdb
+from torchvision.models.detection.transform import GeneralizedRCNNTransform
+from torchvision.models.detection.image_list import ImageList
+from typing import Any, Optional
 
 class DecoderNotFoundError(Exception):
     pass
@@ -56,9 +59,13 @@ def pad_images(imgs: Tensor, patch_size: int | list, padding: str) -> Tensor:
 
 
 def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
+
     use_temporal = backbone_kwargs.pop('use_temporal', None)
     temporal_pooling = backbone_kwargs.pop('temporal_pooling', None)
     concat = backbone_kwargs.pop('temporal_concat', None)
+    n_timestamps = backbone_kwargs.pop('temporal_n_timestamps', None)
+    features_permute_op = backbone_kwargs.pop('temporal_features_permute_op', None)
+    
     if isinstance(backbone, nn.Module):
         model = backbone
     else:
@@ -66,7 +73,7 @@ def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
 
     # Apply TemporalWrapper inside _get_backbone
     if use_temporal:
-        model = TemporalWrapper(model, pooling=temporal_pooling, concat=concat)
+        model = TemporalWrapper(model, pooling=temporal_pooling, concat=concat, n_timestamps=n_timestamps, features_permute_op=features_permute_op)
 
     return model
 
@@ -93,12 +100,11 @@ class TemporalWrapper(nn.Module):
         self.n_timestamps = n_timestamps
         self.features_permute_op = features_permute_op
 
-        if pooling not in ["mean", "max", "diff"]:
+        if ((not concat) & (pooling not in ["mean", "max", "diff"])):
             raise ValueError("Pooling must be 'mean', 'max' or 'diff'")
-
         # Ensure the encoder has an out_channels attribute
         if hasattr(encoder, "out_channels"):
-            self.out_channels = encoder.out_channels * (1 if not concat else self.n_timestamps)
+            self.out_channels = [x * (1 if not concat else self.n_timestamps) for x in encoder.out_channels]
         else:
             raise AttributeError("Encoder must have an `out_channels` attribute.")
 
@@ -128,7 +134,6 @@ class TemporalWrapper(nn.Module):
 
         for t in range(timesteps):
             feat = self.encoder(x[:, :, t, :, :])  # Extract features at timestamp t
-                
             if not isinstance(feat, list):  # If the encoder outputs a single feature map, convert to list
                 if isinstance(feat, tuple):
                     feat = list(feat)
@@ -141,7 +146,6 @@ class TemporalWrapper(nn.Module):
             for i, feature_map in enumerate(feat):
                 if len(features_per_map) <= i:
                     features_per_map.append([])  # Create list for each feature map
-
                 feature_map = feature_map[0] if isinstance(feature_map, tuple) else feature_map
                 if self.features_permute_op is not None:
                     if len(self.features_permute_op) != len(feature_map.shape):
@@ -150,15 +154,13 @@ class TemporalWrapper(nn.Module):
                     feature_map = torch.permute(feature_map, self.features_permute_op)
                     # print('New shape:', feature_map.shape)
                     
-                features_per_map[i].append(feature_map)  # Store feature map at time t
-                    
+                features_per_map[i].append(feature_map)  # Store feature map at time t            
         # Stack features along the temporal dimension
         for i in range(num_feature_maps):
             try:
                 features_per_map[i] = torch.stack(features_per_map[i], dim=2)  # Shape: [B, C', T, H', W']
             except RuntimeError as e:
                 raise
-
         # Apply pooling or concatenation
         if self.concat:
             features_per_map_agg = [feat.reshape(batch_size, -1, feat.shape[-2], feat.shape[-1]) if len(feat.shape) == 5 else feat.reshape(batch_size, feat.shape[-3], -1) for feat in features_per_map]
@@ -177,3 +179,58 @@ class TemporalWrapper(nn.Module):
             features_per_map_agg = [torch.permute(feat, reverse_permuation_op) for feat in features_per_map_agg]
 
         return features_per_map_agg
+    
+
+class TerratorchGeneralizedRCNNTransform(GeneralizedRCNNTransform):
+    
+    def init(min_size: int,
+             max_size: int,
+             image_mean: list[float],
+             image_std: list[float],
+             size_divisible: int = 32,
+             fixed_size: Optional[tuple[int, int]] = None,
+             **kwargs: Any):
+        
+        super().__init__(min_size,
+                         max_size,
+                         image_mean,
+                         image_std,
+                         size_divisible,
+                         fixed_size,
+                         **kwargs)
+        
+    def forward(
+        self, images: list[Tensor], targets: Optional[list[dict[str, Tensor]]] = None
+    ) -> tuple[ImageList, Optional[list[dict[str, Tensor]]]]:
+        images = [img for img in images]
+        if targets is not None:
+            # make a copy of targets to avoid modifying it in-place
+            # once torchscript supports dict comprehension
+            # this can be simplified as follows
+            # targets = [{k: v for k,v in t.items()} for t in targets]
+            targets_copy: list[dict[str, Tensor]] = []
+            for t in targets:
+                data: dict[str, Tensor] = {}
+                for k, v in t.items():
+                    data[k] = v
+                targets_copy.append(data)
+            targets = targets_copy
+        for i in range(len(images)):
+            image = images[i]
+            target_index = targets[i] if targets is not None else None
+            images[i] = image
+            if targets is not None and target_index is not None:
+                targets[i] = target_index
+        image_sizes = [img.shape[-2:] for img in images]
+        images = [x[None] for x in images]
+        images = torch.cat(images, 0)
+        image_sizes_list: list[tuple[int, int]] = []
+        for image_size in image_sizes:
+            torch._assert(
+                len(image_size) == 2,
+                f"Input tensors expected to have in the last two elements H and W, instead got {image_size}",
+            )
+            image_sizes_list.append((image_size[0], image_size[1]))
+
+        image_list = ImageList(images, image_sizes_list)
+        return image_list, targets
