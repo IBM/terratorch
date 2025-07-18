@@ -58,7 +58,9 @@ model:
     model_factory: ObjectDetectionModelFactory
     model_args:
       framework: mask-rcnn
-      backbone: dofav2_large_patch14_224
+      # backbone: dofav2_large_patch14_224
+      # backbone_pretrained: true
+      backbone: dofa_large_patch16_224
       backbone_pretrained: true
       backbone_use_temporal: true
       # backbone_temporal_pooling: 'mean'

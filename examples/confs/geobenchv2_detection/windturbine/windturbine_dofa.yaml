@@ -51,11 +51,14 @@ model:
     model_factory: ObjectDetectionModelFactory
     model_args:
       framework: faster-rcnn
-      backbone: dofav2_large_patch14_224
+      # backbone: dofav2_large_patch14_224
+      # backbone_pretrained: true
+      # backbone_ckpt_data: https://hf.co/earthflow/DOFA/resolve/main/dofav2_vit_large_e150.pth
+      # backbone_pos_interpolation_mode: bicubic
+      # backbone_convert_patch_14_to_16: True
+      backbone: dofa_large_patch16_224
       backbone_pretrained: true
-      backbone_ckpt_data: https://hf.co/earthflow/DOFA/resolve/main/dofav2_vit_large_e150.pth
       backbone_pos_interpolation_mode: bicubic
-      backbone_convert_patch_14_to_16: True
       num_classes: 2
       backbone_img_size: 512
       framework_min_size: 512
