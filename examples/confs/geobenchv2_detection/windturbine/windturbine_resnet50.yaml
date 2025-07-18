@@ -52,8 +52,7 @@ model:
       framework: faster-rcnn
       backbone: timm_resnet50  
       backbone_pretrained: true
-      # num_classes: 2
-      num_classes: 1
+      num_classes: 2
       framework_min_size: 512
       framework_max_size: 512
       in_channels: 3
@@ -63,7 +62,7 @@ model:
     freeze_backbone: false
     freeze_decoder: false
     class_names:
-      # - Background
+      - Background
       - WindTurbine
     
     boxes_field: 'bbox_xyxy'
