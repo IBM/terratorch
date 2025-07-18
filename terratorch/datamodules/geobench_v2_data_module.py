@@ -141,7 +141,7 @@ class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
         cls: type[GeoBenchObjectDetectionDataModule],
         root: str,
         img_size: int,
-        band_order: list,
+        band_order: Any,
         categories: list,
         batch_size: int | None = None,
         eval_batch_size: int | None = None,
@@ -175,7 +175,6 @@ class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
             kwargs["batch_size"] = batch_size
         if eval_batch_size is not None:
             kwargs["eval_batch_size"] = batch_size
-
         if not train_augmentations in [None, "default", "multi_temporal_default"]:
             kwargs["train_augmentations"] =kornia_augmentations_to_callable_with_dict(train_augmentations)
         else:
@@ -269,8 +268,7 @@ class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
         assert show_feats in {'boxes', 'masks', 'both'}
 
         image = sample['image']
-        
-        image = image[-1] if len(image.shape) == 4 else image
+        image = image.median(1).values if len(image.shape) == 4 else image
         # get indexes to plot 
         image = image[ self.plot_indexes, :, :]
         if image.mean() > 1:
