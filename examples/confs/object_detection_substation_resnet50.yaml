@@ -1,0 +1,83 @@
+# lightning.pytorch==2.1.1
+seed_everything: 0
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: 16-mixed
+  logger:
+    class_path: TensorBoardLogger
+    init_args:
+      save_dir: /opt/app-root/src/logs/
+      name: substation_resnet
+  callbacks:
+    # - class_path: RichProgressBar
+    - class_path: LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+    - class_path: ModelCheckpoint
+      init_args:
+          # dirpath: output/agb/checkpoints
+          mode: max
+          monitor: val_segm_map
+          filename: best-{epoch:02d}
+  max_epochs: 10
+  check_val_every_n_epoch: 1
+  log_every_n_steps: 50
+  enable_checkpointing: true
+  default_root_dir: /opt/app-root/src/logs/
+  
+data:
+  class_path: terratorch.datamodules.SubstationDataModule
+  init_args:
+    root: /opt/app-root/src/use-cases/substation-dataset-conversion/Substation
+    bands: [3, 2, 1]
+    mask_2d: false 
+    mode: object_detection 
+    dataset_version: geobench 
+    timepoint_aggregation: median 
+    use_timepoints: true 
+    download: true
+    image_size: 224
+    plot_indexes: [0, 1, 2]
+
+model:
+  class_path: terratorch.tasks.ObjectDetectionTask
+  init_args:
+    model_factory: ObjectDetectionModelFactory
+    model_args:
+      framework: mask-rcnn  # Model name of TorchVision (one of faster-rcnn, fcos, retinanet, mask-rcnn)
+      backbone: timm_resnet50  # One of resnet18, resnet34, resnet50, resnet101, resnet152, resnext50_32x4d, resnext101_32x8d, wide_resnet50_2, or wide_resnet101_2
+      backbone_pretrained: true
+      framework_min_size: 224
+      framework_max_size: 224 
+
+      num_classes: 2  # Number of classes including background
+      # trainable_layers: 3  # Number of trainable layers
+      # backbone_model_bands:
+      #   - RED
+      #   - GREEN
+      #   - BLUE
+      in_channels: 3
+      necks:
+        - name: FeaturePyramidNetworkNeck
+        
+    freeze_backbone: false
+    freeze_decoder: false
+    class_names:  # Optional class names (Alphabetic order for generic classification dataset)
+      - Background
+      - Substation
+
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 1e-4
+    weight_decay: 0.05
+
+lr_scheduler:
+  class_path: CosineAnnealingLR
+  init_args:
+    T_max: 20
+
+
