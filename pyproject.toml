@@ -40,13 +40,13 @@ classifiers = [
 ]
 
 dependencies = [
-  "torch==2.7.1",
-  "torchvision==0.22.1",
+  "torch~=2.7.1",
+  "torchvision~=0.22.1",
   "rioxarray==0.19.0",
   "albumentations==1.4.6",
   "albucore==0.0.16",
   "rasterio==1.4.3",
-  "torchmetrics==1.7.3",
+  "torchmetrics~=1.7.3",
   "geopandas==1.1.0",
   "lightly==1.5.21",
   "jsonargparse==4.35.0",
@@ -56,11 +56,11 @@ dependencies = [
   "segmentation-models-pytorch<=0.4",
   "jsonargparse==4.35.0",
   "pytest==8.4.1",
-  "torchgeo==0.7.0",
+  "torchgeo~=0.7.0",
   "einops==0.8.1",
   "timm==1.0.15",
   "pycocotools==2.0.10",
-  "huggingface_hub",
+  "huggingface_hub==0.33.1",
   "tifffile==2025.6.11",
   "python-box==7.3.2"
 ]
