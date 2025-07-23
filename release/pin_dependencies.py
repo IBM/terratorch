@@ -9,7 +9,7 @@ exclude_list = ["torchvision", "torchmetrics"]
 
 
 def get_pip_list():
-    result = subprocess.run(["pip", "list"], capture_output=True, text=True, check=False)
+    result = subprocess.run(["pip", "list"], capture_output=True, text=True, check=True)
     return result.stdout
 
 
