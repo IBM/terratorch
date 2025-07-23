@@ -201,7 +201,7 @@ def test_current_terratorch_version_buildings_predict(config_name, buildings_ima
         "eo_v2_600",
         "swinb",
         "swinl",
-        "timm_resnet34"
+        "timm_resnet34",
         "timm_resnet18",
         "timm_resnet50",
         "timm_resnet101",
@@ -230,7 +230,24 @@ def test_current_terratorch_version_burnscars_predict(config_name, burnscars_ima
 
 
 @pytest.mark.parametrize(
-    "model_name", ["eo_v1_100", "eo_v2_300", "eo_v2_600", "swinb", "swinl", "smp_resnet34", "enc_dec_resnet34"]
+    "model_name",
+    [
+        "eo_v1_100",
+        "eo_v2_300",
+        "eo_v2_600",
+        "swinb",
+        "swinl",
+        "smp_resnet34",
+        "enc_dec_resnet34",
+        "timm_resnet34",
+        "timm_resnet18",
+        "timm_resnet50",
+        "timm_resnet101",
+        "timm_resnet152",
+        "clay_v1",
+        "timm_convnext_large",
+        "timm_convnext_xlarge",
+    ],
 )
 def test_cleanup(model_name):
 
