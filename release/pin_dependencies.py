@@ -1,11 +1,12 @@
-import toml
-import sys
 import re
 import subprocess
+import sys
+
+import toml
 
 
 def get_pip_list():
-    result = subprocess.run(["pip", "list"], capture_output=True, text=True)
+    result = subprocess.run(["pip", "list"], capture_output=True, text=True, check=False)
     return result.stdout
 
 
@@ -19,7 +20,7 @@ def parse_pip_list(pip_list):
 
 
 def update_pyproject_toml(pyproject_path, package_versions):
-    with open(pyproject_path, "r") as f:
+    with open(pyproject_path) as f:
         lines = f.readlines()
 
     in_dependencies = False
@@ -39,11 +40,18 @@ def update_pyproject_toml(pyproject_path, package_versions):
                 continue
 
             match = re.match(r'\s*"([^"]+)"(.*)', stripped)
+            print(stripped)
             if match:
                 package_name = match.group(1)
                 constraints = match.group(2)
                 lower_package = package_name.lower()
-                if lower_package in package_versions and "==" not in constraints and "<=" not in constraints and ">=" not in constraints and "@" not in constraints:
+                if (
+                    lower_package in package_versions
+                    and "==" not in constraints
+                    and "<=" not in constraints
+                    and ">=" not in constraints
+                    and "@" not in constraints
+                ):
                     updated_line = f'  "{package_name}=={package_versions[lower_package]}",\n'
                     print(f"Updated {package_name} to version {package_versions[lower_package]}")
                 else:
