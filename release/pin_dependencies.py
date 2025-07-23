@@ -4,6 +4,9 @@ import sys
 
 import toml
 
+# These packages must be left free in order to be adapted according to torch
+exclude_list = ["torchvision", "torchmetrics"]
+
 
 def get_pip_list():
     result = subprocess.run(["pip", "list"], capture_output=True, text=True, check=False)
@@ -40,8 +43,8 @@ def update_pyproject_toml(pyproject_path, package_versions):
                 continue
 
             match = re.match(r'\s*"([^"]+)"(.*)', stripped)
-            print(stripped)
-            if match:
+
+            if match and match.group(1) not in exclude_list:
                 package_name = match.group(1)
                 constraints = match.group(2)
                 lower_package = package_name.lower()
