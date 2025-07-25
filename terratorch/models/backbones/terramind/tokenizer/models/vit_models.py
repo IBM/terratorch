@@ -478,6 +478,17 @@ class ViTEncoder(nn.Module):
         Returns:
             Output tensor of shape [B, dim_tokens, N_H, N_W].
         """
+        if x.shape[1] != self.in_channels:
+            # Apply one hot encoding for segmentation inputs
+            if len(x.shape) == 3:
+                x = F.one_hot(x.to(torch.long), num_classes=self.in_channels).permute(0, 3, 1, 2).to(torch.float32)
+            elif len(x.shape) == 4 and x.shape[1] == 1:
+                x = F.one_hot(x.to(torch.long).squeeze(1),
+                              num_classes=self.in_channels).permute(0, 3, 1, 2).to(torch.float32)
+            else:
+                raise ValueError(f'Expect input data with {self.in_channels} classes, found {x.shape}. '
+                                 f'Either with class indexes and shape [B, H, W] or one hot encoded [B, C, H, W].')
+
         # Create patches [B, C, H, W] -> [B, (H*W), C]
         if self.patch_proj:
             B, C, H, W = x.shape
