@@ -268,20 +268,8 @@ def init_conditioned_target_modality(mod_dict, modality_info, domain, num_target
     return mod_dict
 
 
-def init_full_input_modality(value, modality_info, domain, tokenizer, device, eos_id=3):
-    if isinstance(value, dict):
-        mod_dict = value
-        value = mod_dict["tensor"]
-    else:
-        mod_dict = {"tensor": value}
-
-    if domain in tokenizer:
-        # Tokenize
-        value = tokenizer[domain].encode(value, device)
-        if isinstance(value, dict):
-            mod_dict = value
-        else:
-            mod_dict["tensor"] = value[-1]  # Select tokens from img tokenizer
+def init_full_input_modality(value, modality_info, domain, device, eos_id=3):
+    mod_dict = value if isinstance(value, dict) else {"tensor": value}
 
     if 'input_mask' not in mod_dict:
         mod_dict['input_mask'] = torch.zeros(mod_dict['tensor'].shape, dtype=torch.bool, device=device)

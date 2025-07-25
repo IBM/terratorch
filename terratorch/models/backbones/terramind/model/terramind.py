@@ -753,3 +753,128 @@ class TerraMind(nn.Module):
     def unfreeze_all(self):
         self.unfreeze_encoder(unfreeze_embeddings=True)
         self.unfreeze_decoder(unfreeze_embeddings=True)
+
+
+def build_tokenizer(tokenizer_dict, input_modalities, output_modalities=None, pretrained=True):
+    # TODO: Add loading only encoder/decoder
+    tokenizer = {}
+    for modality in input_modalities:
+        if modality in tokenizer_dict:
+            tokenizer[modality] = tokenizer_dict[modality](pretrained=pretrained)
+
+    if output_modalities is not None:
+        for modality in output_modalities:
+            if modality in tokenizer:
+                pass
+            elif modality in tokenizer_dict:
+                tokenizer[modality] = tokenizer_dict[modality](pretrained=pretrained)
+            else:
+                warnings.warn(f'Tokenizer for output modality {modality} not found.')
+
+    tokenizer = nn.ModuleDict(tokenizer)
+
+    return tokenizer
+
+
+def build_modality_embeddings(modality_info, modalities, img_size=None, dim=None, patch_size=None):
+    mod_embeddings = {}
+    mod_name_mapping = {}
+    for modality in modalities:
+        # New modalities can be provided as {"name": <num_channels>}
+        if isinstance(modality, dict):
+            for key, value in modality.items():
+                if isinstance(value, nn.Module):
+                    mod_embeddings[key] = value
+                elif isinstance(value, int):
+                    mod_embeddings[key] = ImageEncoderEmbedding(num_channels=value, dim_tokens=dim, image_size=img_size,
+                                                                patch_size=patch_size, sincos_pos_emb=True)
+                else:
+                    raise ValueError(f'Modalities must be provided as a list of strings and dicts. '
+                                     f'The strings can be any pre-trained modality: '
+                                     f'RGB, S2L1C, S2L2A, S1RTC, S1GRD, DEM, LULC, NDVI, Coords. '
+                                     f'Dicts define new modalities with the format {{"<name>": <num_channels>}}. '
+                                     f'Found {key}: {value} ({type(value)})')
+                mod_name_mapping[key] = key
+            continue
+
+        # Cover multiple naming conventions
+        modality_renamed = (modality.lower()
+                            .replace('s2', 'sen2')
+                            .replace('s1', 'sen1')
+                            .replace('text', 'caption')
+                            .replace('location', 'coords')
+                            )
+
+        # Get modality key in MODALITY_INFO
+        if modality in modality_info.keys():
+            key = modality
+        elif 'sen2l2a' in modality_renamed:
+            key = 'untok_sen2l2a@224'
+        elif 'sen2l1c' in modality_renamed:
+            key = 'untok_sen2l1c@224'
+        elif 'sen1rtc' in modality_renamed:
+            key = 'untok_sen1rtc@224'
+        elif 'sen1grd' in modality_renamed:
+            key = 'untok_sen1grd@224'
+        elif 'rgb' in modality_renamed:
+            key = 'untok_sen2rgb@224'
+        elif 'dem' in modality_renamed:
+            key = 'untok_dem@224'
+        elif 'lulc' in modality_renamed:
+            key = 'tok_lulc@224'
+        elif 'ndvi' in modality_renamed:
+            key = 'tok_ndvi@224'
+        elif 'caption' in modality_renamed:
+            key = 'caption'
+        elif 'coord' in modality_renamed:
+            key = 'coords'
+        else:
+            raise NotImplementedError(f'Could not find modality {modality} in default modality info.')
+
+        mod_info = modality_info[key]
+        mod_embeddings[key] = mod_info['encoder_embedding'](image_size=img_size, dim_tokens=dim, **mod_info)
+        mod_name_mapping[modality] = key  # Requires manual mapping for loading model weights
+
+    return mod_embeddings, mod_name_mapping
+
+
+def build_output_modality_embeddings(modality_info, modalities, img_size=None, dim=None, patch_size=None):
+    mod_embeddings = {}
+    mod_name_mapping = {}
+    for modality in modalities:
+        # Cover multiple naming conventions
+        modality_renamed = (modality.lower()
+                            .replace('s2', 'sen2')
+                            .replace('s1', 'sen1')
+                            .replace('text', 'caption')
+                            .replace('location', 'coords')
+                            )
+
+        # Get modality key in MODALITY_INFO
+        if modality in modality_info.keys():
+            key = modality
+        elif 'sen2' in modality_renamed:
+            key = 'tok_sen2l2a@224'
+        elif 'sen1rtc' in modality_renamed:
+            key = 'tok_sen1rtc@224'
+        elif 'sen1' in modality_renamed:  # Default to S1GRD if not specified
+            key = 'tok_sen1grd@224'
+        elif 'dem' in modality_renamed:
+            key = 'tok_dem@224'
+        elif 'lulc' in modality_renamed:
+            key = 'tok_lulc@224'
+        elif 'ndvi' in modality_renamed:
+            key = 'tok_ndvi@224'
+        elif 'caption' in modality_renamed:
+            key = 'caption'
+        elif 'coord' in modality_renamed:
+            key = 'coords'
+        else:
+            raise NotImplementedError(f'Could not find modality {modality} in default modality info.'
+                                      f'Available modalities: S2L2A, S1RTC, S1GRD, DEM, LULC, NDVI, and Coords.')
+
+        mod_info = modality_info[key]
+        mod_embeddings[key] = mod_info['decoder_embedding'](image_size=img_size, dim_tokens=dim, **mod_info)
+        mod_name_mapping[modality] = key  # Requires manual mapping for loading model weights
+
+    return mod_embeddings, mod_name_mapping
