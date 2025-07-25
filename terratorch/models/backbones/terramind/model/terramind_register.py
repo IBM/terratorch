@@ -49,6 +49,7 @@ __all__ = [
     'terramind_v01_base',
     'terramind_v1_base',
     'terramind_v1_large',
+    'terramind_v01_base_tim',
     'terramind_v1_base_tim',
     'terramind_v1_large_tim',
     'terramind_v1_base_mae',
@@ -480,6 +481,28 @@ def terramind_v01_base(**kwargs):
     model = build_terrammind_vit(
         variant='terramind_v01_base',
         encoder_depth=12,
+        dim=768,
+        num_heads=12,
+        mlp_ratio=4,
+        qkv_bias=False,
+        proj_bias=False,
+        mlp_bias=False,
+        norm_layer=partial(LayerNorm, eps=1e-6, bias=False),
+        act_layer=nn.SiLU,
+        gated_mlp=True,
+        pretrained_bands={'untok_sen2l2a@224': PRETRAINED_BANDS['untok_sen2l2a@224']},
+        tokenizer_dict=tokenizer_dict['v01'],
+        **kwargs
+    )
+    return model
+
+
+@TERRATORCH_BACKBONE_REGISTRY.register
+def terramind_v01_base_tim(**kwargs):
+    model = build_terrammind_tim(
+        variant='terramind_v01_base',
+        encoder_depth=12,
+        decoder_depth=12,
         dim=768,
         num_heads=12,
         mlp_ratio=4,
