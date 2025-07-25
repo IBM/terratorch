@@ -19,7 +19,7 @@ class CaptionTokenizer(nn.Module):
         self.text_tokenizer = Tokenizer.from_file(tokenizer_file)
         self.text_tokenizer.enable_padding()
 
-    def encode(self, text: list[str], device: torch.device, *args, **kwargs) -> dict[str, torch.Tensor]:
+    def encode(self, text: list[str], device: torch.device, eos_id=3, *args, **kwargs) -> dict[str, torch.Tensor]:
         """
         Args:
             text list[str]: Text to be tokenized
@@ -28,10 +28,14 @@ class CaptionTokenizer(nn.Module):
             dict for generation sampler input
         """
         # Add start token
-        text = [t + " [EOS]" for t in text]
+        text = [t + " [S_1]" for t in text]
 
         # Tokenize
         tok_ids = [t.ids for t in self.text_tokenizer.encode_batch(text, add_special_tokens=True)]
+
+        # Add EOS token
+        tok_ids = [t + [eos_id] for t in tok_ids]
+
 
         tok_ids = torch.tensor(tok_ids, device=device)
 

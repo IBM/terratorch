@@ -448,14 +448,21 @@ class TerraMindGeneration(nn.Module):
         # Initialize output modalities
         tokens_per_target = []
         autoregression_schemes = []
+        token_decoding_schedules = []
+        token_decoding_steps = []
+
         for mod in self.output_modalities:
             if mod in self.output_image_modalities:
                 mod_num_tokens = img_num_tokens
                 autoregression_schemes.append("roar")
+                token_decoding_schedules.append("linear")
+                token_decoding_steps.append(self.decoding_steps)
             else:
                 # Get max length from modality info for sequence data
                 mod_num_tokens = self.decoder_embeddings[mod].max_length
                 autoregression_schemes.append("autoregressive")
+                token_decoding_schedules.append(None)
+                token_decoding_steps.append(None)
             tokens_per_target.append(mod_num_tokens)
 
             if mod in input_dict:
@@ -470,8 +477,8 @@ class TerraMindGeneration(nn.Module):
             target_domains=self.output_modalities,
             tokens_per_target=tokens_per_target,
             autoregression_schemes=autoregression_schemes,
-            decoding_steps=self.decoding_steps,
-            token_decoding_schedules=["linear"] * len(self.output_modalities),
+            decoding_steps=token_decoding_steps,
+            token_decoding_schedules=token_decoding_schedules,
             temps=self.temps,
             temp_schedules=["constant"] * len(self.output_modalities),
             cfg_scales=[1.0] * len(self.output_modalities),
