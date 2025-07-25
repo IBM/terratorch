@@ -5,10 +5,23 @@ import torch.nn.functional as F
 from albumentations import BasicTransform, Compose, ImageOnlyTransform
 from einops import rearrange
 import albumentations as A
+import kornia.augmentation as K
+from kornia.augmentation._2d.geometric.base import GeometricAugmentationBase2D
 
 N_DIMS_FOR_TEMPORAL = 4
 N_DIMS_FLATTENED_TEMPORAL = 3
 
+def kornia_augmentations_to_callable_with_dict(augmentations: list[GeometricAugmentationBase2D] | None = None):
+    if augmentations is None:
+        return lambda x: x
+    augmentations = K.AugmentationSequential(
+                *augmentations,
+                data_keys=None,
+                keepdim=True,
+            )
+    def fn(data):
+        return augmentations(data)
+    return augmentations
 
 def albumentations_to_callable_with_dict(albumentation: list[BasicTransform] | None = None):
     if albumentation is None:

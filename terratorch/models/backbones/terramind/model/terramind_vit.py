@@ -14,6 +14,8 @@
 
 import math
 import random
+import warnings
+
 import torch
 from torch import nn
 from functools import partial
@@ -198,8 +200,8 @@ class TerraMindViT(nn.Module):
             d = {self.modalities[0]: d}
         elif d is None or len(d) == 0:
             d = {}
-            if len(kwargs) == 0:
-                raise ValueError("No inputs provided.")
+            if not len(kwargs):
+                raise ValueError("No input provided.")
 
         # Add additional keyword args to input dict
         for key, value in kwargs.items():
@@ -282,6 +284,6 @@ class TerraMindViT(nn.Module):
             pass  # Do nothing
         else:
             raise NotImplementedError(f'Merging method {self.merge_method} is not implemented. '
-                                      f'Select one of mean, max or concat.')
+                                      f'Select one of mean, max, concat, dict, or None.')
 
         return out
