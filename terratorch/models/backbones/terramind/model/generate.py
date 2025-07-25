@@ -159,7 +159,6 @@ def empty_img_modality(mod_dict, key):
 def empty_seq_modality(mod_dict, s1_id=5):
     # To create an empty sequence, we suppose an input budget of 1, and the rest assigned to targets
 
-    # TODO: Check if correct!
     # Input tensor
     # Input is [S_1], target is [S_1] ...... [S_2]
     # (so [S_1] [S_1] ..... [S_2] when combined)
@@ -219,6 +218,55 @@ def init_empty_target_modality(modality_info, domain, batch_size, num_tokens, de
         raise ValueError()
         
     return mod_dict
+
+def init_conditioned_target_modality(mod_dict, modality_info, domain, num_target_tokens, eos_id=3, s1_id=5):
+    batch_size, input_length = mod_dict["tensor"].shape[:2]
+    device = mod_dict["tensor"].device
+
+    if modality_info[domain]['type'] in ['seq', 'seq_token']:
+        # Extend the input tokens with target tokens
+        mod_dict["tensor"] = torch.cat([
+            mod_dict["tensor"],
+            torch.zeros((batch_size, num_target_tokens), dtype=torch.int32, device=device)
+        ], dim=1)
+        mod_dict["input_mask"] = torch.cat([
+            mod_dict["input_mask"],
+            torch.ones((batch_size, num_target_tokens), dtype=torch.bool, device=device)
+        ], dim=1)
+        mod_dict["target_mask"] = torch.cat([
+            mod_dict["target_mask"],
+            torch.zeros((batch_size, num_target_tokens), dtype=torch.bool, device=device)
+        ], dim=1)
+        mod_dict["decoder_attention_mask"] = torch.cat([
+            mod_dict["decoder_attention_mask"],
+            torch.ones((batch_size, num_target_tokens), dtype=torch.bool, device=device)
+        ], dim=1)
+
+        if eos_id in mod_dict['tensor']:
+            eos_indices = torch.where(mod_dict['tensor'] == eos_id)[1]
+        else:
+            warnings.warn(f'Cannot find EOS token in {domain} input, assuming last input position.')
+            eos_indices = [input_length] * len(mod_dict['tensor'])
+        for i in range(len(mod_dict['tensor'])):
+            eos_idx = eos_indices[i]
+            # Update input tensor
+            # Input is [S_1], target is [S_1] ...... [S_2] (so Input [S_1] [S_1] ..... [S_2] when combined)
+            mod_dict['tensor'][i, [eos_idx, eos_idx+1]] = s1_id
+            mod_dict['tensor'][i, -1] = s1_id + 1
+
+            mod_dict['input_mask'][i, :eos_idx+1] = False
+            mod_dict['input_mask'][i, eos_idx+1:] = True
+        mod_dict['target_mask'] = ~mod_dict['input_mask']
+        mod_dict["decoder_attention_mask"] = mod_dict['input_mask']
+
+    elif modality_info[domain]['type'] in ['img']:
+        # TODO: Implement image masking in input
+        raise NotImplementedError(f'Conditioned target modality not implemented for {domain}')
+    else:
+        raise NotImplementedError(f'Conditioned target modality not implemented for {domain}')
+
+    return mod_dict
+
 
 def init_full_input_modality(value, modality_info, domain, tokenizer, device, eos_id=3):
     if isinstance(value, dict):

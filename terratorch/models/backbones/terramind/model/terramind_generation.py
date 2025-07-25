@@ -31,6 +31,7 @@ from .generate import (
     build_chained_generation_schedules,
     init_full_input_modality,
     init_empty_target_modality,
+    init_conditioned_target_modality,
 )
 from .terramind import TerraMind
 from terratorch.models.backbones.terramind.tokenizer.tokenizer_register import (
@@ -458,15 +459,10 @@ class TerraMindGeneration(nn.Module):
             tokens_per_target.append(mod_num_tokens)
 
             if mod in input_dict:
-                raise ValueError('Input and output of the same modality. Not supported.')
-            # TODO Implement!
-            #     warnings.warn(f'The modality {mod} is used as input and output which is not possible for the same '
-            #                   f'patches. Random sampling 50% of tokens as input and output.')
-            #     input_dict[mod]['input_mask'] = torch.rand((B, mod_num_tokens), device=device) < 0.5
-            #     input_dict[mod]['target_mask'] = ~input_dict[mod]['input_mask']
-            #     input_dict[mod]['tensor'] = input_dict[mod]['tensor'].reshape(B, -1).to(torch.long)
-
-            input_dict[mod] = init_empty_target_modality(MODALITY_INFO, mod, batch_size, mod_num_tokens, device)
+                # Modality in input and target
+                input_dict[mod] = init_conditioned_target_modality(input_dict[mod], MODALITY_INFO, mod, mod_num_tokens)
+            else:
+                input_dict[mod] = init_empty_target_modality(MODALITY_INFO, mod, batch_size, mod_num_tokens, device)
 
         # Predict tokens of output modalities
         schedule = build_chained_generation_schedules(
