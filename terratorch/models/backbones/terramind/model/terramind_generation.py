@@ -108,17 +108,10 @@ class TerraMindGeneration(nn.Module):
         elif not isinstance(modalities, list):
             raise ValueError(f'Modalities must be a list of modality keys or a dict with embedding layers.')
 
-        self.output_modalities = output_modalities or ["sen2l2a@224"]
-        if isinstance(decoding_steps, list):
-            assert len(decoding_steps) == len(self.output_modalities), \
-                "Number of decoding steps must match number of output modalities."
-        else:
-            decoding_steps = [decoding_steps] * len(self.output_modalities)
-        if isinstance(temps, list):
-            assert len(temps) == len(self.output_modalities), \
-                "Number of temperatures must match number of output modalities."
-        else:
-            temps = [temps] * len(self.output_modalities)
+        if output_modalities is None or len(output_modalities) == 0:
+            raise ValueError('Output modalities not provided.')
+        elif not isinstance(output_modalities, list):
+            raise ValueError(f'Output modalities must be a list of modality keys.')
 
         # Parameters for generation schedule
         self.top_p = top_p
@@ -131,7 +124,7 @@ class TerraMindGeneration(nn.Module):
         self.encoder_embeddings, mod_name_mapping = build_modality_embeddings(
             MODALITY_INFO, modalities, img_size=img_size, dim=dim, patch_size=patch_size)
         self.decoder_embeddings, decoder_name_mapping = build_output_modality_embeddings(
-            MODALITY_INFO, self.output_modalities, img_size=img_size, dim=dim, patch_size=patch_size)
+            MODALITY_INFO, output_modalities, img_size=img_size, dim=dim, patch_size=patch_size)
         self.output_modalities = list(decoder_name_mapping.values())  # Update output modality names
         self.mod_name_mapping = decoder_name_mapping | mod_name_mapping  # Merging dicts
         self.modalities = list(mod_name_mapping.keys())  # Further code expects list
@@ -141,6 +134,10 @@ class TerraMindGeneration(nn.Module):
                                         if isinstance(value, ImageTokenDecoderEmbedding)]
         self.output_mod_name_mapping = {v: k for k, v in decoder_name_mapping.items()}
         self.standardize = standardize
+
+        if len(modalities) == 1 and self.mod_name_mapping[modalities[0]] == 'caption':
+            # TODO Debug why text to image generations don't work.
+            raise NotImplementedError(f"TerraMind v0.1 generations with only text input don't work yet.")
 
         if offset is not None:
             for mod, o in offset.items():
@@ -309,7 +306,7 @@ class TerraMindGeneration(nn.Module):
             autoregression_schemes=autoregression_schemes,
             decoding_steps=token_decoding_steps,
             token_decoding_schedules=token_decoding_schedules,
-            temps=self.temps,
+            temps=[self.temps] * len(self.output_modalities),
             temp_schedules=["constant"] * len(self.output_modalities),
             cfg_scales=[1.0] * len(self.output_modalities),
             cfg_schedules=["constant"] * len(self.output_modalities),
