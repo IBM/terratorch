@@ -1137,7 +1137,7 @@ class GenerationSampler(nn.Module):
 
 
     @torch.no_grad()
-    def generate(self, mod_dict, schedule, top_k=0.0, top_p=0.0, text_tokenizer=None, verbose=False, seed=None,
+    def generate(self, mod_dict, schedule, top_k=0.0, top_p=0.0, tokenizer=None, verbose=False, seed=None,
                  num_tokens=None):
         """ Generates a sequence of tokens from the input modalities.
         :param mod_dict: Dictionary of modalities.
@@ -1145,7 +1145,7 @@ class GenerationSampler(nn.Module):
             list of dictionaries containing {target_domain, scheme, num_tokens, temperature, cfg_scale, cfg_cond_domains}.
         :param top_k: top_k > 0: Keep only top k tokens with highest probability (a.k.a. top-k filtering).
         :param top_p: top_p > 0.0: Keep the top tokens with cumulative probability >= top_p (a.k.a. nucleus filtering).
-        :param text_tokenizer: Text tokenizer.
+        :param tokenizer: Modality tokenizer.
         :param verbose: Whether to print progress.
         :param seed: Random seed.
         :return: Generated mod dict.
@@ -1193,12 +1193,12 @@ class GenerationSampler(nn.Module):
                 if cfg_scale == 1.0 or len(cfg_conditioning) == 0:
                     mod_dict = self.autoregressive_step_batched(
                         mod_dict, target_mod, temperature=temp, top_k=top_k, top_p=top_p,
-                        text_tokenizer=text_tokenizer, seed=seed_i
+                        text_tokenizer=tokenizer[target_mod].text_tokenizer, seed=seed_i
                     )
                 else:
                     mod_dict = self.guided_autoregressive_step_batched(
                         mod_dict, target_mod, temperature=temp, top_k=top_k, top_p=top_p,
-                        text_tokenizer=text_tokenizer, conditioning=cfg_conditioning, 
+                        text_tokenizer=tokenizer[target_mod].text_tokenizer, conditioning=cfg_conditioning,
                         guidance_scale=cfg_scale, seed=seed_i
                     )
             else:

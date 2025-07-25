@@ -34,6 +34,15 @@ except Exception as e:
     vqvae_available = False
     import_error = e
 
+try:
+    import tokenizers
+    tokenizers_available = True
+    import_error_tokenizers = None
+except Exception as e:
+    logger.debug(f"Could not import tokenizers due to ImportError({e})")
+    tokenizers_available = False
+    import_error_tokenizers = e
+
 
 
 # Model definitions
@@ -416,6 +425,11 @@ def terramind_v01_tokenizer_lulc(**kwargs):
 
 
 def terramind_v01_caption_tokenizer(*args, **kwargs):
+    if not tokenizers_available:
+        warnings.warn(f"Cannot import tokenizers. "
+                      f"\nMake sure to install `pip install tokenizers`.")
+        raise import_error_tokenizers
+
     tokenizer_file = hf_hub_download(repo_id=pretrained_weights["terramind_v01_caption_tokenizer"]["hf_hub_id"],
                                      filename=pretrained_weights["terramind_v01_caption_tokenizer"]["hf_hub_filename"])
     return CaptionTokenizer(
@@ -425,8 +439,14 @@ def terramind_v01_caption_tokenizer(*args, **kwargs):
 
 
 def terramind_v1_coords_tokenizer(*args, **kwargs):
+    if not tokenizers_available:
+        warnings.warn(f"Cannot import tokenizers. "
+                      f"\nMake sure to install `pip install tokenizers`.")
+        raise import_error_tokenizers
+
     tokenizer_file = hf_hub_download(repo_id=pretrained_weights["terramind_v1_coords_tokenizer"]["hf_hub_id"],
                                      filename=pretrained_weights["terramind_v1_coords_tokenizer"]["hf_hub_filename"])
+
     return CoordsTokenizer(
         tokenizer_file=tokenizer_file,
         *args, **kwargs
