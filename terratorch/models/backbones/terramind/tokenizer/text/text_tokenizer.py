@@ -1,8 +1,16 @@
-import warnings
 
+import warnings
+import re
 import torch
 from torch import nn
 from tokenizers import Tokenizer
+
+
+def capitalize_sentences(text):
+    # Split text into sentences using a regex that looks for sentence end punctuation
+    sentences = re.split('([.!?] *)', text)
+    capitalized = ''.join([s.capitalize() for s in sentences])
+    return capitalized
 
 
 class CaptionTokenizer(nn.Module):
@@ -20,14 +28,10 @@ class CaptionTokenizer(nn.Module):
             dict for generation sampler input
         """
         # Add start token
-        text = [t + " [S_1]" for t in text]
+        text = [t + " [EOS]" for t in text]
 
         # Tokenize
         tok_ids = [t.ids for t in self.text_tokenizer.encode_batch(text, add_special_tokens=True)]
-
-        # Add end token
-        eos_id = self.text_tokenizer.encode("[EOS]").ids
-        tok_ids = [t + eos_id for t in tok_ids]
 
         tok_ids = torch.tensor(tok_ids, device=device)
 
@@ -59,6 +63,8 @@ class CaptionTokenizer(nn.Module):
 
             decoded_texts.append(merged_text.replace(" [EOS]", ""))
 
+        decoded_texts = list(map(capitalize_sentences, decoded_texts))
+
         return decoded_texts
 
 
@@ -89,7 +95,6 @@ class CoordsTokenizer(nn.Module):
 
         # Tokenize
         tok_ids = [t.ids for t in self.text_tokenizer.encode_batch(coords, add_special_tokens=True)]
-
         tok_ids = torch.tensor(tok_ids, device=device)
 
         coords_dict = {
@@ -118,12 +123,12 @@ class CoordsTokenizer(nn.Module):
 
             text = self.text_tokenizer.decode(seq, skip_special_tokens=False)
 
-            lat, lon = text.split(" ")
-            if lat.startswith("lon") or lon.startswith("lat"):
-                warnings.warn(f"Coordinate generation did not work correctly, generated text: {text}. Returning NaN.")
+            try:
+                lat, lon = text.split(" ")
+                coords.append([float(lon.strip("lon=")), float(lat.strip("lat="))])
+            except Exception as e:
+                warnings.warn(f"Coordinate generation did not work correctly, generated text: {text} (Error: {e}). "
+                              f"Returning NaN.")
                 coords.append([torch.nan, torch.nan])
-                continue
-
-            coords.append([float(lon.strip("lon=")), float(lat.strip("lat="))])
 
         return coords
