@@ -86,6 +86,10 @@ pretrained_weights = {
         "hf_hub_id": "ibm-esa-geospatial/TerraMind-1.0-Tokenizer-NDVI",
         "hf_hub_filename": "TerraMind_Tokenizer_NDVI.pt",
     },
+    "terramind_v1_coords_tokenizer": {
+        "hf_hub_id": "ibm-esa-geospatial/TerraMind-1.0-Tokenizer-Coords",
+        "hf_hub_filename": "config.json",
+    },
     "terramind_v01_tokenizer_s2l2a": {
         "hf_hub_id": "FAST-EO/TerraMind-v0.1-Tokenizer-S2L2A",
         "hf_hub_filename": "TerraMind_v01_Tokenizer_S2L2A.pt",
@@ -103,10 +107,6 @@ pretrained_weights = {
         "hf_hub_filename": "TerraMind_v01_Tokenizer_LULC.pt",
     },
     "terramind_v01_caption_tokenizer": {
-        "hf_hub_id": "FAST-EO/TerraMind-v0.1-Tokenizer-Text",
-        "hf_hub_filename": "config.json",
-    },
-    "terramind_v1_coords_tokenizer": {
         "hf_hub_id": "FAST-EO/TerraMind-v0.1-Tokenizer-Text",
         "hf_hub_filename": "config.json",
     },
