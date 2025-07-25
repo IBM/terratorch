@@ -26,7 +26,12 @@ from .encoder_embeddings import ImageEncoderEmbedding, ImageTokenEncoderEmbeddin
 from .decoder_embeddings import ImageTokenDecoderEmbedding
 from .tm_utils import LayerNorm
 from .modality_info import MODALITY_INFO
-from .generate import GenerationSampler, build_chained_generation_schedules, init_empty_target_modality
+from .generate import (
+    GenerationSampler,
+    build_chained_generation_schedules,
+    init_full_input_modality,
+    init_empty_target_modality,
+)
 from .terramind import TerraMind
 from terratorch.models.backbones.terramind.tokenizer.tokenizer_register import (
     terramind_v1_tokenizer_s2l2a,
@@ -43,12 +48,32 @@ from terratorch.models.backbones.terramind.tokenizer.tokenizer_register import (
     terramind_v1_coords_tokenizer,
 )
 
+tokenizer_dict = {
+    "v1": {
+        "tok_sen2l2a@224": terramind_v1_tokenizer_s2l2a,
+        "tok_sen1rtc@224": terramind_v1_tokenizer_s1rtc,
+        "tok_sen1grd@224": terramind_v1_tokenizer_s1grd,
+        "tok_dem@224": terramind_v1_tokenizer_dem,
+        "tok_lulc@224": terramind_v1_tokenizer_lulc,
+        "tok_ndvi@224": terramind_v1_tokenizer_ndvi,
+        "coords": terramind_v1_coords_tokenizer,        
+    },
+    "v01": {
+        "tok_sen2l2a@224": terramind_v01_tokenizer_s2l2a,
+        "tok_sen1grd@224": terramind_v01_tokenizer_s1grd,
+        "tok_dem@224": terramind_v01_tokenizer_dem,
+        "tok_lulc@224": terramind_v01_tokenizer_lulc,
+        "coords": terramind_v1_coords_tokenizer,
+        "caption": terramind_v01_caption_tokenizer,        
+    }
+}
+
 
 def build_modality_embeddings(modalities, img_size=None, dim=None, patch_size=None):
     mod_embeddings = {}
     mod_name_mapping = {}
     for modality in modalities:
-        # New modalities can be provided as {'name': <num_channels>}
+        # New modalities can be provided as {"name": <num_channels>}
         if isinstance(modality, dict):
             for key, value in modality.items():
                 if isinstance(value, nn.Module):
@@ -57,8 +82,10 @@ def build_modality_embeddings(modalities, img_size=None, dim=None, patch_size=No
                     mod_embeddings[key] = ImageEncoderEmbedding(num_channels=value, dim_tokens=dim, image_size=img_size,
                                                                 patch_size=patch_size, sincos_pos_emb=True)
                 else:
-                    raise ValueError(f'Modalities must be provided as a list of strings or dicts, or as a dict with '
-                                     f'the values being nn.Module or int (number of channels of the modality). '
+                    raise ValueError(f'Modalities must be provided as a list of strings and dicts. '
+                                     f'The strings can be any pre-trained modality: '
+                                     f'RGB, S2L1C, S2L2A, S1RTC, S1GRD, DEM, LULC, NDVI, Coords. '
+                                     f'Dicts define new modalities with the format {{"<name>": <num_channels>}}. '
                                      f'Found {key}: {value} ({type(value)})')
                 mod_name_mapping[key] = key
             continue
@@ -68,7 +95,6 @@ def build_modality_embeddings(modalities, img_size=None, dim=None, patch_size=No
                             .replace('s2', 'sen2')
                             .replace('s1', 'sen1')
                             .replace('text', 'caption')
-                            .replace('coordinates', 'coords')
                             .replace('location', 'coords')
                             )
 
@@ -93,7 +119,7 @@ def build_modality_embeddings(modalities, img_size=None, dim=None, patch_size=No
             key = 'tok_ndvi@224'
         elif 'caption' in modality_renamed:
             key = 'caption'
-        elif 'coords' in modality_renamed:
+        elif 'coord' in modality_renamed:
             key = 'coords'
         else:
             key = modality
@@ -117,7 +143,6 @@ def build_output_modality_embeddings(modalities, img_size=None, dim=None, patch_
                             .replace('s2', 'sen2')
                             .replace('s1', 'sen1')
                             .replace('text', 'caption')
-                            .replace('coordinates', 'coords')
                             .replace('location', 'coords')
                             )
 
@@ -136,7 +161,7 @@ def build_output_modality_embeddings(modalities, img_size=None, dim=None, patch_
             key = 'tok_ndvi@224'
         elif 'caption' in modality_renamed:
             key = 'caption'
-        elif 'coords' in modality_renamed:
+        elif 'coord' in modality_renamed:
             key = 'coords'
         else:
             key = modality
@@ -147,52 +172,37 @@ def build_output_modality_embeddings(modalities, img_size=None, dim=None, patch_
             mod_name_mapping[modality] = key  # Requires manual mapping for loading model weights
         else:
             raise NotImplementedError(f'Could not find modality {modality} in default modality info.'
-                                      f'Available modalities: S2L2A, S1RTC, S1GRD, DEM, LULC, NDVI.')
+                                      f'Available modalities: S2L2A, S1RTC, S1GRD, DEM, LULC, NDVI, and Coords.')
 
     return mod_embeddings, mod_name_mapping
 
-
-
 def build_tokenizer(input_modalities, output_modalities, pretrained, version='v1'):
-    if version == 'v1':
-        tokenizer_dict = {
-            'tok_sen2l2a@224': terramind_v1_tokenizer_s2l2a,
-            'tok_sen1rtc@224': terramind_v1_tokenizer_s1rtc,
-            'tok_sen1grd@224': terramind_v1_tokenizer_s1grd,
-            'tok_dem@224': terramind_v1_tokenizer_dem,
-            'tok_lulc@224': terramind_v1_tokenizer_lulc,
-            'tok_ndvi@224': terramind_v1_tokenizer_ndvi,
-            'coords': terramind_v1_coords_tokenizer,
-        }
-    elif version == 'v01':
-        tokenizer_dict = {
-            'tok_sen2l2a@224': terramind_v01_tokenizer_s2l2a,
-            'tok_sen1grd@224': terramind_v01_tokenizer_s1grd,
-            'tok_dem@224': terramind_v01_tokenizer_dem,
-            'tok_lulc@224': terramind_v01_tokenizer_lulc,
-            'coords':  terramind_v1_coords_tokenizer,
-            'caption': terramind_v01_caption_tokenizer,
-        }
-    else:
-        raise NotImplementedError(f'Unsupported TerraMind Tokenizer version: {version}')
+    if version not in tokenizer_dict:
+        raise NotImplementedError(f'Unsupported TerraMind Tokenizer version: {version}. '
+                                  f'Available versions: {list(tokenizer_dict.keys())}')
 
     # TODO: Add loading only encoder/decoder
     tokenizer = {}
     for modality in input_modalities:
-        if modality in tokenizer_dict:
-            tokenizer[modality] = tokenizer_dict[modality](pretrained=pretrained)
+        if modality in tokenizer_dict[version]:
+            tokenizer[modality] = tokenizer_dict[version][modality](pretrained=pretrained)
 
     for modality in output_modalities:
         if modality in tokenizer:
             pass
-        elif modality in tokenizer_dict:
-            tokenizer[modality] = tokenizer_dict[modality](pretrained=pretrained)
+        elif modality in tokenizer_dict[version]:
+            tokenizer[modality] = tokenizer_dict[version][modality](pretrained=pretrained)
         else:
             warnings.warn(f'Tokenizer for output modality {modality} not found.')
 
     tokenizer = nn.ModuleDict(tokenizer)
 
     return tokenizer
+
+def init_image_input():
+
+
+    return None
 
 
 class TerraMindGeneration(nn.Module):
@@ -253,7 +263,7 @@ class TerraMindGeneration(nn.Module):
             qkv_bias: bool = True,
             proj_bias: bool = True,
             mlp_bias: bool = True,
-            act_layer: torch.Tensor = nn.GELU,
+            act_layer: nn.Module = nn.GELU,
             norm_layer: partial | nn.Module = partial(LayerNorm, eps=1e-6),
             gated_mlp: bool = False,
             qk_norm: bool = False,
@@ -310,7 +320,9 @@ class TerraMindGeneration(nn.Module):
         if offset is not None:
             for mod, o in offset.items():
                 # Add offset to mean values
-                assert mod in self.mod_name_mapping, f"offset {mod} not defined in input or output modalities"
+                if mod not in self.mod_name_mapping:
+                    warnings.warn(f"offset {mod} not defined in input or output modalities, ignoring offset.")
+                    continue
                 pretraining_mean[self.mod_name_mapping[mod]] = \
                     np.array(pretraining_mean[self.mod_name_mapping[mod]], dtype=np.float32) + o
 
@@ -373,19 +385,28 @@ class TerraMindGeneration(nn.Module):
             dict[str, torch.Tensor]: Dict of generated images
         """
         # Handle single image modality
-        if isinstance(d, torch.Tensor):
+        if not isinstance(d, dict):
             # Assuming first modality
             d = {self.modalities[0]: d}
-        elif d is None:
+        elif d is None or len(d) == 0:
             d = {}
-            assert len(kwargs), "No input provided."
+            if len(kwargs) == 0:
+                raise ValueError("No inputs provided.")
 
         # Add additional keyword args to input dict
         for key, value in kwargs.items():
             d[key] = value
 
+        # Check for unknown modalities in input
+        for mod in list(d.keys()):
+            if mod not in self.mod_name_mapping:
+                warnings.warn(f"Unknown input modality: {mod}. Ignoring input.")
+                del d[mod]
+        if len(d) == 0:
+            raise ValueError("No valid inputs provided.")
+
         # Get batch size and device
-        B = len(list(d.values())[0])
+        batch_size = len(list(d.values())[0])
         device = next(self.parameters()).device
 
         standardize = standardize if standardize is not None else self.standardize
@@ -400,75 +421,59 @@ class TerraMindGeneration(nn.Module):
         # Default values if no images are provided
         img_num_tokens, image_size = 196, (224, 224)
         for mod, value in d.items():
-            if self.mod_name_mapping[mod] in ['caption', 'coords']:
-                token_ids = self.tokenizer[self.mod_name_mapping[mod]].encode(value, device)
-                input_dict[self.mod_name_mapping[mod]] = token_ids
-            elif self.mod_name_mapping[mod] in self.image_modalities:
+            if self.mod_name_mapping[mod] in self.image_modalities:
                 # Get image size and num tokens
                 patch_size = self.encoder_embeddings[self.mod_name_mapping[mod]].patch_size
-                num_tokens = int((value.shape[-1] / patch_size[-1]) * (value.shape[-2] / patch_size[-2]))
-                img_num_tokens = num_tokens
+                img_num_tokens = int((value.shape[-1] / patch_size[-1]) * (value.shape[-2] / patch_size[-2]))
                 image_size = (value.shape[-2], value.shape[-1])
 
-                # Run tokenizer encoder for tokenized input modalities
-                if self.mod_name_mapping[mod] in self.tokenizer:
-                    if 'lulc' in self.mod_name_mapping[mod]:
-                        # TODO Hack: One hot encoding for LULC classes. Generalize code.
-                        num_classes = 9 if self.version == 'v01' else 10
-                        if len(value.shape) == 3:
-                            value = F.one_hot(value.to(int), num_classes=num_classes).permute(0, 3, 1, 2).to(torch.float32)
-                        elif len(value.shape) == 4 and value.shape[1] == 1:
-                            value = F.one_hot(value.to(int).squeeze(1),
-                                              num_classes=num_classes).permute(0, 3, 1, 2).to(torch.float32)
-                        elif len(value.shape) == 4 and value.shape[1] == 10:
-                            # Correct shape
-                            pass
-                        else:
-                            raise ValueError('Expect LULC data with 10 classes. '
-                                'Either with class indexes and shape [B, H, W] or one hot encoded [B, 10, H, W].')
-
-                    # Tokenize
-                    value = self.tokenizer[self.mod_name_mapping[mod]].encode(value, device)[-1]
-
-                input_dict[self.mod_name_mapping[mod]] = {
+                # Init raw image input masks
+                value = {
                     "tensor": value,
-                    "input_mask": torch.zeros(B, num_tokens, dtype=torch.bool, device=device),
-                    "target_mask": torch.ones(B, num_tokens, dtype=torch.bool, device=device),
+                    "input_mask": torch.zeros(batch_size, img_num_tokens, dtype=torch.bool, device=device),
+                    "target_mask": torch.ones(batch_size, img_num_tokens, dtype=torch.bool, device=device),
+                    "decoder_attention_mask": torch.zeros(batch_size, img_num_tokens, dtype=torch.bool, device=device),
                 }
 
-            else:
-                raise ValueError(f"Unknown modality {mod}")
+            # Encode input and provide expected format
+            input_dict[self.mod_name_mapping[mod]] = init_full_input_modality(
+                value,
+                MODALITY_INFO,
+                self.mod_name_mapping[mod],
+                self.tokenizer,
+                device
+            )
 
         # Initialize output modalities
-        sum_tokens = 0
+        tokens_per_target = []
+        autoregression_schemes = []
         for mod in self.output_modalities:
             if mod in self.output_image_modalities:
                 mod_num_tokens = img_num_tokens
+                autoregression_schemes.append("roar")
             else:
                 # Get max length from modality info for sequence data
                 mod_num_tokens = self.decoder_embeddings[mod].max_length
-
-            sum_tokens += mod_num_tokens
+                autoregression_schemes.append("autoregressive")
+            tokens_per_target.append(mod_num_tokens)
 
             if mod in input_dict:
                 raise ValueError('Input and output of the same modality. Not supported.')
+            # TODO Implement!
             #     warnings.warn(f'The modality {mod} is used as input and output which is not possible for the same '
             #                   f'patches. Random sampling 50% of tokens as input and output.')
             #     input_dict[mod]['input_mask'] = torch.rand((B, mod_num_tokens), device=device) < 0.5
             #     input_dict[mod]['target_mask'] = ~input_dict[mod]['input_mask']
             #     input_dict[mod]['tensor'] = input_dict[mod]['tensor'].reshape(B, -1).to(torch.long)
 
-
-            input_dict = init_empty_target_modality(
-                input_dict, MODALITY_INFO, mod, B, mod_num_tokens, device
-            )
+            input_dict[mod] = init_empty_target_modality(MODALITY_INFO, mod, batch_size, mod_num_tokens, device)
 
         # Predict tokens of output modalities
         schedule = build_chained_generation_schedules(
             cond_domains=[self.mod_name_mapping[m] for m in self.modalities],
             target_domains=self.output_modalities,
-            tokens_per_target=[img_num_tokens] * len(self.output_modalities),
-            autoregression_schemes=["roar"] * len(self.output_modalities),
+            tokens_per_target=tokens_per_target,
+            autoregression_schemes=autoregression_schemes,
             decoding_steps=self.decoding_steps,
             token_decoding_schedules=["linear"] * len(self.output_modalities),
             temps=self.temps,
@@ -485,8 +490,8 @@ class TerraMindGeneration(nn.Module):
             seed=random.randint(-(2 ** 31), 2 ** 31 - 1),
             top_p=self.top_p,
             top_k=self.top_k,
-            num_tokens=sum_tokens,
-            text_tokenizer=self.tokenizer['caption'].text_tokenizer if 'caption' in self.tokenizer else None, # Test for coords
+            num_tokens=sum(tokens_per_target),
+            tokenizer=self.tokenizer
         )
 
         # TODO Vary timesteps based on codebook diversity
