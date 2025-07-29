@@ -28,6 +28,7 @@ from torch import nn
 import torch.nn.functional as F
 
 from .tm_utils import Block, DecoderBlock, LayerNorm
+from .encoder_embeddings import ImageEncoderEmbedding
 
 
 class TerraMind(nn.Module):
