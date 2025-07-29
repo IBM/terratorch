@@ -3,7 +3,23 @@ import warnings
 import re
 import torch
 from torch import nn
-from tokenizers import Tokenizer
+from tokenizers import Tokenizer, AddedToken
+from tokenizers.models import WordPiece
+from tokenizers.pre_tokenizers import BertPreTokenizer
+from tokenizers.normalizers import BertNormalizer
+from tokenizers.decoders import WordPiece as WordPieceDecoder
+
+
+def build_blank_wordpiece():
+    # Minimal tokens needed for testing
+    vocab = {"[PAD]": 0, "[UNK]": 1, "[SOS]": 2,"[EOS]": 3, "[S_0]": 4, "[S_1]": 5, "[S_2]": 6}
+    added_tokens = [AddedToken(w, normalized=False, special=True) for w in vocab.keys()]
+    tok = Tokenizer(WordPiece(vocab, unk_token="[UNK]"))
+    tok.normalizer = BertNormalizer()
+    tok.pre_tokenizer = BertPreTokenizer()
+    tok.decoder = WordPieceDecoder()
+    tok.add_tokens(added_tokens)
+    return tok
 
 
 def capitalize_sentences(text):
@@ -14,9 +30,12 @@ def capitalize_sentences(text):
 
 
 class CaptionTokenizer(nn.Module):
-    def __init__(self, tokenizer_file, pretrained=True, *args, **kwargs):
+    def __init__(self, tokenizer_file, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.text_tokenizer = Tokenizer.from_file(tokenizer_file)
+        if tokenizer_file is not None:
+            self.text_tokenizer = Tokenizer.from_file(tokenizer_file)
+        else:
+            self.text_tokenizer = build_blank_wordpiece()  # un-trained
         self.text_tokenizer.enable_padding()
 
     def encode(self, text: list[str], device: torch.device, eos_id=3, *args, **kwargs) -> dict[str, torch.Tensor]:
@@ -73,9 +92,12 @@ class CaptionTokenizer(nn.Module):
 
 
 class CoordsTokenizer(nn.Module):
-    def __init__(self, tokenizer_file, pretrained=True, *args, **kwargs):
+    def __init__(self, tokenizer_file, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.text_tokenizer = Tokenizer.from_file(tokenizer_file)
+        if tokenizer_file is not None:
+            self.text_tokenizer = Tokenizer.from_file(tokenizer_file)
+        else:
+            self.text_tokenizer = build_blank_wordpiece()  # un-trained
 
     def encode(self, coords: torch.Tensor, *args, **kwargs) -> dict[str, torch.Tensor]:
         """

@@ -18,10 +18,6 @@ import torch
 import logging
 from terratorch.registry import TERRATORCH_FULL_MODEL_REGISTRY
 from huggingface_hub import hf_hub_download
-from terratorch.models.backbones.terramind.tokenizer.text.text_tokenizer import (
-    CoordsTokenizer,
-    CaptionTokenizer,
-)
 
 logger = logging.getLogger("terramind")
 
@@ -35,14 +31,13 @@ except Exception as e:
     import_error = e
 
 try:
-    import tokenizers
+    from .text.text_tokenizer import CoordsTokenizer, CaptionTokenizer
     tokenizers_available = True
     import_error_tokenizers = None
 except Exception as e:
     logger.debug(f"Could not import tokenizers due to ImportError({e})")
     tokenizers_available = False
     import_error_tokenizers = e
-
 
 
 # Model definitions
@@ -424,28 +419,35 @@ def terramind_v01_tokenizer_lulc(**kwargs):
     return tokenizer
 
 
-def terramind_v01_caption_tokenizer(*args, **kwargs):
+def terramind_v01_caption_tokenizer(pretrained=True, tokenizer_file=None, *args, **kwargs):
     if not tokenizers_available:
         warnings.warn(f"Cannot import tokenizers. "
                       f"\nMake sure to install `pip install tokenizers`.")
         raise import_error_tokenizers
 
-    tokenizer_file = hf_hub_download(repo_id=pretrained_weights["terramind_v01_caption_tokenizer"]["hf_hub_id"],
-                                     filename=pretrained_weights["terramind_v01_caption_tokenizer"]["hf_hub_filename"])
+    if pretrained and tokenizer_file is not None:
+        tokenizer_file = hf_hub_download(
+            repo_id=pretrained_weights["terramind_v01_caption_tokenizer"]["hf_hub_id"],
+            filename=pretrained_weights["terramind_v01_caption_tokenizer"]["hf_hub_filename"]
+        )
+
     return CaptionTokenizer(
         tokenizer_file=tokenizer_file,
         *args, **kwargs
     )
 
 
-def terramind_v1_coords_tokenizer(*args, **kwargs):
+def terramind_v1_coords_tokenizer(pretrained=True, tokenizer_file=None, *args, **kwargs):
     if not tokenizers_available:
         warnings.warn(f"Cannot import tokenizers. "
                       f"\nMake sure to install `pip install tokenizers`.")
         raise import_error_tokenizers
 
-    tokenizer_file = hf_hub_download(repo_id=pretrained_weights["terramind_v1_coords_tokenizer"]["hf_hub_id"],
-                                     filename=pretrained_weights["terramind_v1_coords_tokenizer"]["hf_hub_filename"])
+    if pretrained and tokenizer_file is not None:
+        tokenizer_file = hf_hub_download(
+            repo_id=pretrained_weights["terramind_v1_coords_tokenizer"]["hf_hub_id"],
+            filename=pretrained_weights["terramind_v1_coords_tokenizer"]["hf_hub_filename"]
+        )
 
     return CoordsTokenizer(
         tokenizer_file=tokenizer_file,
