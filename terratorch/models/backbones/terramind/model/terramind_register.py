@@ -52,8 +52,8 @@ __all__ = [
     'terramind_v01_base_tim',
     'terramind_v1_base_tim',
     'terramind_v1_large_tim',
-    'terramind_v1_base_mae',
-    'terramind_v1_large_mae',
+    'terramind_v1_base_encdec',
+    'terramind_v1_large_encdec',
     'terramind_v01_base_generate',
     'terramind_v1_base_generate',
     'terramind_v1_large_generate',
@@ -259,12 +259,12 @@ def checkpoint_filter_fn_tim(state_dict, model: TerraMindTiM) -> dict:
                                f"({list(model_state_dict[k].shape)}), skipping weights.")
         if 'sampler.model.' + k in model_state_dict:
             # Copy weights for MAE model for TiM
-            mae_k = 'sampler.model.' + k
-            if v.shape == model_state_dict[mae_k].shape:
-                clean_dict[mae_k] = v
+            encdec_k = 'sampler.model.' + k
+            if v.shape == model_state_dict[encdec_k].shape:
+                clean_dict[encdec_k] = v
             else:
                 raise ValueError(f"Shape for {k} ({list(v.shape)}) does not match MAE model weights "
-                                 f"({list(model_state_dict[mae_k].shape)}). Cannot run chain of thoughts without MAE.")
+                                 f"({list(model_state_dict[encdec_k].shape)}). Cannot run chain of thoughts without MAE.")
 
     missing_params = set(model_state_dict.keys()) - set(clean_dict.keys())
     for k in missing_params:
@@ -285,13 +285,13 @@ def checkpoint_filter_fn_generate(state_dict, model: TerraMindGeneration) -> dic
     model_state_dict = model.state_dict()
     clean_dict = {}
     for k, v in state_dict.items():
-        mae_k = 'sampler.model.' + k
-        if mae_k in model_state_dict:
-            if v.shape == model_state_dict[mae_k].shape:
-                clean_dict[mae_k] = v
+        encdec_k = 'sampler.model.' + k
+        if encdec_k in model_state_dict:
+            if v.shape == model_state_dict[encdec_k].shape:
+                clean_dict[encdec_k] = v
             else:
                 logger.warning(f"Shape for {k} ({list(v.shape)}) does not match model weights "
-                               f"({list(model_state_dict[mae_k].shape)}), skipping weights.")
+                               f"({list(model_state_dict[encdec_k].shape)}), skipping weights.")
 
     missing_params = set(model_state_dict.keys()) - set(clean_dict.keys())
     for k in missing_params:
@@ -338,7 +338,7 @@ def build_terrammind_vit(
     return model
 
 
-def build_terrammind_mae(
+def build_terrammind_encdec(
         variant: str = None,
         pretrained: bool = False,
         ckpt_path: str | None = None,
@@ -563,12 +563,12 @@ def terramind_v1_large_tim(**kwargs):
 
 
 @TERRATORCH_FULL_MODEL_REGISTRY.register
-def terramind_v1_base_mae(**kwargs):
+def terramind_v1_base_encdec(**kwargs):
     assert 'encoder_embeddings' in kwargs and 'decoder_embeddings' in kwargs and 'modality_info' in kwargs, \
         ("TerraMind MAE expects encoder_embeddings, decoder_embeddings, and modality_info. "
          "For generation, use the terramind_v1_base_generate model.")
 
-    model = build_terrammind_mae(
+    model = build_terrammind_encdec(
         variant='terramind_v1_base',
         encoder_depth=12,
         decoder_depth=12,
@@ -587,12 +587,12 @@ def terramind_v1_base_mae(**kwargs):
 
 
 @TERRATORCH_FULL_MODEL_REGISTRY.register
-def terramind_v1_large_mae(**kwargs):
+def terramind_v1_large_encdec(**kwargs):
     assert 'encoder_embeddings' in kwargs and 'decoder_embeddings' in kwargs and 'modality_info' in kwargs, \
         ("TerraMind MAE expects encoder_embeddings, decoder_embeddings, and modality_info. "
          "For generation, use the terramind_v1_large_generate model.")
 
-    model = build_terrammind_mae(
+    model = build_terrammind_encdec(
         variant='terramind_v1_large',
         encoder_depth=24,
         decoder_depth=24,
