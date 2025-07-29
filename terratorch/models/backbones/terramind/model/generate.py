@@ -61,37 +61,6 @@ def merge_span_masking(input_seq, decoder_seq, sentinel_ids):
     return out_seq
 
 
-def sample_to_batch(mod_dict, device, domains):
-    mod_dict = {
-        modality: {k: v.unsqueeze(0).to(device, non_blocking=True) for k, v in d.items()}
-        for modality, d in mod_dict.items() if modality in domains
-    }
-
-    return mod_dict
-
-
-def unbatch(tensor):
-    return tensor.detach().squeeze(0).cpu()
-
-
-def batch_to_sample(mod_dict, domains):
-    mod_dict = {
-        modality: {k: unbatch(v) for k, v in d.items()}
-        for modality, d in mod_dict.items() if modality in domains
-    }
-
-    return mod_dict
-
-
-def batch_to_device(mod_dict, device, domains):
-    mod_dict = {
-        modality: {k: v.to(device, non_blocking=True) for k, v in d.items()}
-        for modality, d in mod_dict.items() if modality in domains
-    }
-
-    return mod_dict
-
-
 def cosine_schedule(num_steps, total_tokens):
     iters = np.arange(num_steps)
     base_value = 1
@@ -109,21 +78,6 @@ def linear_schedule(num_steps, total_tokens):
     schedule_tokens.sort()  # Sorts the array in ascending order.
     schedule_tokens = schedule_tokens[::-1]  # Reverses the array to descending order.
     return np.trim_zeros(schedule_tokens, 'b')  # Trims trailing zeros.
-
-
-def continue_schedule(schedule, num_current_tokens):
-    schedule_cumsum = np.cumsum(schedule)
-    keep_mask = schedule_cumsum > num_current_tokens
-    diff = schedule_cumsum[keep_mask][0] - num_current_tokens
-    new_schedule = schedule[keep_mask]
-    new_schedule[0] = diff
-    return new_schedule
-
-
-def decreasing_temp_schedule(max, min, token_schedule):
-    schedule_cumsum = np.cumsum(token_schedule) / np.sum(token_schedule)
-    temp_schedule = np.array([min + (max - min) * (1 - s) for s in schedule_cumsum])
-    return temp_schedule
 
 
 def onex_temp_schedule(max_t, min_t, token_schedule, power=0.5, min_linspace=1, max_linspace=100):
@@ -330,18 +284,6 @@ def custom_text(input_text, device, text_tokenizer, target_max_len=50, start_tok
     mod_dict['target_mask'] = target_mask.to(device)
     mod_dict['decoder_attention_mask'] = torch.zeros(all_ids.shape, dtype=torch.bool, device=device)
 
-    return mod_dict
-
-def expand_to_batch(mod_dict, batch_size):
-    for mod, d in mod_dict.items():
-        for k, v in d.items():
-            if k in ['tensor', 'input_mask', 'target_mask', 'decoder_attention_mask', 'mask_valid']:
-                B = v.shape[0]
-                if B == 1:
-                    mod_dict[mod][k] = repeat(v, "1 ... -> b ...", b=batch_size)
-                elif B != batch_size:
-                    raise ValueError(f"Invalid batch size: {B} instead of {batch_size}")
-                
     return mod_dict
 
 
