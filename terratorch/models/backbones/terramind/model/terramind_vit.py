@@ -14,6 +14,8 @@
 
 import math
 import random
+import warnings
+
 import torch
 from torch import nn
 from functools import partial
@@ -151,7 +153,6 @@ class TerraMindViT(nn.Module):
         self.encoder_embeddings = nn.ModuleDict(mod_embeddings)
         self.mod_name_mapping = mod_name_mapping
         self.modalities = list(mod_name_mapping.keys())  # Further code expects list
-        self.output_mod_name_mapping = {v: k for k, v in mod_name_mapping.items()}
 
         self.img_size = img_size
         self.merge_method = merge_method
@@ -250,7 +251,8 @@ class TerraMindViT(nn.Module):
             d = {self.modalities[0]: d}
         elif d is None:
             d = {}
-            assert len(kwargs), "No input provided."
+            if not len(kwargs):
+                raise ValueError("No input provided.")
 
         # Add additional keyword args to input dict
         for key, value in kwargs.items():
@@ -266,8 +268,8 @@ class TerraMindViT(nn.Module):
         num_tokens = []
         image_mod = []
         for mod, tensor in d.items():
-            assert mod in self.mod_name_mapping.keys(), \
-                f'No patch embedding layer found for modality {mod}.'
+            if mod not in self.mod_name_mapping.keys():
+                raise ValueError(f'No patch embedding layer found for modality {mod}.')
 
             mod_dict = self.encoder_embeddings[self.mod_name_mapping[mod]](tensor)
             # Add embeddings to patchified data
@@ -312,12 +314,12 @@ class TerraMindViT(nn.Module):
 
         elif self.merge_method == 'dict':
             out = [torch.split(x, num_tokens, dim=1) for x in out]
-            out = [{self.output_mod_name_mapping[mod]: x[i] for i, mod in enumerate(d.keys())} for x in out]
+            out = [{mod: x[i] for i, mod in enumerate(d.keys())} for x in out]
 
         elif self.merge_method is None:
             pass  # Do nothing
         else:
             raise NotImplementedError(f'Merging method {self.merge_method} is not implemented. '
-                                      f'Select one of mean, max or concat.')
+                                      f'Select one of mean, max, concat, dict, or None.')
 
         return out

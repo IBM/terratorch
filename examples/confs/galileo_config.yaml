@@ -1,5 +1,4 @@
 # lightning.pytorch==2.1.1
-custom_modules_path: examples/custom_modules/
 seed_everything: 42
 trainer:
   accelerator: auto
@@ -10,8 +9,8 @@ trainer:
   logger:
     class_path: TensorBoardLogger
     init_args:
-      save_dir: examples/
-      name: custom_modules_root
+      save_dir: tests/
+      name: all_ecos_random
   callbacks:
     - class_path: RichProgressBar
     - class_path: LearningRateMonitor
@@ -36,11 +35,11 @@ trainer:
         every_n_epochs: 2
         verbose: true
         save_top_k: 1
-  max_epochs: 4
+  max_epochs: 1
   check_val_every_n_epoch: 1
   log_every_n_steps: 20
   enable_checkpointing: true
-  default_root_dir: examples/
+  default_root_dir: tests/
 data:
   class_path: GenericNonGeoPixelwiseRegressionDataModule
   init_args:
@@ -82,12 +81,12 @@ data:
       - 1
       - 0
     check_stackability: false
-    train_data_root: tests/resources/inputs
-    train_label_data_root: tests/resources/inputs
-    val_data_root: tests/resources/inputs
-    val_label_data_root: tests/resources/inputs
-    test_data_root: tests/resources/inputs
-    test_label_data_root: tests/resources/inputs 
+    train_data_root: ../tests/resources/inputs
+    train_label_data_root: ../tests/resources/inputs
+    val_data_root: ../tests/resources/inputs
+    val_label_data_root: ../tests/resources/inputs
+    test_data_root: ../tests/resources/inputs
+    test_label_data_root: ../tests/resources/inputs 
     img_grep: "regression*input*.tif"
     label_grep: "regression*label*.tif"
     means:
@@ -106,18 +105,19 @@ data:
     - 1067.641
     no_label_replace: -1
     no_data_replace: 0
-
 model:
   class_path: terratorch.tasks.PixelwiseRegressionTask
   init_args:
     model_args:
       decoder: IdentityDecoder
-      backbone: alexnet_encoder 
-      backbone_num_channels: 6
+      backbone: galileo_tiny_encoder 
+      #backbone_num_channels: 6
+      #necks : 
+      # - name: PermuteDims
+      #      new_order: [0, 2, 1]
       head_dropout: 0.5708022831486758
       head_final_act: torch.nn.ReLU
       head_learned_upscale_layers: 2
-      decoder: IdentityDecoder
     loss: rmse
     ignore_index: -1
     freeze_backbone: true

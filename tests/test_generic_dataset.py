@@ -25,8 +25,8 @@ HLS_dataset_bands = [
     "SWIR_1",
     "SWIR_2",
     "CIRRUS",
-    "THEMRAL_INFRARED_1",
-    "THEMRAL_INFRARED_2",
+    "THERMAL_INFRARED_1",
+    "THERMAL_INFRARED_2",
 ]
 
 HLS_output_bands = [

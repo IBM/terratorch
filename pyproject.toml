@@ -40,7 +40,7 @@ classifiers = [
 ]
 
 dependencies = [
-  "torch",
+  "torch>2.0",
   "torchvision",
   "rioxarray",
   "albumentations==1.4.6",
@@ -61,8 +61,8 @@ dependencies = [
   "timm>=1.0.15",
   "pycocotools",
   "huggingface_hub",
-  "tifffile"
-
+  "tifffile",
+  "python-box",
 ]
 
 
@@ -83,6 +83,7 @@ test = [
   "peft>=0.15.0",
   "diffusers>=0.30.0",
   "dask",
+  "wandb",
 ]
 
 mmseg = [
@@ -104,6 +105,10 @@ visualize = [
 
 peft = [
   "peft>=0.15.0"
+]
+
+galileo = [
+  "galileo @ git+https://github.com/Joao-L-S-Almeida/terratorch-galileo.git"
 ]
 
 [project.urls]
