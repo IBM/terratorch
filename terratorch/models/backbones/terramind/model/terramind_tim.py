@@ -334,6 +334,8 @@ class TerraMindTiM(nn.Module):
         tim_dict = {}
         img_num_tokens = 196  # Default value if no images are provided
         for mod, value in list(d.items()):
+            if self.mod_name_mapping[mod] in self.image_modalities:
+                input_size = value.shape
             if self.mod_name_mapping[mod] in self.tokenizer:
                 # Tokenize
                 with torch.no_grad():
@@ -347,7 +349,7 @@ class TerraMindTiM(nn.Module):
             if self.mod_name_mapping[mod] in self.image_modalities:
                 # Get image size and num tokens
                 patch_size = self.encoder_embeddings[self.mod_name_mapping[mod]].patch_size
-                img_num_tokens = int((value.shape[-1] / patch_size[-1]) * (value.shape[-2] / patch_size[-2]))
+                img_num_tokens = int((input_size[-1] / patch_size[-1]) * (input_size[-2] / patch_size[-2]))
 
                 # Init raw image input masks
                 value = {

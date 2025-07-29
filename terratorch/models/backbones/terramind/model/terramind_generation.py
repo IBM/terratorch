@@ -244,6 +244,8 @@ class TerraMindGeneration(nn.Module):
         # Default values if no images are provided
         img_num_tokens, image_size = 196, (224, 224)
         for mod, value in d.items():
+            if self.mod_name_mapping[mod] in self.image_modalities:
+                input_shape = value.shape
             if self.mod_name_mapping[mod] in self.tokenizer:
                 # Tokenize
                 value = self.tokenizer[self.mod_name_mapping[mod]].encode(value, device)
@@ -253,8 +255,8 @@ class TerraMindGeneration(nn.Module):
             if self.mod_name_mapping[mod] in self.image_modalities:
                 # Get image size and num tokens
                 patch_size = self.encoder_embeddings[self.mod_name_mapping[mod]].patch_size
-                img_num_tokens = int((value.shape[-1] / patch_size[-1]) * (value.shape[-2] / patch_size[-2]))
-                image_size = (value.shape[-2], value.shape[-1])
+                img_num_tokens = int((input_shape[-1] / patch_size[-1]) * (input_shape[-2] / patch_size[-2]))
+                image_size = (input_shape[-1], input_shape[-2])
 
                 # Init raw image input masks
                 value = {
