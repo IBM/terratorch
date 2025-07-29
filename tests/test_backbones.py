@@ -230,11 +230,25 @@ def test_prithvi_vit_adapter(backbone, input_224):
 
 
 @pytest.mark.parametrize(
-    "model_name", ["terramind_v1_base", "terramind_v1_large", "terramind_v1_base_tim", "terramind_v1_large_tim"]
+    "model_name", ["terramind_v1_base", "terramind_v1_large"]
 )
 def test_terramind(model_name):
     # default should have 3 channels
-    backbone = BACKBONE_REGISTRY.build(model_name, modalities=["S2L2A"])
-    output = backbone({"S2L2A": torch.ones((1, 12, 224, 224))})
+    backbone = BACKBONE_REGISTRY.build(model_name, modalities=["S2L2A", "LULC", "coords", {"new": 1}])
+    output = backbone({"S2L2A": torch.ones((1, 12, 224, 224))},
+                      LULC=torch.ones((1, 1, 224, 224)),  # Test with kwargs inputs
+                      coords=torch.ones((1, 2)),
+                      new=torch.ones((1, 1, 224, 224)),
+                      unknown='Test',
+                      )
+    gc.collect()
+
+@pytest.mark.parametrize(
+    "model_name", ["terramind_v1_base_tim", "terramind_v1_large_tim"]
+)
+def test_terramind_tim(model_name):
+    # default should have 3 channels
+    backbone = BACKBONE_REGISTRY.build(model_name, modalities=["S2L2A", "LULC"], tim_modalities=["coords", "DEM"])
+    output = backbone({"S2L2A": torch.ones((1, 12, 224, 224))}, LULC=torch.ones((1, 1, 224, 224)))
 
     gc.collect()
