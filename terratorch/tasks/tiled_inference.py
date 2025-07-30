@@ -306,6 +306,11 @@ def tiled_inference(
     original_device = input_batch.get_device()
     input_batch = input_batch.cpu()
 
+    # It handles cases in which the device is
+    # returned as a negative number
+    if original_device < 0:
+        original_device = "cpu"
+
     input_batch_size = input_batch.shape[0]
     h_img, w_img = input_batch.shape[-2:]
 
