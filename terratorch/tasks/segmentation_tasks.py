@@ -380,8 +380,7 @@ class SemanticSegmentationTask(TerraTorchTask):
                 for key in ["image", "mask", "prediction"]:
                     batch[key] = batch[key].cpu()
                 sample = unbind_samples(batch)[0]
-                #                fig = datamodule.val_dataset.plot(sample)
-                fig = False
+                fig = datamodule.val_dataset.plot(sample)
                 if fig:
                     summary_writer = self.logger.experiment
                     if hasattr(summary_writer, "add_figure"):
