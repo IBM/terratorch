@@ -302,14 +302,9 @@ def tiled_inference(
         raise ValueError("input for tiled inference must be either a torch.Tensor or a dict of torch.Tensors")
 
     device = input_batch.device
-    # Move inputs to CPU to avoid out-of-memory errors
-    original_device = input_batch.get_device()
-    input_batch = input_batch.cpu()
 
-    # It handles cases in which the device is
-    # returned as a negative number
-    if original_device < 0:
-        original_device = "cpu"
+    # Move inputs to CPU to avoid out-of-memory errors
+    input_batch = input_batch.cpu()
 
     input_batch_size = input_batch.shape[0]
     h_img, w_img = input_batch.shape[-2:]
@@ -394,7 +389,7 @@ def tiled_inference(
         raise RuntimeError(msg)
     if average_patches:
         output = preds / preds_count.unsqueeze(1)
-        output = output.to(original_device)
+        output = output.to(device)
         return output
-    output = preds.to(original_device)
+    output = preds.to(device)
     return output
