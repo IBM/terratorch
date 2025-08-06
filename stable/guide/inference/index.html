@@ -1819,15 +1819,16 @@ It is just important, that the output of the passed forward function returns a t
 
 
 <h4 id="terratorch.tasks.tiled_inference.tiled_inference" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">terratorch</span><span class="o">.</span><span class="n">tasks</span><span class="o">.</span><span class="n">tiled_inference</span><span class="o">.</span><span class="n">tiled_inference</span><span class="p">(</span><span class="n">model_forward</span><span class="p">,</span> <span class="n">input_batch</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="n">inference_parameters</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <code class="highlight language-python"><span class="n">terratorch</span><span class="o">.</span><span class="n">tasks</span><span class="o">.</span><span class="n">tiled_inference</span><span class="o">.</span><span class="n">tiled_inference</span><span class="p">(</span><span class="n">model_forward</span><span class="p">,</span> <span class="n">input_batch</span><span class="p">,</span> <span class="n">out_channels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">inference_parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">crop</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">192</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">h_crop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">w_crop</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">h_stride</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">w_stride</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">average_patches</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">blend_overlaps</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="s1">&#39;reflect&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
 
 <a href="#terratorch.tasks.tiled_inference.tiled_inference" class="headerlink" title="Permanent link">#</a></h4>
 
 
     <div class="doc doc-contents first">
 
-        <p>Divide an image into (potentially) overlapping tiles and perform inference on them.
-Additionally, rebatch for increased GPU utilization.</p>
+        <p>Divide an image into (potentially) overlapping chips and perform inference on them.
+Additionally, re-batch for varibale GPU utilization defined by crop size and batch_size.
+The overlap between chips is defined with: crop - stride - 2 * delta.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -1886,7 +1887,7 @@ Additionally, rebatch for increased GPU utilization.</p>
               </div>
             </td>
             <td>
-                <em>required</em>
+                  <code>None</code>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -1898,38 +1899,179 @@ Additionally, rebatch for increased GPU utilization.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Parameters to be used for the process.</p>
+                <p>Parameters to be used for inference.
+Deprecated, please us directly pass the parameters to tiled_inference.</p>
               </div>
             </td>
             <td>
-                <em>required</em>
+                  <code>None</code>
             </td>
           </tr>
-      </tbody>
-    </table>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="torch.Tensor">Tensor</span></code>
+                <code>crop</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>torch.Tensor: The result of the inference</p>
+                <p>height and width of the smaller chips. Ignored if h_crop or w_crop is provided. Defaults to 224.</p>
               </div>
+            </td>
+            <td>
+                  <code>224</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>stride</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>size of the stride. Ignored if h_stride or w_stride is provided. Defaults to 192.</p>
+              </div>
+            </td>
+            <td>
+                  <code>192</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>delta</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>size of the border cropped from each chip. Defaults to 8.</p>
+              </div>
+            </td>
+            <td>
+                  <code>8</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>h_crop</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>height of the smaller chips.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>w_crop</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>width of the smaller chips.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>h_stride</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>size of the stride on the y-axis.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>w_stride</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>size of the stride on the x-axis.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>average_patches</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to average the overlapping regions. Defaults to True.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>batch_size</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Number of chips per forward pass. Defaults to 16.</p>
+              </div>
+            </td>
+            <td>
+                  <code>16</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>padding</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | <span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Padding mode for input image to reduce artefacts on edges. Deactivate padding with False.
+Defaults to reflect.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;reflect&#39;</code>
             </td>
           </tr>
       </tbody>
     </table>
+        <p>Returns:
+    torch.Tensor: The result of the inference</p>
 
 
     </div>
