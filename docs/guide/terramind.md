@@ -1,9 +1,9 @@
 # TerraMind
 
-TerraMind models are fully integrated into TerraTorch and support standard fine-tuning, Thinking-in-Modalities (TiM), and generation tasks.
-All tokenizers are registered in `FULL_MODEL_REGISTRY` and can be used in Python scripts for encoding or reconstruction.
+TerraMind is a multi-modal, generative foundation model build by IBM and ESA. 
+It is fully integrated into TerraTorch and support standard fine-tuning, Thinking-in-Modalities (TiM), and generation tasks.
 
-More information about the TerraMind model: [https://ibm.github.io/terramind/](https://ibm.github.io/terramind/)
+More information about the TerraMind models: [https://ibm.github.io/terramind/](https://ibm.github.io/terramind/)
 
 If you encounter any issues, please create an issue in our [GitHub repo](https://github.com/IBM/terramind).
 
@@ -64,7 +64,12 @@ Modalities usable as `tim_modalities` or `output_modalities`: `S2L2A`, `S1GRD`, 
 
 ### Fine-Tuning
 
-Use `modalities` to define input types. You can specify them via `BACKBONE_FACTORY` or `model_args`. If you use multiple modalities, the encoder merges the embeddings across modalities by averaging (default).
+Use `modalities` to define input types. You can specify them in `BACKBONE_FACTORY.build` or `model_args`.
+
+TerraMind uses seperated tokens per modality. If you use multiple modalities, these tokens need to be merged for each patch embedding to be compatible with the decoders.  
+By default, the encoder merges the embeddings across image modalities by averaging (`mean`). Another approach can be selected with `merge_method`:
+`max` takes the maximum value over all image modality while `concat` concatenates the modalities along the embedding dimension which increases the decoder input.
+In a custom python script, you can also use `dict` which returns a dictionary with all embeddings rather than a tensor, or `None` which keeps the modalities as seperated tokens.
 
 ```python
 from terratorch.registry import BACKBONE_REGISTRY
@@ -98,6 +103,9 @@ necks:
 ```
 
 You can find an example for fine-tuning TerraMind with multi-modal inputs in this [notebook](https://github.com/IBM/terramind/blob/main/notebooks/terramind_v1_base_sen1floods11.ipynb) and this [config](https://github.com/IBM/terramind/blob/main/configs/terramind_v1_base_sen1floods11.yaml) file.
+
+Set `modality_drop_rate` to train TerraMind that supports multiple modalities but can handle inference on a subset (e.g., a single input). 
+During training, modalities are randomly dropped according to the rate (e.g., with `0.1` each modality is dropped in 10% of all batches).
 
 ### Subset of Input Bands
 
@@ -166,7 +174,7 @@ backbone_modalities:
 
 Note that in our experience it is always better to reuse a patch embedding, even with other satellites (e.g. using S-2 or RGB modalities for other optical sensors).
 The model more quickly adapts to the new data rather than learning it from scratch.
-The current implementation cannot reuse a specific patch embedding multiple times. However, you could use up to three optical modalities and two SAR modalities with the current setting. For example: 
+The current implementation cannot reuse a specific patch embedding multiple times. However, you could use up to three optical modalities (using S2L1C, S2L2A, and RGB) and two SAR modalities (S1GRD and S1RTC). For example: 
 ```yaml
 backbone_modalities:
   - S2L2A
@@ -246,7 +254,8 @@ model = BACKBONE_REGISTRY.build(
 ```
 
 Use `standardize=True` to automatically apply correct scaling to the inputs and generations.
-Alternatively, you can find the standardization values from pre-training [here](https://github.com/IBM/terratorch/blob/53768e684a50e3f7e37d654f499dcccb4373940b/terratorch/models/backbones/terramind/model/terramind_register.py#L130)
+Alternatively, you can find the standardization values from pre-training [here](https://github.com/IBM/terratorch/blob/53768e684a50e3f7e37d654f499dcccb4373940b/terratorch/models/backbones/terramind/model/terramind_register.py#L130).
+The model requires all pre-trained bands for the inputs.
 
 Demos are provided in [terramind_generation.ipynb](https://github.com/IBM/terramind/blob/main/notebooks/terramind_generation.ipynb) and [any_to_any_generation.ipynb](https://github.com/IBM/terramind/blob/main/notebooks/terramind_any_to_any_generation.ipynb).
 You can use TerraTorch's large-tile-inference to generate images of larger scenes, which is demonstrated in [large_tile_generation.ipynb](https://github.com/IBM/terramind/blob/main/notebooks/large_tile_generation.ipynb).
