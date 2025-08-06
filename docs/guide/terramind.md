@@ -3,7 +3,7 @@
 TerraMind models are fully integrated into TerraTorch and support standard fine-tuning, Thinking-in-Modalities (TiM), and generation tasks.
 All tokenizers are registered in `FULL_MODEL_REGISTRY` and can be used in Python scripts for encoding or reconstruction.
 
-More information: [https://ibm.github.io/terramind/](https://ibm.github.io/terramind/)
+More information about the TerraMind model: [https://ibm.github.io/terramind/](https://ibm.github.io/terramind/)
 
 If you encounter any issues, please create an issue in our [GitHub repo](https://github.com/IBM/terramind).
 
@@ -46,10 +46,10 @@ See [New Modalities](#new-modalities) for alternatives.
 
 Modalities usable as `tim_modalities` or `output_modalities`: `S2L2A`, `S1GRD`, `S1RTC`, `DEM`, `LULC`, `NDVI`, `Coordinates`
 
-!!! note
+!!! info
     Coordinate support is added in `terratorch==1.1`. Install TerraTorch from a recent version or from the `main` branch.
 
-??? note "Experimental Models (v0.1)"
+??? quote "Experimental Models (v0.1)"
     TerraMind v0.1 models (TM-B-single in the paper):
     ```yaml
         terramind_v01_base
@@ -123,7 +123,7 @@ backbone_bands:
     - THERMAL_2  # New band
 ```
 
-??? note "List of pre-trained bands"
+??? into "List of pre-trained bands"
     The name of the pre-trained bands are [here](https://github.com/IBM/terratorch/blob/53768e684a50e3f7e37d654f499dcccb4373940b/terratorch/models/backbones/terramind/model/terramind_register.py#L77) specified:
     ```yaml
     S2L1C / S2L2A:
