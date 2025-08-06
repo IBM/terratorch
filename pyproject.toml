@@ -8,14 +8,15 @@ include = ["terratorch*"]
 [project]
 name = "terratorch"
 version = "1.0.2"
-description = "TerraTorch - A model training toolkit for geospatial tasks"
+description = "TerraTorch - The geospatial foundatoin model fine-tuning toolkit"
 license = { "text" = "Apache License, Version 2.0" }
 readme = "README.md"
 requires-python = ">=3.10"
 keywords = ["fine-tuning", "geospatial foundation models", "artificial intelligence"]
 authors = [
-  { name = "Carlos Gomes", email = "carlos.gomes@ibm.com" },
-  { name = "Joao Lucas de Sousa Almeida", email = "joao.lucas.sousa.almeida@ibm.com"},
+  { email = "terratorch@ibm.com"},
+  { name = "Carlos Gomes"},
+  { name = "Joao Lucas de Sousa Almeida"},
   { name = "Romeo Kienzler"},
   { name = "Benedikt Blumenstiel"},
   { name = "Francesc Martí Escofet"},
@@ -32,14 +33,14 @@ authors = [
 classifiers = [
 #  "Development Status :: 2 - Pre-Alpha",
 #  "Programming Language :: Python",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
 #  "Programming Language :: Python :: Implementation :: CPython",
 ]
 
 dependencies = [
-  "torch",
+  "torch>2.0",
   "torchvision",
   "rioxarray",
   "albumentations==1.4.6",
@@ -60,8 +61,8 @@ dependencies = [
   "timm>=1.0.15",
   "pycocotools",
   "huggingface_hub",
-  "tifffile"
-
+  "tifffile",
+  "python-box",
 ]
 
 
@@ -80,8 +81,9 @@ test = [
   "pytest-coverage",
   "coverage-badge",
   "peft>=0.15.0",
-  "diffusers>=0.30.0"
-
+  "diffusers>=0.30.0",
+  "dask",
+  "wandb",
 ]
 
 mmseg = [
@@ -103,6 +105,10 @@ visualize = [
 
 peft = [
   "peft>=0.15.0"
+]
+
+galileo = [
+  "galileo @ git+https://github.com/Joao-L-S-Almeida/terratorch-galileo.git"
 ]
 
 [project.urls]
