@@ -73,7 +73,7 @@ extra:
 
 site_url: https://ibm.github.io/terratorch/
 repo_url: https://github.com/IBM/terratorch
-edit_uri: edit/main/docs
+edit_uri: edit/update-docs/docs
 nav:
   - Welcome: index.md
 
