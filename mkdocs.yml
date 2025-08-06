@@ -86,9 +86,9 @@ nav:
 #      - Generic Datamodules: guide/generic_datasets.md
 #      - Custom Datasets: guide/custom_datasets.md
     - Models:
-      - guide/models.md  # Overview
+      - Models: guide/models.md  # Overview
       - Model Registry: guide/registry.md
-      - guide/encoder_decoder_factory.md
+      - Encoder-Decoder Factory: guide/encoder_decoder_factory.md
       - TerraMind: guide/terramind.md
       - Prithvi EO: guide/prithvi_eo.md
 # TODO Add guide for a general approach to a new use case
