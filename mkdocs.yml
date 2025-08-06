@@ -89,9 +89,8 @@ nav:
       - guide/models.md  # Overview
       - Model Registry: guide/registry.md
       - guide/encoder_decoder_factory.md
-# TODO Add guide for TerraMind and Prithvi
-#      - TerraMind: guide/terramind.md
-#      - Prithvi EO: guide/prithvi_eo.md
+      - TerraMind: guide/terramind.md
+      - Prithvi EO: guide/prithvi_eo.md
 # TODO Add guide for a general approach to a new use case
 #    - New Use Case: guide/new_use_case.md
 # TODO Add guide for fine-tuning
