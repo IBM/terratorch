@@ -1,17 +1,18 @@
 # TerraMind
 
-The TerraMind models are fully integrated into TerraTorch and support standard fine-tuning, TiM tunig and generations.
-The Tokenizers are registered in the `FULL_MODEL_REGISTRY` and can be used in python scripts for encoding or reconstructions.
+TerraMind models are fully integrated into TerraTorch and support standard fine-tuning, Thinking-in-Modalities (TiM), and generation tasks.
+All tokenizers are registered in `FULL_MODEL_REGISTRY` and can be used in Python scripts for encoding or reconstruction.
 
-More information at https://ibm.github.io/terramind/.
+More information: [https://ibm.github.io/terramind/](https://ibm.github.io/terramind/)
 
-If you have an problem, please create an issue in our [GitHub repo](https://github.com/IBM/terramind).
+If you encounter any issues, please create an issue in our [GitHub repo](https://github.com/IBM/terramind).
 
-## Model versions
+---
 
-Here is an overview of all available 
+## Model Versions
 
-TerraMind 1.0 backbones (`BACKBONE_REGISTRY`):
+TerraMind 1.0 Backbones (`BACKBONE_REGISTRY`)
+
 ```text
 terramind_v1_base
 terramind_v1_large
@@ -19,13 +20,15 @@ terramind_v1_base_tim
 terramind_v1_large_tim
 ```
 
-TerraMind 1.0 generative models (`FULL_MODEL_REGISTRY`):
+TerraMind 1.0 Generative Models (`FULL_MODEL_REGISTRY`)
+
 ```text
 terramind_v1_base_generate
 terramind_v1_large_generate
 ```
 
-TerraMind 1.0 Tokenziers (`FULL_MODEL_REGISTRY`):
+TerraMind 1.0 Tokenizers (`FULL_MODEL_REGISTRY`)
+
 ```text
 terramind_v1_tokenizer_s2l2a
 terramind_v1_tokenizer_s1rtc
@@ -35,79 +38,78 @@ terramind_v1_tokenizer_lulc
 terramind_v1_tokenizer_ndvi
 ```
 
-The backbones support the following pre-trained modalities as raw inputs: `S2L1C`, `S2L2A`, `RGB`, `S1GRD`, `S1RTC`, `DEM`, and `Coordinates`.
-The RGB patch embedding was pre-trained on S2 RGB inputs (0-255).
+Raw input modalities supported by backbones: `S2L1C`, `S2L2A`, `RGB`, `S1GRD`, `S1RTC`, `DEM`, and `Coordinates`
+(*Note: RGB patch embedding was pre-trained on S2 RGB inputs \[0–255].*)
 
-Additionally, the following inputs can be used via Tokenizers (not recommended for fine-tuning, see section [new modalities](#new-modalities)): `LULC` and `NDVI`.
+Tokenized input modalities (use with caution for fine-tuning): `LULC`, `NDVI`
+See [New Modalities](#new-modalities) for alternatives.
 
-The following modalities can be used as `tim_modalities` or `output_modalities`:  `S2L2A`, `S1GRD`, `S1RTC`, `DEM`, `LULC`, `NDVI`, and `Coordinates`.
+Modalities usable as `tim_modalities` or `output_modalities`: `S2L2A`, `S1GRD`, `S1RTC`, `DEM`, `LULC`, `NDVI`, `Coordinates`
 
 !!! note
-    Support for coordinates is added in `terratorch==1.1`. Make sure to use the most recent version or install from `main`.
+    Coordinate support is added in `terratorch==1.1`. Install TerraTorch from a recent version or from the `main` branch.
 
-
-??? note "Experimental models (v0.1)"
-    TerraMind v0.1 models (refert to TM-B-single in the paper):
+??? note "Experimental Models (v0.1)"
+    TerraMind v0.1 models (TM-B-single in the paper):
     ```yaml
-    terramind_v01_base
-    terramind_v01_base_tim
-    terramind_v01_base_generate
+        terramind_v01_base
+        terramind_v01_base_tim
+        terramind_v01_base_generate
     ```
-    This model is experimental and not publicly accessible. It supports only `S2L2A` as raw input modality and `Captions` as input and output modality.
+    These are experimental and not publicly released. It supports only `S2L2A` as raw input and `Captions` as input and output modality.
+
+---
 
 ## Usage
 
-### Fine-tuning
+### Fine-Tuning
 
-TerraMind requires the additional parameter `modalities` to define the input types. You can pass it to `BACKBONE_FACTORY` or define it as `model_args`.
-Additionally, you can define how the encoder output of multiple modalities are merged. By default, averages over all image modalities of each patch.  
+Use `modalities` to define input types. You can specify them via `BACKBONE_FACTORY` or `model_args`. If you use multiple modalities, the encoder merges the embeddings across modalities by averaging (default).
 
 ```python
 from terratorch.registry import BACKBONE_REGISTRY
-
 model = BACKBONE_REGISTRY.build("terramind_v1_base", pretrained=True, modalities=["S2L2A", "S1GRD"])
+
+# merge_method='mean' by default. Alternatives are max, concat, dict, and None
 ```
 
 ```yaml
-    model_factory: EncoderDecoderFactory
-    model_args:
-      backbone: terramind_v1_base
-      backbone_pretrained: True
-      backbone_modalities:  # List your raw inputs
-        - S2L2A
-        - S1GRD
-      backbone_merge_method: mean  # mean (default), max, and concat working in TerraTorch fine-tuning (for custom scripts: dict, None).
+model_factory: EncoderDecoderFactory
+model_args:
+  backbone: terramind_v1_base
+  backbone_pretrained: True
+  backbone_modalities:
+    - S2L2A
+    - S1GRD
+  backbone_merge_method: mean  # Options: mean (default), max, concat
 ```
 
-The output of the backbone is a list of tensors, specically, the outputs of each model layer. With the shape \[batch, token, embedding]. Note that Terramind v1 does not use a CLS token.
-If you want to combine the model with a hierarchical decoder, such as UNetDecoder or UperNetDecoder, use the following necks:
+The backbone output is a list of tensors \[batch, token, embedding] (no CLS token).
+For hierarchical decoders (e.g., UNet), use the following necks:
 
 ```yaml
 necks:
   - name: ReshapeTokensToImage
-    remove_cls_token: False  # Need to be False because of missing CLS token in TerraMind
-  - name: SelectIndices  # Select layers used in the UNet decoder
+    remove_cls_token: False
+  - name: SelectIndices
     indices: [2, 5, 8, 11]  # Base model
-#            indices: [5, 11, 17, 23]  # Large model
-  - name: LearnedInterpolateToPyramidal  # Upscale outputs to UNet input size
+  # indices: [5, 11, 17, 23]  # Large model
+  - name: LearnedInterpolateToPyramidal
 ```
 
 You can find an example for fine-tuning TerraMind with multi-modal inputs in this [notebook](https://github.com/IBM/terramind/blob/main/notebooks/terramind_v1_base_sen1floods11.ipynb) and this [config](https://github.com/IBM/terramind/blob/main/configs/terramind_v1_base_sen1floods11.yaml) file.
 
-### Subset of input bands
+### Subset of Input Bands
 
-If you only want to use a subset of the original bands using in pre-training, you can specify them in a dict with the `bands` parameter. 
-The dict key is the name of the modality and the values are the name of the bands you want to use. 
-If you have new unseen bands, give them a new name and TerraTorch initalizes the patch embedding of these channels with new random weights.
-If you don't specify the bands of a modality, all bands are expected. 
+Use the `bands` dict to select a subset of the pre-trained bands. Unlisted modalities expect all bands as inputs.
 
-Here is an example, where we want to use the Sentinel-2 embeddings for Landsat-8 data. `S2L1C` still needs to be part of the modality name so that TerraTorch knows which patch embeddings to load (the name can be quite flexible, e.g., upper or lower case works).
+Here is an example that uses the Sentinel-2 embeddings for Landsat-8 data. `S2L1C` still needs to be part of the modality name so that TerraTorch knows which patch embeddings to load (the name can be quite flexible, e.g., upper or lower case works).
 ```yaml
 backbone_modalities:
   - S2L1C_L8
   - S1GRD
 backbone_bands:
-  S2L1C_L8:  # Modality name has to match
+  S2L1C_L8:  # Modality name has to match backbone_modalities
     - COASTAL_AEROSOL
     - BLUE
     - GREEN
@@ -121,37 +123,35 @@ backbone_bands:
     - THERMAL_2  # New band
 ```
 
-The name of the pre-trained bands are [here](https://github.com/IBM/terratorch/blob/53768e684a50e3f7e37d654f499dcccb4373940b/terratorch/models/backbones/terramind/model/terramind_register.py#L77) specified:
-```yaml
-S2L1C / S2L2A:
-  - COASTAL_AEROSOL
-  - BLUE
-  - GREEN
-  - RED
-  - RED_EDGE_1
-  - RED_EDGE_2
-  - RED_EDGE_3
-  - NIR_BROAD
-  - NIR_NARROW
-  - WATER_VAPOR
-  - CIRRUS  # Only in S2L1C
-  - SWIR_1
-  - SWIR_2
+??? note "List of pre-trained bands"
+    The name of the pre-trained bands are [here](https://github.com/IBM/terratorch/blob/53768e684a50e3f7e37d654f499dcccb4373940b/terratorch/models/backbones/terramind/model/terramind_register.py#L77) specified:
+    ```yaml
+    S2L1C / S2L2A:
+      - COASTAL_AEROSOL
+      - BLUE
+      - GREEN
+      - RED
+      - RED_EDGE_1
+      - RED_EDGE_2
+      - RED_EDGE_3
+      - NIR_BROAD
+      - NIR_NARROW
+      - WATER_VAPOR
+      - CIRRUS  # Only in S2L1C
+      - SWIR_1
+      - SWIR_2 
+    S1GRD / S1RTC:
+      - VV
+      - VH 
+    RGB:
+      - BLUE
+      - GREEN
+      - RED 
+    DEM: 
+      - DEM
+    ```
 
-S1GRD / S1RTC:
-  - VV
-  - VH
-
-RGB:
-  - BLUE
-  - GREEN
-  - RED
-  
-DEM: 
-  - DEM
-```
-
-## New modalities
+### New modalities
 
 You might want to use input modalities which are not used with raw inputs during pre-training. 
 Therefore, you can define a new patch embedding by providing a dict as an input in the modality list, which specifies the new name and the number of input channels.
@@ -164,33 +164,35 @@ backbone_modalities:
   - PLANET: 6
 ```
 
-Note that in our experience it is always better to reuse a patch embedding, even with other satellite (e.g. using S2 or RGB modalities for optical ones).
-The model can more quickly adapt to different data scaling etc. compared to learning it from scratch.
-Note that with the current implementation, you cannot reuse a specific patch embedding mulitple times. However, you could also do something like this:
+Note that in our experience it is always better to reuse a patch embedding, even with other satellites (e.g. using S-2 or RGB modalities for other optical sensors).
+The model more quickly adapts to the new data rather than learning it from scratch.
+The current implementation cannot reuse a specific patch embedding multiple times. However, you could use up to three optical modalities and two SAR modalities with the current setting. For example: 
 ```yaml
 backbone_modalities:
   - S2L2A
   - NDVI: 1
   - S2L1C_PLANET # Reuse S2L1C patch embedding
 backbone_bands:
-  S2L1C_PLANET:  
+  S2L1C_PLANET:
     - BLUE
     - GREEN
     - RED
-    - ...  
+    - ...
 ```
 
-If you use a single new modality, you can also define it via: 
+To define a single new modality directly:
+
 ```yaml
-    model_args:
-      backbone: terramind_v1_base
-      backbone_pretrained: True
-      backbone_modalities: [] # Set list to None or empty list
-      backbone_in_chans: 3  # Define in channels of your modality, defaults to 3.
+model_args:
+  backbone: terramind_v1_base
+  backbone_pretrained: True
+  backbone_modalities: []
+  backbone_in_chans: 3
 ```
-The new modality is called `image` and the patch embedding will be randomly initialized. 
-You can pass the data to the model as a PyTorch tensor or in a dict `{"image": tensor}`. 
 
+This creates a random patch embedding named `image`, usable with a raw tensor or `{"image": tensor}` as model input.
+
+---
 
 ## Thinking-in-Modalities (TiM)
 
@@ -200,81 +202,78 @@ So, TerraMind can generate any missing modality as an intermediate step — an a
 We refer to the [paper](https://arxiv.org/pdf/2504.11171) for details.
 
 !!! warning "Important"
-    Thinking-in-Modalities only works with pre-trained modalities as inputs and with all input bands.
-    The Encoder-Decoder model generating the TiM modalities is never trained to ensure efficient fine-tuning.
-    Therefore, it cannot adapt to other inputs such as new modalities or subsets of the pre-trained bands.
-    If this is the case for you, you cannot use the TiM model.
+    TiM only works with fully pre-trained raw inputs (all bands, no `bands` parameter).
+    The generator model is frozen and cannot adapt to unseen inputs such as subsets of pre-trained bands.
+    If this is the case for you, you cannot use the TiM models.
 
-You can use TiM models by just adding the `_tim` suffix to the model name and specifing the `tim_modalities`.
-
-```python
-from terratorch.registry import BACKBONE_REGISTRY
-
-model = BACKBONE_REGISTRY.build("terramind_v1_base_tim", pretrained=True, modalities=["S2L2A", "S1GRD"], tim_modalities=["LULC"])
-```
-
-```yaml
-    model_factory: EncoderDecoderFactory
-    model_args:
-      backbone: terramind_v1_base_tim
-      backbone_pretrained: True
-      backbone_modalities:
-        - S2L2A
-      backbone_tim_modalities:
-        - LULC
-```
-
-Here is a [config](https://github.com/IBM/terramind/blob/main/configs/terramind_v1_base_tim_lulc_sen1floods11.yaml) example for fine-tuning. 
-
-## Generation
-
-You can perform any-to-any generation with the `terramind_v1_base_generate` and `terramind_v1_large_generate` models:
+To use, suffix `_tim` to the model name and set `tim_modalities`.
 
 ```python
-from terratorch.registry import BACKBONE_REGISTRY
-
 model = BACKBONE_REGISTRY.build(
-    'terramind_v1_base_generate',
-    modalities=['S2L2A'],  # Input modalities.
-    output_modalities=['S2L2A', 'S1GRD', 'LULC'],  # List any number of output modalities for generation.
+    "terramind_v1_base_tim",
     pretrained=True,
-    standardize=True,  # Apply standardization on input and output.
+    modalities=["S2L2A", "S1GRD"],
+    tim_modalities=["LULC"]
 )
 ```
 
-You don't need to apply standardization on the input or output, if you set `standardize=True`. This avoids error from using wrong values.
-Alternatively, you can find the standardization values from pre-training [here](https://github.com/IBM/terratorch/blob/53768e684a50e3f7e37d654f499dcccb4373940b/terratorch/models/backbones/terramind/model/terramind_register.py#L130).
+```yaml
+model_args:
+  backbone: terramind_v1_base_tim
+  backbone_pretrained: True
+  backbone_modalities:
+    - S2L2A
+  backbone_tim_modalities:
+    - LULC
+```
 
-We provide demos in [terramind_generation.ipynb](https://github.com/IBM/terramind/blob/main/notebooks/terramind_generation.ipynb) and [any_to_any_generation.ipynb](https://github.com/IBM/terramind/blob/main/notebooks/terramind_any_to_any_generation.ipynb).
-You can also use TerraTorch's large-tile-inference to generate images of larger scenes, which is demonstrated in [large_tile_generation.ipynb](https://github.com/IBM/terramind/blob/main/notebooks/large_tile_generation.ipynb).
+Here is a [TiM config](https://github.com/IBM/terramind/blob/main/configs/terramind_v1_base_tim_lulc_sen1floods11.yaml) example for fine-tuning. 
 
-## Tokenizer
+---
 
-The tokenizers are integrated into the TerraTorch as well can be initialized with: 
+## Generation
+
+Use `*_generate` models for any-to-any generation.
+
+```python
+model = BACKBONE_REGISTRY.build(
+    'terramind_v1_base_generate',
+    modalities=['S2L2A'],
+    output_modalities=['S2L2A', 'S1GRD', 'LULC'],
+    pretrained=True,
+    standardize=True,
+)
+```
+
+Use `standardize=True` to automatically apply correct scaling to the inputs and generations.
+Alternatively, you can find the standardization values from pre-training [here](https://github.com/IBM/terratorch/blob/53768e684a50e3f7e37d654f499dcccb4373940b/terratorch/models/backbones/terramind/model/terramind_register.py#L130)
+
+Demos are provided in [terramind_generation.ipynb](https://github.com/IBM/terramind/blob/main/notebooks/terramind_generation.ipynb) and [any_to_any_generation.ipynb](https://github.com/IBM/terramind/blob/main/notebooks/terramind_any_to_any_generation.ipynb).
+You can use TerraTorch's large-tile-inference to generate images of larger scenes, which is demonstrated in [large_tile_generation.ipynb](https://github.com/IBM/terramind/blob/main/notebooks/large_tile_generation.ipynb).
+
+---
+
+## Tokenizers
+
+Initialize tokenizers from `FULL_MODEL_REGISTRY`:
 
 ```python
 from terratorch.registry import FULL_MODEL_REGISTRY
 
 model = FULL_MODEL_REGISTRY.build('terramind_v1_tokenizer_s2l2a', pretrained=True)
-model = FULL_MODEL_REGISTRY.build('terramind_v1_tokenizer_s1rtc', pretrained=True)
-model = FULL_MODEL_REGISTRY.build('terramind_v1_tokenizer_s1grd', pretrained=True)
-model = FULL_MODEL_REGISTRY.build('terramind_v1_tokenizer_dem', pretrained=True)
-model = FULL_MODEL_REGISTRY.build('terramind_v1_tokenizer_ndvi', pretrained=True)
-model = FULL_MODEL_REGISTRY.build('terramind_v1_tokenizer_lulc', pretrained=True)
 ```
 
-You can create reconstructions with:
+Reconstruction example:
+
 ```python
 with torch.no_grad():
-    # Run full reconstruction
+    # Full reconstruction
     reconstruction = model(normalized_input)
 
-# Alternatively run only the encoder or decoder
-with torch.no_grad():
-    # Tokenize
+    # Encode only
     _, _, tokens = model.encode(normalized_input)
-    
-    # Detokenize
+
+    # Decode only
     reconstruction = model.decode_tokens(tokens)
 ```
 
