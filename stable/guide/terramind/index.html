@@ -1811,9 +1811,9 @@
 
 
 <h1 id="terramind">TerraMind<a class="headerlink" href="#terramind" title="Permanent link">#</a></h1>
-<p>TerraMind models are fully integrated into TerraTorch and support standard fine-tuning, Thinking-in-Modalities (TiM), and generation tasks.
-All tokenizers are registered in <code>FULL_MODEL_REGISTRY</code> and can be used in Python scripts for encoding or reconstruction.</p>
-<p>More information about the TerraMind model: <a href="https://ibm.github.io/terramind/">https://ibm.github.io/terramind/</a></p>
+<p>TerraMind is a multi-modal, generative foundation model build by IBM and ESA. 
+It is fully integrated into TerraTorch and support standard fine-tuning, Thinking-in-Modalities (TiM), and generation tasks.</p>
+<p>More information about the TerraMind models: <a href="https://ibm.github.io/terramind/">https://ibm.github.io/terramind/</a></p>
 <p>If you encounter any issues, please create an issue in our <a href="https://github.com/IBM/terramind">GitHub repo</a>.</p>
 <hr />
 <h2 id="model-versions">Model Versions<a class="headerlink" href="#model-versions" title="Permanent link">#</a></h2>
@@ -1856,7 +1856,11 @@ These are experimental and not publicly released. It supports only <code>S2L2A</
 <hr />
 <h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">#</a></h2>
 <h3 id="fine-tuning">Fine-Tuning<a class="headerlink" href="#fine-tuning" title="Permanent link">#</a></h3>
-<p>Use <code>modalities</code> to define input types. You can specify them via <code>BACKBONE_FACTORY</code> or <code>model_args</code>. If you use multiple modalities, the encoder merges the embeddings across modalities by averaging (default).</p>
+<p>Use <code>modalities</code> to define input types. You can specify them in <code>BACKBONE_FACTORY.build</code> or <code>model_args</code>.</p>
+<p>TerraMind uses seperated tokens per modality. If you use multiple modalities, these tokens need to be merged for each patch embedding to be compatible with the decoders.<br />
+By default, the encoder merges the embeddings across image modalities by averaging (<code>mean</code>). Another approach can be selected with <code>merge_method</code>:
+<code>max</code> takes the maximum value over all image modality while <code>concat</code> concatenates the modalities along the embedding dimension which increases the decoder input.
+In a custom python script, you can also use <code>dict</code> which returns a dictionary with all embeddings rather than a tensor, or <code>None</code> which keeps the modalities as seperated tokens.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span> <span class="nn">terratorch.registry</span> <span class="kn">import</span> <span class="n">BACKBONE_REGISTRY</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">model</span> <span class="o">=</span> <span class="n">BACKBONE_REGISTRY</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="s2">&quot;terramind_v1_base&quot;</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">modalities</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;S2L2A&quot;</span><span class="p">,</span> <span class="s2">&quot;S1GRD&quot;</span><span class="p">])</span>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
@@ -1882,6 +1886,8 @@ For hierarchical decoders (e.g., UNet), use the following necks:</p>
 </span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">LearnedInterpolateToPyramidal</span>
 </span></code></pre></div>
 <p>You can find an example for fine-tuning TerraMind with multi-modal inputs in this <a href="https://github.com/IBM/terramind/blob/main/notebooks/terramind_v1_base_sen1floods11.ipynb">notebook</a> and this <a href="https://github.com/IBM/terramind/blob/main/configs/terramind_v1_base_sen1floods11.yaml">config</a> file.</p>
+<p>Set <code>modality_drop_rate</code> to train TerraMind that supports multiple modalities but can handle inference on a subset (e.g., a single input). 
+During training, modalities are randomly dropped according to the rate (e.g., with <code>0.1</code> each modality is dropped in 10% of all batches).</p>
 <h3 id="subset-of-input-bands">Subset of Input Bands<a class="headerlink" href="#subset-of-input-bands" title="Permanent link">#</a></h3>
 <p>Use the <code>bands</code> dict to select a subset of the pre-trained bands. Unlisted modalities expect all bands as inputs.</p>
 <p>Here is an example that uses the Sentinel-2 embeddings for Landsat-8 data. <code>S2L1C</code> still needs to be part of the modality name so that TerraTorch knows which patch embeddings to load (the name can be quite flexible, e.g., upper or lower case works).
@@ -1942,7 +1948,7 @@ Here is an example that reuses the S-2 patch embedding but initalizes a new patc
 </span></code></pre></div></p>
 <p>Note that in our experience it is always better to reuse a patch embedding, even with other satellites (e.g. using S-2 or RGB modalities for other optical sensors).
 The model more quickly adapts to the new data rather than learning it from scratch.
-The current implementation cannot reuse a specific patch embedding multiple times. However, you could use up to three optical modalities and two SAR modalities with the current setting. For example: 
+The current implementation cannot reuse a specific patch embedding multiple times. However, you could use up to three optical modalities (using S2L1C, S2L2A, and RGB) and two SAR modalities (S1GRD and S1RTC). For example: 
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nt">backbone_modalities</span><span class="p">:</span>
 </span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">S2L2A</span>
 </span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">NDVI</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
@@ -2003,7 +2009,8 @@ If this is the case for you, you cannot use the TiM models.</p>
 </span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="p">)</span>
 </span></code></pre></div>
 <p>Use <code>standardize=True</code> to automatically apply correct scaling to the inputs and generations.
-Alternatively, you can find the standardization values from pre-training <a href="https://github.com/IBM/terratorch/blob/53768e684a50e3f7e37d654f499dcccb4373940b/terratorch/models/backbones/terramind/model/terramind_register.py#L130">here</a></p>
+Alternatively, you can find the standardization values from pre-training <a href="https://github.com/IBM/terratorch/blob/53768e684a50e3f7e37d654f499dcccb4373940b/terratorch/models/backbones/terramind/model/terramind_register.py#L130">here</a>.
+The model requires all pre-trained bands for the inputs.</p>
 <p>Demos are provided in <a href="https://github.com/IBM/terramind/blob/main/notebooks/terramind_generation.ipynb">terramind_generation.ipynb</a> and <a href="https://github.com/IBM/terramind/blob/main/notebooks/terramind_any_to_any_generation.ipynb">any_to_any_generation.ipynb</a>.
 You can use TerraTorch's large-tile-inference to generate images of larger scenes, which is demonstrated in <a href="https://github.com/IBM/terramind/blob/main/notebooks/large_tile_generation.ipynb">large_tile_generation.ipynb</a>.</p>
 <hr />
@@ -2045,7 +2052,7 @@ You can use TerraTorch's large-tile-inference to generate images of larger scene
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="August 6, 2025 14:58:12">August 6, 2025</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="August 6, 2025 15:44:57">August 6, 2025</span>
   </span>
 
     
