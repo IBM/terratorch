@@ -368,7 +368,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 image_grep = "*" + image_grep
             self.image_grep = {m: image_grep or "*" for m in modalities}
         # Check if label_grep is valid
-        if '*' not in label_grep:
+        if label_grep is not None and '*' not in label_grep:
             warnings.warn(f"label_grep requires a wildcard with a suffix. Adding '*' to label_grep={label_grep}")
             label_grep = "*" + label_grep
         if isinstance(label_grep, str) and "*" in label_grep.strip("*/\\"):
