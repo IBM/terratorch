@@ -347,14 +347,33 @@ class GenericMultiModalDataModule(NonGeoDataModule):
             self.non_image_modalities += ["label"]
 
         if img_grep is not None:
-            warnings.warn(f'img_grep was renamed to image_grep and will be removed in a future version.',
+            warnings.warn(f"img_grep was renamed to image_grep and will be removed in a future version.",
                           DeprecationWarning)
             image_grep = img_grep
 
         if isinstance(image_grep, dict):
+            # Check if image_grep is valid
+            for key, grep in image_grep.items():
+                if "*" not in grep:
+                    warnings.warn(f"image_grep requires a wildcard with a suffix. "
+                                  f"Adding '*' to image_grep[{key}]={grep}.")
+                    image_grep[key] = "*" + grep
+                if "*" in grep.strip("*/\\"):
+                    raise ValueError(f"GenericMultiModalDataModule can only handle image_grep with suffixes "
+                                     f"(e.g. '*_mod.tif'). Intermediate wildcards do not work, found {grep}.")
             self.image_grep = {m: image_grep[m] if m in image_grep else "*" for m in modalities}
         else:
+            if "*" not in image_grep:
+                warnings.warn(f"image_grep requires a wildcard with a suffix. Adding '*' to image_grep={image_grep}.")
+                image_grep = "*" + image_grep
             self.image_grep = {m: image_grep or "*" for m in modalities}
+        # Check if label_grep is valid
+        if label_grep is not None and '*' not in label_grep:
+            warnings.warn(f"label_grep requires a wildcard with a suffix. Adding '*' to label_grep={label_grep}")
+            label_grep = "*" + label_grep
+        if isinstance(label_grep, str) and "*" in label_grep.strip("*/\\"):
+            raise ValueError(f"GenericMultiModalDataModule can only handle label_grep with suffixes "
+                             f"(e.g. '*_mask.tif'). Intermediate wildcards do not work, found {label_grep}.")
         self.label_grep = label_grep or "*"
         self.train_root = train_data_root
         self.val_root = val_data_root

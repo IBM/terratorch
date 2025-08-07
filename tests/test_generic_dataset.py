@@ -8,10 +8,10 @@ from _pytest.tmpdir import TempPathFactory
 
 from terratorch.datasets import GenericNonGeoPixelwiseRegressionDataset, GenericNonGeoSegmentationDataset, HLSBands
 
-REGRESSION_IMAGE_PATH = "tests/resources/inputs/regression_test_input.tif"
-REGRESSION_LABEL_PATH = "tests/resources/inputs/regression_test_label.tif"
-SEGMENTATION_IMAGE_PATH = "tests/resources/inputs/segmentation_test_input.tif"
-SEGMENTATION_LABEL_PATH = "tests/resources/inputs/segmentation_test_label.tif"
+REGRESSION_IMAGE_PATH = "tests/resources/inputs/regression_test_0_input.tif"
+REGRESSION_LABEL_PATH = "tests/resources/inputs/regression_test_0_label.tif"
+SEGMENTATION_IMAGE_PATH = "tests/resources/inputs/segmentation_test_0_input.tif"
+SEGMENTATION_LABEL_PATH = "tests/resources/inputs/segmentation_test_0_label.tif"
 NUM_CLASSES_SEGMENTATION = 2
 
 # Testing bands
