@@ -39,7 +39,7 @@ terramind_v1_tokenizer_ndvi
 ```
 
 Raw input modalities supported by backbones: `S2L1C`, `S2L2A`, `RGB`, `S1GRD`, `S1RTC`, `DEM`, and `Coordinates`
-(*Note: RGB patch embedding was pre-trained on S2 RGB inputs \[0–255].*)
+(*Note: RGB patch embedding was pre-trained on Sentinel-2 RGB inputs \[0–255].*)
 
 Tokenized input modalities (use with caution for fine-tuning): `LULC`, `NDVI`
 See [New Modalities](#new-modalities) for alternatives.
@@ -64,7 +64,7 @@ Modalities usable as `tim_modalities` or `output_modalities`: `S2L2A`, `S1GRD`, 
 
 ### Fine-Tuning
 
-Use `modalities` to define input types. You can specify them in `BACKBONE_FACTORY.build` or `model_args`.
+Use `modalities` to define input types. You can specify them in `BACKBONE_FACTORY.build` for building the backbone or `model_args` when building the task-specific model.
 
 TerraMind uses seperated tokens per modality. If you use multiple modalities, these tokens need to be merged for each patch embedding to be compatible with the decoders.  
 By default, the encoder merges the embeddings across image modalities by averaging (`mean`). Another approach can be selected with `merge_method`:
@@ -73,63 +73,190 @@ In a custom python script, you can also use `dict` which returns a dictionary wi
 
 ```python
 from terratorch.registry import BACKBONE_REGISTRY
-model = BACKBONE_REGISTRY.build("terramind_v1_base", pretrained=True, modalities=["S2L2A", "S1GRD"])
 
-# merge_method='mean' by default. Alternatives are max, concat, dict, and None
+model = BACKBONE_REGISTRY.build(
+    "terramind_v1_base", pretrained=True, modalities=["S2L2A", "S1GRD"],
+    merge_method='concat' # mean(default), max, concat, dict, None
+)
 ```
 
-```yaml
-model_factory: EncoderDecoderFactory
-model_args:
-  backbone: terramind_v1_base
-  backbone_pretrained: True
-  backbone_modalities:
-    - S2L2A
-    - S1GRD
-  backbone_merge_method: mean  # Options: mean (default), max, concat
-```
 
-The backbone output is a list of tensors \[batch, token, embedding] (no CLS token).
+Use TerraMind as a backbone in TerraTorch's EncoderDecoderFactory: 
+=== "YAML"
+    ```yaml
+    model:
+      class_path: terratorch.tasks.SemanticSegmentationTask
+      init_args:    
+        model_factory: EncoderDecoderFactory
+        model_args:
+          backbone: terramind_v1_base
+          backbone_pretrained: True
+          backbone_modalities:
+            - S2L2A
+            - S1GRD
+          backbone_merge_method: mean  # mean (default), max, concat
+          ...
+    ```
+
+=== "Python"
+    ```python
+    task = terratorch.tasks.SemanticSegmentationTask(
+        model_factory="EncoderDecoderFactory", 
+        model_args={
+            "backbone": "terramind_v1_base",
+            "backbone_pretrained": True,
+            "backbone_modalities": ["S2L2A", "S1GRD"],
+            "backbone_merge_method": "mean", # mean (default), max, concat
+            ...
+        },
+        ...
+    )
+    ```
+
+The backbone output is a list of tensors \[batch, token, embedding] (no CLS token) which need to be restructured depending on the decoder.
 For hierarchical decoders (e.g., UNet), use the following necks:
 
-```yaml
-necks:
-  - name: ReshapeTokensToImage
-    remove_cls_token: False
-  - name: SelectIndices
-    indices: [2, 5, 8, 11]  # Base model
-  # indices: [5, 11, 17, 23]  # Large model
-  - name: LearnedInterpolateToPyramidal
-```
+=== "YAML"
+    ```yaml
+    model_args:    
+      ...
+      necks:
+        - name: ReshapeTokensToImage  # Reshape 1D tokens to 2D grid 
+          remove_cls_token: False
+        - name: SelectIndices  # Select three intermediate layer outputs and the final one
+          indices: [2, 5, 8, 11]  # Base model
+        # indices: [5, 11, 17, 23]  # Large model
+        - name: LearnedInterpolateToPyramidal  # Upscale outputs for hierarchical decoders
+        ...
+    ```
+
+=== "Python"
+    ```python
+    model_args={
+        ...        
+        "necks": [
+            {"name": "ReshapeTokensToImage", 
+             "remove_cls_token": False}
+            {"name": "SelectIndices", 
+            "indices": [2, 5, 8, 11]}, # Base model
+            # "indices": [5, 11, 17, 23]}, # Large model
+            {"name": "LearnedInterpolateToPyramidal"}
+        ]
+        ...
+    } 
+    ```
 
 You can find an example for fine-tuning TerraMind with multi-modal inputs in this [notebook](https://github.com/IBM/terramind/blob/main/notebooks/terramind_v1_base_sen1floods11.ipynb) and this [config](https://github.com/IBM/terramind/blob/main/configs/terramind_v1_base_sen1floods11.yaml) file.
 
 Set `modality_drop_rate` to train TerraMind that supports multiple modalities but can handle inference on a subset (e.g., a single input). 
 During training, modalities are randomly dropped according to the rate (e.g., with `0.1` each modality is dropped in 10% of all batches).
 
+### Model Input
+
+The model expects the input as a dict `model({"mod1": input1, "mod2": input2, ...})` or as keyword args `model(mod1=input1, mod2=input2)` with inputs being torch tensors.
+If you only use a single modality, you can pass the input direct as a tensor `model(input1)`.
+In TerraTorch, single modality data modules such as the `GenericNonGeoSegmentationDataModule` us the latter option, while the `GenericMultiModalDataModule` loads the inputs as a dictionary by default.
+
+
+```python
+import torch
+from terratorch.registry import BACKBONE_REGISTRY
+
+model = BACKBONE_REGISTRY.build("terramind_v1_base", pretrained=True, modalities=["S2L2A", "S1GRD"])
+
+s2_input: torch.Tensor = torch.rand(1, 12, 224, 224)  # [B, C, H, W]
+s1_input: torch.Tensor = torch.rand(1, 2, 224, 224)  # [B, C, H, W]
+
+# Input as dict
+out = model({
+    "S2L2A": s2_input,
+    "S1GRD": s1_input,
+})
+
+# Input as kwargs
+out = model(S2L2A=s2_input, S1GRD=s2_input)
+
+# One modality (assume first defined modality)
+out = model(s2_input)
+
+# The output is a list of tensors from each transformer layer
+len(out)  
+# 12
+
+out[-1].shape  # Output shape: [Batch, Tokens, Embedding]
+# torch.Size([1, 196, 768])
+```
+
 ### Subset of Input Bands
 
 Use the `bands` dict to select a subset of the pre-trained bands. Unlisted modalities expect all bands as inputs.
 
 Here is an example that uses the Sentinel-2 embeddings for Landsat-8 data. `S2L1C` still needs to be part of the modality name so that TerraTorch knows which patch embeddings to load (the name can be quite flexible, e.g., upper or lower case works).
-```yaml
-backbone_modalities:
-  - S2L1C_L8
-  - S1GRD
-backbone_bands:
-  S2L1C_L8:  # Modality name has to match backbone_modalities
-    - COASTAL_AEROSOL
-    - BLUE
-    - GREEN
-    - RED
-    - NIR_NARROW
-    - SWIR_1
-    - SWIR_2
-    - PANCHROMATIC  # New band
-    - CIRRUS
-    - THERMAL_1  # New band
-    - THERMAL_2  # New band
-```
+
+=== "YAML"
+    ```yaml
+    backbone_modalities:
+      - S2L1C_L8
+      - S1GRD
+    backbone_bands:
+      S2L1C_L8:  # Modality name has to match backbone_modalities
+        - COASTAL_AEROSOL
+        - BLUE
+        - GREEN
+        - RED
+        - NIR_NARROW
+        - SWIR_1
+        - SWIR_2
+        - PANCHROMATIC  # New band
+        - CIRRUS
+        - THERMAL_1  # New band
+        - THERMAL_2  # New band
+    ```
+
+=== "Python"
+    ```python
+    model_args={
+        ...
+        "backbone_modalities": ["S2L1C_L8", "S1GRD"],
+        "backbone_bands": {
+            "S2L1C_L8": [
+                "COASTAL_AEROSOL",
+                "BLUE",
+                "GREEN",
+                "RED",
+                "NIR_NARROW",
+                "SWIR_1",
+                "SWIR_2",
+                "PANCHROMATIC",  # New band
+                "CIRRUS",
+                "THERMAL_1",  # New band
+                "THERMAL_2",  # New band
+            ] 
+        },
+        ...
+    }
+    ```
+
+=== "Backbone registry"
+    ```python
+    model = BACKBONE_REGISTRY.build("terramind_v1_base", pretrained=True, 
+                                    modalities=["S2L2A", "S1GRD"],
+                                    bands={
+                                        "S2L1C_L8": [
+                                        "COASTAL_AEROSOL",
+                                        "BLUE",
+                                        "GREEN",
+                                        "RED",
+                                        "NIR_NARROW",
+                                        "SWIR_1",
+                                        "SWIR_2",
+                                        "PANCHROMATIC",  # New band
+                                        "CIRRUS",
+                                        "THERMAL_1",  # New band
+                                        "THERMAL_2",  # New band
+                                    ]}                                
+                                    )
+    ```
 
 ??? into "List of pre-trained bands"
     The name of the pre-trained bands are [here](https://github.com/IBM/terratorch/blob/53768e684a50e3f7e37d654f499dcccb4373940b/terratorch/models/backbones/terramind/model/terramind_register.py#L77) specified:
@@ -165,38 +292,123 @@ You might want to use input modalities which are not used with raw inputs during
 Therefore, you can define a new patch embedding by providing a dict as an input in the modality list, which specifies the new name and the number of input channels.
 You can also use it if you want to fine-tune the model with NDVI or LULC data, which would otherwise use the TerraMind tokenizers, which increases the model size quite a lot.
 Here is an example that reuses the S-2 patch embedding but initalizes a new patch emebdding for NDVI data and a completly new modality:  
-```yaml
-backbone_modalities:
-  - S2L2A
-  - NDVI: 1
-  - PLANET: 6
-```
+
+=== "YAML"
+    ```yaml
+    backbone_modalities:
+      - S2L2A
+      - NDVI: 1
+      - PLANET: 6
+    ```
+
+=== "Python"
+    ```python
+    model_args={
+        ...
+        "backbone_modalities": [
+            "S2L2A",
+            {"NDVI": 1},
+            {"PLANET": 6}
+        ],
+        ...
+    }
+    ```
+
+=== "Backbone registry"
+    ```python
+    model = BACKBONE_REGISTRY.build("terramind_v1_base", pretrained=True, 
+                                    modalities=[
+                                        "S2L2A", 
+                                        {"NDVI": 1},
+                                        {"PLANET": 6}
+                                    ])
+    ```
 
 Note that in our experience it is always better to reuse a patch embedding, even with other satellites (e.g. using S-2 or RGB modalities for other optical sensors).
 The model more quickly adapts to the new data rather than learning it from scratch.
 The current implementation cannot reuse a specific patch embedding multiple times. However, you could use up to three optical modalities (using S2L1C, S2L2A, and RGB) and two SAR modalities (S1GRD and S1RTC). For example: 
-```yaml
-backbone_modalities:
-  - S2L2A
-  - NDVI: 1
-  - S2L1C_PLANET # Reuse S2L1C patch embedding
-backbone_bands:
-  S2L1C_PLANET:
-    - BLUE
-    - GREEN
-    - RED
-    - ...
-```
+
+=== "YAML"
+    ```yaml
+    backbone_modalities:
+      - S2L2A
+      - NDVI: 1
+      - S2L1C_PLANET # Reuse S2L1C patch embedding
+    backbone_bands:
+      S2L1C_PLANET:
+        - BLUE
+        - GREEN
+        - RED
+        - ...
+    ```
+=== "Python"
+    ```python
+    model_args={
+        ...
+        "backbone_modalities": [
+            "S2L2A",
+            {"NDVI": 1},
+            "S2L1C_PLANET"
+        ],
+        "backbone_bands": {
+            "S2L1C_PLANET": [
+                "BLUE",
+                "GREEN",
+                "RED",
+                ...
+            ] 
+        ...
+    }
+    ```
+
+=== "Backbone registry"
+    ```python
+    model = BACKBONE_REGISTRY.build("terramind_v1_base", pretrained=True, 
+                                    modalities=[
+                                        "S2L2A", 
+                                        {"NDVI": 1},
+                                        {"PLANET": 6}
+                                    ],
+                                    bands={
+                                        "S2L1C_PLANET": [
+                                        "BLUE",
+                                        "GREEN",
+                                        "RED",
+                                        ...
+                                    ]}                                
+                                    )
+    ```
 
 To define a single new modality directly:
 
-```yaml
-model_args:
-  backbone: terramind_v1_base
-  backbone_pretrained: True
-  backbone_modalities: []
-  backbone_in_chans: 3
-```
+=== "YAML"
+    ```yaml
+    model_args:
+      backbone: terramind_v1_base
+      backbone_pretrained: True
+      backbone_modalities: []
+      backbone_in_chans: 3
+    ```
+
+=== "Python"
+    ```python
+    model_args={
+        ...
+        "backbone": "terramind_v1_base",
+        "backbone_pretrained": True,
+        "backbone_modalities": [],
+        "backbone_in_chans": 3,
+        ...
+    },
+    ```
+
+=== "Backbone registry"
+    ```python
+    model = BACKBONE_REGISTRY.build("terramind_v1_base", pretrained=True, 
+                                    modalities=[],
+                                    in_chans=3,
+    ```
+
 
 This creates a random patch embedding named `image`, usable with a raw tensor or `{"image": tensor}` as model input.
 
@@ -216,24 +428,39 @@ We refer to the [paper](https://arxiv.org/pdf/2504.11171) for details.
 
 To use, suffix `_tim` to the model name and set `tim_modalities`.
 
-```python
-model = BACKBONE_REGISTRY.build(
-    "terramind_v1_base_tim",
-    pretrained=True,
-    modalities=["S2L2A", "S1GRD"],
-    tim_modalities=["LULC"]
-)
-```
 
-```yaml
-model_args:
-  backbone: terramind_v1_base_tim
-  backbone_pretrained: True
-  backbone_modalities:
-    - S2L2A
-  backbone_tim_modalities:
-    - LULC
-```
+=== "YAML"
+    ```yaml
+    model_args:
+      backbone: terramind_v1_base_tim
+      backbone_pretrained: True
+      backbone_modalities:
+        - S2L2A
+      backbone_tim_modalities:
+        - LULC
+    ```
+
+=== "Python"
+    ```python
+    model_args={
+        ...
+        "backbone": "terramind_v1_base",
+        "backbone_pretrained": True,
+        "backbone_modalities": ["S2L2A"],
+        "backbone_tim_modalities": ["LULC"],
+        ...
+    },
+    ```
+
+=== "Backbone registry"
+    ```python
+    model = BACKBONE_REGISTRY.build(
+        "terramind_v1_base_tim",
+        pretrained=True,
+        modalities=["S2L2A", "S1GRD"],
+        tim_modalities=["LULC"]
+    )
+    ```
 
 Here is a [TiM config](https://github.com/IBM/terramind/blob/main/configs/terramind_v1_base_tim_lulc_sen1floods11.yaml) example for fine-tuning. 
 
