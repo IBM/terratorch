@@ -37,7 +37,7 @@ class ReconstructionTask(BaseTask):
             freeze_encoder: bool = False,  # noqa: FBT001, FBT002
             freeze_decoder: bool = False,  # noqa: FBT001, FBT002
             plot_on_val: bool | int = 10,
-            tiled_inference_parameters: TiledInferenceParameters | None = None,
+            tiled_inference_parameters: dict | None = None,
             modalities: list[str] | None = None
     ) -> None:
         """Constructor
@@ -69,7 +69,7 @@ class ReconstructionTask(BaseTask):
             freeze_decoder (bool, optional): Whether to freeze the decoder and segmentation head. Defaults to False.
             plot_on_val (bool | int, optional): Whether to plot visualizations on validation.
                 If true, log every epoch. Defaults to 10. If int, will plot every plot_on_val epochs.
-            tiled_inference_parameters (TiledInferenceParameters | None, optional): Inference parameters
+            tiled_inference_parameters (dict | None, optional): Inference parameters
                 used to determine if inference is done on the whole image or through tiling.
             modalities list(str), optional: List of modality names that are reconstructed. Expect reconstructions as
                 dict with modelity names as keys and tensors as values. Computes metrics for every modality.
@@ -369,15 +369,14 @@ class ReconstructionTask(BaseTask):
         def model_forward(x):
             out = self(x)[1]
             if isinstance(out, ReconstructionOutput):
-                pred  = out.pred
+                pred = out.pred
             else:
                 pred = out[1]
             return pred
 
         # Tiled inference for autoencoder ? Is it making sense ?
         if self.tiled_inference_parameters:
-            # TODO: tiled inference does not work with additional input data (**rest)
-            pred: torch.Tensor = tiled_inference(model_forward, x, 1, self.tiled_inference_parameters)
+            pred: torch.Tensor = tiled_inference(model_forward, x, **self.tiled_inference_parameters, **rest)
         else:
             pred: torch.Tensor = model_forward(x)
         # TODO: Return mask and file_names?

@@ -1,14 +1,18 @@
+from functools import partial
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
-from functools import partial
-from torch import Tensor
+from torch import Tensor, nn
 from torchmetrics import MetricCollection
 from torchmetrics.classification import (
     MultilabelAccuracy,
-    MultilabelFBetaScore,
+    MultilabelAUROC,
+    MultilabelAveragePrecision,
+    MultilabelF1Score,
+    MultilabelPrecision,
+    MultilabelRecall,
 )
+from torchmetrics.wrappers import ClasswiseWrapper
 
 from terratorch.models.model import ModelOutput
 from terratorch.tasks import ClassificationTask
@@ -40,16 +44,53 @@ class MultiLabelClassificationTask(ClassificationTask):
             super().configure_losses()
 
     def configure_metrics(self) -> None:
+        """Initialize the performance metrics."""
+        num_classes: int = self.hparams["model_args"]["num_classes"]
+        ignore_index: int = self.hparams["ignore_index"]
+        class_names = self.hparams["class_names"]
         metrics = MetricCollection(
             {
-                "Overall_Accuracy": MultilabelAccuracy(
-                    num_labels=self.hparams["model_args"]["num_classes"], average="micro"
+                "Multilabel_Accuracy": MultilabelAccuracy(
+                    num_labels=num_classes, ignore_index=ignore_index, average="macro"
                 ),
-                "Average_Accuracy": MultilabelAccuracy(
-                    num_labels=self.hparams["model_args"]["num_classes"], average="macro"
+                "Multilabel_Accuracy_Micro": MultilabelAccuracy(
+                    num_labels=num_classes, ignore_index=ignore_index, average="micro"
                 ),
-                "Multilabel_F1_Score": MultilabelFBetaScore(
-                    num_labels=self.hparams["model_args"]["num_classes"], beta=1.0, average="micro"
+                "Multilabel_F1_Score": MultilabelF1Score(
+                    num_labels=num_classes, ignore_index=ignore_index, average="macro"
+                ),
+                "Multilabel_Precision": MultilabelPrecision(
+                    num_labels=num_classes,
+                    ignore_index=ignore_index,
+                    average="macro",
+                ),
+                "Multilabel_Recall": MultilabelRecall(
+                    num_labels=num_classes,
+                    ignore_index=ignore_index,
+                    average="macro",
+                ),
+                "Multilabel_AUROC": MultilabelAUROC(
+                    num_labels=num_classes,
+                    ignore_index=ignore_index,
+                    average="macro",
+                ),
+                "Class_Accuracy": ClasswiseWrapper(
+                    MultilabelAccuracy(
+                        num_labels=num_classes,
+                        ignore_index=ignore_index,
+                        average=None,
+                    ),
+                    labels=class_names,
+                    prefix="Class_Accuracy_",
+                ),
+                "Class_F1": ClasswiseWrapper(
+                    MultilabelF1Score(
+                        num_labels=num_classes,
+                        ignore_index=ignore_index,
+                        average=None,
+                    ),
+                    labels=class_names,
+                    prefix="Class_F1_",
                 ),
             }
         )
@@ -72,13 +113,13 @@ class MultiLabelClassificationTask(ClassificationTask):
         x = batch["image"]
         y = batch["label"].to(torch.float32)
         other_keys = batch.keys() - {"image", "label", "filename"}
-        rest = {k:batch[k] for k in other_keys}
+        rest = {k: batch[k] for k in other_keys}
 
         model_output: ModelOutput = self(x, **rest)
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat = self.to_multilabel_prediction(model_output)
-        self.train_metrics.update(y_hat, y)
+        self.train_metrics.update(y_hat, y.to(torch.int))
 
         return loss["loss"]
 
@@ -86,18 +127,18 @@ class MultiLabelClassificationTask(ClassificationTask):
         x = batch["image"]
         y = batch["label"].to(torch.float32)
         other_keys = batch.keys() - {"image", "label", "filename"}
-        rest = {k:batch[k] for k in other_keys}
+        rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat = self.to_multilabel_prediction(model_output)
-        self.val_metrics.update(y_hat, y)
+        self.val_metrics.update(y_hat, y.to(torch.int))
 
     def test_step(self, batch: object, batch_idx: int, dataloader_idx: int = 0) -> None:
         x = batch["image"]
         y = batch["label"].to(torch.float32)
         other_keys = batch.keys() - {"image", "label", "filename"}
-        rest = {k:batch[k] for k in other_keys}
+        rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
         if dataloader_idx >= len(self.test_loss_handler):
             msg = "You are returning more than one test dataloader but not defining enough test_dataloaders_names."
@@ -109,7 +150,7 @@ class MultiLabelClassificationTask(ClassificationTask):
             batch_size=y.shape[0],
         )
         y_hat = self.to_multilabel_prediction(model_output)
-        self.test_metrics[dataloader_idx].update(y_hat, y)
+        self.test_metrics[dataloader_idx].update(y_hat, y.to(torch.int))
 
     def predict_step(self, batch: object, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         """Compute the predicted class probabilities.

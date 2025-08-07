@@ -24,8 +24,8 @@ class HLSBands(Enum):
     SWIR_2 = "SWIR_2"
     WATER_VAPOR = "WATER_VAPOR"
     CIRRUS = "CIRRUS"
-    THEMRAL_INFRARED_1 = "THEMRAL_INFRARED_1"
-    THEMRAL_INFRARED_2 = "THEMRAL_INFRARED_2"
+    THERMAL_INFRARED_1 = "THERMAL_INFRARED_1"
+    THERMAL_INFRARED_2 = "THERMAL_INFRARED_2"
 
     @classmethod
     def try_convert_to_hls_bands_enum(cls, x: Any):
@@ -33,6 +33,7 @@ class HLSBands(Enum):
             return cls(x)
         except ValueError:
             return x
+
 
 class OpticalBands(Enum):
     COASTAL_AEROSOL = "COASTAL_AEROSOL"
@@ -48,8 +49,8 @@ class OpticalBands(Enum):
     SWIR_2 = "SWIR_2"
     WATER_VAPOR = "WATER_VAPOR"
     CIRRUS = "CIRRUS"
-    THEMRAL_INFRARED_1 = "THEMRAL_INFRARED_1"
-    THEMRAL_INFRARED_2 = "THEMRAL_INFRARED_2"
+    THERMAL_INFRARED_1 = "THERMAL_INFRARED_1"
+    THERMAL_INFRARED_2 = "THERMAL_INFRARED_2"
 
     @classmethod
     def try_convert_to_optical_bands_enum(cls, x: Any):
@@ -57,9 +58,10 @@ class OpticalBands(Enum):
             return cls(x)
         except ValueError:
             return x
-        
+
+
 class SARBands(Enum):
-    VV =  "VV"
+    VV = "VV"
     VH = "VH"
     ASC_VV = "ASC_VV"
     ASC_VH = "ASC_VH"
@@ -76,13 +78,13 @@ class SARBands(Enum):
 
 
 class MetadataBands(Enum):
-    DEM = 'DEM'
-    NDVI = 'NDVI'
-    LULC = 'LULC'
+    DEM = "DEM"
+    NDVI = "NDVI"
+    LULC = "LULC"
 
 
 class LULCclasses(Enum):
-    LULC = 'LULC'
+    LULC = "LULC"
 
 
 class Modalities(Enum):
@@ -99,22 +101,24 @@ class Modalities(Enum):
 def default_transform(**batch):
     return to_tensor(batch)
 
+
 def generate_bands_intervals(bands_intervals: list[int | str | HLSBands | tuple[int]] | None = None):
-        if bands_intervals is None:
-            return None
-        bands = []
-        for element in bands_intervals:
-            # if its an interval
-            if isinstance(element, tuple):
-                if len(element) != 2:  # noqa: PLR2004
-                    msg = "When defining an interval, a tuple of two integers should be passed,\
+    if bands_intervals is None:
+        return None
+    bands = []
+    for element in bands_intervals:
+        # if its an interval
+        if isinstance(element, tuple):
+            if len(element) != 2:  # noqa: PLR2004
+                msg = "When defining an interval, a tuple of two integers should be passed,\
                         defining start and end indices inclusive"
-                    raise Exception(msg)
-                expanded_element = list(range(element[0], element[1] + 1))
-                bands.extend(expanded_element)
-            else:
-                bands.append(element)
-        return bands
+                raise Exception(msg)
+            expanded_element = list(range(element[0], element[1] + 1))
+            bands.extend(expanded_element)
+        else:
+            bands.append(element)
+    return bands
+
 
 def filter_valid_files(
     files, valid_files: Iterator[str] | None = None, ignore_extensions: bool = False, allow_substring: bool = True

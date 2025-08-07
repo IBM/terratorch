@@ -1,5 +1,5 @@
 # Copyright contributors to the Terratorch project
-
+import gc
 import pytest
 import torch
 
@@ -43,6 +43,7 @@ def test_create_segmentation_task(backbone, decoder, loss, model_factory: ClayMo
         loss=loss,
     )
 
+    gc.collect()
 
 @pytest.mark.parametrize("backbone", ["clay_v1_base"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder"])
@@ -66,6 +67,7 @@ def test_create_regression_task(backbone, decoder, loss, model_factory: ClayMode
         loss=loss,
     )
 
+    gc.collect()
 
 @pytest.mark.parametrize("backbone", ["clay_v1_base"])
 @pytest.mark.parametrize("decoder", ["IdentityDecoder"])
@@ -89,3 +91,5 @@ def test_create_classification_task(backbone, decoder, loss, model_factory: Clay
         model_factory,
         loss=loss,
     )
+
+    gc.collect()

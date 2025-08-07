@@ -52,8 +52,8 @@ data:
       - SWIR_1
       - SWIR_2
       - CIRRUS
-      - THEMRAL_INFRARED_1
-      - THEMRAL_INFRARED_2
+      - THERMAL_INFRARED_1
+      - THERMAL_INFRARED_2
     output_bands:
       - BLUE
       - GREEN
