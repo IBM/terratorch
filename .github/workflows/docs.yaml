@@ -1,0 +1,21 @@
+name: Uploading documentation
+
+on: 
+  push:
+    branches:
+      - update-docs
+  pull_request:
+    branches:
+      - update-docs
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v4
+      - name: deploy documentation
+        run: |
+          mike deploy --push --allow-empty stable
+
+
