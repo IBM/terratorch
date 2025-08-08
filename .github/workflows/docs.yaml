@@ -8,14 +8,23 @@ on:
     branches:
       - update-docs
 jobs:
-  build:
+  deploy-docs:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+     permissions:
+      pages: write
+      id-token: write
+      contents: read
+    environment:
+      name: github-pages
+      url: ibm.github.io/terratorch/
     steps:
       - name: Clone repo
         uses: actions/checkout@v4
       - name: deploy documentation
         run: |
+          git fetch origin
+          git checkout deploy/docs
+          git pull origin deploy/docs
           mike deploy --push --allow-empty stable
 
 
