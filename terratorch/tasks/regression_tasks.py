@@ -102,6 +102,9 @@ class IgnoreIndexMetricWrapper(WrapperMetric):
             items_to_take[torch.isnan(target)] = False  # Filter NaN values as well
             target = target[items_to_take]
             preds = preds[items_to_take]
+        else:
+            preds = preds.flatten()
+            target = target.flatten()
         return self.metric.update(preds, target)
 
     def forward(self, preds: Tensor, target: Tensor, *args, **kwargs) -> Any:

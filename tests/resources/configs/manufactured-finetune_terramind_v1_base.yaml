@@ -110,7 +110,7 @@ model:
       decoder: UNetDecoder
       decoder_channels: [ 512, 256, 128, 64 ]
     loss: rmse
-    ignore_index: -1
+#    ignore_index: -1
     freeze_backbone: true
     freeze_decoder: false
     tiled_inference_parameters:
