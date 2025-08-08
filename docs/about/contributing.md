@@ -50,7 +50,9 @@ MkDocs, a framework which relies on Markdown in order to create webpages as this
 * Install the MkDocs dependencies. Install as a developer `pip install terratorch[dev]` to include them or manually using [this list](https://github.com/IBM/terratorch/blob/cdb130dd0be3db053c8858d69e8f02197d42c567/pyproject.toml#L66).
 * Clone the branch dedicated to documentation to a local branch:
 ```
-    git fetch origin improve/docs
+    git fetch origin update-docs
+    git checkout update-docs
+    git pull origin update-docs
 ```
 * Add your modifications and open a PR to `improve/docs`. It is recommended to add the label `documentation` to your PR. 
 * The PR will be reviewed and approved if it is considered relevant by the maintainers. 
