@@ -29,7 +29,7 @@ def setup_and_cleanup(model_name):
 # The backbones `prithvi_eo_v2_300` and `prithvi_swin_B` are already used in
 # others tests and don't need be tested here again
 @pytest.mark.parametrize(
-    "model_name", ["terramind_v1_base"]
+    "model_name", ["terramind_v1_base", "prithvi_eo_v1_100", "prithvi_swin_L", "prithvi_eo_v2_600"]
 )
 @pytest.mark.parametrize("case", ["fit", "test", "validate", "compute_statistics"])
 def test_finetune_multiple_backbones(model_name, case):
