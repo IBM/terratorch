@@ -10,6 +10,7 @@ from torch import Tensor
 
 from .norm_layers import LayerNorm, GRN
 
+from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
 
 # All rights reserved.
 # This source code is licensed under the license found in the
@@ -208,41 +209,49 @@ class ConvNeXtV2(nn.Module):
         return x
 
 
+@TERRATORCH_BACKBONE_REGISTRY.register
 def convnextv2_atto(**kwargs):
     model = ConvNeXtV2(depths=[2, 2, 6, 2], dims=[40, 80, 160, 320], **kwargs)
     return model
 
 
+@TERRATORCH_BACKBONE_REGISTRY.register
 def convnextv2_femto(**kwargs):
     model = ConvNeXtV2(depths=[2, 2, 6, 2], dims=[48, 96, 192, 384], **kwargs)
     return model
 
 
+@TERRATORCH_BACKBONE_REGISTRY.register
 def convnext_pico(**kwargs):
     model = ConvNeXtV2(depths=[2, 2, 6, 2], dims=[64, 128, 256, 512], **kwargs)
     return model
 
 
+@TERRATORCH_BACKBONE_REGISTRY.register
 def convnextv2_nano(**kwargs):
     model = ConvNeXtV2(depths=[2, 2, 8, 2], dims=[80, 160, 320, 640], **kwargs)
     return model
 
 
+@TERRATORCH_BACKBONE_REGISTRY.register
 def convnextv2_tiny(**kwargs):
     model = ConvNeXtV2(depths=[3, 3, 9, 3], dims=[96, 192, 384, 768], **kwargs)
     return model
 
 
+@TERRATORCH_BACKBONE_REGISTRY.register
 def convnextv2_base(**kwargs):
     model = ConvNeXtV2(depths=[3, 3, 27, 3], dims=[128, 256, 512, 1024], **kwargs)
     return model
 
 
+@TERRATORCH_BACKBONE_REGISTRY.register
 def convnextv2_large(**kwargs):
     model = ConvNeXtV2(depths=[3, 3, 27, 3], dims=[192, 384, 768, 1536], **kwargs)
     return model
 
 
+@TERRATORCH_BACKBONE_REGISTRY.register
 def convnextv2_huge(**kwargs):
     model = ConvNeXtV2(depths=[3, 3, 27, 3], dims=[352, 704, 1408, 2816], **kwargs)
     return model
