@@ -8,7 +8,9 @@ import torch.nn as nn
 from timm.models.layers import trunc_normal_, DropPath
 from torch import Tensor
 
-from .norm_layers import LayerNorm, GRN
+#from .norm_layers import LayerNorm, GRN
+from timm.layers import GlobalResponseNormMlp as GRN
+from timm.layers import LayerNorm
 
 from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
 
@@ -104,12 +106,12 @@ class ConvNeXtV2(nn.Module):
                     kernel_size=patch_size // (2 ** (self.num_stage - 1)),
                     stride=patch_size // (2 ** (self.num_stage - 1)),
                 ),
-                LayerNorm(dims[0], eps=1e-6, data_format="channels_first"),
+                LayerNorm(dims[0], eps=1e-6), #data_format="channels_first"),
             )
         else:
             self.initial_conv = nn.Sequential(
                 nn.Conv2d(in_chans, dims[0], kernel_size=3, stride=1),
-                LayerNorm(dims[0], eps=1e-6, data_format="channels_first"),
+                LayerNorm(dims[0], eps=1e-6), #data_format="channels_first"),
                 nn.GELU(),
             )
             # depthwise conv for stem
@@ -122,12 +124,12 @@ class ConvNeXtV2(nn.Module):
                     padding=(patch_size // (2 ** (self.num_stage - 1))) // 2,
                     groups=dims[0],
                 ),
-                LayerNorm(dims[0], eps=1e-6, data_format="channels_first"),
+                LayerNorm(dims[0], eps=1e-6), #data_format="channels_first"),
             )
 
         for i in range(3):
             downsample_layer = nn.Sequential(
-                LayerNorm(dims[i], eps=1e-6, data_format="channels_first"),
+                LayerNorm(dims[i], eps=1e-6), #data_format="channels_first"),
                 nn.Conv2d(dims[i], dims[i + 1], kernel_size=2, stride=2),
             )
             self.downsample_layers.append(downsample_layer)
