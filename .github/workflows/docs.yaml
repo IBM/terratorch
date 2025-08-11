@@ -23,8 +23,8 @@ jobs:
       - name: deploy documentation
         run: |
           git fetch origin
-          git checkout deploy/docs
-          git pull origin deploy/docs
+          git checkout update-docs
+          git pull origin update-docs
           mike deploy --push --allow-empty stable
 
 
