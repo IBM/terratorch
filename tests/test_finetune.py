@@ -25,7 +25,10 @@ def setup_and_cleanup(model_name):
     if os.path.isdir(os.path.join("tests", "all_ecos_random")):
         shutil.rmtree(os.path.join("tests", "all_ecos_random"))
 
-    shutil.rmtree("~/.cache/huggingface/hub")
+    hub_dir = os.getenv("HOME")+"/.cache/huggingface/hub"
+
+    if os.path.isdir(hub_dir):
+        shutil.rmtree()
 
 # The backbones `prithvi_eo_v2_300` and `prithvi_swin_B` are already used in
 # others tests and don't need be tested here again
