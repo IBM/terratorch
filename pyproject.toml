@@ -84,6 +84,7 @@ test = [
   "diffusers>=0.30.0",
   "dask",
   "wandb",
+  "huggingface_hub[hf_xet]"
 ]
 
 mmseg = [
