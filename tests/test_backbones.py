@@ -1,6 +1,7 @@
 # Copyright contributors to the Terratorch project
 import gc
 import os
+import shutil
 import warnings
 
 import pytest
@@ -14,6 +15,14 @@ NUM_CHANNELS = 6
 NUM_FRAMES = 4
 
 IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "false") == "true"
+
+
+@pytest.fixture(autouse=True)
+def setup_and_cleanup(model_name):
+    hub_dir = os.getenv("HOME") + "/.cache/huggingface/hub"
+
+    if os.path.isdir(hub_dir):
+        shutil.rmtree(hub_dir)
 
 
 @pytest.fixture
@@ -229,23 +238,21 @@ def test_prithvi_vit_adapter(backbone, input_224):
     assert output[3].shape == (1, embed_dim, 7, 7)
 
 
-@pytest.mark.parametrize(
-    "model_name", ["terramind_v1_base", "terramind_v1_large"]
-)
+@pytest.mark.parametrize("model_name", ["terramind_v1_base", "terramind_v1_large"])
 def test_terramind(model_name):
     # default should have 3 channels
     backbone = BACKBONE_REGISTRY.build(model_name, modalities=["S2L2A", "LULC", "coords", {"new": 1}])
-    output = backbone({"S2L2A": torch.ones((1, 12, 224, 224))},
-                      LULC=torch.ones((1, 1, 224, 224)),  # Test with kwargs inputs
-                      coords=torch.ones((1, 2)),
-                      new=torch.ones((1, 1, 224, 224)),
-                      unknown='Test',
-                      )
+    output = backbone(
+        {"S2L2A": torch.ones((1, 12, 224, 224))},
+        LULC=torch.ones((1, 1, 224, 224)),  # Test with kwargs inputs
+        coords=torch.ones((1, 2)),
+        new=torch.ones((1, 1, 224, 224)),
+        unknown="Test",
+    )
     gc.collect()
 
-@pytest.mark.parametrize(
-    "model_name", ["terramind_v1_base_tim", "terramind_v1_large_tim"]
-)
+
+@pytest.mark.parametrize("model_name", ["terramind_v1_base_tim", "terramind_v1_large_tim"])
 def test_terramind_tim(model_name):
     # default should have 3 channels
     backbone = BACKBONE_REGISTRY.build(model_name, modalities=["S2L2A", "LULC"], tim_modalities=["coords", "DEM"])
