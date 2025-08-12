@@ -63,7 +63,6 @@ dependencies = [
   "huggingface_hub",
   "tifffile",
   "python-box",
-  "transformers<4.55.0"
 ]
 
 
