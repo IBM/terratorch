@@ -54,7 +54,7 @@ MkDocs, a framework which relies on Markdown in order to create webpages as this
     git checkout update-docs
     git pull origin update-docs
 ```
-* Add your modifications and open a PR to `update-docs`. It is recommended to add the label `documentation` to your PR. 
+* If you already have access to the IBM org on GitHub, add your modifications and open a PR to `update-docs`. It is recommended to add the label `documentation` to your PR. 
 * The PR will be reviewed and approved if it is considered relevant by the maintainers. 
 
 ## Contributing by reporting issues
