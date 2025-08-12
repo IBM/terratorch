@@ -1,0 +1,111 @@
+{
+  "stac_version": "1.0.0",
+  "stac_extensions": [
+    "https://stac-extensions.github.io/mlm/v1.4.0/schema.json",
+    "https://stac-extensions.github.io/raster/v1.1.0/schema.json"
+  ],
+  "type": "Feature",
+  "id": "geo_multisource_embedder_v1",
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [-180.0, -90.0],
+        [-180.0,  90.0],
+        [ 180.0,  90.0],
+        [ 180.0, -90.0],
+        [-180.0, -90.0]
+      ]
+    ]
+  },
+  "bbox": [-180.0, -90.0, 180.0, 90.0],
+
+  "properties": {
+    "description": "Torch model ingesting Sentinel-2 L2A/L1C and Sentinel-1 GRD/RTC patches (224×224) and emitting geo-aware embeddings.",
+    "datetime": "1900-01-01T00:00:00Z",
+
+    "mlm:name": "GeoMultiSourceEmbedder",
+    "mlm:tasks": ["classification", "embedding"],
+    "mlm:architecture": "ViT-Hybrid-224",
+    "mlm:framework": "pytorch",
+    "mlm:framework_version": "2.3.0",
+    "mlm:accelerator": "cuda",
+
+    "mlm:input": [
+      {
+        "name": "S2L2A patched reflectance",
+        "constellation": "sentinel-2",
+        "processing_level": "L2A",
+        "bands": ["B01","B02","B03","B04","B05","B06","B07","B08","B8A","B09","B11","B12"],
+        "input": {
+          "shape": [-1, 12, 224, 224],
+          "dim_order": ["batch", "channel", "y", "x"],
+          "data_type": "float32"
+        },
+        "value_scaling": [{ "type": "min-max", "min": 0, "max": 1 }],
+        "resize_type": null,
+        "pre_processing_function": null
+      },
+      {
+        "name": "S2L1C TOA reflectance",
+        "constellation": "sentinel-2",
+        "processing_level": "L1C",
+        "bands": ["B01","B02","B03","B04","B05","B06","B07","B08","B8A","B09","B10","B11","B12"],
+        "input": {
+          "shape": [-1, 13, 224, 224],
+          "dim_order": ["batch", "channel", "y", "x"],
+          "data_type": "float32"
+        },
+        "value_scaling": [{ "type": "min-max", "min": 0, "max": 1 }],
+        "resize_type": null,
+        "pre_processing_function": null
+      },
+      {
+        "name": "S1GRD/RTC backscatter",
+        "constellation": "sentinel-1",
+        "processing_level": "GRD/RTC",
+        "bands": ["VV","VH"],
+        "input": {
+          "shape": [-1, 2, 224, 224],
+          "dim_order": ["batch", "channel", "y", "x"],
+          "data_type": "float32"
+        },
+        "value_scaling": [{ "type": "z-score", "mean": 0, "stddev": 1 }],
+        "resize_type": null,
+        "pre_processing_function": null
+      }
+    ],
+
+    "mlm:output": [
+      {
+        "name": "geo-aware embeddings",
+        "tasks": ["classification", "embedding"],
+        "result": {
+          "shape": [24, 196, 1024],
+          "dim_order": ["batch", "y", "x", "embedding"],
+          "data_type": "float32"
+        },
+        "post_processing_function": null
+      }
+    ]
+  },
+
+  "assets": {
+    "weights": {
+      "href": "https://drive.google.com/file/d/1nImq7n_awDCKHTH4XMROvS3_4kRr28D2/view?usp=sharing",
+      "title": "TorchScript Weights",
+      "description": "Inference-ready TorchScript model",
+      "type": "application/octet-stream; application=pytorch-script",
+      "roles": ["mlm:model", "mlm:weights"],
+      "mlm:artifact_type": "torchscript"
+    },
+    "readme": {
+      "href": "https://github.com/your-org/geo_multisource_embedder/README.md",
+      "title": "Model Card",
+      "type": "text/markdown",
+      "roles": ["documentation"]
+    }
+  },
+
+  "links": []
+}

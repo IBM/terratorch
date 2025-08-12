@@ -27,3 +27,4 @@ examples/**/*tif*
 annotations.json
 **/*.tif
 replicate
+examples/notebooks/model.onnx
