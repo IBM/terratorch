@@ -10,7 +10,7 @@ on:
 jobs:
   deploy-docs:
     runs-on: ubuntu-latest
-     permissions:
+    permissions:
       pages: write
       id-token: write
       contents: read
