@@ -6,6 +6,7 @@ from typing import Optional
 from collections.abc import Iterable,Iterator
 import terratorch
 
+
 class MultiModalDataGenerator():
     def __init__(self,config: dict):
         #print("DummyDataGenerator called")
@@ -44,12 +45,12 @@ class DummyDataGenerator():
         }
         elif "WxCDownscalingTask" in self.task_type:
             return {
-            "y": torch.full((1, 360, 576), 1.0),
-            "static_y": torch.full((11, 360, 576), 1.0),
-            "climate_y": torch.full((1, 360, 576), 1.0),
-            "x": torch.full((280, 60, 96), 1.0),
-            "static_x": torch.full((11, 60, 96), 1.0),
-            "climate_x": torch.full((140, 60, 96), 1.0),
+            "y": torch.full((1, 360, 576), 1.0,dtype=torch.float16),
+            "static_y": torch.full((11, 360, 576), 1.0,dtype=torch.float16),
+            "climate_y": torch.full((1, 360, 576), 1.0,dtype=torch.float16),
+            "x": torch.full((280, 60, 96), 1.0,dtype=torch.float16),
+            "static_x": torch.full((11, 60, 96), 1.0,dtype=torch.float16),
+            "climate_x": torch.full((140, 60, 96), 1.0,dtype=torch.float16),
             }
                 
         else:
