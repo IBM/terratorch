@@ -75,105 +75,133 @@ def subtract_along_dim2(tensor: torch.Tensor):
 
 
 class TemporalWrapper(nn.Module):
-    def __init__(self, encoder: nn.Module, pooling="mean", concat=False, n_timestamps=None, features_permute_op = None):
+    def __init__(self, encoder: nn.Module, pooling: str, concat=None, n_timestamps=None, features_permute_op = None):
         """
         Wrapper for applying a temporal encoder across multiple time steps.
 
         Args:
             encoder (nn.Module): The feature extractor (backbone).
             pooling (str): Type of pooling ('mean', 'max', 'diff') with 'diff' working only with 2 timestamps.
-            concat (bool): Whether to concatenate features instead of pooling.
-            n_timestamps (int): Number of timestamps. Necessary in case of concat.
+            concat (bool): Deprecated - 'concat' now intagrated as pooling option.
+            n_timestamps (int): Deprecated 
             features_permute_op (list): Permutation operation to perform on the features before aggregation. This is in case the features to do not match either 'BCHW' or 'BLC' formats. It is reversed once aggregation has happened.
         """
         super().__init__()
+
+        if concat or n_timestamps is not None:
+            print("Warning: 'concat' and 'n_timestamps' are deprecated in TemporalWrapper. Use concate as 'pooling' type instead.")
+
+        supported_poolings = ["mean", "max", "diff", "keep", "concat"]
+        if pooling not in supported_poolings:
+            raise ValueError(f"Unsupported pooling '{pooling}', choose from {supported_poolings}.")
+        
         self.encoder = encoder
-        self.concat = concat
-        self.pooling_type = pooling
-        self.n_timestamps = n_timestamps
+        self.pooling = pooling
         self.features_permute_op = features_permute_op
 
-        if pooling not in ["mean", "max", "diff"]:
-            raise ValueError("Pooling must be 'mean', 'max' or 'diff'")
-
-        # Ensure the encoder has an out_channels attribute
-        if hasattr(encoder, "out_channels"):
-            self.out_channels = encoder.out_channels * (1 if not concat else self.n_timestamps)
-        else:
-            raise AttributeError("Encoder must have an `out_channels` attribute.")
-
-
-    def forward(self, x: torch.Tensor) -> list[torch.Tensor]:
+    def pool_temporal(self, stacked: torch.Tensor, pooling: str):
+        """
+        Pool per-timestep outputs based on the specified pooling method.
+        """
+        if pooling == "concat":
+            return stacked.flatten(1, 2)    
+        elif pooling == "max":
+            return torch.max(stacked, dim=2).values
+        elif pooling == "diff":
+            return subtract_along_dim2(stacked)
+        elif pooling == "mean":
+            return torch.mean(stacked, dim=2)
+        else: 
+            return stacked
+        
+    def reshape_5d(self, tensor: torch.Tensor, batch_size: int, timesteps: int) -> torch.Tensor:
+        """
+        Reshape `tensor` to 5d: [B, C, T, H, W], channel dim C will be 1 for ViT outputs.
+        """
+        H_lat, W_lat = tensor.shape[-2:]
+        return tensor.view(batch_size, -1, timesteps, H_lat, W_lat)
+    
+    def permute_op(self, tensor: torch.Tensor, permute_op: list[int]) -> torch.Tensor:
+        """
+        Apply a permutation operation to the tensor.
+        """
+        if permute_op is not None:
+            if len(permute_op) != len(tensor.shape):
+                raise ValueError(f"Expected permute_op to have same number of dimensions as tensor, but got {len(permute_op)} and {len(tensor.shape)}")
+            return torch.permute(tensor, permute_op)
+        return tensor
+        
+    def forward(self, 
+                x: torch.Tensor | dict[str, torch.Tensor]
+                ) -> list[torch.Tensor | dict[str, torch.Tensor]]:
         """
         Forward pass for temporal processing.
 
         Args:
-            x (Tensor): Input tensor of shape [B, C, T, H, W].
+            x: Input tensor of shape [B, C, T, H, W] or dict with shape {modality: [B, C_mod, T, H, W]}.
 
         Returns:
-            List[Tensor]: A list of processed tensors, one per feature map.
+            List: A list of processed tensors/dicts, one per feature map.
         """
 
-        if x.dim() != 5:
-            raise ValueError(f"Expected input shape [B, C, T, H, W], but got {x.shape}")
+        is_dict = isinstance(x, dict)
+        sample = next(iter(x.values())) if is_dict else x
 
-        if (self.pooling_type == 'diff') & (x.shape[2] != 2):
-            raise ValueError(f"Expected 2 timestamps for aggregation method 'diff'")
-
-        batch_size, _, timesteps, _, _ = x.shape
-
-        # Initialize lists to store feature maps at each timestamp
-        num_feature_maps = None  # Will determine dynamically
-        features_per_map = []  # Stores feature maps across timestamps
-
-        for t in range(timesteps):
-            feat = self.encoder(x[:, :, t, :, :])  # Extract features at timestamp t
-                
-            if not isinstance(feat, list):  # If the encoder outputs a single feature map, convert to list
-                if isinstance(feat, tuple):
-                    feat = list(feat)
-                else:
-                    feat = [feat]
-
-            if num_feature_maps is None:
-                num_feature_maps = len(feat)  # Determine how many feature maps the encoder produces
-
-            for i, feature_map in enumerate(feat):
-                if len(features_per_map) <= i:
-                    features_per_map.append([])  # Create list for each feature map
-
-                feature_map = feature_map[0] if isinstance(feature_map, tuple) else feature_map
-                if self.features_permute_op is not None:
-                    if len(self.features_permute_op) != len(feature_map.shape):
-                        ValueError(f"Expected features_permute_op to have same number of dimensions of features, but got {len(self.features_permute_op)} and {len(feature_map.shape)}")
-                    # print('Old shape:', feature_map.shape)
-                    feature_map = torch.permute(feature_map, self.features_permute_op)
-                    # print('New shape:', feature_map.shape)
-                    
-                features_per_map[i].append(feature_map)  # Store feature map at time t
-                    
-        # Stack features along the temporal dimension
-        for i in range(num_feature_maps):
-            try:
-                features_per_map[i] = torch.stack(features_per_map[i], dim=2)  # Shape: [B, C', T, H', W']
-            except RuntimeError as e:
-                raise
-
-        # Apply pooling or concatenation
-        if self.concat:
-            features_per_map_agg = [feat.reshape(batch_size, -1, feat.shape[-2], feat.shape[-1]) if len(feat.shape) == 5 else feat.reshape(batch_size, feat.shape[-3], -1) for feat in features_per_map]
-        elif self.pooling_type == "max":
-            features_per_map_agg = [torch.max(feat, dim=2)[0] for feat in features_per_map]  # Max pooling across T
-        elif self.pooling_type == "diff":
-            features_per_map_agg = [feat[:, :, 0, ...] - feat[:, :, 1, ...] for feat in features_per_map]
-        else:
-            features_per_map_agg = [torch.mean(feat, dim=2) for feat in features_per_map]
+        if sample.dim() != 5:
+            raise ValueError(f"Expected input shape [B, C, T, H, W], got {tuple(sample.shape)}")
         
         if self.features_permute_op is not None:
-            # use position in the permutation op as the value of the permuation and the original value of permutation as the index
-            reverse_permuation_op = [None] * len(self.features_permute_op)
-            for i in range(len(self.features_permute_op)):
-                reverse_permuation_op[self.features_permute_op[i]] = i
-            features_per_map_agg = [torch.permute(feat, reverse_permuation_op) for feat in features_per_map_agg]
+            self.reverse_permute_op = [None] * len(self.features_permute_op)
+            for i, p in enumerate(self.features_permute_op):
+                self.reverse_permute_op[p] = i
+        else:
+            self.reverse_permute_op = None
 
-        return features_per_map_agg
+        if is_dict:
+            B, _, T, H, W = sample.shape
+            flat_input = {
+                k: v.permute(0, 2, 1, 3, 4).reshape(-1, v.shape[1], *v.shape[3:])
+                for k, v in x.items()
+            }
+
+        else:
+            B, C, T, H, W = sample.shape
+            flat_input = x.permute(0, 2, 1, 3, 4).reshape(B * T, C, H, W)
+
+        feat = self.encoder(flat_input)
+
+        if isinstance(feat, tuple):
+            feat = list(feat)
+        elif isinstance(feat, list):
+            feat = feat
+        else:
+            feat = [feat]
+
+        outputs = []
+
+        for feature_map in feat:
+            if isinstance(feature_map, dict):
+                mod_keys = feature_map.keys()
+                pooled = {}
+                for k in mod_keys:
+                    
+                    feature_map[k] = self.permute_op(feature_map[k], self.features_permute_op)
+                    mod_stacked = self.reshape_5d(feature_map[k], B, T)
+                    pooled[k] = self.pool_temporal(mod_stacked, self.pooling)
+                    pooled[k] = self.permute_op(pooled[k], self.reverse_permute_op)
+    
+                    if pooled[k].shape[1] == 1: # Squeeze if only one channel (ViT output)
+                        pooled[k] = pooled[k].squeeze(1)
+
+            else:
+                feature_map = self.permute_op(feature_map, self.features_permute_op)
+                stacked = self.reshape_5d(feature_map, B, T)
+                pooled = self.pool_temporal(stacked, self.pooling)
+                pooled = self.permute_op(pooled, self.reverse_permute_op)
+
+                if pooled.shape[1] == 1: # Squeeze if only one channel dimension (ViT output) - TODO: Check if this should be removed
+                    pooled = pooled.squeeze(1)
+                
+            outputs.append(pooled)
+
+        return outputs
