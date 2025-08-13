@@ -1,0 +1,30 @@
+name: Uploading documentation
+
+on: 
+  push:
+    branches:
+      - update-docs
+  pull_request:
+    branches:
+      - update-docs
+jobs:
+  deploy-docs:
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+      contents: read
+    environment:
+      name: github-pages
+      url: ibm.github.io/terratorch/
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v4
+      - name: deploy documentation
+        run: |
+          git fetch origin
+          git checkout update-docs
+          git pull origin update-docs
+          mike deploy --push --allow-empty stable
+
+
