@@ -5,7 +5,7 @@ components: adding code (as new models, tasks and
 auxiliary algorithms or even addressing the solution of a bug), examples using the software (scripts, yaml files and notebooks showcasing the package) and documentation.
 All these ways are valid for TerraTorch
 and the users are welcome to contribute in any of these fronts. However, some recommendations and rules are
-necessary in order to facilitate and organize his process. And this is the matter of the next paragraphs. 
+necessary in order to facilitate and organize the process. And this is the matter of the next paragraphs. 
 
 ## Contributing with code
 
