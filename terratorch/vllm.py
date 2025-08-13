@@ -6,56 +6,51 @@ from typing import Optional
 from collections.abc import Iterable,Iterator
 import terratorch
 
+from pydantic import BaseModel
+from typing import List,Dict
+from enum import Enum
+
+class InputTypeEnum(str, Enum):
+    tensor= 'torch.Tensor'
+
+class data(BaseModel):
+    type: InputTypeEnum 
+    shape: List[int]
+
+class InputDefinition(BaseModel):
+    data: Dict[str,data]
+    target: Optional[str] = None
 
 class MultiModalDataGenerator():
     def __init__(self,config: dict):
         #print("DummyDataGenerator called")
         #self.task_type= config["task_args"]["task"] 
+        self.config = config
+        self.input_definition = InputDefinition(**config["input"])
         self.task_type= config['model']["class_path"]
     
     def _get_mm_fields_config(self) -> dict[str:str]:
-        if "SemanticSegmentationTasks"in self.task_type: 
-            return {
-                "pixel_values": "image",
-                "location_coords": "image"
-            }
-        elif "WxCDownscalingTask" in self.task_type:
-            return {
-            "y": "image",
-            "static_y": "image",
-            "climate_y": "image",
-            "x": "image",
-            "static_x": "image",
-            "climate_x": "image"
-            }
+        fields = {}
+        for input_name,input in self.input_definition.data.items():
+            if input.type == InputTypeEnum.tensor:
+                fields[input_name] = "image"
+        return fields
 
 class DummyDataGenerator():
     def __init__(self,config: dict):
         #print("DummyDataGenerator called")
         #self.task_type= config["task_args"]["task"] 
+        self.config = config
+        self.input_definition = InputDefinition(**config["input"])
         self.task_type= config['model']["class_path"]
     
     def get_dummy_mm_data(self) -> dict[str,torch.Tensor]:
 
-        if "SemanticSegmentationTask" in self.task_type:
-            return {
-            "pixel_values": torch.full((6, 512, 512), 1.0,
-                                       dtype=torch.float16),
-            "location_coords": torch.full((1, 2), 1.0, dtype=torch.float16),
-        }
-        elif "WxCDownscalingTask" in self.task_type:
-            return {
-            "y": torch.full((1, 360, 576), 1.0,dtype=torch.float16),
-            "static_y": torch.full((11, 360, 576), 1.0,dtype=torch.float16),
-            "climate_y": torch.full((1, 360, 576), 1.0,dtype=torch.float16),
-            "x": torch.full((280, 60, 96), 1.0,dtype=torch.float16),
-            "static_x": torch.full((11, 60, 96), 1.0,dtype=torch.float16),
-            "climate_x": torch.full((140, 60, 96), 1.0,dtype=torch.float16),
-            }
-                
-        else:
-            raise Exception(f"task type {self.task_type} is not supported")
-            
+        mm_data = {}
+        for input_name,input in self.input_definition.data.items():
+            if input.type == InputTypeEnum.tensor:
+                mm_data[input_name] = torch.full(input.shape,1.0,dtype=torch.float16)
+        return mm_data
 
 def lookup_task_name(class_path):
     if "SemanticSegmentationTask" in class_path:
@@ -64,7 +59,6 @@ def lookup_task_name(class_path):
         return 'WxCModelFactory'
     else:
         raise Exception("Factory not supported")
-    
         
 class InferenceRunner():
     
@@ -78,87 +72,32 @@ class InferenceRunner():
         model_factory = terratorch.registry.MODEL_FACTORY_REGISTRY.build(model_conf["init_args"]["model_factory"])
         self.model = model_factory.build_model(task=task_name,**model_conf['init_args']['model_args'])
 
-#        self.task_type = config["task_args"]["task"]
-#
-#        if self.task_type == "SemanticSegmentationTask":
-#
-#            self.task = SemanticSegmentationTask(
-#                config["model_args"],
-#                config["task_args"]["model_factory"],
-#                loss=config["task_args"]["loss"],
-#                lr=config["task_args"]["lr"],
-#                ignore_index=config["task_args"]["ignore_index"],
-#                optimizer=config["task_args"]["optimizer"],
-#                optimizer_hparams=config["optimizer_params"],
-#                scheduler=config["task_args"]["scheduler"],
-#                scheduler_hparams=config["scheduler_params"],
-#                plot_on_val=config["task_args"]["plot_on_val"],
-#                freeze_decoder=config["task_args"]["freeze_decoder"],
-#                freeze_backbone=config["task_args"]["freeze_backbone"],
-#            )
-#
-#        else:
-#            raise ValueError(
-#                "Unsupported task. "
-#                "Only SemanticSegmentationTask is supported for now "
-#                "by PrithviGeospatialMAE.")
+        self.input_definition = InputDefinition(**config["input"])
+
     
     def _parse_and_validate_multimodal_data(
         self,**kwargs:object) -> tuple[torch.Tensor, Optional[torch.Tensor]] :
+        mm_data = {}
+        for input_name,input in self.input_definition.data.items():
+            input_value= kwargs.pop(input_name, None)
+            if input.type == InputTypeEnum.tensor:
+                if not isinstance(input_value, torch.Tensor):
+                    raise ValueError(f"Incorrect type of {input_name}. "
+                                    f"Got type: {type(input_value)}, expected {input.type}")
+                if self.input_definition.target and input_name != self.input_definition.target:
+                    input_value= torch.unbind(input_value, dim=0)[0]
 
+            mm_data[input_name] = input_value
+        return mm_data
 
-        if "SemanticSegmentationTask" in self.task_type:
-
-            pixel_values = kwargs.pop("pixel_values", None)
-            if not isinstance(pixel_values, torch.Tensor):
-                raise ValueError(f"Incorrect type of pixel_values. "
-                                f"Got type: {type(pixel_values)}")
-
-            location_coords = kwargs.pop("location_coords", None)
-            if not isinstance(location_coords, torch.Tensor):
-                raise ValueError(f"Incorrect type of location_coords. "
-                                f"Got type: {type(location_coords)}")
-            location_coords = torch.unbind(location_coords, dim=0)[0]
-            if location_coords.shape == torch.Size([0]):
-                location_coords = None
-
-            return pixel_values, location_coords
-        elif "WxCDownscalingTask" in self.task_type:
-            y= kwargs.pop("y", None)
-            if not isinstance(y, torch.Tensor):
-                raise ValueError(f"Incorrect type of y. "
-                                f"Got type: {type(y)}")
-            static_y= kwargs.pop("static_y", None)
-            climate_y= kwargs.pop("climate_y", None)
-            x= kwargs.pop("x", None)
-            static_x= kwargs.pop("static_x", None)
-            climate_x= kwargs.pop("climate_x", None)
-            return { 
-                    "y": y,
-                    "static_y": static_y,
-                    "climate_y": climate_y,
-                    "x": x,
-                    "static_x": static_x,
-                    "climate_x": climate_x,
-            }
-
-
-        else:
-            raise Exception(f"task type {self.task_type} is not supported")
     
     def forward(self,**kwargs: object):
         
-        if "SemanticSegmentationTask" in self.task_type:
-            pixel_values, location_coords = (
-                self._parse_and_validate_multimodal_data(**kwargs))
-            model_output = self.model(pixel_values,
-                                           location_coords=location_coords)
-
-        elif "WxCDownscalingTask" in self.task_type:
-            input = self._parse_and_validate_multimodal_data(**kwargs)
-            model_output = self.model(input)
+        input = self._parse_and_validate_multimodal_data(**kwargs)
+        if self.input_definition.target:
+            target_input = input.pop(self.input_definition.target)
+            model_output = self.model(target_input,**input)
         else:
-            raise Exception(f"task type {self.task_type} is not supported")
-
+            model_output = self.model(input)
         return model_output
     
