@@ -81,7 +81,7 @@ model:
   init_args:
     model_args:
       decoder: UperNetDecoder
-      pretrained: true
+      pretrained: false
       backbone: prithvi_swin_B
         #backbone_pretrained_cfg_overlay:
         #file: tests/prithvi_swin_B.pt

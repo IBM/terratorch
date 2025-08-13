@@ -21,9 +21,16 @@ from terratorch.cli_tools import LightningInferenceModel
         "prithvi_swinL_model_factory_config",
         "smp_resnet34_model_factory_config",
         "encoderdecoder_timm_resnet34_model_factory",
+        "encoder_decoder_timm_resnet18_model_factory",
+        "encoder_decoder_timm_resnet50_model_factory",
+        "encoder_decoder_timm_resnet101_model_factory",
+        "encoder_decoder_timm_resnet152_model_factory",
+        "encoderdecoder_clay_v1_base_model_factory",
+        "encoderdecoder_timm_convnext_large-fb-in22k_model_factory",
+        "encoderdecoder_timm_convnext_xlarge-fb-in22k_model_factory",
     ],
 )
-def test_burns_fit(model_name):
+def test_models_fit(model_name):
     result = subprocess.run(
         ['terratorch', 'fit', '-c', f"./configs/test_{model_name}.yaml"], capture_output=True, text=True
     )
@@ -186,7 +193,24 @@ def test_current_terratorch_version_buildings_predict(config_name, buildings_ima
     gc.collect()
 
 
-@pytest.mark.parametrize("config_name", ["eo_v1_100", "eo_v2_300", "eo_v2_600", "swinb", "swinl"])
+@pytest.mark.parametrize(
+    "config_name",
+    [
+        "eo_v1_100",
+        "eo_v2_300",
+        "eo_v2_600",
+        "swinb",
+        "swinl",
+        "timm_resnet34",
+        "timm_resnet18",
+        "timm_resnet50",
+        "timm_resnet101",
+        "timm_resnet152",
+        "clay_v1",
+        "timm_convnext_large",
+        "timm_convnext_xlarge",
+    ],
+)
 # Models trained with current terratorch version
 def test_current_terratorch_version_burnscars_predict(config_name, burnscars_image):
     # config_path = f"configs/test_{config_name}.yaml"
@@ -206,7 +230,24 @@ def test_current_terratorch_version_burnscars_predict(config_name, burnscars_ima
 
 
 @pytest.mark.parametrize(
-    "model_name", ["eo_v1_100", "eo_v2_300", "eo_v2_600", "swinb", "swinl", "smp_resnet34", "enc_dec_resnet34"]
+    "model_name",
+    [
+        "eo_v1_100",
+        "eo_v2_300",
+        "eo_v2_600",
+        "swinb",
+        "swinl",
+        "smp_resnet34",
+        "enc_dec_resnet34",
+        "timm_resnet34",
+        "timm_resnet18",
+        "timm_resnet50",
+        "timm_resnet101",
+        "timm_resnet152",
+        "clay_v1",
+        "timm_convnext_large",
+        "timm_convnext_xlarge",
+    ],
 )
 def test_cleanup(model_name):
 
