@@ -56,6 +56,7 @@ jobs:
         run: pip cache purge
       - name: Test with pytest
         run: |
+          export TOKENIZERS_PARALLELISM=false
           pytest -s --cov=terratorch -v --cov-report term-missing tests
 
 

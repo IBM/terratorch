@@ -96,7 +96,7 @@ model:
   init_args:
     model_args:
       decoder: UperNetDecoder
-      backbone_pretrained: True
+      backbone_pretrained: false
       backbone: satlas_swin_b_sentinel2_si_ms
       # backbone: ssl4eol_resnet18_landsat_oli_tirs_toa_moco
       # backbone_pretrain_img_size: 512
