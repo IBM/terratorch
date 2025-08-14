@@ -46,6 +46,7 @@
     options:
         toc_label: "TorchGeo Swin Satlas"
 
+<--
 ### Timm
 
 You can use any model from `timm` as a backbone. 
@@ -62,3 +63,4 @@ You can use any model from `timm` as a backbone.
     options:
         heading_level: 4
         show_source: false
+-->
