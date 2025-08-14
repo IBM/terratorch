@@ -64,7 +64,7 @@ class IgnoreIndexLossWrapper(nn.Module):
         return loss * mask.float(), mask.sum() + eps
 
     def forward(self, output: Tensor, target: Tensor) -> Tensor:
-        loss: Tensor = self.loss_function(output, target)
+        loss: Tensor = self.loss_function(output, target.float())
         if self.ignore_index is not None:
             loss, norm_value = self._mask(loss, target)
         else:
