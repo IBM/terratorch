@@ -6,11 +6,6 @@ import os
 from torchvision.datasets.vision import VisionDataset
 from PIL import Image
 from collections import defaultdict
-import logging
-import json
-import collections
-
-
 
 # Ignore warnings
 import warnings
@@ -93,51 +88,75 @@ class XviewDataset(VisionDataset):
             and returns a transformed version.
     """
     
-    def __init__(self, root, annFile, transform=None):
-        self.root = root
-        self.annFile = annFile
-        self.transform = transform
+    def __init__(self, root, annFile, transform=None, target_transform=None, transforms=None):
+        super(XviewDataset, self).__init__(root, transforms, transform, target_transform)
+        image_ids = [int(f.replace(".tif", "")) for f in os.listdir(root)]
 
-        # Load annotations
-        with open(self.annFile) as f:
-            anns = json.load(f)
-
-        self.objects = {}  # object_id -> object
-        self.ids = set()
-
-        for idx, feat in enumerate(anns['features']):
-            obj_id = idx
-            image_id = feat['properties']['image_id']
-            self.ids.add(image_id)
-            self.objects[obj_id] = {
+        if not os.path.isdir(root):
+            raise RuntimeError('Dataset not found or corrupted.' +
+                               ' Go to <http://xviewdataset.org/> to download it.')
+        
+        if not os.path.isfile(annFile):
+            raise RuntimeError('Annotation file not found or corrupted.' +
+                               ' See <http://xviewdataset.org/> to download it.')
+        
+        # === load annotations ===
+        import json
+        import time
+        with open(annFile, "r") as f:
+            print("loading annotations into memory...")
+            t0 = time.time()
+            raw_anns = json.load(f)
+            raw_anns = raw_anns["features"]
+            t1 = time.time()
+            print(f"Done (t={t1-t0:.2f}s)")
+            
+        # === create index ===
+        print("creating index...")
+        image_id_to_object_ids = defaultdict(list)
+        objects = []
+        for i in range(len(raw_anns)): # for all objects
+            image_id = int(raw_anns[i]["properties"]["image_id"].replace(".tif", ""))
+            xmin, ymin, xmax, ymax = map(int, raw_anns[i]["properties"]["bounds_imcoords"].split(","))
+            x = xmin
+            y = ymin
+            w = xmax - xmin
+            h = ymax - ymin
+            type_id = raw_anns[i]["properties"]["type_id"]
+            image_id_to_object_ids[image_id].append(i)
+            objects.append({
                 "image_id": image_id,
-                "bbox": feat['properties']['bounds_imcoords'],
-                "type_id": feat['properties']['type_id']
-            }
-
-        # Create mapping from image_id to all object_ids
-        self.image_id_to_object_ids = collections.defaultdict(list)
-        for obj_id, obj in self.objects.items():
-            self.image_id_to_object_ids[obj["image_id"]].append(obj_id)
-
-        self.ids = list(self.ids)
-
+                "bbox": [x, y, w, h],
+                "category_id": type_id
+            })
+        print("index created!")
+        self.image_ids = image_ids
+        self.image_id_to_object_ids = image_id_to_object_ids
+        self.objects = objects
+        
     def __getitem__(self, index):
-        img_id = self.ids[index]
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            tuple: Tuple (image, target) where target is a dictionary.
+        """
+        img_id = self.image_ids[index]
         ann_ids = self.image_id_to_object_ids[img_id]
-        target = [self.objects[ann_id] for ann_id in ann_ids]
+        target = []
+        for ann_id in ann_ids:
+            target.append(self.objects[ann_id])
 
-        fname = os.path.join(self.root, img_id)  # don't append .tif if it's already in img_id
-        img = Image.open(fname).convert("RGB")
-
-        if self.transform is not None :
-            img = self.transform(img)
-
+        fname = os.path.join(self.root, str(img_id) + ".tif")
+        
+        img = Image.open(os.path.join(self.root, fname)).convert("RGB")
+        if self.transforms is not None:
+            img, target = self.transforms(img, target)
         return img, target
 
     def __len__(self):
         return len(self.ids)
-
 
 
 if __name__ == "__main__":

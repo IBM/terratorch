@@ -1,7 +1,7 @@
 import os
 import logging
 from torch.utils.data import DataLoader
-import pytorch_lightning as pl
+from lightning.pytorch import LightningDataModule
 from torchvision import transforms
 
 try:
@@ -16,7 +16,7 @@ except ImportError as e:
     raise e
 
 
-class XviewDataModule(pl.LightningDataModule):
+class XviewDataModule(LightningDataModule):
 
     def __init__(self, data_dir, ann_file, batch_size=8, num_workers=4, img_transform=None):
         super().__init__()
@@ -38,12 +38,19 @@ class XviewDataModule(pl.LightningDataModule):
             transform=self.img_transform
         )
 
+    def detection_collate(batch, *args, **kwargs):
+        images = [item[0] for item in batch]
+        targets = [item[1] for item in batch]
+        return images, targets
+
+
     def train_dataloader(self):
         return DataLoader(
             self.xv_dataset,
             batch_size=self.batch_size,
             shuffle=True,
-            num_workers=self.num_workers
+            num_workers=self.num_workers,
+            collate_fn=self.detection_collate,
         )
 
     def val_dataloader(self):
@@ -51,7 +58,8 @@ class XviewDataModule(pl.LightningDataModule):
             self.xv_dataset,
             batch_size=self.batch_size,
             shuffle=False,
-            num_workers=self.num_workers
+            num_workers=self.num_workers,
+            collate_fn=self.detection_collate,
         )
 
     def test_dataloader(self):
@@ -59,5 +67,6 @@ class XviewDataModule(pl.LightningDataModule):
             self.xv_dataset,
             batch_size=self.batch_size,
             shuffle=False,
-            num_workers=self.num_workers
+            num_workers=self.num_workers,
+            collate_fn=self.detection_collate,
         )
