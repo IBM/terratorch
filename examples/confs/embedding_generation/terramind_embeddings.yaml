@@ -89,7 +89,9 @@ model:
       merge_method: mean
     filename_key: file_id
     output_dir: 'output/terramind_embeddings'
+    output_format: tiff
     layers: [-1] # Model layers to extract embeddings from, -1 means the last layer
+    embedding_pooling: null
     temporal_cfg: 
       temporal_wrapper: True
       temporal_pooling: keep

@@ -29,6 +29,7 @@ class EmbeddingGenerationTask(BaseTask):
             layers: list[int] = [-1],
             temporal_cfg: dict | None = None,
             output_format: str = "tiff",
+            embedding_pooling: str | None = None,
     ) -> None:
         """Constructor for EmbeddingGenerationTask
 
@@ -41,14 +42,21 @@ class EmbeddingGenerationTask(BaseTask):
             layers (list[int], optional): List of layers to extract embeddings from. Defaults to [-1].
             temporal_cfg (dict, optional): Configuration for temporal processing. Defaults to None.
             output_format (str, optional): Format for saving embeddings ('tiff' for GeoTIFF, 'parquet' for GeoParquet). Defaults to "tiff".
+            embedding_pooling (str | None, optional): Pooling method for embeddings. Defaults to None.
         """
-
         self.output_path = Path(output_dir)
         self.output_path.mkdir(parents=True, exist_ok=True)
         self.temporal_cfg = temporal_cfg or {}
 
         super().__init__()
         self.save_hyperparameters()
+
+        self._warned_keys: set[str] = set() 
+
+    def _warn_once(self, key: str, msg: str) -> None:
+        if key not in self._warned_keys:
+            logging.warning(msg)
+            self._warned_keys.add(key)
 
     def configure_callbacks(self):
         return []
@@ -99,49 +107,6 @@ class EmbeddingGenerationTask(BaseTask):
 
         return embeddings, valid_layers
     
-    def pull_metadata(
-        self, 
-        data: dict
-    ) -> dict:
-        """Extract known metadata fields from `batch`, removing them from data and returning a metadata dict.
-        Args:
-            data (dict): Input data dictionary containing metadata.
-        Returns:
-            dict: Metadata dictionary.
-        """
-        def pop_first(d: dict, keys):
-            for k in keys:
-                if k in d:
-                    return d.pop(k)
-            return None
-        
-        # Aliases in priority order
-        metadata_map = {
-            "file_id":       ("file_id",),
-            "product_id":    ("product_id",),
-            "time":          ("time", "time_", "timestamp"),
-            "grid_cell":     ("grid_cell",),
-            "grid_row_u":    ("grid_row_u",),
-            "grid_col_r":    ("grid_col_r",),
-            "geometry":      ("geometry",),
-            "utm_footprint": ("utm_footprint",),
-            "crs":           ("crs", "utm_crs"),
-            "pixel_bbox":    ("pixel_bbox",),
-            "bounds":        ("bounds",),
-            "center_lat":    ("center_lat", "centre_lat"),
-            "center_lon":    ("center_lon", "centre_lon"),
-        } 
-
-        metadata = {}
-
-        for key, aliases in metadata_map.items():
-            value = pop_first(data, aliases)
-            if value is not None:
-                metadata[key] = value
-        
-        return metadata
-
-    
     @torch.no_grad()
     def predict_step(self, batch: dict) -> None:
         image_key = self.hparams.image_key
@@ -190,7 +155,49 @@ class EmbeddingGenerationTask(BaseTask):
             self.write_batch(embedding, filenames, metadata, path, fmt)
         else:
             raise TypeError(f"Unsupported embedding type: {type(embedding)}. Expected Tensor or dict of Tensors.")
+
+    def pull_metadata(
+        self, 
+        data: dict
+    ) -> dict:
+        """Extract known metadata fields from `batch`, removing them from data and returning a metadata dict.
+        Args:
+            data (dict): Input data dictionary containing metadata.
+        Returns:
+            dict: Metadata dictionary.
+        """
+        def pop_first(d: dict, keys):
+            for k in keys:
+                if k in d:
+                    return d.pop(k)
+            return None
         
+        # Aliases in priority order
+        metadata_map = {
+            "file_id":       ("file_id",),
+            "product_id":    ("product_id",),
+            "time":          ("time", "time_", "timestamp"),
+            "grid_cell":     ("grid_cell",),
+            "grid_row_u":    ("grid_row_u",),
+            "grid_col_r":    ("grid_col_r",),
+            "geometry":      ("geometry",),
+            "utm_footprint": ("utm_footprint",),
+            "crs":           ("crs", "utm_crs"),
+            "pixel_bbox":    ("pixel_bbox",),
+            "bounds":        ("bounds",),
+            "center_lat":    ("center_lat", "centre_lat"),
+            "center_lon":    ("center_lon", "centre_lon"),
+        } 
+
+        metadata = {}
+
+        for key, aliases in metadata_map.items():
+            value = pop_first(data, aliases)
+            if value is not None:
+                metadata[key] = value
+        
+        return metadata
+      
     def write_batch(
             self,
             embedding: torch.Tensor,
@@ -210,18 +217,60 @@ class EmbeddingGenerationTask(BaseTask):
                 for t in range(T):
                     filename = filenames[b][t]
                     metadata_sample = {k: v[b][t] for k, v in metadata.items()}
+                    embedding_sample = self.pool_embedding(embedding[b, t, ...], self.hparams.get("embedding_pooling"), self.hparams.get("has_cls", None))
                     if fmt == "tiff":
-                        self.write_tiff(embedding[b, t, ...], filename, metadata_sample, dir_path)
+                        self.write_tiff(embedding_sample, filename, metadata_sample, dir_path)
                     elif fmt == "parquet":
-                        self.write_parquet(embedding[b, t, ...], filename, metadata_sample, dir_path)
+                        self.write_parquet(embedding_sample, filename, metadata_sample, dir_path)
             else:
                 filename = filenames[b]
                 metadata_sample = {k: v[b] for k, v in metadata.items()}
+                embedding_sample = self.pool_embedding(embedding[b, ...], self.hparams.get("embedding_pooling"), self.hparams.get("has_cls", None))
                 if fmt == "tiff":
-                    self.write_tiff(embedding[b, ...], filename, metadata_sample, dir_path)
+                    self.write_tiff(embedding_sample, filename, metadata_sample, dir_path)
                 elif fmt == "parquet":
-                    self.write_parquet(embedding[b, ...], filename, metadata_sample, dir_path)
+                    self.write_parquet(embedding_sample, filename, metadata_sample, dir_path)
     
+    def pool_embedding(
+        self,
+        embedding: torch.Tensor,
+        pooling: str,
+        has_cls: bool | None,
+    ) -> torch.Tensor:
+        """Apply pooling to embeddings."""
+        if pooling in (None, "None", "keep"):
+            return embedding
+
+        if pooling.startswith("vit_"):
+            if embedding.dim() != 2:
+                raise ValueError(f"Expected 2D embedding for ViT pooling, got {embedding.dim()}D.")
+            if has_cls is None:
+                has_cls = embedding.shape[0] % 2 == 1
+            if has_cls is False and pooling == "vit_cls":
+                raise ValueError("Cannot use 'vit_cls' pooling without a CLS token.")
+            if has_cls is True and pooling != "vit_cls":
+                embedding = embedding[1:, :]
+
+        if pooling.startswith("cnn_") and embedding.dim() != 3:
+            raise ValueError(f"Expected 3D embedding for CNN pooling, got {embedding.dim()}D.")
+
+        if pooling == "vit_mean":
+            return embedding.mean(dim=0)
+        elif pooling == "vit_max":
+            return embedding.max(dim=0).values
+        elif pooling == "vit_min":
+            return embedding.min(dim=0).values
+        elif pooling == "vit_cls":
+            return embedding[0, :]
+        elif pooling == "cnn_mean":
+            return embedding.mean(dim=(1, 2))
+        elif pooling == "cnn_max":
+            return embedding.max(dim=(1, 2)).values
+        elif pooling == "cnn_min":
+            return embedding.min(dim=(1, 2)).values
+        else:
+            raise ValueError(f"Unsupported pooling method: {pooling}.")
+        
     def write_tiff(
         self,
         embedding: torch.Tensor,
@@ -234,9 +283,26 @@ class EmbeddingGenerationTask(BaseTask):
         out_path = dir_path / f"{Path(filename)}_embedding.tif"
         arr = embedding.detach().cpu().numpy()
 
-        if arr.ndim == 2: # Add third dim for ViT outputs              
-            arr = arr[None, ...]
-
+        if arr.ndim == 1:
+            self._warn_once(
+                "tiff 1d",
+                "1D embedding detected; GeoTIFF not recommended. Saving with height=1 and width=1."
+            )
+            arr = arr.reshape(1, 1, -1)
+        elif arr.ndim == 2:    
+            self._warn_once(
+                "tiff 2d",
+                "2D embedding detected with GeoTIFF output selected. "
+                "Assuming token sequence and reshaping to "
+                "[embedding_size, sqrt(num_tokens), sqrt(num_tokens)], "
+                "ignoring the CLS token if present. "
+                "Consider using 'parquet' for saving 2D embeddings."
+            )
+            if arr.shape[0] % 2 == 1:
+                arr = arr[1:]
+            sqrt_size = int(np.sqrt(arr.shape[0]))
+            arr = arr.reshape(arr.shape[1], sqrt_size, sqrt_size)
+                
         with rasterio.open( 
             out_path,
             "w",
