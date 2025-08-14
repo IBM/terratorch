@@ -55,10 +55,12 @@ class DummyDataGenerator():
 def lookup_task_name(class_path):
     if "SemanticSegmentationTask" in class_path:
         return 'segmentation'
-    if "WxCDownscalingTask" in class_path:
-        return 'WxCModelFactory'
+    elif "PixelwiseRegressionTask" in class_path:
+        return 'regression'
+    #if "WxCDownscalingTask" in class_path:
+    #    return 'WxCModelFactory'
     else:
-        raise Exception("Factory not supported")
+        return None
         
 class InferenceRunner():
     
