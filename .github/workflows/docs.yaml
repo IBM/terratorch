@@ -20,7 +20,7 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          pip install mkdocs-material mike  mkdocstrings[python] mkdocs-git-revision-date-localized-plugin
+          pip install mkdocs-material mike mkdocstrings[python] mkdocs-git-revision-date-localized-plugin timm
       - name: Clone repo
         uses: actions/checkout@v4
       - name: deploy documentation
