@@ -3,6 +3,11 @@ import logging
 from torch.utils.data import DataLoader
 from lightning.pytorch import LightningDataModule
 from torchvision import transforms
+import torch
+import torch.nn.functional as F
+from torchvision.models.detection.transform import GeneralizedRCNNTransform
+
+
 
 try:
     from terratorch.datasets.xview import XviewDataset
@@ -38,10 +43,43 @@ class XviewDataModule(LightningDataModule):
             transform=self.img_transform
         )
 
-    def detection_collate(batch, *args, **kwargs):
+    def detection_collate(self, batch):
         images = [item[0] for item in batch]
-        targets = [item[1] for item in batch]
-        return images, targets
+        annots_batch = [item[1] for item in batch]
+
+        # pad to max H,W
+        max_h = max(img.shape[1] for img in images)
+        max_w = max(img.shape[2] for img in images)
+        padded_images = []
+        for img in images:
+            c,h,w = img.shape
+            pad = (0, max_w-w, 0, max_h-h)  # (left,right,top,bottom)
+            padded_images.append(F.pad(img, pad, value=0.0))
+        images_tensor = torch.stack(padded_images, dim=0)  # [B,C,H,W]
+
+        boxes_list = []
+        labels_list = []
+        for annots in annots_batch:
+            boxes, labels = [], []
+            for obj in annots:
+                x1,y1,x2,y2 = map(float, obj['bbox'].split(','))
+                boxes.append([x1,y1,x2,y2])
+                labels.append(int(obj['type_id']))
+            boxes_list.append(torch.tensor(boxes, dtype=torch.float32) if boxes else torch.zeros((0,4),dtype=torch.float32))
+            labels_list.append(torch.tensor(labels, dtype=torch.int64) if labels else torch.zeros((0,),dtype=torch.int64))
+
+        rcnn_transform = GeneralizedRCNNTransform(min_size=800, max_size=1333,
+                                     image_mean=[0.485, 0.456, 0.406],
+                                     image_std=[0.229, 0.224, 0.225])
+
+        images = rcnn_transform(images)
+
+        return {
+            'image': images_tensor,  # [B,C,Hmax,Wmax]
+            'boxes': boxes_list,     # list of tensors
+            'labels': labels_list
+        }
+
 
 
     def train_dataloader(self):
