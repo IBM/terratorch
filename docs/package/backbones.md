@@ -46,7 +46,7 @@
     options:
         toc_label: "TorchGeo Swin Satlas"
 
-<--
+<!--
 ### Timm
 
 You can use any model from `timm` as a backbone. 
