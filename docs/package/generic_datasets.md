@@ -1,0 +1,19 @@
+# Generic Datasets
+
+:::terratorch.datasets.generic_pixel_wise_dataset.GenericNonGeoSegmentationDataset
+
+:::terratorch.datasets.generic_pixel_wise_dataset.GenericNonGeoPixelwiseRegressionDataset
+
+:::terratorch.datasets.generic_pixel_wise_dataset.GenericPixelWiseDataset
+
+:::terratorch.datasets.generic_scalar_label_dataset.GenericNonGeoClassificationDataset
+
+:::terratorch.datasets.generic_scalar_label_dataset.GenericScalarLabelDataset
+
+:::terratorch.datasets.generic_multimodal_dataset.GenericMultimodalSegmentationDataset
+
+:::terratorch.datasets.generic_multimodal_dataset.GenericMultimodalPixelwiseRegressionDataset
+
+:::terratorch.datasets.generic_multimodal_dataset.GenericMultimodalScalarDataset
+
+:::terratorch.datasets.generic_multimodal_dataset.GenericMultimodalDataset

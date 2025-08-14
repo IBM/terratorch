@@ -18,10 +18,6 @@ They must be instances of [Neck][terratorch.models.necks.Neck], which is a subcl
 
 The [EncoderDecoderFactory][terratorch.models.encoder_decoder_factory.EncoderDecoderFactory] returns a [PixelWiseModel][terratorch.models.pixel_wise_model.PixelWiseModel] or a [ScalarOutputModel][terratorch.models.scalar_output_model.ScalarOutputModel] depending on the task.
 
-### :::terratorch.models.encoder_decoder_factory.EncoderDecoderFactory
-    options:
-        show_source: false
-
 ## Encoders
 
 To be a valid encoder, an object must be an `nn.Module` and contain an attribute `out_channels`, basically a list of the channel dimensions corresponding to
@@ -73,7 +69,7 @@ Out[24]:
 ## Necks
 
 Necks are the connectors between encoder and decoder. They can perform operations such as selecting elements from the output of the encoder ([SelectIndices][terratorch.models.necks.SelectIndices]), reshaping the outputs of ViTs so they are compatible with CNNs ([ReshapeTokensToImage][terratorch.models.necks.ReshapeTokensToImage]), amongst others.
-Necks are `nn.Modules`, with an additional method `process_channel_list` which informs the [EncoderDecoderFactory][terratorch.models.encoder_decoder_factory.EncoderDecoderFactory] about how it will alter the channel list provided by `encoder.out_channels`. See a better description about necks [here](necks.md).
+Necks are `nn.Modules`, with an additional method `process_channel_list` which informs the [EncoderDecoderFactory][terratorch.models.encoder_decoder_factory.EncoderDecoderFactory] about how it will alter the channel list provided by `encoder.out_channels`. See a better description about necks [here](../package/necks.md).
 
 
 ## Decoders
@@ -81,14 +77,14 @@ Necks are `nn.Modules`, with an additional method `process_channel_list` which i
 To be a valid decoder, an object must be an `nn.Module` with an attribute `out_channels`, an `int` representing the channel dimension of the output.
 The first argument to its constructor will be a list of channel dimensions it should expect as input.
 It's forward method should accept a list of embeddings. To see a list of built-in decoders check the
-related [documentation](decoders.md). 
+related [documentation](../package/decoders.md). 
 
 ## Heads
 
 Most decoders require a final head to be added for a specific task (e.g. semantic segmentation vs pixel wise regression).
 Those registries producing decoders that dont require a head must expose the attribute `includes_head=True` so that a head is not added.
 Decoders passed as `nn.Modules` which do not require a head must expose the same attribute themselves. More
-about heads can be seen in its [documentation](heads.md). 
+about heads can be seen in its [documentation](../package/heads.md). 
 
 ## Decoder compatibilities
 
@@ -99,7 +95,7 @@ In this case, the [InterpolateToPyramidal][terratorch.models.necks.InterpolateTo
 ### SMP decoders
 
 Not all decoders are guaranteed to work with all encoders without additional necks.
-Please check smp documentation to understand the embedding spatial dimensions expected by each decoder.
+Please check smp documentation to understand the embedding spatial dimensions expected by each decoder and add suitable necks to reshape the encoder output.
 
 In particular, smp seems to assume the first feature in the passed feature list has the same spatial resolution
 as the input, which may not always be true, and may break some decoders.
