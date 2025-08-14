@@ -65,13 +65,11 @@ class InferenceRunner():
     def __init__(self, config: dict):
         
 
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model_conf=  config["model"]
         self.task_type= config['model']["class_path"]
         task_name = lookup_task_name(model_conf["class_path"])
         model_factory = terratorch.registry.MODEL_FACTORY_REGISTRY.build(model_conf["init_args"]["model_factory"])
         self.model = model_factory.build_model(task=task_name,**model_conf['init_args']['model_args'])
-
         self.input_definition = InputDefinition(**config["input"])
 
     
