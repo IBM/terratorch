@@ -9,6 +9,7 @@ from collections import defaultdict
 import logging
 import json
 import collections
+import torch
 
 
 
@@ -94,6 +95,8 @@ class XviewDataset(VisionDataset):
     """
     
     def __init__(self, root, annFile, transform=None):
+        import os, json, collections
+
         self.root = root
         self.annFile = annFile
         self.transform = transform
@@ -108,6 +111,12 @@ class XviewDataset(VisionDataset):
         for idx, feat in enumerate(anns['features']):
             obj_id = idx
             image_id = feat['properties']['image_id']
+
+            img_path = os.path.join(self.root, f"{image_id}")
+            if not os.path.exists(img_path):
+                logging.info(f'{img_path} skipped because it was not found')
+                continue
+
             self.ids.add(image_id)
             self.objects[obj_id] = {
                 "image_id": image_id,
@@ -120,12 +129,37 @@ class XviewDataset(VisionDataset):
         for obj_id, obj in self.objects.items():
             self.image_id_to_object_ids[obj["image_id"]].append(obj_id)
 
+        # Keep ids only for images that still exist
         self.ids = list(self.ids)
+
+
+    def filter_invalid_boxes(self, target):
+        boxes = target["boxes"]
+        # keep only boxes with strictly positive width & height
+        keep = (boxes[:, 2] > boxes[:, 0]) & (boxes[:, 3] > boxes[:, 1])
+        target["boxes"] = boxes[keep]
+        if "labels" in target:
+            target["labels"] = target["labels"][keep]
+        return target
+
+    def target_list_to_dict(self, target_list):
+        if len(target_list) == 0:
+            return {
+                "boxes": torch.zeros((0, 4), dtype=torch.float32),
+                "labels": torch.zeros((0,), dtype=torch.int64)
+            }
+        boxes = torch.tensor([list(map(float, t['bbox'].split(','))) for t in target_list], dtype=torch.float32)
+        labels = torch.tensor([t['type_id'] for t in target_list], dtype=torch.int64)
+        return {"boxes": boxes, "labels": labels}
+
 
     def __getitem__(self, index):
         img_id = self.ids[index]
         ann_ids = self.image_id_to_object_ids[img_id]
         target = [self.objects[ann_id] for ann_id in ann_ids]
+
+        target = self.target_list_to_dict(target)
+        target = self.filter_invalid_boxes(target)
 
         fname = os.path.join(self.root, img_id)  # don't append .tif if it's already in img_id
         img = Image.open(fname).convert("RGB")
@@ -138,11 +172,3 @@ class XviewDataset(VisionDataset):
     def __len__(self):
         return len(self.ids)
 
-
-
-if __name__ == "__main__":
-    ds = XviewDataset(root="/home/nitta/data/xview/train_images",
-                      annFile="/home/nitta/data/xview/xView_train.geojson")
-    img, target = ds[0]
-    print(img)
-    print(target)

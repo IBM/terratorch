@@ -43,42 +43,90 @@ class XviewDataModule(LightningDataModule):
             transform=self.img_transform
         )
 
+
+ #   def detection_collate(self, batch):
+ #       images = [item[0] for item in batch]
+ #       annots_batch = [item[1] for item in batch]#
+
+        # pad images to max H, W
+#       max_h = max(img.shape[1] for img in images)
+ #       max_w = max(img.shape[2] for img in images)
+  #      padded_images = []
+   #     for img in images:
+    #        c, h, w = img.shape
+     #       pad = (0, max_w - w, 0, max_h - h)  # (left, right, top, bottom)
+      #      padded_images.append(F.pad(img, pad, value=0.0))
+       # images_tensor = torch.stack(padded_images, dim=0)  # [B,C,H,W]
+
+#        boxes_list = []
+#        labels_list = []
+
+#        for annots in annots_batch:
+#            boxes, labels = [], []
+#            for obj in annots:
+#                if isinstance(obj, dict):
+#                    x1, y1, x2, y2 = map(float, obj['bbox'].split(','))
+#                    type_id = int(obj['type_id'])
+#                elif isinstance(obj, str):
+#                    parts = list(map(float, obj.split(',')))  # x1,y1,x2,y2,type_id
+#                    x1, y1, x2, y2, type_id = parts
+#                else:
+#                    raise TypeError(f"Unexpected annotation type: {type(obj)}")
+#                boxes.append([x1, y1, x2, y2])
+#                labels.append(type_id)#
+#
+#            boxes_list.append(
+#                torch.tensor(boxes, dtype=torch.float32) if boxes else torch.zeros((0, 4), dtype=torch.float32)
+#            )
+#            labels_list.append(
+#                torch.tensor(labels, dtype=torch.int64) if labels else torch.zeros((0,), dtype=torch.int64)
+#            )
+#
+#        return {
+#            'image': images_tensor,  # [B,C,Hmax,Wmax]
+#            'boxes': boxes_list,     # list of tensors per image
+#            'labels': labels_list    # list of tensors per image
+#        }
+
+
     def detection_collate(self, batch):
+        """
+        Collate function for TorchVision object detection datasets.
+        Returns:
+            images: Tensor [B,C,Hmax,Wmax]
+            targets: List[dict], each dict has 'boxes' [N,4] and 'labels' [N]
+        """
         images = [item[0] for item in batch]
         annots_batch = [item[1] for item in batch]
 
-        # pad to max H,W
+        # pad images to max H,W
         max_h = max(img.shape[1] for img in images)
         max_w = max(img.shape[2] for img in images)
         padded_images = []
         for img in images:
-            c,h,w = img.shape
-            pad = (0, max_w-w, 0, max_h-h)  # (left,right,top,bottom)
+            c, h, w = img.shape
+            pad = (0, max_w - w, 0, max_h - h)  # left, right, top, bottom
             padded_images.append(F.pad(img, pad, value=0.0))
-        images_tensor = torch.stack(padded_images, dim=0)  # [B,C,H,W]
+        images_tensor = torch.stack(padded_images, dim=0)  # [B,C,Hmax,Wmax]
 
-        boxes_list = []
-        labels_list = []
-        for annots in annots_batch:
-            boxes, labels = [], []
-            for obj in annots:
-                x1,y1,x2,y2 = map(float, obj['bbox'].split(','))
-                boxes.append([x1,y1,x2,y2])
-                labels.append(int(obj['type_id']))
-            boxes_list.append(torch.tensor(boxes, dtype=torch.float32) if boxes else torch.zeros((0,4),dtype=torch.float32))
-            labels_list.append(torch.tensor(labels, dtype=torch.int64) if labels else torch.zeros((0,),dtype=torch.int64))
+        # prepare targets
+        targets = []
+        #for annots in annots_batch:
+        #    boxes = torch.tensor([
+        #        list(map(float, obj['bbox'].split(','))) for obj in annots
+        #    ], dtype=torch.float32) if annots else torch.zeros((0, 4), dtype=torch.float32)
+#
+ #           labels = torch.tensor([
+  #              int(obj['type_id']) for obj in annots
+   #         ], dtype=torch.int64) if annots else torch.zeros((0,), dtype=torch.int64)
+#
+ #           targets.append({
+  #              'boxes': boxes,
+   #             'labels': labels
+    #        })
 
-        rcnn_transform = GeneralizedRCNNTransform(min_size=800, max_size=1333,
-                                     image_mean=[0.485, 0.456, 0.406],
-                                     image_std=[0.229, 0.224, 0.225])
 
-        images = rcnn_transform(images)
-
-        return {
-            'image': images_tensor,  # [B,C,Hmax,Wmax]
-            'boxes': boxes_list,     # list of tensors
-            'labels': labels_list
-        }
+        return { 'image': images_tensor, 'boxes': [d["boxes"] for d in annots_batch], 'labels': [d["labels"] for d in annots_batch] }
 
 
 
