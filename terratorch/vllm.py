@@ -62,11 +62,12 @@ def lookup_task_name(class_path):
     else:
         return None
         
-class InferenceRunner():
+class InferenceRunner(nn.Module):
     
     def __init__(self, config: dict):
         
 
+        super().__init__()
         model_conf=  config["model"]
         self.task_type= config['model']["class_path"]
         task_name = lookup_task_name(model_conf["class_path"])
