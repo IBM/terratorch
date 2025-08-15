@@ -10,7 +10,7 @@ on:
 jobs:
   deploy-docs:
     runs-on: ubuntu-latest
-     permissions:
+    permissions:
       pages: write
       id-token: write
       contents: read
@@ -18,10 +18,15 @@ jobs:
       name: github-pages
       url: ibm.github.io/terratorch/
     steps:
+      - name: Install dependencies
+        run: |
+          pip install mkdocs-material mike mkdocstrings[python] mkdocs-git-revision-date-localized-plugin timm
       - name: Clone repo
         uses: actions/checkout@v4
       - name: deploy documentation
         run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
           git fetch origin
           git checkout update-docs
           git pull origin update-docs

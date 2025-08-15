@@ -20,7 +20,9 @@
 [![tests](https://github.com/IBM/terratorch/actions/workflows/test.yaml/badge.svg)](https://github.com/ibm/terratorch/actions/workflows/test.yaml)
 [![MkDocs](https://img.shields.io/badge/MkDocs-526CFE?logo=materialformkdocs&logoColor=fff)](https://ibm.github.io/terratorch/)
 ![cov](https://github.com/IBM/terratorch/raw/main/assets/coverage-badge.svg)
+<!--
 [![PyPI Downloads](https://img.shields.io/pypi/dm/terratorch.svg?label=PyPI%20downloads)](https://pypi.org/project/terratorch/)
+-->
 
 ## Overview
 TerraTorch is a PyTorch domain library based on [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/) and the [TorchGeo](https://github.com/microsoft/torchgeo) domain library
