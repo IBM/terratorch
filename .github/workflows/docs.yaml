@@ -23,6 +23,8 @@ jobs:
           pip install mkdocs-material mike mkdocstrings[python] mkdocs-git-revision-date-localized-plugin timm
       - name: Clone repo
         uses: actions/checkout@v4
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       - name: deploy documentation
         run: |
           git config user.name 'github-actions[bot]'
