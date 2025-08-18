@@ -21,7 +21,7 @@ modification be merged to `main`. In this way, when an user wants to modify
     See how to configure it [here](https://pre-commit.com/#installation). 
 * If you are an user outside the IBM org, create a fork to add your modifications. If you are inside the IBM
     org or have received writing provileges, create a branch for it. 
-* If you are adding new features, we ask you to also add tests for it. These tests are defined in the
+* If you are adding new features, we ask you to also add tests (inside `tests/`) for it. These tests are defined in the
     directory `tests/` and are fundamental to check if your feature is working as expected and not breaking
     anything. If your feature is something more complex, as a new model or auxiliary algorithm, you can also
     (optionally) to add a complete example, as a notebook, demonstrating how the feature works.
