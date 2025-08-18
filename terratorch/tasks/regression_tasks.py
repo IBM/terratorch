@@ -64,7 +64,7 @@ class IgnoreIndexLossWrapper(nn.Module):
         return loss * mask.float(), mask.sum() + eps
 
     def forward(self, output: Tensor, target: Tensor) -> Tensor:
-        loss: Tensor = self.loss_function(output, target)
+        loss: Tensor = self.loss_function(output, target.float())
         if self.ignore_index is not None:
             loss, norm_value = self._mask(loss, target)
         else:
@@ -102,6 +102,9 @@ class IgnoreIndexMetricWrapper(WrapperMetric):
             items_to_take[torch.isnan(target)] = False  # Filter NaN values as well
             target = target[items_to_take]
             preds = preds[items_to_take]
+        else:
+            preds = preds.flatten()
+            target = target.flatten()
         return self.metric.update(preds, target)
 
     def forward(self, preds: Tensor, target: Tensor, *args, **kwargs) -> Any:

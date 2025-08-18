@@ -26,67 +26,68 @@ trainer:
   enable_checkpointing: true
   default_root_dir: tests/
 data:
-  class_path: GenericNonGeoPixelwiseRegressionDataModule
+  class_path: terratorch.datamodules.GenericMultiModalDataModule
   init_args:
+    task: 'regression'
     batch_size: 2
     num_workers: 4
     train_transform:
-      #- class_path: albumentations.HorizontalFlip
-      #  init_args:
-      #    p: 0.5      
-      #- class_path: albumentations.Rotate
-      #  init_args:
-      #    limit: 30
-      #    border_mode: 0 # cv2.BORDER_CONSTANT
-      #    value: 0
-      #    # mask_value: 1
-      #    p: 0.5
       - class_path: ToTensorV2
+    modalities:
+      - S2L2A
     dataset_bands:
-      - 0
-      - BLUE
-      - GREEN
-      - RED
-      - NIR_NARROW
-      - SWIR_1
-      - SWIR_2
-      - 1
-      - 2
-      - 3
-      - 4
+      S2L2A:
+        - 0
+        - BLUE
+        - GREEN
+        - RED
+        - NIR_NARROW
+        - SWIR_1
+        - SWIR_2
+        - 1
+        - 2
+        - 3
+        - 4
     output_bands:
-      - BLUE
-      - GREEN
-      - RED
-      - NIR_NARROW
-      - SWIR_1
-      - SWIR_2
+      S2L2A:
+        - BLUE
+        - GREEN
+        - RED
+        - NIR_NARROW
+        - SWIR_1
+        - SWIR_2
     rgb_indices:
       - 2
       - 1
       - 0
-    train_data_root: tests/resources/inputs
+    train_data_root:
+      S2L2A: tests/resources/inputs
     train_label_data_root: tests/resources/inputs
-    val_data_root: tests/resources/inputs
+    val_data_root:
+      S2L2A: tests/resources/inputs
     val_label_data_root: tests/resources/inputs
-    test_data_root: tests/resources/inputs
+    test_data_root:
+      S2L2A: tests/resources/inputs
     test_label_data_root: tests/resources/inputs 
-    img_grep: "regression*input*.tif"
-    label_grep: "regression*label*.tif"
+    img_grep:
+      S2L2A: "*input.tif"
+    label_grep: "*label.tif"
     means:
-    - 547.36707
-    - 898.5121
-    - 1020.9082
-    - 2665.5352
-    - 2340.584
-    - 1610.1407
+      S2L2A:
+      - 547.36707
+      - 898.5121
+      - 1020.9082
+      - 2665.5352
+      - 2340.584
+      - 1610.1407
     stds:
-    - 411.4701
-    - 558.54065
-    - 815.94025
-    - 812.4403
-    - 1113.7145
-    - 1067.641
+      S2L2A:
+      - 411.4701
+      - 558.54065
+      - 815.94025
+      - 812.4403
+      - 1113.7145
+      - 1067.641
     no_label_replace: -1
     no_data_replace: 0
 
@@ -110,7 +111,7 @@ model:
       decoder: UNetDecoder
       decoder_channels: [ 512, 256, 128, 64 ]
     loss: rmse
-    ignore_index: -1
+#    ignore_index: -1
     freeze_backbone: true
     freeze_decoder: false
     tiled_inference_parameters:

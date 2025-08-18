@@ -77,7 +77,9 @@ def test_linear_decoder(upsampling_size, num_classes):
 @pytest.mark.parametrize("do_pool", [False])
 @pytest.mark.parametrize("model_name", ["nano", "tiny", "base"])
 def test_galileo_decoders(do_pool, model_name, input_galileo):
-    backbone = BACKBONE_REGISTRY.build(f"galileo_{model_name}_encoder", pretrained=True, patch_size=16, do_pool=do_pool)
+    backbone = BACKBONE_REGISTRY.build(
+        f"galileo_{model_name}_encoder", pretrained=False, patch_size=16, do_pool=do_pool
+    )
     decoder = DECODER_REGISTRY.build("FCNDecoder", embed_dim=[128])
     neck = NECK_REGISTRY.build("ReshapeTokensToImage", channel_list=[128], remove_cls_token=False)
 

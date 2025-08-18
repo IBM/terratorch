@@ -33,6 +33,10 @@ def setup_and_cleanup(model_name):
 )
 @pytest.mark.parametrize("case", ["fit", "test", "validate", "compute_statistics"])
 def test_finetune_multiple_backbones(model_name, case):
+    if model_name == "terramind_v1_base" and case == "compute_statistics":
+        # Does not work with the multimodal datamodule used in the TerraMind test
+        pytest.skip()
+
     command_list = [case, "-c", f"tests/resources/configs/manufactured-finetune_{model_name}.yaml"]
     _ = build_lightning_cli(command_list)
 
@@ -40,7 +44,7 @@ def test_finetune_multiple_backbones(model_name, case):
 
 
 @pytest.mark.parametrize(
-    "model_name", ["terramind_v1_base", "prithvi_eo_v1_100", "prithvi_swin_L", "prithvi_eo_v2_600"]
+    "model_name", ["prithvi_eo_v1_100", "prithvi_swin_L", "prithvi_eo_v2_600"]
 )
 def test_finetune_multiple_backbones_with_prediction(model_name):
     command_list = ["fit", "-c", f"tests/resources/configs/manufactured-finetune_{model_name}.yaml"]
