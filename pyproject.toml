@@ -107,10 +107,6 @@ peft = [
   "peft>=0.15.0"
 ]
 
-galileo = [
-  "galileo @ git+https://github.com/Joao-L-S-Almeida/terratorch-galileo.git"
-]
-
 [project.urls]
 Documentation = "https://ibm.github.io/terratorch/"
 Issues = "https://github.com/IBM/terratorch/issues"
