@@ -19,11 +19,22 @@ class DummyEncoder(nn.Module):
     def forward(self, x):
         return self.conv(x)
 
+class DummyDictEncoder(nn.Module):
+    def forward(self, x):
+        B = x.shape[0]
+        return {
+            "mod1": torch.randn(B, 64, 16, 16, device=x.device),      
+            "mod2": torch.randn(B, 4, 4, 8, device=x.device),    
+            "mod3": torch.randn(B, 2, 128, device=x.device),        
+        }
 
 @pytest.fixture
 def dummy_encoder():
     return DummyEncoder()
 
+@pytest.fixture
+def dummy_dict_encoder():
+    return DummyDictEncoder()
 
 def test_temporal_wrapper_swin_forward_shapes(dummy_encoder):
     # Built-in Swin
@@ -64,31 +75,33 @@ def test_temporal_wrapper_swin_forward_shapes(dummy_encoder):
 
     gc.collect()
 
+def test_encoder_returning_dict_modalities(dummy_dict_encoder):
+    B, C, T, H, W = 2, 3, 4, 16, 16
+    x = torch.randn(B, C, T, H, W)
+    wrapper = TemporalWrapper(dummy_dict_encoder, pooling="mean")
+
+    out_list = wrapper(x)
+    assert isinstance(out_list, list) and len(out_list) == 1
+    out = out_list[0]
+    assert set(out.keys()) == {"mod1", "mod2", "mod3"}
+
+    assert out["mod1"].shape == (B, 64, 16, 16)  
+    assert out["mod2"].shape == (B, 4, 4, 8)  
+    assert out["mod3"].shape == (B, 2, 128)    
+    gc.collect()
 
 def test_temporal_wrapper_initialization(dummy_encoder):
     # Test valid initialization with default parameters
     wrapper = TemporalWrapper(dummy_encoder)
-    assert wrapper.pooling_type == "mean"
-    assert not wrapper.concat
-    assert wrapper.out_channels == dummy_encoder.out_channels
+    assert wrapper.pooling == "mean"
 
     # Test valid initialization with custom parameters
-    wrapper = TemporalWrapper(dummy_encoder, pooling="max", concat=True, n_timestamps=4)
-    assert wrapper.pooling_type == "max"
-    assert wrapper.concat
-    assert wrapper.out_channels == dummy_encoder.out_channels * 4
+    wrapper = TemporalWrapper(dummy_encoder, pooling="max")
+    assert wrapper.pooling == "max"
 
     # Test invalid pooling type
-    with pytest.raises(ValueError, match="Pooling must be 'mean', 'max' or 'diff'"):
+    with pytest.raises(ValueError, match="Unsupported pooling 'invalid'"):
         TemporalWrapper(dummy_encoder, pooling="invalid")
-
-    # Test encoder without out_channels attribute
-    class InvalidEncoder(nn.Module):
-        def forward(self, x):
-            return x
-
-    with pytest.raises(AttributeError, match="Encoder must have an `out_channels` attribute"):
-        TemporalWrapper(InvalidEncoder())
 
     gc.collect()
 
@@ -150,7 +163,7 @@ def test_temporal_wrapper_pooling_modes(dummy_encoder):
 
     gc.collect()
     # Test concatenation
-    wrapper = TemporalWrapper(encoder, concat=True, n_timestamps=timesteps)
+    wrapper = TemporalWrapper(encoder, pooling="concat")
     output = wrapper(x)
     assert isinstance(output, list)
     assert len(output) == 5
@@ -189,7 +202,7 @@ def test_temporal_wrapper_pooling_modes(dummy_encoder):
 
     gc.collect()
     # Test concatenation
-    wrapper = TemporalWrapper(encoder, concat=True, n_timestamps=timesteps)
+    wrapper = TemporalWrapper(encoder, pooling="concat")
     output = wrapper(x)
     assert isinstance(output, list)
     assert len(output) == 12
@@ -232,7 +245,7 @@ def test_temporal_wrapper_pooling_modes(dummy_encoder):
 
     gc.collect()
     # Test concatenation
-    wrapper = TemporalWrapper(encoder, concat=True, n_timestamps=timesteps, features_permute_op=(0, 3, 1, 2))
+    wrapper = TemporalWrapper(encoder, pooling="concat", features_permute_op=(0, 3, 1, 2))
     output = wrapper(x)
     assert isinstance(output, list)
     assert len(output) == 4
@@ -248,3 +261,4 @@ def test_temporal_wrapper_pooling_modes(dummy_encoder):
     assert output[0].shape == (batch_size, 64, 64, 128)
 
     gc.collect()
+    
