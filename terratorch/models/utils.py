@@ -199,9 +199,9 @@ class TemporalWrapper(nn.Module):
                 pooled = self.pool_temporal(stacked, self.pooling)
                 pooled = self.permute_op(pooled, self.reverse_permute_op)
 
-                if pooled.shape[1] == 1: # Squeeze if only one channel dimension (ViT output) - TODO: Check if this should be removed
+                if pooled.shape[1] == 1: # Squeeze if only one channel dimension (ViT output)
                     pooled = pooled.squeeze(1)
-                
+                    
             outputs.append(pooled)
 
         return outputs

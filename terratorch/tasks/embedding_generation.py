@@ -67,11 +67,10 @@ class EmbeddingGenerationTask(BaseTask):
             self.hparams.model,
             **(self.hparams.model_args or {}),
         )
-
         if self.temporal_cfg.get("temporal_wrapper", False):
             self.model = TemporalWrapper(
                 self.model,
-                pooling=self.temporal_cfg.get("pooling", "keep"),
+                pooling=self.temporal_cfg.get("temporal_pooling", "keep"),
             )
 
         self.model.eval()
