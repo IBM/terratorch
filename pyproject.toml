@@ -44,7 +44,7 @@ dependencies = [
   "torchvision",
   "rioxarray",
   "albumentations==1.4.10",
-  "albucore=0.0.16",
+  "albucore==0.0.16",
   "rasterio",
   "torchmetrics",
   "geopandas",
