@@ -2,6 +2,7 @@ from torch import nn, Tensor
 import torch 
 from terratorch.registry import BACKBONE_REGISTRY
 import pdb
+import warnings
 
 class DecoderNotFoundError(Exception):
     pass
@@ -54,7 +55,6 @@ def pad_images(imgs: Tensor, patch_size: int | list, padding: str) -> Tensor:
         ])
     return imgs
 
-
 def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
     use_temporal = backbone_kwargs.pop('use_temporal', None)
     temporal_pooling = backbone_kwargs.pop('temporal_pooling', None)
@@ -70,26 +70,26 @@ def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
 
     return model
 
-def subtract_along_dim2(tensor: torch.Tensor):
-    return tensor[:, :, 0, ...] - tensor[:, :, 1, ...]
-
-
 class TemporalWrapper(nn.Module):
-    def __init__(self, encoder: nn.Module, pooling: str, concat=None, n_timestamps=None, features_permute_op = None):
+    def __init__(self, encoder: nn.Module, pooling: str='mean', concat=None, n_timestamps=None, features_permute_op = None):
         """
         Wrapper for applying a temporal encoder across multiple time steps.
 
         Args:
             encoder (nn.Module): The feature extractor (backbone).
             pooling (str): Type of pooling ('mean', 'max', 'diff') with 'diff' working only with 2 timestamps.
-            concat (bool): Deprecated - 'concat' now intagrated as pooling option.
+            concat (bool): Deprecated - 'concat' now integrated as pooling option.
             n_timestamps (int): Deprecated 
             features_permute_op (list): Permutation operation to perform on the features before aggregation. This is in case the features to do not match either 'BCHW' or 'BLC' formats. It is reversed once aggregation has happened.
         """
         super().__init__()
 
         if concat or n_timestamps is not None:
-            print("Warning: 'concat' and 'n_timestamps' are deprecated in TemporalWrapper. Use concate as 'pooling' type instead.")
+            warnings.warn(
+                "'concat' and 'n_timestamps' are deprecated in TemporalWrapper. "
+                "Use 'concat' as pooling type instead.",
+                DeprecationWarning
+                )
 
         supported_poolings = ["mean", "max", "diff", "keep", "concat"]
         if pooling not in supported_poolings:
@@ -99,6 +99,16 @@ class TemporalWrapper(nn.Module):
         self.pooling = pooling
         self.features_permute_op = features_permute_op
 
+        if features_permute_op is not None:
+            self.reverse_permute_op = [None] * len(features_permute_op)
+            for i, p in enumerate(features_permute_op):
+                self.reverse_permute_op[p] = i
+        else:
+            self.reverse_permute_op = None
+    
+    def subtract_along_dim1(self, tensor: torch.Tensor):
+        return tensor[:, 0, ...] - tensor[:, 1, ...]
+    
     def pool_temporal(self, stacked: torch.Tensor, pooling: str):
         """
         Pool per-timestep outputs based on the specified pooling method.
@@ -106,20 +116,33 @@ class TemporalWrapper(nn.Module):
         if pooling == "concat":
             return stacked.flatten(1, 2)    
         elif pooling == "max":
-            return torch.max(stacked, dim=2).values
+            return torch.max(stacked, dim=1).values
         elif pooling == "diff":
-            return subtract_along_dim2(stacked)
+            return self.subtract_along_dim1(stacked)
         elif pooling == "mean":
-            return torch.mean(stacked, dim=2)
+            return torch.mean(stacked, dim=1)
         else: 
             return stacked
         
-    def reshape_5d(self, tensor: torch.Tensor, batch_size: int, timesteps: int) -> torch.Tensor:
+    def reshape_5d(self, tensor: torch.Tensor, B: int, T: int) -> torch.Tensor:
         """
-        Reshape `tensor` to 5d: [B, C, T, H, W], channel dim C will be 1 for ViT outputs.
+        Reshape latent to [B, T, C, ...]. Appends dummy dim for ViTs.
         """
-        H_lat, W_lat = tensor.shape[-2:]
-        return tensor.view(batch_size, -1, timesteps, H_lat, W_lat)
+        if tensor.dim() == 4:  # Conv backbone: [BT, C, H, W]
+            C, H, W = tensor.shape[1:]
+            return tensor.view(B, T, C, H, W)
+        elif tensor.dim() == 3:  # ViT backbone: [BT, L, C]
+            L, C = tensor.shape[-2:]
+            return tensor.view(B, T, C, L, 1)
+        raise ValueError(f"Expected latent tensor to be 3D or 4D, but got {tensor.dim()}.")
+    
+    def vit_postprocess(self, tensor: torch.Tensor) -> torch.Tensor:
+        """
+        Reorders L and C dim and removes helper size-1 dim if present.
+        """
+        if tensor.shape[-1] != 1:
+            return tensor
+        return tensor.squeeze(-1).movedim(-1, -2)
     
     def permute_op(self, tensor: torch.Tensor, permute_op: list[int]) -> torch.Tensor:
         """
@@ -139,7 +162,6 @@ class TemporalWrapper(nn.Module):
 
         Args:
             x: Input tensor of shape [B, C, T, H, W] or dict with shape {modality: [B, C_mod, T, H, W]}.
-
         Returns:
             List: A list of processed tensors/dicts, one per feature map.
         """
@@ -149,13 +171,6 @@ class TemporalWrapper(nn.Module):
 
         if sample.dim() != 5:
             raise ValueError(f"Expected input shape [B, C, T, H, W], got {tuple(sample.shape)}")
-        
-        if self.features_permute_op is not None:
-            self.reverse_permute_op = [None] * len(self.features_permute_op)
-            for i, p in enumerate(self.features_permute_op):
-                self.reverse_permute_op[p] = i
-        else:
-            self.reverse_permute_op = None
 
         if is_dict:
             B, _, T, H, W = sample.shape
@@ -163,19 +178,15 @@ class TemporalWrapper(nn.Module):
                 k: v.permute(0, 2, 1, 3, 4).reshape(-1, v.shape[1], *v.shape[3:])
                 for k, v in x.items()
             }
-
         else:
             B, C, T, H, W = sample.shape
             flat_input = x.permute(0, 2, 1, 3, 4).reshape(B * T, C, H, W)
 
         feat = self.encoder(flat_input)
-
-        if isinstance(feat, tuple):
-            feat = list(feat)
-        elif isinstance(feat, list):
-            feat = feat
-        else:
+        if not isinstance(feat, (list, tuple)):
             feat = [feat]
+        else:
+            feat = list(feat)
 
         outputs = []
 
@@ -184,14 +195,13 @@ class TemporalWrapper(nn.Module):
                 mod_keys = feature_map.keys()
                 pooled = {}
                 for k in mod_keys:
-                    
                     feature_map[k] = self.permute_op(feature_map[k], self.features_permute_op)
                     mod_stacked = self.reshape_5d(feature_map[k], B, T)
                     pooled[k] = self.pool_temporal(mod_stacked, self.pooling)
                     pooled[k] = self.permute_op(pooled[k], self.reverse_permute_op)
-    
-                    if pooled[k].shape[1] == 1: # Squeeze if only one channel (ViT output)
-                        pooled[k] = pooled[k].squeeze(1)
+
+                    if pooled[k].shape[-1] == 1: 
+                        pooled[k] = self.vit_postprocess(pooled[k])
 
             else:
                 feature_map = self.permute_op(feature_map, self.features_permute_op)
@@ -199,8 +209,8 @@ class TemporalWrapper(nn.Module):
                 pooled = self.pool_temporal(stacked, self.pooling)
                 pooled = self.permute_op(pooled, self.reverse_permute_op)
 
-                if pooled.shape[1] == 1: # Squeeze if only one channel dimension (ViT output)
-                    pooled = pooled.squeeze(1)
+                if pooled.shape[-1] == 1: 
+                    pooled = self.vit_postprocess(pooled)
                     
             outputs.append(pooled)
 
