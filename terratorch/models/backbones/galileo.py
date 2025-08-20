@@ -37,7 +37,22 @@ def load_weights(model: nn.Module, ckpt_data: dict, **kwargs) -> nn.Module:
     return model
 
 
+def conditional_import_galileo(function, *args, **kwargs):
+    def inside(*args, **kwargs):
+        try:
+            from galileo.data.earthengine.s1 import S1_BANDS
+            from galileo.data.earthengine.s2 import ALL_S2_BANDS
+            from galileo.galileo import GalileoWrapper
+        except:
+            logging.getLogger("terratorch").info(
+                "The package `galileo` is not installed. If you want to use it, install it using"
+                "`pip install git+https://github.com/Joao-L-S-Almeida/terratorch-galileo.git`"
+            )
+        return function(*args, **kwargs)
+
+
 @TERRATORCH_BACKBONE_REGISTRY.register
+@conditional_import_galileo
 def galileo_tiny_encoder(
     pretrained: bool = None,
     kind: str = "s1",
@@ -60,6 +75,7 @@ def galileo_tiny_encoder(
 
 
 @TERRATORCH_BACKBONE_REGISTRY.register
+@conditional_import_galileo
 def galileo_base_encoder(
     pretrained: bool = None,
     kind: str = "s1",
@@ -82,6 +98,7 @@ def galileo_base_encoder(
 
 
 @TERRATORCH_BACKBONE_REGISTRY.register
+@conditional_import_galileo
 def galileo_nano_encoder(
     pretrained: bool = None,
     kind: str = "s1",
