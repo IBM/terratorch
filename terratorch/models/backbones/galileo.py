@@ -50,6 +50,8 @@ def conditional_import_galileo(function, *args, **kwargs):
             )
         return function(*args, **kwargs)
 
+    return inside
+
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 @conditional_import_galileo
