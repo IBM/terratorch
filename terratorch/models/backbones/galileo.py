@@ -6,16 +6,6 @@ from torch import nn
 
 from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
 
-try:
-    from galileo.data.earthengine.s1 import S1_BANDS
-    from galileo.data.earthengine.s2 import ALL_S2_BANDS
-    from galileo.galileo import GalileoWrapper
-except:
-    logging.getLogger("terratorch").info(
-        "The package `galileo` is not installed. If you want to use it, install it using"
-        "`pip install git+https://github.com/Joao-L-S-Almeida/terratorch-galileo.git`"
-    )
-
 
 def load_weights(model: nn.Module, ckpt_data: dict, **kwargs) -> nn.Module:
     logging.getLogger("terratorch").info("Loading weights")
@@ -37,24 +27,7 @@ def load_weights(model: nn.Module, ckpt_data: dict, **kwargs) -> nn.Module:
     return model
 
 
-def conditional_import_galileo(function, *args, **kwargs):
-    def inside(*args, **kwargs):
-        try:
-            from galileo.data.earthengine.s1 import S1_BANDS
-            from galileo.data.earthengine.s2 import ALL_S2_BANDS
-            from galileo.galileo import GalileoWrapper
-        except:
-            logging.getLogger("terratorch").info(
-                "The package `galileo` is not installed. If you want to use it, install it using"
-                "`pip install git+https://github.com/Joao-L-S-Almeida/terratorch-galileo.git`"
-            )
-        return function(*args, **kwargs)
-
-    return inside
-
-
 @TERRATORCH_BACKBONE_REGISTRY.register
-@conditional_import_galileo
 def galileo_tiny_encoder(
     pretrained: bool = None,
     kind: str = "s1",
@@ -77,7 +50,6 @@ def galileo_tiny_encoder(
 
 
 @TERRATORCH_BACKBONE_REGISTRY.register
-@conditional_import_galileo
 def galileo_base_encoder(
     pretrained: bool = None,
     kind: str = "s1",
@@ -100,7 +72,6 @@ def galileo_base_encoder(
 
 
 @TERRATORCH_BACKBONE_REGISTRY.register
-@conditional_import_galileo
 def galileo_nano_encoder(
     pretrained: bool = None,
     kind: str = "s1",
@@ -128,6 +99,16 @@ class Galileo(nn.Module):
         self, kind: str = "s1", transpose: bool = False, bands: list = None, model_bands: list = None, **kwargs
     ):
         super().__init__()
+
+        try:
+            from galileo.data.earthengine.s1 import S1_BANDS
+            from galileo.data.earthengine.s2 import ALL_S2_BANDS
+            from galileo.galileo import GalileoWrapper
+        except:
+            logging.getLogger("terratorch").info(
+                "The package `galileo` is not installed. If you want to use it, install it using"
+                "`pip install git+https://github.com/Joao-L-S-Almeida/terratorch-galileo.git`"
+            )
 
         self.kind = kind
 
