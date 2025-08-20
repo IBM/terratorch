@@ -363,18 +363,23 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                                      f"(e.g. '*_mod.tif'). Intermediate wildcards do not work, found {grep}.")
             self.image_grep = {m: image_grep[m] if m in image_grep else "*" for m in modalities}
         else:
+            image_grep = image_grep or "*"  # Handle None
             if "*" not in image_grep:
                 warnings.warn(f"image_grep requires a wildcard with a suffix. Adding '*' to image_grep={image_grep}.")
                 image_grep = "*" + image_grep
-            self.image_grep = {m: image_grep or "*" for m in modalities}
+            if "*" in image_grep.strip("*/\\"):
+                raise ValueError(f"GenericMultiModalDataModule can only handle image_grep with suffixes "
+                                 f"(e.g. '*_mod.tif'). Intermediate wildcards do not work, found {image_grep}.")
+            self.image_grep = {m: image_grep for m in modalities}
+        label_grep = label_grep or "*"  # Handle None
         # Check if label_grep is valid
-        if label_grep is not None and '*' not in label_grep:
+        if '*' not in label_grep:
             warnings.warn(f"label_grep requires a wildcard with a suffix. Adding '*' to label_grep={label_grep}")
             label_grep = "*" + label_grep
-        if isinstance(label_grep, str) and "*" in label_grep.strip("*/\\"):
+        if "*" in label_grep.strip("*/\\"):
             raise ValueError(f"GenericMultiModalDataModule can only handle label_grep with suffixes "
                              f"(e.g. '*_mask.tif'). Intermediate wildcards do not work, found {label_grep}.")
-        self.label_grep = label_grep or "*"
+        self.label_grep = label_grep
         self.train_root = train_data_root
         self.val_root = val_data_root
         self.test_root = test_data_root
