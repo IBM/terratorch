@@ -104,8 +104,8 @@ class Galileo(nn.Module):
             from galileo.data.earthengine.s1 import S1_BANDS
             from galileo.data.earthengine.s2 import ALL_S2_BANDS
             from galileo.galileo import GalileoWrapper
-        except:
-            logging.getLogger("terratorch").info(
+        except ModuleNotFoundError:
+            raise Exception(
                 "The package `galileo` is not installed. If you want to use it, install it using"
                 "`pip install git+https://github.com/Joao-L-S-Almeida/terratorch-galileo.git`"
             )
