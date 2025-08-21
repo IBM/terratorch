@@ -3,7 +3,6 @@
 """
 This module contains generic data modules for instantiation at runtime.
 """
-
 import logging
 from collections.abc import Callable, Iterable
 from pathlib import Path
@@ -11,22 +10,24 @@ from typing import Any
 
 import albumentations as A
 import kornia.augmentation as K
+import numpy as np
 import torch
 from torch import Tensor
 from torch.utils.data import DataLoader
 from torchgeo.datamodules import NonGeoDataModule
 
+from terratorch.datamodules.utils import wrap_in_compose_is_list
 from terratorch.datasets import (
     GenericNonGeoClassificationDataset,
-    #  GenericNonGeoRegressionDataset,
     HLSBands,
 )
 from terratorch.io.file import load_from_file_or_attribute
 
 from .utils import check_dataset_stackability
+from einops import rearrange
+
 
 logger = logging.getLogger("terratorch")
-
 
 def wrap_in_compose_is_list(transform_list):
     # set check shapes to false because of the multitemporal case
@@ -40,7 +41,14 @@ class Normalize(Callable):
         self.stds = stds
 
     def __call__(self, batch):
-        image = batch["image"]
+        # min_value = self.means - 2 * self.stds
+        # max_value = self.means + 2 * self.stds
+        # img = (batch["image"] - min_value) / (max_value - min_value)
+        # img = torch.clip(img, 0, 1)
+        # batch["image"] = img
+        # return batch
+        # image = (batch["image"]
+        image = rearrange(batch["image"], 'b h w c -> b c h w') #really bad hack
         if len(image.shape) == 5:
             means = torch.tensor(self.means, device=image.device).view(1, -1, 1, 1, 1)
             stds = torch.tensor(self.stds, device=image.device).view(1, -1, 1, 1, 1)
@@ -50,8 +58,11 @@ class Normalize(Callable):
         else:
             msg = f"Expected batch to have 5 or 4 dimensions, but got {len(image.shape)}"
             raise Exception(msg)
+        
         batch["image"] = (image - means) / stds
+
         return batch
+
 
 
 class GenericNonGeoClassificationDataModule(NonGeoDataModule):
@@ -76,9 +87,10 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
         test_split: Path | None = None,
         ignore_split_file_extensions: bool = True,
         allow_substring_split_file: bool = True,
-        dataset_bands: list[HLSBands | int] | None = None,
-        predict_dataset_bands: list[HLSBands | int] | None = None,
-        output_bands: list[HLSBands | int] | None = None,
+        dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        predict_dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        predict_output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         constant_scale: float = 1,
         rgb_indices: list[int] | None = None,
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
@@ -87,6 +99,7 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
         expand_temporal_dimension: bool = False,
         no_data_replace: float = 0,
         drop_last: bool = True,
+        pin_memory: bool = False,
         check_stackability: bool = True,
         **kwargs: Any,
     ) -> None:
@@ -152,6 +165,7 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
         self.constant_scale = constant_scale
         self.no_data_replace = no_data_replace
         self.drop_last = drop_last
+        self.pin_memory = pin_memory
 
         self.dataset_bands = dataset_bands
         self.predict_dataset_bands = predict_dataset_bands if predict_dataset_bands else dataset_bands
@@ -167,7 +181,6 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
         #     K.Normalize(means, stds),
         #     data_keys=["image"],
         # )
-
         means = load_from_file_or_attribute(means)
         stds = load_from_file_or_attribute(stds)
 
@@ -228,7 +241,6 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
             self.predict_dataset = self.dataset_class(
                 self.predict_root,
                 self.num_classes,
-                require_label=False,
                 dataset_bands=self.predict_dataset_bands,
                 output_bands=self.output_bands,
                 constant_scale=self.constant_scale,
@@ -237,6 +249,7 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
                 no_data_replace=self.no_data_replace,
                 expand_temporal_dimension=self.expand_temporal_dimension,
             )
+
 
     def _dataloader_factory(self, split: str) -> DataLoader[dict[str, Tensor]]:
         """Implement one or more PyTorch DataLoaders.
@@ -255,7 +268,7 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
         batch_size = self._valid_attribute(f"{split}_batch_size", "batch_size")
 
         if self.check_stackability:
-            logger.info("Checking stackability.")
+            logger.info(f"Checking stackability for {split} split.")
             batch_size = check_dataset_stackability(dataset, batch_size)
 
         return DataLoader(
@@ -265,4 +278,5 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
             num_workers=self.num_workers,
             collate_fn=self.collate_fn,
             drop_last=split == "train" and self.drop_last,
+            pin_memory=self.pin_memory,
         )
