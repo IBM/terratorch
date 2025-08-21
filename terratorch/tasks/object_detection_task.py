@@ -301,14 +301,14 @@ class ObjectDetectionTask(BaseTask):
 
 
         self.log_dict(metrics, batch_size=batch_size)
-
+        
         if (
             batch_idx < 10
             and hasattr(self.trainer, 'datamodule')
             and hasattr(self.trainer.datamodule, 'plot')
             and self.logger
             and hasattr(self.logger, 'experiment')
-            and hasattr(self.logger.experiment, 'add_figure')
+            and (hasattr(self.logger.experiment, 'add_figure') | hasattr(self.logger.experiment, 'log_figure'))
         ):
 
             if 'boxes' not in batch.keys():
@@ -318,7 +318,7 @@ class ObjectDetectionTask(BaseTask):
             if self.framework == 'mask-rcnn':
                 if 'masks' not in batch.keys():
                     batch['masks'] = batch.pop(self.masks_field)
-            
+
             # dataset = self.trainer.datamodule.val_dataset
             batch['prediction_boxes'] = [b['boxes'].cpu() for b in y_hat]
             batch['prediction_labels'] = [b['labels'].cpu() for b in y_hat]
@@ -345,10 +345,16 @@ class ObjectDetectionTask(BaseTask):
                 pass
 
             if fig:
+                # pdb.set_trace()
                 summary_writer = self.logger.experiment
-                summary_writer.add_figure(
-                    f'image/{batch_idx}', fig, global_step=self.global_step
-                )
+                if hasattr(self.logger.experiment, 'add_figure'):
+                    summary_writer.add_figure(
+                        f'image/{batch_idx}', fig, global_step=self.global_step
+                    )
+                elif hasattr(self.logger.experiment, 'log_figure'):
+                    summary_writer.log_figure(
+                        self.logger.run_id, fig, f"epoch_{self.current_epoch}_{batch_idx}.png"
+                    )
                 plt.close()
 
     def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
