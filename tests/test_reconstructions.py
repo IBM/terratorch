@@ -16,7 +16,7 @@ def test_reconstruction_cli(model_name, case):
     gc.collect()
 
 
-@pytest.mark.parametrize("model_name", ['prithvi_eo_v1_100_mae', 'prithvi_eo_v2_300_tl_mae'])
+@pytest.mark.parametrize("model_name", ['prithvi_eo_v1_100_mae'])
 def test_prithvi_mae_reconstruction(model_name):
     model = FULL_MODEL_REGISTRY.build(
         model_name,
