@@ -65,6 +65,11 @@ dependencies = [
   "huggingface_hub",
   "tifffile",
   "python-box",
+  "wandb",
+  "termcolor",
+  "numba",
+  "hdf5plugin",
+  "h5netcdf"
 ]
 
 
@@ -107,14 +112,6 @@ visualize = [
 
 peft = [
   "peft>=0.15.0"
-]
-
-helio = [
-  "wandb",
-  "termcolor",
-  "numba",
-  "hdf5plugin",
-  "h5netcdf"
 ]
 
 [project.urls]
