@@ -3,17 +3,91 @@ import gc
 import os
 import warnings
 
+import numpy as np
+import pandas as pd
 import pytest
 import timm
 import torch
+import xarray as xr
+from huggingface_hub import hf_hub_download
 
 from terratorch.models.backbones import scalemae, torchgeo_vit
 from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY
 
 NUM_CHANNELS = 6
 NUM_FRAMES = 4
+REPO_ID = "nasa-ibm-ai4science/Surya-1.0_validation_data"
+INDEX_FILE = "index_2011_test.csv"
 
 IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "false") == "true"
+
+
+def load_sample_batch():
+    """
+    This function downloads, decompresses and formats a small number
+    of real solar data files from the HuggingFace repo: REPO_ID
+
+    The individual data files to be used are specified in the
+    index file: INDEX_FILE. The index file and data files are
+    in the HuggingFace repo.
+
+    The formatted data is then used to test the HelioSpectformer
+    """
+    index_path = hf_hub_download(
+        repo_id=REPO_ID,
+        filename=INDEX_FILE,
+        repo_type="dataset",
+    )
+
+    df = pd.read_csv(index_path)
+    selected_paths = df["path"].tolist()
+
+    channels = [
+        "aia94",
+        "aia131",
+        "aia171",
+        "aia193",
+        "aia211",
+        "aia304",
+        "aia335",
+        "aia1600",
+        "hmi_m",
+        "hmi_bx",
+        "hmi_by",
+        "hmi_bz",
+        "hmi_v",
+    ]
+
+    tensors = []
+    for name in selected_paths:
+        file_path = hf_hub_download(
+            repo_id=REPO_ID,
+            filename=name,
+            repo_type="dataset",
+        )
+        ds = xr.open_dataset(file_path, engine="h5netcdf")
+        arrays = [ds[ch].values for ch in channels if ch in ds]
+        if len(arrays) != len(channels):
+            missing = set(channels) - set(ds.variables)
+            raise KeyError(f"Missing channels: {missing} in file {name}")
+        arr = np.stack(arrays, axis=0)
+        tensors.append(torch.from_numpy(arr))
+
+    x = torch.stack(tensors, dim=0).permute(1, 0, 2, 3).unsqueeze(0)
+
+    B, C, T, H, W = x.shape
+
+    patch_size = 16
+    return {
+        "ts": x,
+        "time_delta_input": torch.zeros(B, T),
+        "tokens": torch.randn(B, (H // patch_size) * (W // patch_size), C),
+        "B": B,
+        "C": C,
+        "T": T,
+        "img_size": H,
+        "patch_size": patch_size,
+    }
 
 
 @pytest.fixture
@@ -250,3 +324,46 @@ def test_terramind_tim(model_name):
     output = backbone({"S2L2A": torch.ones((1, 12, 224, 224))}, LULC=torch.ones((1, 1, 224, 224)))
 
     gc.collect()
+
+
+"""
+@pytest.mark.parametrize("model_name", ["heliofm_backbone_surya"])
+def test_heliofm(model_name):
+
+    B = 8
+    C = 6
+    T = 3
+    H = 4096
+    W = 4096
+
+    backbone = BACKBONE_REGISTRY.build(model_name, in_chans=C, embed_dim=64, num_heads=8,
+                                       time_embedding={"type": "linear",
+                                                       "n_queries": None,
+                                                       "time_dim": 3},
+                                       depth=2, n_spectral_blocks=0,
+                                       dp_rank=2)
+
+    data = {"ts": torch.rand(B, C, T, H, W), "time_delta_input": torch.rand(B, T)}
+
+    with torch.no_grad():
+        x_hat = backbone(data)
+
+    assert x_hat.shape == (B, C, H, W)
+
+@pytest.mark.parametrize("model_name", ["heliofm_backbone_surya"])
+def test_heliofm_from_file(model_name):
+
+    backbone = BACKBONE_REGISTRY.build(model_name, in_chans=13, embed_dim=64, num_heads=8,
+                                       time_embedding={"type": "linear",
+                                                       "n_queries": None,
+                                                       "time_dim": 5},
+                                       depth=2, n_spectral_blocks=0,
+                                       dp_rank=2)
+
+    data = load_sample_batch()
+
+    with torch.no_grad():
+        x_hat = backbone(data)
+
+    assert x_hat.shape == (1, 13, 4096, 4096)
+"""
