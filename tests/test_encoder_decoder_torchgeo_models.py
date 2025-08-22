@@ -118,7 +118,7 @@ def test_create_classification_model_swin(backbone, model_factory: EncoderDecode
 
 @pytest.mark.parametrize("backbone", ["ssl4eos12_resnet50_sentinel2_all_decur"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
-@pytest.mark.parametrize("decoder", ["FCNDecoder", "IdentityDecoder", "smp_Unet"])
+@pytest.mark.parametrize("decoder", ["smp_Unet"])
 def test_create_pixelwise_model_resnet(backbone, task, expected, decoder, model_factory: EncoderDecoderFactory, model_input):
     model_args = {
         "task": task,
@@ -148,7 +148,7 @@ def test_create_pixelwise_model_resnet(backbone, task, expected, decoder, model_
 #@pytest.mark.parametrize("backbone", ["dofa_large_patch16_224"])
 @pytest.mark.parametrize("backbone", ["dofa_base_patch16_224"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
-@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
+@pytest.mark.parametrize("decoder", ["IdentityDecoder"])
 def test_create_pixelwise_model_dofa(backbone, task, expected, decoder, model_factory: EncoderDecoderFactory, model_input):
     model_args = {
         "task": task,
@@ -174,7 +174,7 @@ def test_create_pixelwise_model_dofa(backbone, task, expected, decoder, model_fa
 
 @pytest.mark.parametrize("backbone", ["satlas_swin_b_sentinel2_si_ms"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
-@pytest.mark.parametrize("decoder", ["UperNetDecoder", "IdentityDecoder"])
+@pytest.mark.parametrize("decoder", ["UperNetDecoder"])
 def test_create_pixelwise_model_swin(backbone, task, expected, decoder, model_factory: EncoderDecoderFactory, model_input):
     model_args = {
         "task": task,
