@@ -87,9 +87,12 @@ model:
         - S2L1C
         - S1GRD
       merge_method: mean
-    filename_key: file_id
+    output_format: parquet
+    embed_file_key: file_id
     output_dir: 'output/terramind_embeddings'
     layers: [-1] # Model layers to extract embeddings from, -1 means the last layer
+    embedding_pooling: null
+    has_cls: False
     temporal_cfg: 
       temporal_wrapper: True
       temporal_pooling: keep
