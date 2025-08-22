@@ -44,17 +44,17 @@ modification be merged to `main`. In this way, when an user wants to modify
 Documentation is core for any project, however, most part of the time, the developers do not have the time (or
 patience) to carefully document all the codebase, in this way, contributions from interested users are always
 welcome. 
-To add documentation to TerraTorch, you need to be familiar with Markdown, a clean markup language, and
-MkDocs, a framework which relies on Markdown in order to create webpages as this you are reading. 
+To add documentation to TerraTorch, you need to be familiar with Markdown, a clean markup language, and the pages are built with
+MkDocs, a framework which relies on Markdown in order to create webpages as this you are reading. The documentation is automatically
+deployed by a bot just after the push or merge to the branch dedicated to store the latest documentation.
 These are the steps to configure your environment to work with documentation.
-* Install the MkDocs dependencies. Install as a developer `pip install terratorch[dev]` to include them or manually using [this list](https://github.com/IBM/terratorch/blob/cdb130dd0be3db053c8858d69e8f02197d42c567/pyproject.toml#L66).
-* Clone the branch dedicated to documentation to a local branch:
+* Clone the documentation branch to your machine:
 ```
-    git fetch origin update-docs
-    git checkout update-docs
-    git pull origin update-docs
+    git fetch origin docs
+    git checkout docs
+    git pull origin docs
 ```
-* If you already have access to the IBM org on GitHub, add your modifications and open a PR to `update-docs`. It is recommended to add the label `documentation` to your PR. 
+* Add your modifications and open a PR to `docs`. It is recommended to add the label `documentation` to your PR. 
 * The PR will be reviewed and approved if it is considered relevant by the maintainers. 
 
 ## Contributing by reporting issues
