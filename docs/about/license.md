@@ -12,7 +12,7 @@ Unless required by applicable law or agreed to in writing, software distributed 
 
 ## MIT-Licensed Code Blocks
 
-Certain files in this repository contain code that is licensed under the MIT License. These files are explicitly listed in `MIT_FILES.txt`.
+Certain files in this repository contain code that is licensed under the MIT License. These files are explicitly listed in [`MIT_FILES.txt`](https://github.com/IBM/terratorch/blob/main/MIT_FILES.txt).
 
 The MIT License is as follows:
 

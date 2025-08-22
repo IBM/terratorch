@@ -13,7 +13,7 @@ jobs:
     permissions:
       pages: write
       id-token: write
-      contents: read
+      contents: write
     environment:
       name: github-pages
       url: ibm.github.io/terratorch/
@@ -23,8 +23,9 @@ jobs:
           pip install mkdocs-material mike mkdocstrings[python] mkdocs-git-revision-date-localized-plugin timm
       - name: Clone repo
         uses: actions/checkout@v4
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          fetch-depth: 0
+          persist-credentials: true
       - name: deploy documentation
         run: |
           git config user.name 'github-actions[bot]'

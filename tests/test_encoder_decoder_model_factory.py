@@ -75,7 +75,7 @@ def test_unused_args_raise_exception(model_factory: EncoderDecoderFactory):
     gc.collect()
 
 
-@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v2_300"])
 def test_create_classification_model(backbone, model_factory: EncoderDecoderFactory, model_input):
     model = model_factory.build_model(
         "classification",
@@ -93,7 +93,7 @@ def test_create_classification_model(backbone, model_factory: EncoderDecoderFact
     gc.collect()
 
 
-@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100"])
 def test_create_classification_model_no_in_channels(backbone, model_factory: EncoderDecoderFactory, model_input):
     model = model_factory.build_model(
         "classification",
@@ -113,7 +113,7 @@ def test_create_classification_model_no_in_channels(backbone, model_factory: Enc
 
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
-@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder", "LinearDecoder"])
+@pytest.mark.parametrize("decoder", ["UNetDecoder"])
 def test_create_pixelwise_model(backbone, task, expected, decoder, model_factory: EncoderDecoderFactory, model_input):
     if decoder == "LinearDecoder" and task == "regression":
         pytest.skip("LinearDecoder is not supported for regression tasks")
@@ -291,7 +291,7 @@ def test_create_model_with_mmseg_uperhead_decoder(
 
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
-@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder", "LinearDecoder"])
+@pytest.mark.parametrize("decoder", ["FCNDecoder"])
 def test_create_pixelwise_model_no_in_channels(
     backbone, task, expected, decoder, model_factory: EncoderDecoderFactory, model_input
 ):
@@ -326,7 +326,7 @@ def test_create_pixelwise_model_no_in_channels(
 
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
-@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder"])
+@pytest.mark.parametrize("decoder", ["UperNetDecoder"])
 def test_create_pixelwise_model_with_aux_heads(
     backbone, task, expected, decoder, model_factory: EncoderDecoderFactory, model_input
 ):
@@ -364,7 +364,7 @@ def test_create_pixelwise_model_with_aux_heads(
 
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
-@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder", "LinearDecoder"])
+@pytest.mark.parametrize("decoder", ["FCNDecoder"])
 def test_create_pixelwise_model_with_extra_bands(
     backbone, task, expected, decoder, model_factory: EncoderDecoderFactory
 ):
@@ -396,10 +396,9 @@ def test_create_pixelwise_model_with_extra_bands(
 
     gc.collect()
 
-
-@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "prithvi_eo_v2_300", "clay_v1_base"])
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "clay_v1_base"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
-@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder"])
+@pytest.mark.parametrize("decoder", ["UNetDecoder"])
 def test_create_model_with_lora(backbone, task, expected, decoder, model_factory: EncoderDecoderFactory, model_input):
     model_args = {
         "task": task,

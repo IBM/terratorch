@@ -1,10 +1,10 @@
 # Architecture Overview
 
-The main goal of the design is to extend TorchGeo's existing tasks to be able to handle Prithvi backbones with appropriate decoders and heads.
-At the same time, we wish to keep the existing TorchGeo functionality intact so it can be leveraged with pretrained models that are already included.
+The main goal of TerraTorch is to provide a flexible way to fine-tune geospatial foundation models by making the backbone, decoder, and head modular.  
+At the same time, we wish to keep the existing Lightning and TorchGeo functionality intact so it can be leveraged with datasets and pretrained models that are already included.
 
 We achieve this by making new tasks that accept model factory classes, containing a `build_model` method. This strategy in principle allows arbitrary models to be trained for these tasks, given they respect some reasonable minimal interface.
-Together with this, we provide the [EncoderDecoderFactory][terratorch.models.encoder_decoder_factory.EncoderDecoderFactory], which should enable users to plug together different Encoders and Decoders, with the aid of Necks for intermediate operations.
+Together with this, we provide the [EncoderDecoderFactory][terratorch.models.encoder_decoder_factory.EncoderDecoderFactory], which enables users to plug together different encoders and decoders, with the aid of necks for intermediate operations.
 
 Additionally, we extend TorchGeo with generic datasets and datamodules which can be defined at runtime, rather than requiring classes to be defined beforehand.
 
@@ -17,14 +17,14 @@ Initial reading for a full understanding of the platform includes:
 - Familiarity with [LightningCLI](https://lightning.ai/docs/pytorch/stable/api/lightning.pytorch.cli.LightningCLI.html#lightning.pytorch.cli.LightningCLI)
 
 The scheme below illustrates the general TerraTorch's workflow for a CLI job. 
-![](figs/architecture_drawing.png#only-light)
-![](figs/architecture_drawing_inv.png#only-dark)
+![](../figs/architecture_drawing.png#only-light)
+![](../figs/architecture_drawing_inv.png#only-dark)
 
-### Tasks
+## Tasks
 
-Tasks are the main coordinators for training and inference for specific tasks. They are LightningModules that contain a model and abstract away all the logic for training steps, metric computation and inference.
+Tasks are the main coordinators for training and inference for specific tasks. They are `LightningModules` that contain a model and abstract away all the logic for training steps, metric computation and inference.
 
-One of the most important design decisions was delegating the model construction to a model factory. This has a few advantages:
+One of the most important design decisions is to delegate the model construction to a model factory. This has a few advantages:
     
 - Avoids code repetition among tasks - different tasks can use the same factory
 - Prefers composition over inheritance
@@ -39,9 +39,10 @@ Models are expected to be `torch.nn.Module` and implement the [Model][terratorch
 Additionally, the `forward()` method is expected to return an object of type [ModelOutput][terratorch.models.model.ModelOutput],
 containing the main head's output, as well as any additional auxiliary outputs.
 The names of these auxiliary heads are matched with the names of the provided auxiliary losses.
-The tasks currently deployed in TerraTorch are described [here](tasks.md).  
+The tasks currently deployed in TerraTorch are described [here](../package/tasks.md).
+In general, these models are constructed using the `EncoderDecoderFactory`, which automatically returns a model with the expected functionality.
 
-### Models
+## Models
 
 Models constructed by the [EncoderDecoderFactory][terratorch.models.encoder_decoder_factory.EncoderDecoderFactory]
 have an internal structure explicitly divided into backbones, necks, decoders and heads.
@@ -51,32 +52,31 @@ and [ScalarOutputModel][terratorch.models.scalar_output_model.ScalarOutputModel]
 However, as long as models implement the [Model][terratorch.models.model.Model] interface,
 and return [ModelOutput][terratorch.models.model.ModelOutput] in their forward method, they can take on any structure.
 
-See the [models documentation](meta_models.md) for more details about the core models ScalarOutputModel and
-PixelWiseModel. For details about backbones (encoders) see the [backbones documentation](backbones.md), the
-same for [necks](necks.md), [decoders](decoders.md) and [heads](heads.md).  
+See the [models documentation](../package/meta_models.md) for more details about the core models `ScalarOutputModel` and
+`PixelWiseModel`. For details about backbones (encoders) see the [backbones documentation](../package/backbones.md), the
+same for [necks](../package/necks.md), [decoders](../package/decoders.md) and [heads](../package/heads.md).  
 
-### Model Factories
+## Model Factories
 
 A model factory is a class desgined to search a model in the register and properly instantiate it. TerraTorch
 has a few types of model factories for different situations, as models which require specific wrappers and
 processing.
 
-See the [models factories documentation](model_factories.md) for a better explanation about it. 
+See the [models factories documentation](../package/model_factories.md) for a better explanation about it. 
 
 ### EncoderDecoderFactory
 
 However, as we have tried as much as possible to avoid the limitless replication of model factories dedicate to very specific models by
-concentrating efforts on the EncoderDecoderFactory, which intends to be more general-purpose.
+concentrating efforts on the `EncoderDecoderFactory`, which intends to be more general-purpose.
 With that in mind, we dive deeper into it [here](encoder_decoder_factory.md).
 
-### Loss
-For convenience, we provide a [loss handler](loss.md) that can be used to compute the full loss (from the main head and auxiliary heads as well).
+## Loss
+For convenience, we provide a [loss handler](../package/loss.md) that can be used to compute the full loss (from the main head and auxiliary heads as well).
 
-### Generic datasets / datamodules
-Refer to the section on [data](data.md)
+## Generic datamodules
+Refer to the section on [data](data.md).
 
-### Exporting models
-Models are saved using the PyTorch format, which basically serializes the model weights using pickle
-and store them into a binary file. 
+## Exporting models
+Models are saved using the PyTorch format, which basically serializes the model weights using pickle and store them into a binary file. 
 
 <A future feature would be the possibility to save models in ONNX format, and export them that way. This would bring all the benefits of onnx.>
