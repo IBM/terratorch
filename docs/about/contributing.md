@@ -54,7 +54,7 @@ These are the steps to configure your environment to work with documentation.
     git checkout docs
     git pull origin docs
 ```
-* Add your modifications and open a PR to the branch `docs`. It is recommended to add the label `documentation` to your PR. 
+* Add your modifications and open a PR to the branch `docs`. It is recommended to add the label `documentation` to your PR.
 * The PR will be reviewed and approved if it is considered relevant by the maintainers. 
 
 ## Contributing by reporting issues
