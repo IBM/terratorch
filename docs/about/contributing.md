@@ -62,4 +62,4 @@ These are the steps to configure your environment to work with documentation.
 The users also can contribute by reporting issues they observed during their experiments. When reporting an issue, provide the more details as possible about the problem, as the configuration of your system,
 the terminal output and even the files required to reproduce it. To
 illustrate it, take a
-look on an example of [a good issue](https://github.com/IBM/terratorch/issues/506). 
+look on an example of [a very well-written issue](https://github.com/IBM/terratorch/issues/506). 
