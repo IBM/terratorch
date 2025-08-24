@@ -35,7 +35,6 @@ def kornia_augmentations_to_callable_with_dict(augmentations: list[Union[Geometr
         return augmentations(data)
     return fn
 
-=======
 def kornia_augmentations_to_callable_with_dict(augmentations: list[GeometricAugmentationBase2D] | None = None):
     if augmentations is None:
         return lambda x: x
