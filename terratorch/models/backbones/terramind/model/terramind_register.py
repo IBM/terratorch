@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import torch
 import logging
+import warnings
 from torch import nn
 from functools import partial
 from .terramind import TerraMind
@@ -24,6 +26,21 @@ from .tm_utils import LayerNorm
 from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY, TERRATORCH_FULL_MODEL_REGISTRY
 from huggingface_hub import hf_hub_download
 
+from terratorch.models.backbones.terramind.tokenizer.tokenizer_register import (
+    terramind_v1_tokenizer_s2l2a,
+    terramind_v1_tokenizer_s1rtc,
+    terramind_v1_tokenizer_s1grd,
+    terramind_v1_tokenizer_dem,
+    terramind_v1_tokenizer_lulc,
+    terramind_v1_tokenizer_ndvi,
+    terramind_v01_tokenizer_s2l2a,
+    terramind_v01_tokenizer_s1grd,
+    terramind_v01_tokenizer_dem,
+    terramind_v01_tokenizer_lulc,
+    terramind_v01_caption_tokenizer,
+    terramind_v1_coords_tokenizer,
+)
+
 logger = logging.getLogger('terramind')
 
 # Model definitions
@@ -32,10 +49,12 @@ __all__ = [
     'terramind_v01_base',
     'terramind_v1_base',
     'terramind_v1_large',
+    'terramind_v01_base_tim',
     'terramind_v1_base_tim',
     'terramind_v1_large_tim',
-    'terramind_v1_base_mae',
-    'terramind_v1_large_mae',
+    'terramind_v1_base_encdec',
+    'terramind_v1_large_encdec',
+    'terramind_v01_base_generate',
     'terramind_v1_base_generate',
     'terramind_v1_large_generate',
 ]
@@ -138,6 +157,25 @@ v1_pretraining_std = {
     'tok_ndvi@224': [0.322],
 }
 
+tokenizer_dict = {
+    "v1": {
+        "tok_sen2l2a@224": terramind_v1_tokenizer_s2l2a,
+        "tok_sen1rtc@224": terramind_v1_tokenizer_s1rtc,
+        "tok_sen1grd@224": terramind_v1_tokenizer_s1grd,
+        "tok_dem@224": terramind_v1_tokenizer_dem,
+        "tok_lulc@224": terramind_v1_tokenizer_lulc,
+        "tok_ndvi@224": terramind_v1_tokenizer_ndvi,
+        "coords": terramind_v1_coords_tokenizer,
+    },
+    "v01": {
+        "tok_sen2l2a@224": terramind_v01_tokenizer_s2l2a,
+        "tok_sen1grd@224": terramind_v01_tokenizer_s1grd,
+        "tok_dem@224": terramind_v01_tokenizer_dem,
+        "tok_lulc@224": terramind_v01_tokenizer_lulc,
+        "coords": terramind_v1_coords_tokenizer,
+        "caption": terramind_v01_caption_tokenizer,
+    }
+}
 
 
 def select_modality_patch_embed_weights(model: TerraMindViT, bands: dict[str, list], pretrained_bands: dict[str, list]):
@@ -198,7 +236,8 @@ def checkpoint_filter_fn(state_dict, model: TerraMindViT | TerraMind) -> dict:
 
     missing_params = set(model_state_dict.keys()) - set(clean_dict.keys())
     for k in missing_params:
-        logger.warning(f"Weights for {k} are missing in state dict, using random initialization.")
+        if not k.startswith('tokenizer'):
+            logger.warning(f"Weights for {k} are missing in state dict, using random initialization.")
         clean_dict[k] = model_state_dict[k]
 
     state_dict = clean_dict
@@ -220,18 +259,19 @@ def checkpoint_filter_fn_tim(state_dict, model: TerraMindTiM) -> dict:
                                f"({list(model_state_dict[k].shape)}), skipping weights.")
         if 'sampler.model.' + k in model_state_dict:
             # Copy weights for MAE model for TiM
-            mae_k = 'sampler.model.' + k
-            if v.shape == model_state_dict[mae_k].shape:
-                clean_dict[mae_k] = v
+            encdec_k = 'sampler.model.' + k
+            if v.shape == model_state_dict[encdec_k].shape:
+                clean_dict[encdec_k] = v
             else:
                 raise ValueError(f"Shape for {k} ({list(v.shape)}) does not match MAE model weights "
-                                 f"({list(model_state_dict[mae_k].shape)}). Cannot run chain of thoughts without MAE.")
+                                 f"({list(model_state_dict[encdec_k].shape)}). Cannot run chain of thoughts without MAE.")
 
     missing_params = set(model_state_dict.keys()) - set(clean_dict.keys())
     for k in missing_params:
         if k.startswith('sampler.model.'):
             raise ValueError(f"Weights for {k} are missing in state dict, cannot run chain of thoughts without MAE.")
-        logger.warning(f"Weights for {k} are missing in state dict, using random initialization.")
+        if not k.startswith('tokenizer'):
+            logger.warning(f"Weights for {k} are missing in state dict, using random initialization.")
         clean_dict[k] = model_state_dict[k]
 
     state_dict = clean_dict
@@ -245,13 +285,13 @@ def checkpoint_filter_fn_generate(state_dict, model: TerraMindGeneration) -> dic
     model_state_dict = model.state_dict()
     clean_dict = {}
     for k, v in state_dict.items():
-        mae_k = 'sampler.model.' + k
-        if mae_k in model_state_dict:
-            if v.shape == model_state_dict[mae_k].shape:
-                clean_dict[mae_k] = v
+        encdec_k = 'sampler.model.' + k
+        if encdec_k in model_state_dict:
+            if v.shape == model_state_dict[encdec_k].shape:
+                clean_dict[encdec_k] = v
             else:
                 logger.warning(f"Shape for {k} ({list(v.shape)}) does not match model weights "
-                               f"({list(model_state_dict[mae_k].shape)}), skipping weights.")
+                               f"({list(model_state_dict[encdec_k].shape)}), skipping weights.")
 
     missing_params = set(model_state_dict.keys()) - set(clean_dict.keys())
     for k in missing_params:
@@ -298,7 +338,7 @@ def build_terrammind_vit(
     return model
 
 
-def build_terrammind_mae(
+def build_terrammind_encdec(
         variant: str = None,
         pretrained: bool = False,
         ckpt_path: str | None = None,
@@ -404,6 +444,7 @@ def terramind_v1_base(**kwargs):
         act_layer=nn.SiLU,
         gated_mlp=True,
         pretrained_bands=PRETRAINED_BANDS,
+        tokenizer_dict=tokenizer_dict['v1'],
         **kwargs
     )
     return model
@@ -425,6 +466,7 @@ def terramind_v1_base_tim(**kwargs):
         act_layer=nn.SiLU,
         gated_mlp=True,
         pretrained_bands=PRETRAINED_BANDS,
+        tokenizer_dict=tokenizer_dict['v1'],
         **kwargs
     )
     return model
@@ -432,6 +474,10 @@ def terramind_v1_base_tim(**kwargs):
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def terramind_v01_base(**kwargs):
+    if kwargs.get('pretrained', False):
+        if not os.getenv('HF_TOKEN', None):
+            warnings.warn('TerraMind v0.1 models require a HF_TOKEN with access to model weights.')
+
     model = build_terrammind_vit(
         variant='terramind_v01_base',
         encoder_depth=12,
@@ -445,6 +491,29 @@ def terramind_v01_base(**kwargs):
         act_layer=nn.SiLU,
         gated_mlp=True,
         pretrained_bands={'untok_sen2l2a@224': PRETRAINED_BANDS['untok_sen2l2a@224']},
+        tokenizer_dict=tokenizer_dict['v01'],
+        **kwargs
+    )
+    return model
+
+
+@TERRATORCH_BACKBONE_REGISTRY.register
+def terramind_v01_base_tim(**kwargs):
+    model = build_terrammind_tim(
+        variant='terramind_v01_base',
+        encoder_depth=12,
+        decoder_depth=12,
+        dim=768,
+        num_heads=12,
+        mlp_ratio=4,
+        qkv_bias=False,
+        proj_bias=False,
+        mlp_bias=False,
+        norm_layer=partial(LayerNorm, eps=1e-6, bias=False),
+        act_layer=nn.SiLU,
+        gated_mlp=True,
+        pretrained_bands={'untok_sen2l2a@224': PRETRAINED_BANDS['untok_sen2l2a@224']},
+        tokenizer_dict=tokenizer_dict['v01'],
         **kwargs
     )
     return model
@@ -465,6 +534,7 @@ def terramind_v1_large(**kwargs):
         act_layer=nn.SiLU,
         gated_mlp=True,
         pretrained_bands=PRETRAINED_BANDS,
+        tokenizer_dict=tokenizer_dict['v1'],
         **kwargs
     )
     return model
@@ -486,14 +556,19 @@ def terramind_v1_large_tim(**kwargs):
         act_layer=nn.SiLU,
         gated_mlp=True,
         pretrained_bands=PRETRAINED_BANDS,
+        tokenizer_dict=tokenizer_dict['v1'],
         **kwargs
     )
     return model
 
 
 @TERRATORCH_FULL_MODEL_REGISTRY.register
-def terramind_v1_base_mae(**kwargs):
-    model = build_terrammind_mae(
+def terramind_v1_base_encdec(**kwargs):
+    assert 'encoder_embeddings' in kwargs and 'decoder_embeddings' in kwargs and 'modality_info' in kwargs, \
+        ("TerraMind MAE expects encoder_embeddings, decoder_embeddings, and modality_info. "
+         "For generation, use the terramind_v1_base_generate model.")
+
+    model = build_terrammind_encdec(
         variant='terramind_v1_base',
         encoder_depth=12,
         decoder_depth=12,
@@ -506,15 +581,18 @@ def terramind_v1_base_mae(**kwargs):
         norm_layer=partial(LayerNorm, eps=1e-6, bias=False),
         act_layer=nn.SiLU,
         gated_mlp=True,
-        pretrained_bands=PRETRAINED_BANDS,
         **kwargs
     )
     return model
 
 
 @TERRATORCH_FULL_MODEL_REGISTRY.register
-def terramind_v1_large_mae(**kwargs):
-    model = build_terrammind_mae(
+def terramind_v1_large_encdec(**kwargs):
+    assert 'encoder_embeddings' in kwargs and 'decoder_embeddings' in kwargs and 'modality_info' in kwargs, \
+        ("TerraMind MAE expects encoder_embeddings, decoder_embeddings, and modality_info. "
+         "For generation, use the terramind_v1_large_generate model.")
+
+    model = build_terrammind_encdec(
         variant='terramind_v1_large',
         encoder_depth=24,
         decoder_depth=24,
@@ -527,7 +605,6 @@ def terramind_v1_large_mae(**kwargs):
         norm_layer=partial(LayerNorm, eps=1e-6, bias=False),
         act_layer=nn.SiLU,
         gated_mlp=True,
-        pretrained_bands=PRETRAINED_BANDS,
         **kwargs
     )
     return model
@@ -535,6 +612,10 @@ def terramind_v1_large_mae(**kwargs):
 
 @TERRATORCH_FULL_MODEL_REGISTRY.register
 def terramind_v01_base_generate(**kwargs):
+    if kwargs.get('pretrained', False):
+        if not os.getenv('HF_TOKEN', None):
+            warnings.warn('TerraMind v0.1 models require a HF_TOKEN with access to model weights.')
+
     model = build_terrammind_generate(
         variant='terramind_v01_base',
         encoder_depth=12,
@@ -550,6 +631,7 @@ def terramind_v01_base_generate(**kwargs):
         gated_mlp=True,
         pretraining_mean=v01_pretraining_mean,
         pretraining_std=v01_pretraining_std,
+        tokenizer_dict=tokenizer_dict['v01'],
         **kwargs
     )
     return model
@@ -572,6 +654,7 @@ def terramind_v1_base_generate(**kwargs):
         gated_mlp=True,
         pretraining_mean=v1_pretraining_mean,
         pretraining_std=v1_pretraining_std,
+        tokenizer_dict=tokenizer_dict['v1'],
         **kwargs
     )
     return model
@@ -594,6 +677,7 @@ def terramind_v1_large_generate(**kwargs):
         gated_mlp=True,
         pretraining_mean=v1_pretraining_mean,
         pretraining_std=v1_pretraining_std,
+        tokenizer_dict=tokenizer_dict['v1'],
         **kwargs
     )
     return model

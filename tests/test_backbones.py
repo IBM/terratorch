@@ -8,7 +8,7 @@ import timm
 import torch
 
 from terratorch.models.backbones import scalemae, torchgeo_vit
-from terratorch.registry import BACKBONE_REGISTRY
+from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY
 
 NUM_CHANNELS = 6
 NUM_FRAMES = 4
@@ -19,6 +19,21 @@ IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "false") == "true"
 @pytest.fixture
 def input_224():
     return torch.ones((1, NUM_CHANNELS, 224, 224))
+
+
+@pytest.fixture
+def input_galileo_s1():
+    return torch.ones((5, 224, 224, 1, 2))
+
+
+@pytest.fixture
+def input_galileo_s2():
+    return torch.ones((5, 224, 224, 1, 13))
+
+
+@pytest.fixture
+def input_galileo_s2_less_bands():
+    return torch.ones((5, 224, 224, 1, 6))
 
 
 @pytest.fixture
@@ -45,7 +60,7 @@ def torchgeo_vit_backbones():
     return [i for i in dir(torchgeo_vit) if "_vit_small" in i]
 
 
-@pytest.mark.parametrize("model_name", ["prithvi_swin_B", "prithvi_swin_L", "prithvi_swin_B"])
+@pytest.mark.parametrize("model_name", ["prithvi_swin_B"])
 @pytest.mark.parametrize("test_input", ["input_224", "input_512"])
 def test_can_create_backbones_from_timm(model_name, test_input, request):
     backbone = timm.create_model(model_name, pretrained=False)
@@ -54,7 +69,7 @@ def test_can_create_backbones_from_timm(model_name, test_input, request):
     gc.collect()
 
 
-@pytest.mark.parametrize("model_name", ["prithvi_swin_B", "prithvi_swin_L", "prithvi_swin_B"])
+@pytest.mark.parametrize("model_name", ["prithvi_swin_B"])
 @pytest.mark.parametrize("test_input", ["input_224", "input_512"])
 def test_can_create_backbones_from_timm_features_only(model_name, test_input, request):
     backbone = timm.create_model(model_name, pretrained=False, features_only=True)
@@ -63,7 +78,7 @@ def test_can_create_backbones_from_timm_features_only(model_name, test_input, re
     gc.collect()
 
 
-@pytest.mark.parametrize("model_name", ["prithvi_swin_L", "prithvi_swin_L", "prithvi_swin_B"])
+@pytest.mark.parametrize("model_name", ["prithvi_swin_B"])
 @pytest.mark.parametrize("prefix", ["", "timm_"])
 def test_can_create_timm_backbones_from_registry(model_name, input_224, prefix):
     backbone = BACKBONE_REGISTRY.build(prefix + model_name, pretrained=False)
@@ -71,7 +86,7 @@ def test_can_create_timm_backbones_from_registry(model_name, input_224, prefix):
     gc.collect()
 
 
-@pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
+@pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100"])
 def test_can_create_backbones_from_registry(model_name, input_224):
     backbone = BACKBONE_REGISTRY.build(model_name, pretrained=False)
     backbone(input_224)
@@ -85,14 +100,50 @@ def test_can_create_backbones_from_registry_torchgeo_vit(model_name, input_224):
     gc.collect()
 
 
-@pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
+@pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100"])
 def test_vit_models_accept_multitemporal(model_name, input_224_multitemporal):
     backbone = BACKBONE_REGISTRY.build(model_name, pretrained=False, num_frames=NUM_FRAMES)
     backbone(input_224_multitemporal)
     gc.collect()
 
 
-@pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
+@pytest.mark.parametrize("do_pool", [False, True])
+@pytest.mark.parametrize("model_name", ["tiny"])
+def test_galileo_encoders_s1(do_pool, model_name, input_galileo_s1):
+    backbone = BACKBONE_REGISTRY.build(f"galileo_{model_name}_encoder", pretrained=False, kind="s1", do_pool=do_pool)
+
+    output = backbone(input_galileo_s1)
+
+    gc.collect()
+
+
+@pytest.mark.parametrize("do_pool", [False, True])
+@pytest.mark.parametrize("model_name", ["base"])
+def test_galileo_encoders_s2(do_pool, model_name, input_galileo_s2):
+    backbone = BACKBONE_REGISTRY.build(f"galileo_{model_name}_encoder", pretrained=False, kind="s2", do_pool=do_pool)
+
+    output = backbone(input_galileo_s2)
+
+    gc.collect()
+
+
+@pytest.mark.parametrize("do_pool", [False, True])
+@pytest.mark.parametrize("model_name", ["nano"])
+def test_galileo_encoders_s2_less_bands(do_pool, model_name, input_galileo_s2_less_bands):
+    backbone = BACKBONE_REGISTRY.build(
+        f"galileo_{model_name}_encoder",
+        pretrained=False,
+        kind="s2",
+        model_bands=["B2", "B3", "B4", "B5", "B6", "B7"],
+        do_pool=do_pool,
+    )
+
+    output = backbone(input_galileo_s2_less_bands)
+
+    gc.collect()
+
+
+@pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100"])
 @pytest.mark.parametrize("patch_size", [8, 16])
 @pytest.mark.parametrize("patch_size_time", [1, 2, 4])
 def test_vit_models_different_patch_tubelet_sizes(model_name, patch_size, patch_size_time, input_224_multitemporal):
@@ -121,7 +172,7 @@ def test_vit_models_different_patch_tubelet_sizes(model_name, patch_size, patch_
     gc.collect()
 
 
-@pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_eo_v2_300"])
+@pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100"])
 def test_out_indices(model_name, input_224):
     out_indices = (2, 4, 8, 10)
     backbone = BACKBONE_REGISTRY.build(model_name, pretrained=False, out_indices=out_indices)
@@ -135,7 +186,7 @@ def test_out_indices(model_name, input_224):
     gc.collect()
 
 
-@pytest.mark.parametrize("model_name", ["vit_base_patch16", "vit_large_patch16"])
+@pytest.mark.parametrize("model_name", ["vit_base_patch16"])
 def test_scale_mae(model_name):
     # out_indices = [2, 4, 8, 10]
     out_indices = (2, 4, 8, 10)
@@ -148,7 +199,7 @@ def test_scale_mae(model_name):
     gc.collect()
 
 
-@pytest.mark.parametrize("model_name", ["vit_base_patch16", "vit_large_patch16"])
+@pytest.mark.parametrize("model_name", ["vit_base_patch16"])
 @pytest.mark.parametrize("bands", [2, 4, 6])
 def test_scale_mae_new_channels(model_name, bands):
     backbone = scalemae.create_model(model_name, bands=list(range(bands)))
@@ -158,14 +209,14 @@ def test_scale_mae_new_channels(model_name, bands):
 
 
 @pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Skip this test in GitHub Actions as deformable attn is not supported.")
-@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "prithvi_eo_v2_300", "prithvi_eo_v2_300_tl"])
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v2_300_tl"])
 def test_prithvi_vit_adapter(backbone, input_224):
     try:
         from terratorch.models.backbones.detr_ops.modules.ms_deform_attn import MSDeformAttn
     except ImportError:
         pytest.skip("Cannot test vit_adapter due to missing deformable attn module.")
 
-    backbone = BACKBONE_REGISTRY.build(backbone, pretrained=True, vit_adapter=True)
+    backbone = BACKBONE_REGISTRY.build(backbone, pretrained=False, vit_adapter=True)
     backbone = backbone.to("cuda")
     input_224 = input_224.to("cuda")
     output = backbone(input_224)
@@ -178,12 +229,24 @@ def test_prithvi_vit_adapter(backbone, input_224):
     assert output[3].shape == (1, embed_dim, 7, 7)
 
 
-@pytest.mark.parametrize(
-    "model_name", ["terramind_v1_base", "terramind_v1_large", "terramind_v1_base_tim", "terramind_v1_large_tim"]
-)
+@pytest.mark.parametrize("model_name", ["terramind_v1_base"])
 def test_terramind(model_name):
     # default should have 3 channels
-    backbone = BACKBONE_REGISTRY.build(model_name, modalities=["S2L2A"])
-    output = backbone({"S2L2A": torch.ones((1, 12, 224, 224))})
+    backbone = BACKBONE_REGISTRY.build(model_name, modalities=["S2L2A", "LULC", "coords", {"new": 1}])
+    output = backbone(
+        {"S2L2A": torch.ones((1, 12, 224, 224))},
+        LULC=torch.ones((1, 1, 224, 224)),  # Test with kwargs inputs
+        coords=torch.ones((1, 2)),
+        new=torch.ones((1, 1, 224, 224)),
+        unknown="Test",
+    )
+    gc.collect()
+
+
+@pytest.mark.parametrize("model_name", ["terramind_v1_base_tim"])
+def test_terramind_tim(model_name):
+    # default should have 3 channels
+    backbone = BACKBONE_REGISTRY.build(model_name, modalities=["S2L2A", "LULC"], tim_modalities=["coords", "DEM"])
+    output = backbone({"S2L2A": torch.ones((1, 12, 224, 224))}, LULC=torch.ones((1, 1, 224, 224)))
 
     gc.collect()

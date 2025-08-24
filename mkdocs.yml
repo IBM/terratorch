@@ -1,19 +1,23 @@
-site_name: TerraTorch
+# Mkdocs documentation: https://squidfunk.github.io/mkdocs-material/reference/
+site_name: "TerraTorch"
 theme:
   name: material #readthedocs
-  logo: figs/logo_grey.png #https://github.com/user-attachments/assets/f8c9586f-6220-4a53-9669-2aee3300b492" 
+  logo: figs/logo_header.png
   font:
     text: Roboto
   palette:
-    # Palette toggle for light mode
-    - scheme: default
+    - scheme: default # Light mode
       toggle:
         icon: material/brightness-7
-      primary: black #white
-    - scheme: slate
+        name: Switch to dark mode
+      primary: black
+      accent: deep orange
+    - scheme: slate  # Dark mode
       toggle:
         icon: material/brightness-4
+        name: Switch to light mode
       primary: black
+      accent: deep orange
   features:
     - content.code.copy
     - content.code.select
@@ -27,24 +31,24 @@ theme:
     - content.tabs.link
     - content.tooltips
     - navigation.footer
-      #- navigation.indexes
+    - navigation.indexes  # Adds pages to section headers
+    # - navigation.expand  # Show all subpages
+    - navigation.path  # Show path of current page. Does not work.
     - navigation.instant
-      #- navigation.expand
-    - navigation.path
     - navigation.instant.prefetch
     - navigation.instant.progress
-    # - navigation.prune
-    #- navigation.sections
-    #- navigation.tabs
-      #- navigation.tabs.sticky
-    - navigation.top
+    - navigation.sections
+    # - navigation.prune  # Used for 100+ pages to reduce loading times
+    # - navigation.tabs  # Top menu bar
+    # - navigation.tabs.sticky  # Keep top menu bar
+    - navigation.top  # "Back to top" button
     - navigation.tracking
     - search.highlight
     - search.share
     - search.suggest
     - toc.follow
-      #- toc.integrate
-  user_color_mode_toggle: true 
+    - toc.integrate
+  user_color_mode_toggle: true
 plugins:
   - search 
   - autorefs
@@ -52,9 +56,11 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
-          paths: [src] # search packages in the src folde
+          paths: [src]  # search packages in the src folder
           options:
             show_root_heading: true
+            heading_level: 3
+            show_symbol_type_heading: true  # shows colored `class`, `meth` etc.
   - git-revision-date-localized:
       type: date
 
@@ -67,40 +73,76 @@ extra:
 
 site_url: https://ibm.github.io/terratorch/
 repo_url: https://github.com/IBM/terratorch
+edit_uri: edit/update-docs/docs
 nav:
-  - index.md
-  - License: license.md
-  - Getting Started:
-    - quick_start.md
-    - inference.md
-  - Contribution Guidelines: contributing.md
-  - Architecture Overview: architecture.md
-  - Components:
-    - Backbones: backbones.md
-    - Decoders: decoders.md
-    - Necks: necks.md
-    - Heads: heads.md
-    - Tasks: tasks.md
-    - Model Factories: model_factories.md
-    - Generic Datasets: generic_datasets.md
-    - Datasets: datasets.md
-    - Generic Datamodules: generic_datamodules.md
-    - Datamodules: datamodules.md
-    - Transforms: transforms.md
-  - Glossary: glossary.md
+  - Welcome: index.md
+
+  - User Guide:
+    - Get started: guide/quick_start.md
+    - Architecture: guide/architecture.md
+    - Datasets: guide/data.md
+# TODO Write intro for generic datasets
+#      - guide/data.md # Overview
+#      - Generic Datamodules: guide/generic_datasets.md
+#      - Custom Datasets: guide/custom_datasets.md
+    - Models:
+      - Models: guide/models.md  # Overview
+      - Model Registry: guide/registry.md
+      - Encoder-Decoder Factory: guide/encoder_decoder_factory.md
+      - TerraMind: guide/terramind.md
+      - Prithvi EO: guide/prithvi_eo.md
+# TODO Add guide for a general approach to a new use case
+#    - New Use Case: guide/new_use_case.md
+# TODO Add guide for fine-tuning
+#    - Fine-tuning: guide/finetuning.md
+    - Inference: guide/inference.md
+# TODO Add docs for iterate
+#    - Iterate: guide/iterate.md
+    - Glossary: guide/glossary.md
+    - FAQs: guide/faqs.md
+
   - Tutorials:
-    - tutorials/the_yaml_config.md
-    - tutorials/basic_inference_burn_scars.md 
-    - tutorials/burn_scars_inference_simplified.md
-    - tutorials/using_datamodule_multitemporalclassificationModule.md
-    - tutorials/burn_scars_finetuning.md
-    - tutorials/adding_custom_modules.md
-  - Changelog: changelog.md
+    - YAML Config: tutorials/the_yaml_config.md
+    - Fine-tuning: tutorials/burn_scars_finetuning.md
+    - Basic Inference: tutorials/basic_inference_burn_scars.md
+    - Simplified Inference: tutorials/burn_scars_inference_simplified.md
+    - Multi-temporal data: tutorials/using_datamodule_multitemporalclassificationModule.md
+    - Custom Modules: tutorials/adding_custom_modules.md
+# TODO Add tutorial for compute statistics
+#    - Compute data statistics: tutorials/compute_statistics.md
+
+  - Package Reference:
+    - Tasks: package/tasks.md
+    - Models:
+      - Model Factories: package/model_factories.md
+      - Backbones: package/backbones.md
+      - Decoders: package/decoders.md
+      - Necks: package/necks.md
+      - Heads: package/heads.md
+    - Datamodules:
+      - Generic Datamodules: package/generic_datamodules.md
+      - Specific Datamodules: package/datamodules.md
+    - Datasets:
+      - Generic Datasets: package/generic_datasets.md
+      - Specific Datasets: package/datasets.md
+      - Transforms: package/transforms.md
+    - Others:
+      - Meta Models: package/meta_models.md
+      - Extra Model Structures: package/extra_model_structures.md
+      - Loss Handler: package/loss.md
+
+  - About:
+    - Contribution Guidelines: about/contributing.md
+    - Changelog: about/changelog.md
+    - License: about/license.md
+    - Citation: about/citation.md
+    - Related Packages: about/related_packages.md
+
 markdown_extensions:
   - attr_list
   - toc:
       permalink: "#"
-      toc_depth: 6
+      toc_depth: 3
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
@@ -108,9 +150,19 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
   - admonition
   - pymdownx.details
+  - md_in_html
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+copyright: Copyright &copy; 2024-2025 TerraTorch Developers.
 
 extra_css:
   - stylesheets/extra.css
 
+extra_javascript:
+  - js/logo.js
