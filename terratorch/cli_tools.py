@@ -96,6 +96,7 @@ def write_tiff(img_wrt, filename, metadata):
 
         for i in range(img_wrt.shape[0]):
             dest.write(img_wrt[i, :, :], i + 1)
+    print(filename)
     return filename
 
 
