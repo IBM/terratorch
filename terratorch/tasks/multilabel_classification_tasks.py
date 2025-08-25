@@ -119,7 +119,7 @@ class MultiLabelClassificationTask(ClassificationTask):
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat = self.to_multilabel_prediction(model_output)
-        self.train_metrics.update(y_hat, y.to(torch.int))
+        self.train_metrics.update(y_hat, y.to(torch.int32))
 
         return loss["loss"]
 
@@ -132,7 +132,7 @@ class MultiLabelClassificationTask(ClassificationTask):
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat = self.to_multilabel_prediction(model_output)
-        self.val_metrics.update(y_hat, y.to(torch.int))
+        self.val_metrics.update(y_hat, y.to(torch.int32))
 
     def test_step(self, batch: object, batch_idx: int, dataloader_idx: int = 0) -> None:
         x = batch["image"]
@@ -150,7 +150,7 @@ class MultiLabelClassificationTask(ClassificationTask):
             batch_size=y.shape[0],
         )
         y_hat = self.to_multilabel_prediction(model_output)
-        self.test_metrics[dataloader_idx].update(y_hat, y.to(torch.int))
+        self.test_metrics[dataloader_idx].update(y_hat, y.to(torch.int32))
 
     def predict_step(self, batch: object, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         """Compute the predicted class probabilities.
