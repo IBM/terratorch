@@ -48,14 +48,13 @@ To add documentation to TerraTorch, you need to be familiar with Markdown, a cle
 MkDocs, a framework which relies on Markdown in order to create webpages as this you are reading. The documentation is automatically
 deployed by a bot just after the push or merge to the branch dedicated to store the latest documentation.
 These are the steps to configure your environment to work with documentation.
+
 * Clone the documentation branch to your machine:
-  
 ```
     git fetch origin docs
     git checkout docs
     git pull origin docs
 ```
-
 * Add your modifications and open a PR to the branch `docs`. It is recommended to add the label `documentation` to your PR.
 * The PR will be reviewed and approved if it is considered relevant by the maintainers. 
 
