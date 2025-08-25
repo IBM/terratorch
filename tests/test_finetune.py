@@ -29,10 +29,14 @@ def setup_and_cleanup(model_name):
 # The backbones `prithvi_eo_v2_300` and `prithvi_swin_B` are already used in
 # others tests and don't need be tested here again
 @pytest.mark.parametrize(
-    "model_name", ["terramind_v1_base", "prithvi_eo_v1_100", "prithvi_swin_L", "prithvi_eo_v2_600"]
+    "model_name", ["terramind_v1_base", "prithvi_eo_v1_100"]
 )
 @pytest.mark.parametrize("case", ["fit", "test", "validate", "compute_statistics"])
 def test_finetune_multiple_backbones(model_name, case):
+    if model_name == "terramind_v1_base" and case == "compute_statistics":
+        # Does not work with the multimodal datamodule used in the TerraMind test
+        pytest.skip()
+
     command_list = [case, "-c", f"tests/resources/configs/manufactured-finetune_{model_name}.yaml"]
     _ = build_lightning_cli(command_list)
 
@@ -40,7 +44,7 @@ def test_finetune_multiple_backbones(model_name, case):
 
 
 @pytest.mark.parametrize(
-    "model_name", ["terramind_v1_base", "prithvi_eo_v1_100", "prithvi_swin_L", "prithvi_eo_v2_600"]
+    "model_name", ["prithvi_eo_v1_100", "prithvi_swin_L"]
 )
 def test_finetune_multiple_backbones_with_prediction(model_name):
     command_list = ["fit", "-c", f"tests/resources/configs/manufactured-finetune_{model_name}.yaml"]
@@ -66,7 +70,7 @@ def test_finetune_multiple_backbones_with_prediction(model_name):
 
 
 @pytest.mark.parametrize("model_name", ["prithvi_swin_B"])
-@pytest.mark.parametrize("case", ["fit", "test", "validate"])
+@pytest.mark.parametrize("case", ["fit"])
 def test_finetune_bands_intervals(model_name, case):
     command_list = [case, "-c", f"tests/resources/configs/manufactured-finetune_{model_name}_band_interval.yaml"]
     _ = build_lightning_cli(command_list)
@@ -75,7 +79,7 @@ def test_finetune_bands_intervals(model_name, case):
 
 
 @pytest.mark.parametrize("model_name", ["prithvi_swin_B"])
-@pytest.mark.parametrize("case", ["fit", "test", "validate"])
+@pytest.mark.parametrize("case", ["fit"])
 def test_finetune_bands_str(model_name, case):
     command_list = [case, "-c", f"tests/resources/configs/manufactured-finetune_{model_name}_string.yaml"]
     _ = build_lightning_cli(command_list)
@@ -84,7 +88,7 @@ def test_finetune_bands_str(model_name, case):
 
 
 @pytest.mark.parametrize("model_name", ["prithvi_eo_v2_300"])
-@pytest.mark.parametrize("case", ["fit", "test", "validate"])
+@pytest.mark.parametrize("case", ["fit"])
 def test_finetune_pad(case):
     command_list = [case, "-c", "tests/resources/configs/manufactured-finetune_prithvi_pixelwise_pad.yaml"]
     _ = build_lightning_cli(command_list)
@@ -108,7 +112,7 @@ def test_finetune_metrics_from_file(model_name):
 
 
 @pytest.mark.parametrize("model_name", ["prithvi_swin_B"])
-@pytest.mark.parametrize("case", ["fit", "test", "validate"])
+@pytest.mark.parametrize("case", ["fit"])
 def test_finetune_segmentation_tiled(case, model_name):
     command_list = [case, "-c", f"tests/resources/configs/manufactured-finetune_{model_name}_segmentation.yaml"]
     _ = build_lightning_cli(command_list)

@@ -271,6 +271,25 @@ class CustomWriter(BasePredictionWriter):
                             suffix=suffix,
                             output_file_name=output_file_prefix,
                         )
+            # If there is no suffix to append in the output filename
+            elif isinstance(pred_batch_, torch.Tensor):
+                pred_batch = pred_batch_
+
+                for p, file_name in zip(torch.unbind(pred_batch, dim=0), filename_batch, strict=False):
+                    save_prediction(
+                        p,
+                        file_name,
+                        output_dir,
+                        dtype=trainer.out_dtype,
+                        output_file_name=output_file_prefix,
+                    )
+            else:
+                raise ValueError(
+                    f"`pred_batch_` is expected to be in `[tuple, list, torch.Tensor]` but received {type(pred_batch_)}."
+                )
+
+        elif not prediction:
+            logger.info("Prediction output is `None` for this case.")
 
         else:
             raise TypeError(f"Unknown type for prediction {type(prediction)}")
@@ -330,10 +349,6 @@ def clean_config_for_deployment_and_dump(config: dict[str, Any]):
         elif "backbone_pretrained" in deploy_config["model"]["init_args"]["model_args"]:
             deploy_config["model"]["init_args"]["model_args"]["backbone_pretrained"] = False
 
-    # Set image_grep and label_grep to *tif* .
-    # Fixes issue with inference not finding image named as the training image.
-    deploy_config["data"]["init_args"]["img_grep"] = "*tif*"
-    deploy_config["data"]["init_args"]["label_grep"] = "*tif*"
     return yaml.safe_dump(deploy_config)
 
 
