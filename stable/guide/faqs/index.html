@@ -1800,6 +1800,20 @@ Otherwise, your data or labels could include NaN values, or you are using a wron
 <p>Please check all paths and image/label grep patterns in your config. Likely, TerraTorch does not find the data.
 If the paths are correct, you can either debug the generic dataset class constructor or open an issue to get support from the developers. </p>
 </details>
+<details class="faq">
+<summary>I get an error 'Could not instantiate model <model name> from any source'. What can I do?</summary>
+<p>Please first check if the model name is correct. If that is the case, check if the model is in the correctly registered, e.g.:<br />
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span> <span class="nn">terratorch.registry</span> <span class="kn">import</span> <span class="n">BACKBONE_REGISTRY</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="s1">&#39;terramind_v1_base&#39;</span> <span class="ow">in</span> <span class="n">BACKBONE_REGISTRY</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="o">&gt;&gt;&gt;</span> <span class="kc">True</span>
+</span></code></pre></div>
+If this is the case, run your code with with <code>pretrained=False</code> to check if the code is working. 
+If the code works without pretrained backbones it is like an error from the model weights download. 
+This can happens when the HF cache directory has no space left (default <code>~/.cache/huggingface</code>). 
+You can change the cache dir by setting the <code>HF_HOME</code> env variable.
+Please open an GitHub issue if this does not solve your problem.</p>
+</details>
 
 
 
@@ -1820,7 +1834,7 @@ If the paths are correct, you can either debug the generic dataset class constru
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="June 19, 2025 11:20:35 UTC">June 19, 2025</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="August 22, 2025 14:33:32 UTC">August 22, 2025</span>
   </span>
 
     

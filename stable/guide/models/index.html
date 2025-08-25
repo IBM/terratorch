@@ -1769,7 +1769,7 @@ and have a forward method which returns an object <a class="autorefs autorefs-in
   &lt;/span&gt;" href="../../package/extra_model_structures/#terratorch.models.model.ModelOutput">ModelOutput</a>:</p>
 <h2 id="model-factories">Model Factories<a class="headerlink" href="#model-factories" title="Permanent link">#</a></h2>
 <p>In order to be used by tasks, models must have a Model Factory which builds them.
-Factories must conform to the [ModelFactory][terratorch.models.model.ModelFactory] parent class. </p>
+Factories must conform to the <a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;code&gt;terratorch.models.model.ModelFactory&lt;/code&gt;" href="../../package/model_factories/#terratorch.models.model.ModelFactory">ModelFactory</a> parent class. </p>
 <p>You most likely do not need to implement your own model factory, unless you are wrapping another library which generates full models.</p>
 <p>For most cases, the <a href="../encoder_decoder_factory/">EncoderDecoderFactory</a> can be used to combine a backbone with a decoder.</p>
 <p>To add new backbones or decoders, to be used with the <a href="../encoder_decoder_factory/">EncoderDecoderFactory</a> they should be <a href="../registry/">registered</a>. </p>
