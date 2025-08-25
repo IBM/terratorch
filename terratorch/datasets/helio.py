@@ -133,8 +133,16 @@ class HelioNetCDFDataset(Dataset):
                 scalers_classes[k] = Scaler(var=v)
 
             self.scalers = scalers_classes
+
+        elif isinstance(scalers, dict):
+            scalers_classes = {}
+            for k, v in scalers.items():
+                scalers_classes[k] = Scaler(var=v)
+
+            self.scalers = scalers_classes
+
         else:
-            self.scalers = scalers
+            raise ValueError(f"`scalers` is expected to be `str` or `dict`, but received {type(self.scalers)}")
 
         self.phase = phase
         self.channels = channels

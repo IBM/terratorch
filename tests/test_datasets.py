@@ -1,16 +1,18 @@
 import binascii
 import gc
 import json
-import pickle
+from datetime import datetime
 
 import albumentations as A
 import h5py
 import matplotlib.pyplot as plt
+import netCDF4
 import numpy as np
 import pandas as pd
 import pytest
 import rasterio
 import torch
+import xarray as xr
 from albumentations.pytorch import ToTensorV2
 from huggingface_hub import hf_hub_download
 from rasterio.transform import from_origin
@@ -1185,65 +1187,96 @@ class TestMultiTemporalCropClassification:
         plt.close(fig)
 
 
-"""
 class TestHelioFMDataset:
+    def create_sample_files(self, n_files=22):
+        # Creating index file
+        present = n_files * [1]
+        dtime = 1  # minutes
+        year = 2014
+        month = 1
+        day = 1
+        hour = 0
+        minutes = 0
+        seconds = 0
 
-    def load_sample_batch(self):
-        '''
-        This function downloads, decompresses and formats a small number
-        of real solar data files from the HuggingFace repo: REPO_ID
+        paths = []
+        for i in range(n_files):
+            x = 256
+            y = 256
 
-        The individual data files to be used are specified in the
-        index file: INDEX_FILE. The index file and data files are
-        in the HuggingFace repo.
+            channels = [
+                "aia94",
+                "aia131",
+                "aia171",
+                "aia193",
+                "aia211",
+                "aia304",
+                "aia335",
+                "aia1600",
+                "hmi_m",
+                "hmi_bx",
+                "hmi_by",
+                "hmi_bz",
+                "hmi_v",
+            ]
 
-        The formatted data is then used to test the HelioSpectformer
-        '''
+            variables_dict = {var: xr.DataArray(np.random.rand(x, y), dims=["x", "y"]) for var in channels}
 
-        # TODO Remove the token when the dataset became open
-        REPO_ID = "nasa-ibm-ai4science/Surya-1.0_validation_data"
-        INDEX_FILE = "index_2011_test.csv"
-
-        index_path = hf_hub_download(
-            repo_id=REPO_ID,
-            filename=INDEX_FILE,
-            repo_type="dataset",
-            token=HF_ACCESS_TOKEN,
-        )
-        df = pd.read_csv(index_path)
-        selected_paths = df["path"].tolist()
-
-        channels = [
-            "aia94", "aia131", "aia171", "aia193", "aia211", "aia304", "aia335", "aia1600",
-            "hmi_m", "hmi_bx", "hmi_by", "hmi_bz", "hmi_v"
-        ]
-
-        tensors = []
-        for name in selected_paths:
-            file_path = hf_hub_download(
-                repo_id=REPO_ID,
-                filename=name,
-                repo_type="dataset",
-                token=HF_ACCESS_TOKEN,
+            ds = xr.Dataset(
+                variables_dict,
             )
 
-        return index_path
+            filename = f"/tmp/input_file_{i}.nc"
+            ds.to_netcdf(filename)
+            paths.append(filename)
+
+        timestamps = []
+
+        for i in range(n_files):
+            date_datetime = datetime(year, month, day, hour, i * dtime, seconds).strftime("%Y-%m-%d %H:%M:%S")
+
+            timestamps.append(date_datetime)
+
+        index_dict = {"path": paths, "timestep": timestamps, "present": present}
+        index_dataframe = pd.DataFrame(index_dict)
+        index_dataframe.to_csv("/tmp/index.csv")
+
+        return "/tmp/index.csv"
 
     def test_dataset_load(self):
-
         # Downloading sample data
-        index_path = self.load_sample_batch()
-        channels = ['aia94', 'aia131', 'aia171', 'aia193', 'aia211', 'aia304',
-                    'aia335', 'aia1600', 'hmi_m', 'hmi_bx', 'hmi_by', 'hmi_bz', 'hmi_v']
+        index_path = self.create_sample_files()
+        n_input_timestamps = 2
+
+        channels = [
+            "aia94",
+            "aia131",
+            "aia171",
+            "aia193",
+            "aia211",
+            "aia304",
+            "aia335",
+            "aia1600",
+            "hmi_m",
+            "hmi_bx",
+            "hmi_by",
+            "hmi_bz",
+            "hmi_v",
+        ]
+
+        scalers = {k: {"std": 1, "mean": 0, "epsilon": 0, "sl_scale_factor": 1} for k in channels}
 
         dataset = HelioNetCDFDataset(
-                            index_path=index_path,
-                            time_delta_input_minutes=[-60,0],
-                            time_delta_target_minutes=60,
-                            channels = channels,
-                            n_input_timestamps=1,
-                            rollout_steps=0)
+            index_path=index_path,
+            time_delta_input_minutes=[-5, 0],
+            time_delta_target_minutes=+5,
+            channels=channels,
+            scalers=scalers,
+            n_input_timestamps=n_input_timestamps,
+            rollout_steps=0,
+        )
 
         for batch in dataset:
-            print(batch)
-"""
+            assert batch[0]["ts"].shape == (len(channels), n_input_timestamps, 256, 256), (
+                "Shape for Helio inputs isn't the expected."
+            )
