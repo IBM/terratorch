@@ -326,22 +326,24 @@ def test_terramind_tim(model_name):
     gc.collect()
 
 
-"""
 @pytest.mark.parametrize("model_name", ["heliofm_backbone_surya"])
 def test_heliofm(model_name):
-
     B = 8
     C = 6
     T = 3
     H = 4096
     W = 4096
 
-    backbone = BACKBONE_REGISTRY.build(model_name, in_chans=C, embed_dim=64, num_heads=8,
-                                       time_embedding={"type": "linear",
-                                                       "n_queries": None,
-                                                       "time_dim": 3},
-                                       depth=2, n_spectral_blocks=0,
-                                       dp_rank=2)
+    backbone = BACKBONE_REGISTRY.build(
+        model_name,
+        in_chans=C,
+        embed_dim=64,
+        num_heads=8,
+        time_embedding={"type": "linear", "n_queries": None, "time_dim": 3},
+        depth=2,
+        n_spectral_blocks=0,
+        dp_rank=2,
+    )
 
     data = {"ts": torch.rand(B, C, T, H, W), "time_delta_input": torch.rand(B, T)}
 
@@ -349,21 +351,3 @@ def test_heliofm(model_name):
         x_hat = backbone(data)
 
     assert x_hat.shape == (B, C, H, W)
-
-@pytest.mark.parametrize("model_name", ["heliofm_backbone_surya"])
-def test_heliofm_from_file(model_name):
-
-    backbone = BACKBONE_REGISTRY.build(model_name, in_chans=13, embed_dim=64, num_heads=8,
-                                       time_embedding={"type": "linear",
-                                                       "n_queries": None,
-                                                       "time_dim": 5},
-                                       depth=2, n_spectral_blocks=0,
-                                       dp_rank=2)
-
-    data = load_sample_batch()
-
-    with torch.no_grad():
-        x_hat = backbone(data)
-
-    assert x_hat.shape == (1, 13, 4096, 4096)
-"""
