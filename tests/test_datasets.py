@@ -1,7 +1,8 @@
-import gc
 import binascii
+import gc
 import json
 import pickle
+from datetime import datetime
 
 import albumentations as A
 import h5py
@@ -11,12 +12,15 @@ import pandas as pd
 import pytest
 import rasterio
 import torch
+import xarray as xr
 from albumentations.pytorch import ToTensorV2
+from huggingface_hub import hf_hub_download
 from rasterio.transform import from_origin
 from xarray import DataArray
 
 from terratorch.datasets import (
     FireScarsNonGeo,
+    HelioNetCDFDataset,
     MBeninSmallHolderCashewsNonGeo,
     MBigEarthNonGeo,
     MBrickKilnNonGeo,
@@ -30,10 +34,8 @@ from terratorch.datasets import (
     MSACropTypeNonGeo,
     MSo2SatNonGeo,
     MultiTemporalCropClassification,
-    #Sen1Floods11NonGeo,
 )
 from terratorch.datasets.sen1floods11 import Sen1Floods11NonGeo
-
 from terratorch.datasets.transforms import FlattenTemporalIntoChannels, UnflattenTemporalFromChannels
 
 
@@ -41,16 +43,18 @@ def create_dummy_tiff(path, width=100, height=100, count=6, dtype="uint8"):
     data = np.random.randint(0, 255, (count, height, width), dtype=dtype)
     transform = from_origin(0, 0, 1, 1)
     with rasterio.open(
-        path, "w",
+        path,
+        "w",
         driver="GTiff",
         height=height,
         width=width,
         count=count,
         dtype=dtype,
         crs="EPSG:4326",
-        transform=transform
+        transform=transform,
     ) as dst:
         dst.write(data)
+
 
 @pytest.fixture(scope="function")
 def mpv4ger_data_root(tmp_path):
@@ -58,11 +62,7 @@ def mpv4ger_data_root(tmp_path):
     data_directory = data_root / "m-pv4ger"
     data_directory.mkdir(parents=True, exist_ok=True)
 
-    partition = {
-        "train": ["10.0,20.0", "11.0,21.0"],
-        "val": [],
-        "test": []
-    }
+    partition = {"train": ["10.0,20.0", "11.0,21.0"], "val": [], "test": []}
     partition_file = data_directory / "default_partition.json"
     with open(partition_file, "w") as f:
         json.dump(partition, f)
@@ -72,10 +72,8 @@ def mpv4ger_data_root(tmp_path):
     for img_id in partition["train"]:
         file_path = data_directory / f"{img_id}.hdf5"
         with h5py.File(file_path, "w") as h5file:
-
             for band in bands:
                 h5file.create_dataset(band, data=np.random.rand(100, 100).astype(np.float32))
-
 
             attr_dict = {"label": np.random.randint(0, 10)}
             serialized_attr = pickle.dumps(attr_dict)
@@ -83,6 +81,7 @@ def mpv4ger_data_root(tmp_path):
             h5file.attrs["pickle"] = hex_attr
 
     return str(data_root)
+
 
 @pytest.fixture(scope="function")
 def fire_scars_data_root(tmp_path):
@@ -112,6 +111,7 @@ def fire_scars_data_root(tmp_path):
 
     return str(data_root)
 
+
 @pytest.fixture(scope="function")
 def m_bigearth_data_root(tmp_path):
     data_root = tmp_path / "m_bigearthnet"
@@ -129,9 +129,19 @@ def m_bigearth_data_root(tmp_path):
         json.dump(partition, f)
 
     bands = [
-        "COASTAL_AEROSOL", "BLUE", "GREEN", "RED", "RED_EDGE_1",
-        "RED_EDGE_2", "RED_EDGE_3", "NIR_BROAD", "NIR_NARROW",
-        "WATER_VAPOR", "SWIR_1", "SWIR_2", "CLOUD_PROBABILITY"
+        "COASTAL_AEROSOL",
+        "BLUE",
+        "GREEN",
+        "RED",
+        "RED_EDGE_1",
+        "RED_EDGE_2",
+        "RED_EDGE_3",
+        "NIR_BROAD",
+        "NIR_NARROW",
+        "WATER_VAPOR",
+        "SWIR_1",
+        "SWIR_2",
+        "CLOUD_PROBABILITY",
     ]
 
     for img in ["image_0", "image_1"]:
@@ -145,17 +155,14 @@ def m_bigearth_data_root(tmp_path):
 
     return str(data_root)
 
+
 @pytest.fixture(scope="function")
 def m_forestnet_data_root(tmp_path):
     data_root = tmp_path / "m_forestnet"
     data_directory = data_root / MForestNetNonGeo.data_dir
     data_directory.mkdir(parents=True, exist_ok=True)
 
-    partition = {
-        "train": ["image_0", "image_1"],
-        "val": [],
-        "test": []
-    }
+    partition = {"train": ["image_0", "image_1"], "val": [], "test": []}
     partition_file = data_directory / MForestNetNonGeo.partition_file_template.format(partition="default")
     with open(partition_file, "w") as f:
         json.dump(partition, f)
@@ -179,17 +186,14 @@ def m_forestnet_data_root(tmp_path):
 
     return str(data_root)
 
+
 @pytest.fixture(scope="function")
 def mnz_cattle_data_root(tmp_path):
     data_root = tmp_path / "m_nz_cattle"
     data_directory = data_root / MNzCattleNonGeo.data_dir
     data_directory.mkdir(parents=True, exist_ok=True)
 
-    partition = {
-        "train": ["image_0", "image_1"],
-        "val": [],
-        "test": []
-    }
+    partition = {"train": ["image_0", "image_1"], "val": [], "test": []}
     partition_file = data_directory / MNzCattleNonGeo.partition_file_template.format(partition="default")
     with open(partition_file, "w") as f:
         json.dump(partition, f)
@@ -210,24 +214,32 @@ def mnz_cattle_data_root(tmp_path):
 
     return str(data_root)
 
+
 @pytest.fixture(scope="function")
 def brickkiln_data_root(tmp_path):
     data_root = tmp_path / "m_brick_kiln"
     data_directory = data_root / MBrickKilnNonGeo.data_dir
     data_directory.mkdir(parents=True, exist_ok=True)
 
-    partition = {
-        "train": ["image_0", "image_1"],
-        "val": [],
-        "test": []
-    }
+    partition = {"train": ["image_0", "image_1"], "val": [], "test": []}
     partition_file = data_directory / MBrickKilnNonGeo.partition_file_template.format(partition="default")
     with open(partition_file, "w") as f:
         json.dump(partition, f)
 
     bands = [
-        "COASTAL_AEROSOL", "BLUE", "GREEN", "RED", "RED_EDGE_1", "RED_EDGE_2", "RED_EDGE_3",
-        "NIR_BROAD", "NIR_NARROW", "WATER_VAPOR", "CIRRUS", "SWIR_1", "SWIR_2"
+        "COASTAL_AEROSOL",
+        "BLUE",
+        "GREEN",
+        "RED",
+        "RED_EDGE_1",
+        "RED_EDGE_2",
+        "RED_EDGE_3",
+        "NIR_BROAD",
+        "NIR_NARROW",
+        "WATER_VAPOR",
+        "CIRRUS",
+        "SWIR_1",
+        "SWIR_2",
     ]
 
     for img in ["image_0", "image_1"]:
@@ -241,17 +253,14 @@ def brickkiln_data_root(tmp_path):
 
     return str(data_root)
 
+
 @pytest.fixture(scope="function")
 def neontree_data_root(tmp_path):
     data_root = tmp_path / "m_neon_tree"
     data_directory = data_root / MNeonTreeNonGeo.data_dir
     data_directory.mkdir(parents=True, exist_ok=True)
 
-    partition = {
-        "train": ["image_0", "image_1"],
-        "val": [],
-        "test": []
-    }
+    partition = {"train": ["image_0", "image_1"], "val": [], "test": []}
     partition_file = data_directory / MNeonTreeNonGeo.partition_file_template.format(partition="default")
     with open(partition_file, "w") as f:
         json.dump(partition, f)
@@ -269,32 +278,37 @@ def neontree_data_root(tmp_path):
 
     return str(data_root)
 
+
 @pytest.fixture(scope="function")
 def eurosat_data_root(tmp_path):
     data_root = tmp_path / "m_eurosat"
     data_directory = data_root / MEuroSATNonGeo.data_dir
     data_directory.mkdir(parents=True, exist_ok=True)
 
-    partition = {
-        "train": ["image_0", "image_1"],
-        "val": [],
-        "test": []
-    }
+    partition = {"train": ["image_0", "image_1"], "val": [], "test": []}
     partition_file = data_directory / MEuroSATNonGeo.partition_file_template.format(partition="default")
     with open(partition_file, "w") as f:
         json.dump(partition, f)
 
-    label_map = {
-        "class_0": ["image_0"],
-        "class_1": ["image_1"]
-    }
+    label_map = {"class_0": ["image_0"], "class_1": ["image_1"]}
     label_map_file = data_directory / MEuroSATNonGeo.label_map_file
     with open(label_map_file, "w") as f:
         json.dump(label_map, f)
 
     bands = [
-        "COASTAL_AEROSOL", "BLUE", "GREEN", "RED", "RED_EDGE_1", "RED_EDGE_2", "RED_EDGE_3",
-        "NIR_BROAD", "NIR_NARROW", "WATER_VAPOR", "CIRRUS", "SWIR_1", "SWIR_2"
+        "COASTAL_AEROSOL",
+        "BLUE",
+        "GREEN",
+        "RED",
+        "RED_EDGE_1",
+        "RED_EDGE_2",
+        "RED_EDGE_3",
+        "NIR_BROAD",
+        "NIR_NARROW",
+        "WATER_VAPOR",
+        "CIRRUS",
+        "SWIR_1",
+        "SWIR_2",
     ]
 
     for img in ["image_0", "image_1"]:
@@ -308,17 +322,14 @@ def eurosat_data_root(tmp_path):
 
     return str(data_root)
 
+
 @pytest.fixture(scope="function")
 def pv4gerseg_data_root(tmp_path):
     data_root = tmp_path / "m_pv4ger_seg"
     data_directory = data_root / MPv4gerSegNonGeo.data_dir
     data_directory.mkdir(parents=True, exist_ok=True)
 
-    partition = {
-        "train": ["52.5167,13.3833", "48.8566,2.3522"],
-        "val": [],
-        "test": []
-    }
+    partition = {"train": ["52.5167,13.3833", "48.8566,2.3522"], "val": [], "test": []}
     partition_file = data_directory / MPv4gerSegNonGeo.partition_file_template.format(partition="default")
     with open(partition_file, "w") as f:
         json.dump(partition, f)
@@ -336,17 +347,14 @@ def pv4gerseg_data_root(tmp_path):
 
     return str(data_root)
 
+
 @pytest.fixture(scope="function")
 def pv4ger_data_root(tmp_path):
     data_root = tmp_path / "m_pv4ger"
     data_directory = data_root / MPv4gerNonGeo.data_dir
     data_directory.mkdir(parents=True, exist_ok=True)
 
-    partition = {
-        "train": ["52.5167,13.3833", "48.8566,2.3522"],
-        "val": [],
-        "test": []
-    }
+    partition = {"train": ["52.5167,13.3833", "48.8566,2.3522"], "val": [], "test": []}
     partition_file = data_directory / MPv4gerNonGeo.partition_file_template.format(partition="default")
     with open(partition_file, "w") as f:
         json.dump(partition, f)
@@ -364,26 +372,37 @@ def pv4ger_data_root(tmp_path):
 
     return str(data_root)
 
+
 @pytest.fixture(scope="function")
 def so2sat_data_root(tmp_path):
     data_root = tmp_path / "m_so2sat"
     data_directory = data_root / MSo2SatNonGeo.data_dir
     data_directory.mkdir(parents=True, exist_ok=True)
 
-    partition = {
-        "train": ["image_0", "image_1"],
-        "val": [],
-        "test": []
-    }
+    partition = {"train": ["image_0", "image_1"], "val": [], "test": []}
     partition_file = data_directory / MSo2SatNonGeo.partition_file_template.format(partition="default")
     with open(partition_file, "w") as f:
         json.dump(partition, f)
 
     bands = [
-        "VH_REAL", "BLUE", "VH_IMAGINARY", "GREEN", "VV_REAL", "RED",
-        "VV_IMAGINARY", "VH_LEE_FILTERED", "RED_EDGE_1", "VV_LEE_FILTERED",
-        "RED_EDGE_2", "VH_LEE_FILTERED_REAL", "RED_EDGE_3", "NIR_BROAD",
-        "VV_LEE_FILTERED_IMAGINARY", "NIR_NARROW", "SWIR_1", "SWIR_2"
+        "VH_REAL",
+        "BLUE",
+        "VH_IMAGINARY",
+        "GREEN",
+        "VV_REAL",
+        "RED",
+        "VV_IMAGINARY",
+        "VH_LEE_FILTERED",
+        "RED_EDGE_1",
+        "VV_LEE_FILTERED",
+        "RED_EDGE_2",
+        "VH_LEE_FILTERED_REAL",
+        "RED_EDGE_3",
+        "NIR_BROAD",
+        "VV_LEE_FILTERED_IMAGINARY",
+        "NIR_NARROW",
+        "SWIR_1",
+        "SWIR_2",
     ]
 
     for img in ["image_0", "image_1"]:
@@ -397,24 +416,32 @@ def so2sat_data_root(tmp_path):
 
     return str(data_root)
 
+
 @pytest.fixture(scope="function")
 def cashews_data_root(tmp_path):
     data_root = tmp_path / "m_cashew_plant"
     data_directory = data_root / MBeninSmallHolderCashewsNonGeo.data_dir
     data_directory.mkdir(parents=True, exist_ok=True)
 
-    partition = {
-        "train": ["image_2023-01-15", "image_2023-02-20"],
-        "val": [],
-        "test": []
-    }
+    partition = {"train": ["image_2023-01-15", "image_2023-02-20"], "val": [], "test": []}
     partition_file = data_directory / MBeninSmallHolderCashewsNonGeo.partition_file_template.format(partition="default")
     with open(partition_file, "w") as f:
         json.dump(partition, f)
 
     bands = [
-        "COASTAL_AEROSOL", "BLUE", "GREEN", "RED", "RED_EDGE_1", "RED_EDGE_2",
-        "RED_EDGE_3", "NIR_BROAD", "NIR_NARROW", "WATER_VAPOR", "SWIR_1", "SWIR_2", "CLOUD_PROBABILITY"
+        "COASTAL_AEROSOL",
+        "BLUE",
+        "GREEN",
+        "RED",
+        "RED_EDGE_1",
+        "RED_EDGE_2",
+        "RED_EDGE_3",
+        "NIR_BROAD",
+        "NIR_NARROW",
+        "WATER_VAPOR",
+        "SWIR_1",
+        "SWIR_2",
+        "CLOUD_PROBABILITY",
     ]
 
     for img in ["image_2023-01-15", "image_2023-02-20"]:
@@ -429,6 +456,7 @@ def cashews_data_root(tmp_path):
 
     return str(data_root)
 
+
 @pytest.fixture(scope="function")
 def sen1floods_data_root(tmp_path):
     data_root = tmp_path / "sen1floods11"
@@ -440,14 +468,8 @@ def sen1floods_data_root(tmp_path):
         filename = f"tile_{i}_S2Hand.tif"
         label_filename = f"tile_{i}_LabelHand.tif"
 
-        img_data = DataArray(
-            np.random.rand(13, 64, 64).astype(np.float32),
-            dims=["band", "y", "x"]
-        )
-        mask_data = DataArray(
-            np.random.randint(0, 2, size=(1, 64, 64), dtype=np.uint8),
-            dims=["band", "y", "x"]
-        )
+        img_data = DataArray(np.random.rand(13, 64, 64).astype(np.float32), dims=["band", "y", "x"])
+        mask_data = DataArray(np.random.randint(0, 2, size=(1, 64, 64), dtype=np.uint8), dims=["band", "y", "x"])
 
         img_data.rio.set_spatial_dims(x_dim="x", y_dim="y", inplace=True)
         mask_data.rio.set_spatial_dims(x_dim="x", y_dim="y", inplace=True)
@@ -479,17 +501,14 @@ def sen1floods_data_root(tmp_path):
 
     return str(data_root)
 
+
 @pytest.fixture(scope="function")
 def chesapeake_data_root(tmp_path):
     data_root = tmp_path / "m_chesapeake"
     data_directory = data_root / MChesapeakeLandcoverNonGeo.data_dir
     data_directory.mkdir(parents=True, exist_ok=True)
 
-    partition = {
-        "train": ["image_0", "image_1"],
-        "val": [],
-        "test": []
-    }
+    partition = {"train": ["image_0", "image_1"], "val": [], "test": []}
     partition_file = data_directory / MChesapeakeLandcoverNonGeo.partition_file_template.format(partition="default")
     with open(partition_file, "w") as f:
         json.dump(partition, f)
@@ -506,6 +525,7 @@ def chesapeake_data_root(tmp_path):
             h5file.create_dataset("label", data=mask)
 
     return str(data_root)
+
 
 @pytest.fixture(scope="function")
 def crop_classification_data_root(tmp_path):
@@ -538,22 +558,27 @@ def crop_classification_data_root(tmp_path):
     with open(data_root / "validation_data.txt", "w") as f:
         f.write("\n".join([f"chip_{i}" for i in range(2)]))
 
-    metadata = pd.DataFrame({
-        "chip_id": [f"chip_{i}" for i in range(2)],
-        "first_img_date": ["2021-01-01", "2021-01-02"],
-        "middle_img_date": ["2021-01-15", "2021-01-16"],
-        "last_img_date": ["2021-02-01", "2021-02-02"],
-    })
+    metadata = pd.DataFrame(
+        {
+            "chip_id": [f"chip_{i}" for i in range(2)],
+            "first_img_date": ["2021-01-01", "2021-01-02"],
+            "middle_img_date": ["2021-01-15", "2021-01-16"],
+            "last_img_date": ["2021-02-01", "2021-02-02"],
+        }
+    )
     metadata.to_csv(data_root / "chips_df.csv", index=False)
 
     return str(data_root)
 
+
 class TestMNeonTreeNonGeo:
     def test_dataset_sample(self, neontree_data_root):
-        transform = A.Compose([
-            A.Resize(64, 64),
-            ToTensorV2(),
-        ])
+        transform = A.Compose(
+            [
+                A.Resize(64, 64),
+                ToTensorV2(),
+            ]
+        )
 
         dataset = MNeonTreeNonGeo(data_root=neontree_data_root, split="train", transform=transform)
         sample = dataset[0]
@@ -564,7 +589,9 @@ class TestMNeonTreeNonGeo:
         assert isinstance(sample["mask"], torch.Tensor), "'mask' is not a torch.Tensor"
         assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
         assert sample["mask"].dtype == torch.long, "'mask' does not have dtype torch.long"
-        assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
+        assert sample["image"].shape == (len(dataset.bands), 64, 64), (
+            f"'image' has incorrect shape: {sample['image'].shape}"
+        )
         assert sample["mask"].shape == (64, 64), f"'mask' has incorrect shape: {sample['mask'].shape}"
 
         gc.collect()
@@ -582,10 +609,12 @@ class TestMNeonTreeNonGeo:
 
 class TestMBrickKilnNonGeo:
     def test_dataset_sample(self, brickkiln_data_root):
-        transform = A.Compose([
-            A.Resize(64, 64),
-            ToTensorV2(),
-        ])
+        transform = A.Compose(
+            [
+                A.Resize(64, 64),
+                ToTensorV2(),
+            ]
+        )
 
         dataset = MBrickKilnNonGeo(data_root=brickkiln_data_root, split="train", transform=transform)
         sample = dataset[0]
@@ -595,7 +624,9 @@ class TestMBrickKilnNonGeo:
         assert isinstance(sample["image"], torch.Tensor), "'image' is not a torch.Tensor"
         assert isinstance(sample["label"], int), "'label' is not an int"
         assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
-        assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
+        assert sample["image"].shape == (len(dataset.bands), 64, 64), (
+            f"'image' has incorrect shape: {sample['image'].shape}"
+        )
 
         gc.collect()
 
@@ -609,12 +640,15 @@ class TestMBrickKilnNonGeo:
         assert isinstance(fig, plt.Figure), "Plot method did not return a plt.Figure"
         plt.close(fig)
 
+
 class TestMEuroSATNonGeo:
     def test_dataset_sample(self, eurosat_data_root):
-        transform = A.Compose([
-            A.Resize(64, 64),
-            ToTensorV2(),
-        ])
+        transform = A.Compose(
+            [
+                A.Resize(64, 64),
+                ToTensorV2(),
+            ]
+        )
 
         dataset = MEuroSATNonGeo(data_root=eurosat_data_root, split="train", transform=transform)
         sample = dataset[0]
@@ -624,7 +658,9 @@ class TestMEuroSATNonGeo:
         assert isinstance(sample["image"], torch.Tensor), "'image' is not a torch.Tensor"
         assert isinstance(sample["label"], int), "'label' is not an int"
         assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
-        assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
+        assert sample["image"].shape == (len(dataset.bands), 64, 64), (
+            f"'image' has incorrect shape: {sample['image'].shape}"
+        )
 
         gc.collect()
 
@@ -637,6 +673,7 @@ class TestMEuroSATNonGeo:
         fig = dataset.plot(sample, suptitle="Sample Plot")
         assert isinstance(fig, plt.Figure), "Plot method did not return a plt.Figure"
         plt.close(fig)
+
 
 class TestFireScarsNonGeo:
     def test_dataset_length(self, fire_scars_data_root):
@@ -654,7 +691,9 @@ class TestFireScarsNonGeo:
         assert isinstance(sample["image"], torch.Tensor), "'image' is not a torch.Tensor"
         assert isinstance(sample["mask"], torch.Tensor), "'mask' is not a torch.Tensor"
         assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
-        assert sample["mask"].dtype in [torch.float32, torch.long], "'mask' does not have expected dtype (torch.float32 or torch.long)"
+        assert sample["mask"].dtype in [torch.float32, torch.long], (
+            "'mask' does not have expected dtype (torch.float32 or torch.long)"
+        )
         assert sample["image"].ndim == 3, "'image' does not have 3 dimensions (C, H, W)"
         assert sample["mask"].ndim == 2, "'mask' does not have 2 dimensions (H, W)"
 
@@ -674,11 +713,14 @@ class TestFireScarsNonGeo:
         assert isinstance(fig, plt.Figure), "The plot method did not return a plt.Figure"
         plt.close(fig)
 
+
 class TestMBigEarthNonGeo:
     def test_dataset_sample(self, m_bigearth_data_root):
-        transform = A.Compose([
-            ToTensorV2(),
-        ])
+        transform = A.Compose(
+            [
+                ToTensorV2(),
+            ]
+        )
 
         dataset = MBigEarthNonGeo(data_root=m_bigearth_data_root, split="train", transform=transform)
         sample = dataset[0]
@@ -706,11 +748,14 @@ class TestMBigEarthNonGeo:
         assert isinstance(fig, plt.Figure), "The plot method did not return a plt.Figure"
         plt.close(fig)
 
+
 class TestMForestNetNonGeo:
     def test_dataset_sample(self, m_forestnet_data_root):
-        transform = A.Compose([
-            ToTensorV2(),
-        ])
+        transform = A.Compose(
+            [
+                ToTensorV2(),
+            ]
+        )
 
         dataset = MForestNetNonGeo(data_root=m_forestnet_data_root, split="train", transform=transform)
         sample = dataset[0]
@@ -738,12 +783,15 @@ class TestMForestNetNonGeo:
         assert isinstance(fig, plt.Figure), "The plot method did not return a plt.Figure"
         plt.close(fig)
 
+
 class TestMNzCattleNonGeo:
     def test_dataset_sample(self, mnz_cattle_data_root):
-        transform = A.Compose([
-            A.Resize(64, 64),
-            ToTensorV2(),
-        ])
+        transform = A.Compose(
+            [
+                A.Resize(64, 64),
+                ToTensorV2(),
+            ]
+        )
 
         dataset = MNzCattleNonGeo(data_root=mnz_cattle_data_root, split="train", transform=transform)
         sample = dataset[0]
@@ -773,12 +821,15 @@ class TestMNzCattleNonGeo:
         assert isinstance(fig, plt.Figure), "The plot method did not return a plt.Figure"
         plt.close(fig)
 
+
 class TestMPv4gerNonGeo:
     def test_dataset_sample(self, pv4ger_data_root):
-        transform = A.Compose([
-            A.Resize(64, 64),
-            ToTensorV2(),
-        ])
+        transform = A.Compose(
+            [
+                A.Resize(64, 64),
+                ToTensorV2(),
+            ]
+        )
 
         dataset = MPv4gerNonGeo(data_root=pv4ger_data_root, split="train", transform=transform, use_metadata=True)
         sample = dataset[0]
@@ -790,19 +841,20 @@ class TestMPv4gerNonGeo:
         assert isinstance(sample["location_coords"], torch.Tensor), "'location_coords' is not a torch.Tensor"
         assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
         assert sample["location_coords"].dtype == torch.float32, "'location_coords' does not have dtype torch.float32"
-        assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
-        assert sample["location_coords"].shape == (2,), f"'location_coords' has incorrect shape: {sample['location_coords'].shape}"
+        assert sample["image"].shape == (len(dataset.bands), 64, 64), (
+            f"'image' has incorrect shape: {sample['image'].shape}"
+        )
+        assert sample["location_coords"].shape == (2,), (
+            f"'location_coords' has incorrect shape: {sample['location_coords'].shape}"
+        )
 
         gc.collect()
 
     def test_plot(self, pv4ger_data_root):
-
         transform = A.Compose([ToTensorV2()])
-
 
         dataset = MPv4gerNonGeo(data_root=pv4ger_data_root, split="train", transform=transform)
         sample = dataset[0]
-
 
         fig = dataset.plot(sample, suptitle="Sample Plot")
         assert isinstance(fig, plt.Figure), "Plot method did not return a plt.Figure"
@@ -811,11 +863,12 @@ class TestMPv4gerNonGeo:
 
 class TestMPv4gerSegNonGeo:
     def test_dataset_sample(self, pv4gerseg_data_root):
-
-        transform = A.Compose([
-            A.Resize(64, 64),
-            ToTensorV2(),
-        ])
+        transform = A.Compose(
+            [
+                A.Resize(64, 64),
+                ToTensorV2(),
+            ]
+        )
 
         dataset = MPv4gerSegNonGeo(data_root=pv4gerseg_data_root, split="train", transform=transform, use_metadata=True)
         sample = dataset[0]
@@ -829,9 +882,13 @@ class TestMPv4gerSegNonGeo:
         assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
         assert sample["mask"].dtype == torch.long, "'mask' does not have dtype torch.long"
         assert sample["location_coords"].dtype == torch.float32, "'location_coords' does not have dtype torch.float32"
-        assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
+        assert sample["image"].shape == (len(dataset.bands), 64, 64), (
+            f"'image' has incorrect shape: {sample['image'].shape}"
+        )
         assert sample["mask"].shape == (64, 64), f"'mask' has incorrect shape: {sample['mask'].shape}"
-        assert sample["location_coords"].shape == (2,), f"'location_coords' has incorrect shape: {sample['location_coords'].shape}"
+        assert sample["location_coords"].shape == (2,), (
+            f"'location_coords' has incorrect shape: {sample['location_coords'].shape}"
+        )
 
         gc.collect()
 
@@ -845,29 +902,33 @@ class TestMPv4gerSegNonGeo:
         assert isinstance(fig, plt.Figure), "Plot method did not return a plt.Figure"
         plt.close(fig)
 
+
 @pytest.fixture(scope="function")
 def sacroptype_data_root(tmp_path):
-
     data_root = tmp_path / "m_sa_crop_type"
     data_directory = data_root / MSACropTypeNonGeo.data_dir
     data_directory.mkdir(parents=True, exist_ok=True)
 
-
-    partition = {
-        "train": ["image_0", "image_1"],
-        "val": [],
-        "test": []
-    }
+    partition = {"train": ["image_0", "image_1"], "val": [], "test": []}
     partition_file = data_directory / MSACropTypeNonGeo.partition_file_template.format(partition="default")
     with open(partition_file, "w") as f:
         json.dump(partition, f)
 
-
     bands = [
-        "COASTAL_AEROSOL", "BLUE", "GREEN", "RED", "RED_EDGE_1", "RED_EDGE_2",
-        "RED_EDGE_3", "NIR_BROAD", "NIR_NARROW", "WATER_VAPOR", "SWIR_1", "SWIR_2", "CLOUD_PROBABILITY"
+        "COASTAL_AEROSOL",
+        "BLUE",
+        "GREEN",
+        "RED",
+        "RED_EDGE_1",
+        "RED_EDGE_2",
+        "RED_EDGE_3",
+        "NIR_BROAD",
+        "NIR_NARROW",
+        "WATER_VAPOR",
+        "SWIR_1",
+        "SWIR_2",
+        "CLOUD_PROBABILITY",
     ]
-
 
     for img in ["image_0", "image_1"]:
         file_path = data_directory / f"{img}.hdf5"
@@ -883,11 +944,12 @@ def sacroptype_data_root(tmp_path):
 
 class TestMSACropTypeNonGeo:
     def test_dataset_sample(self, sacroptype_data_root):
-
-        transform = A.Compose([
-            A.Resize(64, 64),
-            ToTensorV2(),
-        ])
+        transform = A.Compose(
+            [
+                A.Resize(64, 64),
+                ToTensorV2(),
+            ]
+        )
 
         dataset = MSACropTypeNonGeo(data_root=sacroptype_data_root, split="train", transform=transform)
         sample = dataset[0]
@@ -898,7 +960,9 @@ class TestMSACropTypeNonGeo:
         assert isinstance(sample["mask"], torch.Tensor), "'mask' is not a torch.Tensor"
         assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
         assert sample["mask"].dtype == torch.long, "'mask' does not have dtype torch.long"
-        assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
+        assert sample["image"].shape == (len(dataset.bands), 64, 64), (
+            f"'image' has incorrect shape: {sample['image'].shape}"
+        )
         assert sample["mask"].shape == (64, 64), f"'mask' has incorrect shape: {sample['mask'].shape}"
 
         gc.collect()
@@ -916,10 +980,12 @@ class TestMSACropTypeNonGeo:
 
 class TestMSo2SatNonGeo:
     def test_dataset_sample(self, so2sat_data_root):
-        transform = A.Compose([
-            A.Resize(64, 64),
-            ToTensorV2(),
-        ])
+        transform = A.Compose(
+            [
+                A.Resize(64, 64),
+                ToTensorV2(),
+            ]
+        )
 
         dataset = MSo2SatNonGeo(data_root=so2sat_data_root, split="train", transform=transform)
         sample = dataset[0]
@@ -929,7 +995,9 @@ class TestMSo2SatNonGeo:
         assert isinstance(sample["image"], torch.Tensor), "'image' is not a torch.Tensor"
         assert isinstance(sample["label"], int), "'label' is not an int"
         assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
-        assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
+        assert sample["image"].shape == (len(dataset.bands), 64, 64), (
+            f"'image' has incorrect shape: {sample['image'].shape}"
+        )
 
         gc.collect()
 
@@ -943,14 +1011,19 @@ class TestMSo2SatNonGeo:
         assert isinstance(fig, plt.Figure), "Plot method did not return a plt.Figure"
         plt.close(fig)
 
+
 class TestMBeninSmallHolderCashewsNonGeo:
     def test_dataset_sample(self, cashews_data_root):
-        transform = A.Compose([
-            A.Resize(64, 64),
-            ToTensorV2(),
-        ])
+        transform = A.Compose(
+            [
+                A.Resize(64, 64),
+                ToTensorV2(),
+            ]
+        )
 
-        dataset = MBeninSmallHolderCashewsNonGeo(data_root=cashews_data_root, split="train", transform=transform, use_metadata=True)
+        dataset = MBeninSmallHolderCashewsNonGeo(
+            data_root=cashews_data_root, split="train", transform=transform, use_metadata=True
+        )
         sample = dataset[0]
 
         assert "image" in sample, "Sample does not contain 'image'"
@@ -962,9 +1035,13 @@ class TestMBeninSmallHolderCashewsNonGeo:
         assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
         assert sample["mask"].dtype == torch.long, "'mask' does not have dtype torch.long"
         assert sample["temporal_coords"].dtype == torch.float32, "'temporal_coords' does not have dtype torch.float32"
-        assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
+        assert sample["image"].shape == (len(dataset.bands), 64, 64), (
+            f"'image' has incorrect shape: {sample['image'].shape}"
+        )
         assert sample["mask"].shape == (64, 64), f"'mask' has incorrect shape: {sample['mask'].shape}"
-        assert sample["temporal_coords"].shape == (1, 2), f"'temporal_coords' has incorrect shape: {sample['temporal_coords'].shape}"
+        assert sample["temporal_coords"].shape == (1, 2), (
+            f"'temporal_coords' has incorrect shape: {sample['temporal_coords'].shape}"
+        )
 
         gc.collect()
 
@@ -981,11 +1058,12 @@ class TestMBeninSmallHolderCashewsNonGeo:
 
 class TestMChesapeakeLandcoverNonGeo:
     def test_dataset_sample(self, chesapeake_data_root):
-
-        transform = A.Compose([
-            A.Resize(64, 64),
-            ToTensorV2(),
-        ])
+        transform = A.Compose(
+            [
+                A.Resize(64, 64),
+                ToTensorV2(),
+            ]
+        )
 
         dataset = MChesapeakeLandcoverNonGeo(data_root=chesapeake_data_root, split="train", transform=transform)
         sample = dataset[0]
@@ -996,7 +1074,9 @@ class TestMChesapeakeLandcoverNonGeo:
         assert isinstance(sample["mask"], torch.Tensor), "'mask' is not a torch.Tensor"
         assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
         assert sample["mask"].dtype == torch.long, "'mask' does not have dtype torch.long"
-        assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
+        assert sample["image"].shape == (len(dataset.bands), 64, 64), (
+            f"'image' has incorrect shape: {sample['image'].shape}"
+        )
         assert sample["mask"].shape == (64, 64), f"'mask' has incorrect shape: {sample['mask'].shape}"
 
         gc.collect()
@@ -1011,14 +1091,19 @@ class TestMChesapeakeLandcoverNonGeo:
         assert isinstance(fig, plt.Figure), "Plot method did not return a plt.Figure"
         plt.close(fig)
 
+
 class TestSen1Floods11NonGeo:
     def test_dataset_sample(self, sen1floods_data_root):
-        transform = A.Compose([
-            A.Resize(32, 32),
-            ToTensorV2(),
-        ])
+        transform = A.Compose(
+            [
+                A.Resize(32, 32),
+                ToTensorV2(),
+            ]
+        )
 
-        dataset = Sen1Floods11NonGeo(data_root=sen1floods_data_root, split="train", transform=transform, use_metadata=True)
+        dataset = Sen1Floods11NonGeo(
+            data_root=sen1floods_data_root, split="train", transform=transform, use_metadata=True
+        )
         sample = dataset[0]
 
         assert "image" in sample, "Sample does not contain 'image'"
@@ -1049,6 +1134,7 @@ class TestSen1Floods11NonGeo:
         assert isinstance(fig, plt.Figure), "The plot method did not return a plt.Figure"
         plt.close(fig)
 
+
 class TestMultiTemporalCropClassification:
     def test_dataset_sample(self, crop_classification_data_root):
         transform = A.Compose(
@@ -1057,7 +1143,7 @@ class TestMultiTemporalCropClassification:
                 ToTensorV2(),
                 UnflattenTemporalFromChannels(3),
             ],
-            is_check_shapes=False
+            is_check_shapes=False,
         )
 
         dataset = MultiTemporalCropClassification(
@@ -1086,7 +1172,7 @@ class TestMultiTemporalCropClassification:
                 ToTensorV2(),
                 UnflattenTemporalFromChannels(3),
             ],
-            is_check_shapes=False
+            is_check_shapes=False,
         )
 
         dataset = MultiTemporalCropClassification(
@@ -1099,3 +1185,98 @@ class TestMultiTemporalCropClassification:
         fig = dataset.plot(sample, suptitle="Sample Plot")
         assert isinstance(fig, plt.Figure), "The plot method did not return a plt.Figure"
         plt.close(fig)
+
+
+class TestHelioFMDataset:
+    def create_sample_files(self, n_files=22):
+        # Creating index file
+        present = n_files * [1]
+        dtime = 1  # minutes
+        year = 2014
+        month = 1
+        day = 1
+        hour = 0
+        minutes = 0
+        seconds = 0
+
+        paths = []
+        for i in range(n_files):
+            x = 256
+            y = 256
+
+            channels = [
+                "aia94",
+                "aia131",
+                "aia171",
+                "aia193",
+                "aia211",
+                "aia304",
+                "aia335",
+                "aia1600",
+                "hmi_m",
+                "hmi_bx",
+                "hmi_by",
+                "hmi_bz",
+                "hmi_v",
+            ]
+
+            variables_dict = {var: xr.DataArray(np.random.rand(x, y), dims=["x", "y"]) for var in channels}
+
+            ds = xr.Dataset(
+                variables_dict,
+            )
+
+            filename = f"/tmp/input_file_{i}.nc"
+            ds.to_netcdf(filename)
+            paths.append(filename)
+
+        timestamps = []
+
+        for i in range(n_files):
+            date_datetime = datetime(year, month, day, hour, i * dtime, seconds).strftime("%Y-%m-%d %H:%M:%S")
+
+            timestamps.append(date_datetime)
+
+        index_dict = {"path": paths, "timestep": timestamps, "present": present}
+        index_dataframe = pd.DataFrame(index_dict)
+        index_dataframe.to_csv("/tmp/index.csv")
+
+        return "/tmp/index.csv"
+
+    def test_dataset_load(self):
+        # Downloading sample data
+        index_path = self.create_sample_files()
+        n_input_timestamps = 2
+
+        channels = [
+            "aia94",
+            "aia131",
+            "aia171",
+            "aia193",
+            "aia211",
+            "aia304",
+            "aia335",
+            "aia1600",
+            "hmi_m",
+            "hmi_bx",
+            "hmi_by",
+            "hmi_bz",
+            "hmi_v",
+        ]
+
+        scalers = {k: {"std": 1, "mean": 0, "epsilon": 0, "sl_scale_factor": 1} for k in channels}
+
+        dataset = HelioNetCDFDataset(
+            index_path=index_path,
+            time_delta_input_minutes=[-5, 0],
+            time_delta_target_minutes=+5,
+            channels=channels,
+            scalers=scalers,
+            n_input_timestamps=n_input_timestamps,
+            rollout_steps=0,
+        )
+
+        for batch in dataset:
+            assert batch[0]["ts"].shape == (len(channels), n_input_timestamps, 256, 256), (
+                "Shape for Helio inputs isn't the expected."
+            )

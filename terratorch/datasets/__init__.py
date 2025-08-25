@@ -63,6 +63,9 @@ from terratorch.datasets.m_VHR10 import mVHR10
 
 from terratorch.datasets.substation import Substation
 
+# Surya datasets
+from terratorch.datasets.helio import HelioNetCDFDataset
+
 __all__ = (
     "GenericNonGeoSegmentationDataset",
     "GenericNonGeoPixelwiseRegressionDataset",
@@ -108,5 +111,6 @@ __all__ = (
     "SARBands",
     "OpenEarthMapNonGeo",
     "mVHR10",
-    "Substation"
+    "Substation",
+    "HelioNetCDFDataset"
 )
