@@ -331,11 +331,12 @@ def test_heliofm(model_name):
     B = 8
     C = 6
     T = 3
-    H = 4096
-    W = 4096
+    H = 256
+    W = 256
 
     backbone = BACKBONE_REGISTRY.build(
         model_name,
+        img_size=256,
         in_chans=C,
         embed_dim=64,
         num_heads=8,
