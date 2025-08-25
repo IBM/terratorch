@@ -8,7 +8,7 @@ import kornia.augmentation as K  # noqa: N812
 from torch import Tensor
 from torch.utils.data import DataLoader
 from torchgeo.datamodules import NonGeoDataModule
-from torchgeo.transforms import AugmentationSequential
+from kornia.augmentation import AugmentationSequential
 
 from terratorch.datamodules.utils import wrap_in_compose_is_list
 from terratorch.datasets import Sen1Floods11NonGeo
@@ -46,7 +46,7 @@ STDS = {
 }
 
 class Sen1Floods11NonGeoDataModule(NonGeoDataModule):
-    """NonGeo Fire Scars data module implementation"""
+    """NonGeo LightningDataModule implementation for Fire Scars."""
 
     def __init__(
         self,
@@ -65,6 +65,25 @@ class Sen1Floods11NonGeoDataModule(NonGeoDataModule):
         use_metadata: bool = False,
         **kwargs: Any,
     ) -> None:
+        """
+        Initializes the Sen1Floods11NonGeoDataModule.
+
+        Args:
+            data_root (str): Root directory of the dataset.
+            batch_size (int, optional): Batch size for DataLoaders. Defaults to 4.
+            num_workers (int, optional): Number of workers for data loading. Defaults to 0.
+            bands (Sequence[str], optional): List of bands to use. Defaults to Sen1Floods11NonGeo.all_band_names.
+            train_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for training data.
+            val_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for validation data.
+            test_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for test data.
+            predict_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for prediction data.
+            drop_last (bool, optional): Whether to drop the last incomplete batch. Defaults to True.
+            constant_scale (float, optional): Scale constant applied to the dataset. Defaults to 0.0001.
+            no_data_replace (float | None, optional): Replacement value for missing data. Defaults to 0.
+            no_label_replace (int | None, optional): Replacement value for missing labels. Defaults to -1.
+            use_metadata (bool): Whether to return metadata info (time and location).
+            **kwargs: Additional keyword arguments.
+        """
         super().__init__(Sen1Floods11NonGeo, batch_size, num_workers, **kwargs)
         self.data_root = data_root
 
@@ -75,7 +94,7 @@ class Sen1Floods11NonGeoDataModule(NonGeoDataModule):
         self.val_transform = wrap_in_compose_is_list(val_transform)
         self.test_transform = wrap_in_compose_is_list(test_transform)
         self.predict_transform = wrap_in_compose_is_list(predict_transform)
-        self.aug = AugmentationSequential(K.Normalize(means, stds), data_keys=["image"])
+        self.aug = AugmentationSequential(K.Normalize(means, stds), data_keys=None)
         self.drop_last = drop_last
         self.constant_scale = constant_scale
         self.no_data_replace = no_data_replace
@@ -83,6 +102,11 @@ class Sen1Floods11NonGeoDataModule(NonGeoDataModule):
         self.use_metadata = use_metadata
 
     def setup(self, stage: str) -> None:
+        """Set up datasets.
+
+        Args:
+            stage: Either fit, validate, test, or predict.
+        """
         if stage in ["fit"]:
             self.train_dataset = self.dataset_class(
                 split="train",

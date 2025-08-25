@@ -1,0 +1,118 @@
+data:
+  type: merra2
+
+  # Input variables definition
+  input_surface_vars:
+    - EFLUX
+    - GWETROOT
+    - HFLUX
+    - LAI
+    - LWGAB # surface absorbed longwave radiation
+    - LWGEM # longwave flux emitted from surface
+    - LWTUP # upwelling longwave flux at toa
+    - PS # surface pressure
+    - QV2M # 2-meter specific humidity
+    - SLP # sea level pressure
+    - SWGNT # surface net downward shortwave flux
+    - SWTNT # toa net downward shortwave flux
+    - T2M # near surface temperature
+    - TQI # total precipitable ice water
+    - TQL # total precipitable liquid water
+    - TQV # total precipitable water vapor
+    - TS # surface skin temperature
+    - U10M # 10m eastward wind
+    - V10M # 10m northward wind
+    - Z0M # surface roughness
+  input_static_surface_vars: [FRACI, FRLAND, FROCEAN, PHIS]
+  input_vertical_vars:
+    - CLOUD # cloud feraction for radiation
+    - H # geopotential/ mid layer heights
+    - OMEGA # vertical pressure velocity
+    - PL # mid level pressure
+    - QI # mass fraction of clous ice water
+    - QL # mass fraction of cloud liquid water
+    - QV # specific humidity
+    - T # tempertaure
+    - U # eastward wind
+    - V # northward wind
+  # (model level/ml ~ pressure level/hPa)
+  # 52ml ~ 562.5hPa, 56ml ~ 700hPa, 63 ml ~ 850hPa
+  input_levels: [34.0, 39.0, 41.0, 43.0, 44.0, 45.0, 48.0, 53.0, 56.0, 63.0, 68.0, 72.0]
+  ## remove: n_input_timestamps: 1
+  # Output variables definition
+  output_vars:
+    - T2M # near surface temperature
+
+  n_input_timestamps: 2
+
+  # Data transformations
+  # Initial crop before any other processing
+  crop_lat: [0, 1]
+  #crop_lon: [0, 0]
+  # coarsening of target -- applied after crop
+  input_size_lat: 60 # 6x coarsening
+  input_size_lon: 96 # 6x coarsening
+  apply_smoothen: True
+  data_path_surface: /dccstor/wfm/shared/datasets/training/merra-2_v1/merra-2
+  data_path_vertical: /dccstor/wfm/shared/datasets/training/merra-2_v1/merra-2
+  climatology_path_surface: /dccstor/wfm/shared/datasets/training/merra-2_v1/climatology
+  climatology_path_vertical: /dccstor/wfm/shared/datasets/training/merra-2_v1/climatology
+
+model:
+
+  # Platform independent config
+  num_static_channels: 7
+  embed_dim: 2560
+  token_size:
+    - 1
+    - 1
+  n_blocks_encoder: 12
+  mlp_multiplier: 4
+  n_heads: 16
+  dropout_rate: 0.0
+  drop_path: 0.05
+
+  # Accepted values: temporal, climate, none
+  residual: climate
+
+  residual_connection: True
+  encoder_shift: False
+
+  downscaling_patch_size: [2, 2]
+  downscaling_embed_dim: 256
+  encoder_decoder_type: 'conv' # ['conv', 'transformer']
+  encoder_decoder_upsampling_mode: pixel_shuffle # ['nearest', 'bilinear', 'pixel_shuffle', 'conv_transpose']
+  encoder_decoder_kernel_size_per_stage: [[3], [3]] # Optional, default = 3 for conv_tanspose [[3], [2]]
+  encoder_decoder_scale_per_stage: [[2], [3]] # First list determines before/after backbone
+  encoder_decoder_conv_channels: 128
+  input_scalers_surface_path: /dccstor/wfm/shared/datasets/training/merra-2_v1/climatology/musigma_surface.nc
+  input_scalers_vertical_path: /dccstor/wfm/shared/datasets/training/merra-2_v1/climatology/musigma_vertical.nc
+  output_scalers_surface_path: /dccstor/wfm/shared/datasets/training/merra-2_v1/climatology/anomaly_variance_surface.nc
+  output_scalers_vertical_path: /dccstor/wfm/shared/datasets/training/merra-2_v1/climatology/anomaly_variance_vertical.nc
+
+
+
+job_id: inference-test
+batch_size: 1
+num_epochs: 400
+dl_num_workers: 2
+dl_prefetch_size: 1
+learning_rate: 0.0001
+limit_steps_train: 250
+limit_steps_valid: 25
+min_lr: 0.00001
+max_lr: 0.0002
+warm_up_steps: 0
+mask_unit_size:
+  - 15
+  - 16
+mask_ratio_inputs: 0.0
+mask_ratio_targets: 0.0
+max_batch_size: 16
+
+path_experiment: experiment
+
+backbone_freeze: True
+backbone_prefix: encoder.
+finetune_w_static: True
+strict_matching: true

@@ -10,7 +10,7 @@ from torch import Tensor
 from torch.utils.data import DataLoader
 from torchgeo.datamodules import GeoDataModule, NonGeoDataModule
 from torchgeo.samplers import GridGeoSampler, RandomBatchGeoSampler
-from torchgeo.transforms import AugmentationSequential
+from kornia.augmentation import AugmentationSequential
 
 from terratorch.datamodules.utils import wrap_in_compose_is_list
 from terratorch.datasets import FireScarsHLS, FireScarsNonGeo, FireScarsSegmentationMask
@@ -35,7 +35,7 @@ STDS = {
 
 
 class FireScarsNonGeoDataModule(NonGeoDataModule):
-    """NonGeo datamodule implementation for Fire Scars"""
+    """NonGeo LightningDataModule implementation for Fire Scars dataset."""
 
     def __init__(
         self,
@@ -53,6 +53,24 @@ class FireScarsNonGeoDataModule(NonGeoDataModule):
         use_metadata: bool = False,
         **kwargs: Any,
     ) -> None:
+        """
+        Initializes the FireScarsNonGeoDataModule.
+
+        Args:
+            data_root (str): Root directory of the dataset.
+            batch_size (int, optional): Batch size for DataLoaders. Defaults to 4.
+            num_workers (int, optional): Number of workers for data loading. Defaults to 0.
+            bands (Sequence[str], optional): List of band names. Defaults to FireScarsNonGeo.all_band_names.
+            train_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for training.
+            val_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for validation.
+            test_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for testing.
+            predict_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for prediction.
+            drop_last (bool, optional): Whether to drop the last incomplete batch. Defaults to True.
+            no_data_replace (float | None, optional): Replacement value for missing data. Defaults to 0.
+            no_label_replace (int | None, optional): Replacement value for missing labels. Defaults to -1.
+            use_metadata (bool): Whether to return metadata info.
+            **kwargs: Additional keyword arguments.
+        """
         super().__init__(FireScarsNonGeo, batch_size, num_workers, **kwargs)
         self.data_root = data_root
 
@@ -63,13 +81,18 @@ class FireScarsNonGeoDataModule(NonGeoDataModule):
         self.val_transform = wrap_in_compose_is_list(val_transform)
         self.test_transform = wrap_in_compose_is_list(test_transform)
         self.predict_transform = wrap_in_compose_is_list(predict_transform)
-        self.aug = AugmentationSequential(K.Normalize(means, stds), data_keys=["image"])
+        self.aug = AugmentationSequential(K.Normalize(means, stds), data_keys=None)
         self.drop_last = drop_last
         self.no_data_replace = no_data_replace
         self.no_label_replace = no_label_replace
         self.use_metadata = use_metadata
 
     def setup(self, stage: str) -> None:
+        """Set up datasets.
+
+        Args:
+            stage: Either fit, validate, test, or predict.
+        """
         if stage in ["fit"]:
             self.train_dataset = self.dataset_class(
                 split="train",
@@ -143,8 +166,8 @@ class FireScarsDataModule(GeoDataModule):
         super().__init__(FireScarsSegmentationMask, 4, 224, 100, 0, **kwargs)
         means = list(MEANS.values())
         stds = list(STDS.values())
-        self.train_aug = AugmentationSequential(K.RandomCrop(224, 224), K.Normalize(means, stds))
-        self.aug = AugmentationSequential(K.Normalize(means, stds))
+        self.train_aug = AugmentationSequential(K.RandomCrop(224, 224), K.Normalize(means, stds), data_keys=None)
+        self.aug = AugmentationSequential(K.Normalize(means, stds), data_keys=None)
         self.data_root = data_root
 
     def setup(self, stage: str) -> None:
@@ -155,7 +178,7 @@ class FireScarsDataModule(GeoDataModule):
             os.path.join(self.data_root, "training/")
         )
         self.dataset = self.images & self.labels
-        self.train_aug = AugmentationSequential(K.RandomCrop(224, 224), K.normalize())
+        self.train_aug = AugmentationSequential(K.RandomCrop(224, 224), K.normalize(), data_keys=None)
 
         self.images_test = FireScarsHLS(
             os.path.join(self.data_root, "validation/")

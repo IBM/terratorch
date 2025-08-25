@@ -8,7 +8,7 @@ from terratorch.datamodules.generic_pixel_wise_data_module import Normalize
 from terratorch.datamodules.generic_multimodal_data_module import wrap_in_compose_is_list
 from terratorch.datasets import ForestNetNonGeo
 from torchgeo.datamodules import NonGeoDataModule
-from torchgeo.transforms import AugmentationSequential
+from kornia.augmentation import AugmentationSequential
 
 MEANS = {
     "BLUE": 19.8680,
@@ -30,7 +30,7 @@ STDS = {
 
 
 class ForestNetNonGeoDataModule(NonGeoDataModule):
-    """NonGeo datamodule implementation for Landslide4Sense."""
+    """NonGeo LightningDataModule implementation for Landslide4Sense dataset."""
 
     def __init__(
         self,
@@ -48,6 +48,24 @@ class ForestNetNonGeoDataModule(NonGeoDataModule):
         use_metadata: bool = False,
         **kwargs: Any,
     ) -> None:
+        """
+        Initializes the ForestNetNonGeoDataModule.
+
+        Args:
+            data_root (str): Directory containing the dataset.
+            batch_size (int, optional): Batch size for data loaders. Defaults to 4.
+            num_workers (int, optional): Number of workers for data loading. Defaults to 0.
+            label_map (dict[str, int], optional): Mapping of labels to integers. Defaults to ForestNetNonGeo.default_label_map.
+            bands (Sequence[str], optional): List of band names to use. Defaults to ForestNetNonGeo.all_band_names.
+            train_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for training data.
+            val_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for validation data.
+            test_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for testing data.
+            predict_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for prediction.
+            fraction (float, optional): Fraction of data to use. Defaults to 1.0.
+            aug (AugmentationSequential, optional): Augmentation/normalization pipeline; if None, uses Normalize.
+            use_metadata (bool): Whether to return metadata info.
+            **kwargs (Any): Additional keyword arguments.
+        """
         super().__init__(ForestNetNonGeo, batch_size, num_workers, **kwargs)
         self.data_root = data_root
 
@@ -64,6 +82,11 @@ class ForestNetNonGeoDataModule(NonGeoDataModule):
         self.use_metadata = use_metadata
 
     def setup(self, stage: str) -> None:
+        """Set up datasets.
+
+        Args:
+            stage: Either fit, validate, test, or predict.
+        """
         if stage in ["fit"]:
             self.train_dataset = self.dataset_class(
                 split="train",

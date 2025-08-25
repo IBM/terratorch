@@ -1,5 +1,5 @@
 # Copyright contributors to the Terratorch project
-
+import gc
 import os
 
 import pytest
@@ -8,10 +8,10 @@ from _pytest.tmpdir import TempPathFactory
 
 from terratorch.datasets import GenericNonGeoPixelwiseRegressionDataset, GenericNonGeoSegmentationDataset, HLSBands
 
-REGRESSION_IMAGE_PATH = "tests/resources/inputs/regression_test_input.tif"
-REGRESSION_LABEL_PATH = "tests/resources/inputs/regression_test_label.tif"
-SEGMENTATION_IMAGE_PATH = "tests/resources/inputs/segmentation_test_input.tif"
-SEGMENTATION_LABEL_PATH = "tests/resources/inputs/segmentation_test_label.tif"
+REGRESSION_IMAGE_PATH = "tests/resources/inputs/regression_test_0_input.tif"
+REGRESSION_LABEL_PATH = "tests/resources/inputs/regression_test_0_label.tif"
+SEGMENTATION_IMAGE_PATH = "tests/resources/inputs/segmentation_test_0_input.tif"
+SEGMENTATION_LABEL_PATH = "tests/resources/inputs/segmentation_test_0_label.tif"
 NUM_CLASSES_SEGMENTATION = 2
 
 # Testing bands
@@ -25,8 +25,8 @@ HLS_dataset_bands = [
     "SWIR_1",
     "SWIR_2",
     "CIRRUS",
-    "THEMRAL_INFRARED_1",
-    "THEMRAL_INFRARED_2",
+    "THERMAL_INFRARED_1",
+    "THERMAL_INFRARED_2",
 ]
 
 HLS_output_bands = [
@@ -199,9 +199,13 @@ class TestGenericSegmentationDataset:
     def test_file_discovery_generic_segmentation_dataset(self, segmentation_dataset):
         assert len(segmentation_dataset) == 5
 
+        gc.collect()
+
     def test_data_type_regression_float_long(self, segmentation_dataset):
         assert torch.is_floating_point(segmentation_dataset[0]["image"])
         assert not torch.is_floating_point(segmentation_dataset[0]["mask"])
+
+        gc.collect()
 
     @pytest.fixture(scope="class")
     def segmentation_dataset_with_HLS_bands(self, data_root_segmentation, split_file_path):
@@ -264,3 +268,4 @@ class TestGenericSegmentationDataset:
     def test_correct_filter(self, dataset, request):
         fixture, expected = request.getfixturevalue(dataset)
         assert fixture.filter_indices == expected
+        gc.collect()

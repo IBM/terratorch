@@ -3,11 +3,11 @@
 """
 This module contains generic data modules for instantiation at runtime.
 """
-import os
+
 import logging
+import warnings
 from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any, Iterator
 import albumentations as A
 import numpy as np
 import torch
@@ -20,9 +20,15 @@ from terratorch.datasets import (GenericMultimodalDataset, GenericMultimodalSegm
 from terratorch.datamodules.generic_pixel_wise_data_module import Normalize
 from terratorch.io.file import load_from_file_or_attribute
 
+from .utils import check_dataset_stackability, check_dataset_stackability_dict
+
 logger = logging.getLogger("terratorch")
 
 def collate_chunk_dicts(batch_list):
+    if isinstance(batch_list, dict):
+        # batch size = 1
+        return batch_list
+
     batch = {}
     for key, value in batch_list[0].items():  # TODO: Handle missing modalities when allow_missing_modalities is set.
         if isinstance(value, torch.Tensor):
@@ -109,6 +115,7 @@ class MultimodalNormalize(Callable):
                 msg = (f"Expected batch with 5 or 4 dimensions (B, C, (T,) H, W), sample with 3 dimensions (C, H, W) "
                        f"or a single channel, but got {len(image.shape)}")
                 raise Exception(msg)
+
             batch["image"][m] = (image - means) / stds
         return batch
 
@@ -123,7 +130,7 @@ class MultiModalBatchSampler(BatchSampler):
         self.sample_num_modalities = sample_num_modalities
         self.sample_replace = sample_replace
 
-    def __iter__(self) -> Iterator[list[int]]:
+    def __iter__(self) -> Iterable[list[int]]:
         """
         Code similar to BatchSampler but samples tuples in the format (idx, ["m1", "m2", ...])
         """
@@ -185,7 +192,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         image_modalities: list[str] | None = None,
         rgb_modality: str | None = None,
         rgb_indices: list[int] | None = None,
-        allow_substring_file_names: bool = False,
+        allow_substring_file_names: bool = True,
         class_names: list[str] | None = None,
         constant_scale: dict[float] = None,
         train_transform: dict | A.Compose | None | list[A.BasicTransform] = None,
@@ -200,11 +207,13 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         num_workers: int = 0,
         pin_memory: bool = False,
         data_with_sample_dim: bool = False,
+        allow_missing_modalities: bool = False,
         sample_num_modalities: int | None = None,
         sample_replace: bool = False,
         channel_position: int = -3,
         concat_bands: bool = False,
-        **kwargs: Any,
+        check_stackability: bool = True,
+        img_grep: str | dict[str, str] | None = None,
     ) -> None:
         """Constructor
 
@@ -265,7 +274,10 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 differently during the transforms and are not modified but only converted into a tensor if possible.
             rgb_modality (str, optional): Modality used for RGB plots. Defaults to first modality in data_root.keys().
             rgb_indices (list[int] | None, optional): _description_. Defaults to None.
-            allow_substring_file_names
+            allow_substring_file_names (bool, optional): Allow substrings during sample identification by adding
+                image or label grep to the sample prefixes. If False, treats sample prefixes as full file names.
+                If True and no split file is provided, considers the file stem as prefix, otherwise the full file name.
+                Defaults to True.
             class_names (list[str], optional): Names of the classes. Defaults to None.
             constant_scale (dict[float]): Factor to multiply data values by, provided as a dictionary with modalities as
                 keys. Can be subset of all modalities. Defaults to None.
@@ -301,6 +313,8 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 returning them. Defaults to False.
             data_with_sample_dim (bool): Use a specific collate function to concatenate samples along a existing sample
                 dimension instead of stacking the samples. Defaults to False.
+            allow_missing_modalities (bool): Experimental feature! Allow missing modalities during data loading.
+                Defaults to False.
             sample_num_modalities (int, optional): Load only a subset of modalities per batch. Defaults to None.
             sample_replace (bool): If sample_num_modalities is set, sample modalities with replacement.
                 Defaults to False.
@@ -308,7 +322,9 @@ class GenericMultiModalDataModule(NonGeoDataModule):
             concat_bands (bool): Concatenate all image modalities along the band dimension into a single "image", so
                 that it can be processed by single-modal models. Concatenate in the order of provided modalities.
                 Works with image modalities only. Does not work with allow_missing_modalities. Defaults to False.
+            check_stackability (bool): Check if all the files in the dataset has the same size and can be stacked.
         """
+
         if task == "segmentation":
             dataset_class = GenericMultimodalSegmentationDataset
         elif task == "regression":
@@ -321,7 +337,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         else:
             raise ValueError(f"Unknown task {task}, only segmentation and regression are supported.")
 
-        super().__init__(dataset_class, batch_size, num_workers, **kwargs)
+        super().__init__(dataset_class, batch_size, num_workers)
         self.num_classes = num_classes
         self.class_names = class_names
         self.modalities = modalities
@@ -329,11 +345,41 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.non_image_modalities = list(set(self.modalities) - set(self.image_modalities))
         if task == "scalar":
             self.non_image_modalities += ["label"]
+
+        if img_grep is not None:
+            warnings.warn(f"img_grep was renamed to image_grep and will be removed in a future version.",
+                          DeprecationWarning)
+            image_grep = img_grep
+
         if isinstance(image_grep, dict):
+            # Check if image_grep is valid
+            for key, grep in image_grep.items():
+                if "*" not in grep:
+                    warnings.warn(f"image_grep requires a wildcard with a suffix. "
+                                  f"Adding '*' to image_grep[{key}]={grep}.")
+                    image_grep[key] = "*" + grep
+                if "*" in grep.strip("*/\\"):
+                    raise ValueError(f"GenericMultiModalDataModule can only handle image_grep with suffixes "
+                                     f"(e.g. '*_mod.tif'). Intermediate wildcards do not work, found {grep}.")
             self.image_grep = {m: image_grep[m] if m in image_grep else "*" for m in modalities}
         else:
-            self.image_grep = {m: image_grep or "*" for m in modalities}
-        self.label_grep = label_grep or "*"
+            image_grep = image_grep or "*"  # Handle None
+            if "*" not in image_grep:
+                warnings.warn(f"image_grep requires a wildcard with a suffix. Adding '*' to image_grep={image_grep}.")
+                image_grep = "*" + image_grep
+            if "*" in image_grep.strip("*/\\"):
+                raise ValueError(f"GenericMultiModalDataModule can only handle image_grep with suffixes "
+                                 f"(e.g. '*_mod.tif'). Intermediate wildcards do not work, found {image_grep}.")
+            self.image_grep = {m: image_grep for m in modalities}
+        label_grep = label_grep or "*"  # Handle None
+        # Check if label_grep is valid
+        if '*' not in label_grep:
+            warnings.warn(f"label_grep requires a wildcard with a suffix. Adding '*' to label_grep={label_grep}")
+            label_grep = "*" + label_grep
+        if "*" in label_grep.strip("*/\\"):
+            raise ValueError(f"GenericMultiModalDataModule can only handle label_grep with suffixes "
+                             f"(e.g. '*_mask.tif'). Intermediate wildcards do not work, found {label_grep}.")
+        self.label_grep = label_grep
         self.train_root = train_data_root
         self.val_root = val_data_root
         self.test_root = test_data_root
@@ -341,6 +387,19 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.val_label_data_root = val_label_data_root
         self.test_label_data_root = test_label_data_root
         self.predict_root = predict_data_root
+
+        # Check paths and modalities
+        for name, data_root in [("train", train_data_root), ("val", val_data_root), ("test", test_data_root),
+                                ("predict", predict_data_root)]:
+            if data_root is None:
+                pass
+            elif allow_missing_modalities:
+                if not set(data_root.keys()) <= set(modalities):
+                    raise ValueError(f"Modalities {modalities} do not match {name}_data_root: {data_root}")
+            else:
+                if not set(data_root.keys()) == set(modalities):
+                    raise ValueError(f"Paths in {name}_data_root do not match modalities {modalities}: {data_root}")
+
         self.train_split = train_split
         self.val_split = val_split
         self.test_split = test_split
@@ -350,8 +409,13 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.no_label_replace = no_label_replace
         self.drop_last = drop_last
         self.pin_memory = pin_memory
+        self.allow_missing_modalities = allow_missing_modalities
         self.sample_num_modalities = sample_num_modalities
-        self.sample_replace = sample_replace        
+        self.sample_replace = sample_replace
+        if allow_missing_modalities and batch_size > 1:
+            warnings.warn("allow_missing_modalities is set to True. This is an experimental feature."
+                          "Stacking is currently not supported, setting batch_size to 1.")
+            self.batch_size = 1
 
         self.dataset_bands = dataset_bands
         self.output_bands = output_bands
@@ -364,6 +428,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self.reduce_zero_label = reduce_zero_label
         self.channel_position = channel_position
         self.concat_bands = concat_bands
+        self.check_stackability = check_stackability
 
         if isinstance(train_transform, dict):
             self.train_transform = {m: wrap_in_compose_is_list(train_transform[m]) if m in train_transform else None
@@ -426,6 +491,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 label_grep=self.label_grep,
                 label_data_root=self.train_label_data_root,
                 split=self.train_split,
+                allow_missing_modalities=self.allow_missing_modalities,
                 allow_substring_file_names=self.allow_substring_file_names,
                 dataset_bands=self.dataset_bands,
                 output_bands=self.output_bands,
@@ -439,7 +505,8 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
                 channel_position=self.channel_position,
-                concat_bands=self.concat_bands ,
+                data_with_sample_dim = self.data_with_sample_dim,
+                concat_bands=self.concat_bands,
             )
             logger.info(f"Train dataset: {len(self.train_dataset)}")
         if stage in ["fit", "validate"]:
@@ -450,6 +517,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 label_grep=self.label_grep,
                 label_data_root=self.val_label_data_root,
                 split=self.val_split,
+                allow_missing_modalities=self.allow_missing_modalities,
                 allow_substring_file_names=self.allow_substring_file_names,
                 dataset_bands=self.dataset_bands,
                 output_bands=self.output_bands,
@@ -463,6 +531,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
                 channel_position=self.channel_position,
+                data_with_sample_dim = self.data_with_sample_dim,
                 concat_bands=self.concat_bands,
             )
             logger.info(f"Val dataset: {len(self.val_dataset)}")
@@ -474,6 +543,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 label_grep=self.label_grep,
                 label_data_root=self.test_label_data_root,
                 split=self.test_split,
+                allow_missing_modalities=self.allow_missing_modalities,
                 allow_substring_file_names=self.allow_substring_file_names,
                 dataset_bands=self.dataset_bands,
                 output_bands=self.output_bands,
@@ -487,13 +557,18 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
                 channel_position=self.channel_position,
+                data_with_sample_dim = self.data_with_sample_dim,
                 concat_bands=self.concat_bands,
             )
             logger.info(f"Test dataset: {len(self.test_dataset)}")
         if stage in ["predict"] and self.predict_root:
             self.predict_dataset = self.dataset_class(
                 data_root=self.predict_root,
+                label_data_root=None,  # Prediction mode
                 num_classes=self.num_classes,
+                image_grep=self.image_grep,
+                label_grep=self.label_grep,
+                allow_missing_modalities=self.allow_missing_modalities,
                 allow_substring_file_names=self.allow_substring_file_names,
                 dataset_bands=self.predict_dataset_bands,
                 output_bands=self.predict_output_bands,
@@ -507,6 +582,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
                 channel_position=self.channel_position,
+                data_with_sample_dim=self.data_with_sample_dim,
                 concat_bands=self.concat_bands,
             )
             logger.info(f"Predict dataset: {len(self.predict_dataset)}")
@@ -526,6 +602,14 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         """
         dataset = self._valid_attribute(f"{split}_dataset", "dataset")
         batch_size = self._valid_attribute(f"{split}_batch_size", "batch_size")
+
+        if self.check_stackability and batch_size > 1:
+            logger.info(f'Checking dataset stackability for {split} split')
+            if self.concat_bands:
+                batch_size = check_dataset_stackability(dataset, batch_size)
+            else:
+                batch_size = check_dataset_stackability_dict(dataset, batch_size)
+
         if self.sample_num_modalities:
             # Custom batch sampler for sampling modalities per batch
             batch_sampler = MultiModalBatchSampler(

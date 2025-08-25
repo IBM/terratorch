@@ -1,20 +1,23 @@
 # Copyright contributors to the Terratorch project
 
-"""Module containing generic dataset classes
-"""
+"""Module containing generic dataset classes"""
+
 import glob
 import os
 from abc import ABC
 from pathlib import Path
-from typing import Any
+from typing import Any, Tuple
 
 import albumentations as A  # noqa: N812
 import numpy as np
+import PIL
 import rioxarray
+import tifffile
 import torch
 import xarray as xr
 from einops import rearrange
 from matplotlib.figure import Figure
+from PIL import Image
 from torch import Tensor
 from torchgeo.datasets import NonGeoDataset
 from torchgeo.datasets.utils import rasterio_loader
@@ -33,6 +36,7 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
         self,
         data_root: Path,
         split: Path | None = None,
+        require_label: bool = True,
         ignore_split_file_extensions: bool = True,  # noqa: FBT001, FBT002
         allow_substring_split_file: bool = True,  # noqa: FBT001, FBT002
         rgb_indices: list[int] | None = None,
@@ -73,7 +77,8 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
                 Defaults to False.
         """
         self.split_file = split
-
+        self.split = split
+        self.require_label = require_label
         self.image_files = sorted(glob.glob(os.path.join(data_root, "**"), recursive=True))
         self.image_files = [f for f in self.image_files if not os.path.isdir(f)]
         self.constant_scale = constant_scale
@@ -100,6 +105,12 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
 
             def is_valid_file(x):
                 return True
+
+        # Checking if it's necessary to overwrite the `find_classes` method
+        try:
+            _, _ = self.find_classes(data_root)
+        except FileNotFoundError:
+            self.find_classes = self.find_classes_
 
         super().__init__(
             root=data_root, transform=None, target_transform=None, loader=rasterio_loader, is_valid_file=is_valid_file
@@ -131,13 +142,41 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
         import warnings
 
         import rasterio
+
         warnings.filterwarnings("ignore", category=rasterio.errors.NotGeoreferencedWarning)
 
     def __len__(self) -> int:
         return len(self.image_files)
 
+    def _loader(self, path: str | Path) -> Image.Image:
+        try:
+            with open(path, "rb") as f:
+                img = np.asarray(Image.open(f))
+        except PIL.UnidentifiedImageError:
+            # TIFF files containing floating-point values should be handled in
+            # another way.
+            if path.endswith(".tif") or path.endswith(".tiff"):
+                img = tifffile.imread(path)
+            else:
+                raise OSError(f"Could not open {path}. Unsupported format or configuration.")
+        return img
+
+    def __base_getitem__(self, index: int) -> tuple[Any, Any]:
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            tuple: (sample, target) where target is class_index of the target class.
+        """
+        path, target = self.samples[index]
+        sample = self._loader(path)
+
+        return sample, target
+
     def __getitem__(self, index: int) -> dict[str, Any]:
-        image, label = ImageFolder.__getitem__(self, index)
+        image, label = self.__base_getitem__(index)
+
         if self.expand_temporal_dimension:
             image = rearrange(image, "h w (channels time) -> time h w channels", channels=len(self.output_bands))
         if self.filter_indices:
@@ -148,11 +187,17 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
         if self.transforms:
             image = self.transforms(image=image)["image"]  # albumentations returns dict
 
-        output = {
-            "image": image,
-            "label": label,  # samples is an attribute of ImageFolder. Contains a tuple of (Path, Target)
-            "filename": self.image_files[index]
-        }
+        if self.require_label:
+            output = {
+                "image": image,
+                "label": label,  # samples is an attribute of ImageFolder. Contains a tuple of (Path, Target)
+                "filename": self.image_files[index],
+            }
+        else:
+            output = {
+                "image": image,
+                "filename": self.image_files[index],
+            }
 
         return output
 
@@ -178,6 +223,9 @@ class GenericScalarLabelDataset(NonGeoDataset, ImageFolder, ABC):
         data = data.fillna(self.no_data_replace)
         return data
 
+    def find_classes_(self, directory: str | Path) -> tuple[list[str], dict[str, int]]:
+        return ["./"], {"./": 0}
+
 
 class GenericNonGeoClassificationDataset(GenericScalarLabelDataset):
     """GenericNonGeoClassificationDataset"""
@@ -187,6 +235,7 @@ class GenericNonGeoClassificationDataset(GenericScalarLabelDataset):
         data_root: Path,
         num_classes: int,
         split: Path | None = None,
+        require_label: bool = True,
         ignore_split_file_extensions: bool = True,  # noqa: FBT001, FBT002
         allow_substring_split_file: bool = True,  # noqa: FBT001, FBT002
         rgb_indices: list[str] | None = None,
@@ -229,6 +278,7 @@ class GenericNonGeoClassificationDataset(GenericScalarLabelDataset):
         super().__init__(
             data_root,
             split=split,
+            require_label=require_label,
             ignore_split_file_extensions=ignore_split_file_extensions,
             allow_substring_split_file=allow_substring_split_file,
             rgb_indices=rgb_indices,
@@ -244,7 +294,8 @@ class GenericNonGeoClassificationDataset(GenericScalarLabelDataset):
 
     def __getitem__(self, index: int) -> dict[str, Any]:
         item = super().__getitem__(index)
-        item["label"] = torch.tensor(item["label"]).long()
+        if "label" in item:
+            item["label"] = torch.tensor(item["label"]).long()
         return item
 
     def plot(self, sample: dict[str, Tensor], suptitle: str | None = None) -> Figure:

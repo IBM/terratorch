@@ -37,7 +37,7 @@ from terratorch.datasets.pastis import PASTIS
 
 # GenericNonGeoRegressionDataset,
 
-from terratorch.datasets.sen1floods11_lat_lon import Sen1Floods11NonGeo
+from terratorch.datasets.sen1floods11 import Sen1Floods11NonGeo
 from terratorch.datasets.utils import HLSBands, OpticalBands, SARBands
 
 #from terratorch.datasets.sen1floods11 import Sen1Floods11NonGeo
@@ -59,6 +59,9 @@ from terratorch.datasets.openearthmap import OpenEarthMapNonGeo
 # Generic Classification Dataset
 from terratorch.datasets.sen4map import Sen4MapDatasetMonthlyComposites
 
+from terratorch.datasets.m_VHR10 import mVHR10
+
+from terratorch.datasets.substation import Substation
 
 __all__ = (
     "GenericNonGeoSegmentationDataset",
@@ -103,5 +106,7 @@ __all__ = (
     "HLSS30",
     "OpticalBands",
     "SARBands",
-    "OpenEarthMapNonGeo"
+    "OpenEarthMapNonGeo",
+    "mVHR10",
+    "Substation"
 )

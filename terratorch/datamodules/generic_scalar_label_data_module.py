@@ -4,6 +4,7 @@
 This module contains generic data modules for instantiation at runtime.
 """
 
+import logging
 from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
@@ -24,9 +25,13 @@ from terratorch.io.file import load_from_file_or_attribute
 
 from .utils import check_dataset_stackability
 
+logger = logging.getLogger("terratorch")
+
+
 def wrap_in_compose_is_list(transform_list):
     # set check shapes to false because of the multitemporal case
     return A.Compose(transform_list, is_check_shapes=False) if isinstance(transform_list, Iterable) else transform_list
+
 
 class Normalize(Callable):
     def __init__(self, means, stds):
@@ -82,6 +87,7 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
         expand_temporal_dimension: bool = False,
         no_data_replace: float = 0,
         drop_last: bool = True,
+        check_stackability: bool = True,
         **kwargs: Any,
     ) -> None:
         """Constructor
@@ -130,6 +136,7 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
             expand_temporal_dimension (bool): Go from shape (time*channels, h, w) to (channels, time, h, w).
                 Defaults to False.
             drop_last (bool): Drop the last batch if it is not complete. Defaults to True.
+            check_stackability (bool): Check if all the files in the dataset has the same size and can be stacked.
         """
         super().__init__(GenericNonGeoClassificationDataset, batch_size, num_workers, **kwargs)
         self.num_classes = num_classes
@@ -168,6 +175,8 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
 
         # self.aug = Normalize(means, stds)
         # self.collate_fn = collate_fn_list_dicts
+
+        self.check_stackability = check_stackability
 
     def setup(self, stage: str) -> None:
         if stage in ["fit"]:
@@ -219,6 +228,7 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
             self.predict_dataset = self.dataset_class(
                 self.predict_root,
                 self.num_classes,
+                require_label=False,
                 dataset_bands=self.predict_dataset_bands,
                 output_bands=self.output_bands,
                 constant_scale=self.constant_scale,
@@ -243,8 +253,10 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
         """
         dataset = self._valid_attribute(f"{split}_dataset", "dataset")
         batch_size = self._valid_attribute(f"{split}_batch_size", "batch_size")
-        
-        batch_size = check_dataset_stackability(dataset, batch_size)
+
+        if self.check_stackability:
+            logger.info("Checking stackability.")
+            batch_size = check_dataset_stackability(dataset, batch_size)
 
         return DataLoader(
             dataset=dataset,

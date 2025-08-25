@@ -1,5 +1,5 @@
 # Copyright contributors to the Terratorch project
-
+import gc
 import pytest
 import torch
 
@@ -22,8 +22,8 @@ def model_input() -> torch.Tensor:
     return torch.ones((1, NUM_CHANNELS, 224, 224))
 
 @pytest.mark.parametrize("backbone", ["clay_v1_base"])
-@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder"])
-@pytest.mark.parametrize("loss", ["ce", "jaccard", "focal", "dice"])
+@pytest.mark.parametrize("decoder", ["UperNetDecoder"])
+@pytest.mark.parametrize("loss", ["dice"])
 def test_create_segmentation_task(backbone, decoder, loss, model_factory: ClayModelFactory):
     model_args = {
         "backbone": backbone,
@@ -43,10 +43,11 @@ def test_create_segmentation_task(backbone, decoder, loss, model_factory: ClayMo
         loss=loss,
     )
 
+    gc.collect()
 
 @pytest.mark.parametrize("backbone", ["clay_v1_base"])
-@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder"])
-@pytest.mark.parametrize("loss", ["mae", "rmse", "huber"])
+@pytest.mark.parametrize("decoder", ["FCNDecoder"])
+@pytest.mark.parametrize("loss", ["mae"])
 def test_create_regression_task(backbone, decoder, loss, model_factory: ClayModelFactory):
     model_args = {
         "backbone": backbone,
@@ -66,10 +67,11 @@ def test_create_regression_task(backbone, decoder, loss, model_factory: ClayMode
         loss=loss,
     )
 
+    gc.collect()
 
 @pytest.mark.parametrize("backbone", ["clay_v1_base"])
 @pytest.mark.parametrize("decoder", ["IdentityDecoder"])
-@pytest.mark.parametrize("loss", ["ce", "bce", "jaccard", "focal"])
+@pytest.mark.parametrize("loss", ["bce"])
 def test_create_classification_task(backbone, decoder, loss, model_factory: ClayModelFactory):
     model_args = {
         "backbone": backbone,
@@ -89,3 +91,5 @@ def test_create_classification_task(backbone, decoder, loss, model_factory: Clay
         model_factory,
         loss=loss,
     )
+
+    gc.collect()

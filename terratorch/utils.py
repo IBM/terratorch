@@ -1,6 +1,8 @@
 import math
 from collections import Counter
+from typing import Dict, Union
 
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -68,3 +70,54 @@ def compute_float_mask_statistics(dataloader: DataLoader) -> dict[str, float]:
     variance = sum_squared / n_data
     std = math.sqrt(variance)
     return {"mean": mean, "std": std}
+
+
+# TODO remove it for future releases
+def remove_unexpected_prefix(state_dict):
+    state_dict_ = {}
+    for k, v in state_dict.items():
+        keys = k.split(".")
+        if "_timm_module" in keys:
+            index = keys.index("_timm_module")
+            keys.pop(index)
+            k_ = ".".join(keys)
+        else:
+            k_ = k
+        state_dict_[k_] = v
+    return state_dict_
+
+
+def view_api(
+    module: torch.nn.Module = None,
+    input_data: torch.nn.Module | np.ndarray = None,
+    config: dict = None,
+    save_dir: str = None,
+):
+    try:
+        from torchview import draw_graph
+    except Exception:
+        raise Exception(
+            "For using the visualization API,\
+                        it is necessary to install torchview and graphviz"
+        )
+
+    # Wrapper for torchview
+    class Module_wrap(torch.nn.Module):
+        def __init__(self, module=None):
+            super(Module_wrap, self).__init__()
+            self.module = module
+
+        def forward(self, *args, **kwargs):
+            return self.module(*args)
+
+        def train(self, *args, **kwargs):
+            pass
+
+        def eval(self, *args, **kwargs):
+            pass
+
+    module_wrap = Module_wrap(module=module)
+
+    model_graph = draw_graph(module_wrap, input_data=input_data, directory=save_dir, **config)
+
+    return model_graph.visual_graph

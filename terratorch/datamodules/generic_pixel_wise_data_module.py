@@ -3,6 +3,8 @@
 """
 This module contains generic data modules for instantiation at runtime.
 """
+
+import logging
 import os
 from collections.abc import Callable, Iterable
 from pathlib import Path
@@ -12,16 +14,19 @@ import albumentations as A
 import kornia.augmentation as K
 import numpy as np
 import torch
+from kornia.augmentation import AugmentationSequential
 from torch import Tensor
 from torch.utils.data import DataLoader
 from torchgeo.datamodules import NonGeoDataModule
-from torchgeo.transforms import AugmentationSequential
 
 from terratorch.datamodules.utils import wrap_in_compose_is_list
 from terratorch.datasets import GenericNonGeoPixelwiseRegressionDataset, GenericNonGeoSegmentationDataset, HLSBands
 from terratorch.io.file import load_from_file_or_attribute
 
 from .utils import check_dataset_stackability
+
+logger = logging.getLogger("terratorch")
+
 
 def wrap_in_compose_is_list(transform_list):
     # set check shapes to false because of the multitemporal case
@@ -81,11 +86,11 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
         train_data_root: Path,
         val_data_root: Path,
         test_data_root: Path,
-        img_grep: str,
-        label_grep: str,
         means: list[float] | str,
         stds: list[float] | str,
         num_classes: int,
+        img_grep: str = "*",
+        label_grep: str = "*",
         predict_data_root: Path | None = None,
         train_label_data_root: Path | None = None,
         val_label_data_root: Path | None = None,
@@ -97,8 +102,8 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
         allow_substring_split_file: bool = True,
         dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
-        predict_dataset_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
-        predict_output_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
+        predict_dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        predict_output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         constant_scale: float = 1,
         rgb_indices: list[int] | None = None,
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
@@ -110,6 +115,7 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
         no_label_replace: int | None = None,
         drop_last: bool = True,
         pin_memory: bool = False,
+        check_stackability: bool = True,
         **kwargs: Any,
     ) -> None:
         """Constructor
@@ -173,6 +179,7 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
             drop_last (bool): Drop the last batch if it is not complete. Defaults to True.
             pin_memory (bool): If ``True``, the data loader will copy Tensors
             into device/CUDA pinned memory before returning them. Defaults to False.
+            check_stackability (bool): Check if all the files in the dataset has the same size and can be stacked.
         """
         super().__init__(GenericNonGeoSegmentationDataset, batch_size, num_workers, **kwargs)
         self.num_classes = num_classes
@@ -220,6 +227,8 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
 
         # self.aug = Normalize(means, stds)
         # self.collate_fn = collate_fn_list_dicts
+
+        self.check_stackability = check_stackability
 
     def setup(self, stage: str) -> None:
         if stage in ["fit"]:
@@ -286,6 +295,8 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
             self.predict_dataset = self.dataset_class(
                 self.predict_root,
                 self.num_classes,
+                image_grep=self.img_grep,
+                label_grep=self.label_grep,
                 dataset_bands=self.predict_dataset_bands,
                 output_bands=self.predict_output_bands,
                 constant_scale=self.constant_scale,
@@ -313,7 +324,9 @@ class GenericNonGeoSegmentationDataModule(NonGeoDataModule):
         dataset = self._valid_attribute(f"{split}_dataset", "dataset")
         batch_size = self._valid_attribute(f"{split}_batch_size", "batch_size")
 
-        batch_size = check_dataset_stackability(dataset, batch_size)
+        if self.check_stackability:
+            logger.info(f"Checking stackability for {split} split.")
+            batch_size = check_dataset_stackability(dataset, batch_size)
 
         return DataLoader(
             dataset=dataset,
@@ -352,10 +365,10 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         test_split: Path | None = None,
         ignore_split_file_extensions: bool = True,
         allow_substring_split_file: bool = True,
-        dataset_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
-        output_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
-        predict_dataset_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
-        predict_output_bands: list[HLSBands | int | tuple[int, int] | str ] | None = None,
+        dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        predict_dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        predict_output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         constant_scale: float = 1,
         rgb_indices: list[int] | None = None,
         train_transform: A.Compose | None | list[A.BasicTransform] = None,
@@ -367,6 +380,7 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         no_label_replace: int | None = None,
         drop_last: bool = True,
         pin_memory: bool = False,
+        check_stackability: bool = True,
         **kwargs: Any,
     ) -> None:
         """Constructor
@@ -429,7 +443,7 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
             drop_last (bool): Drop the last batch if it is not complete. Defaults to True.
             pin_memory (bool): If ``True``, the data loader will copy Tensors
             into device/CUDA pinned memory before returning them. Defaults to False.
-
+            check_stackability (bool): Check if all the files in the dataset has the same size and can be stacked.
         """
         super().__init__(GenericNonGeoPixelwiseRegressionDataset, batch_size, num_workers, **kwargs)
         self.img_grep = img_grep
@@ -474,6 +488,8 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         self.train_transform = wrap_in_compose_is_list(train_transform)
         self.val_transform = wrap_in_compose_is_list(val_transform)
         self.test_transform = wrap_in_compose_is_list(test_transform)
+
+        self.check_stackability = check_stackability
 
     def setup(self, stage: str) -> None:
         if stage in ["fit"]:
@@ -538,6 +554,7 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
             self.predict_dataset = self.dataset_class(
                 self.predict_root,
                 image_grep=self.img_grep,
+                label_grep=self.label_grep,
                 dataset_bands=self.predict_dataset_bands,
                 output_bands=self.predict_output_bands,
                 constant_scale=self.constant_scale,
@@ -548,7 +565,7 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
             )
-       
+
     def _dataloader_factory(self, split: str) -> DataLoader[dict[str, Tensor]]:
         """Implement one or more PyTorch DataLoaders.
 
@@ -565,7 +582,9 @@ class GenericNonGeoPixelwiseRegressionDataModule(NonGeoDataModule):
         dataset = self._valid_attribute(f"{split}_dataset", "dataset")
         batch_size = self._valid_attribute(f"{split}_batch_size", "batch_size")
 
-        batch_size = check_dataset_stackability(dataset, batch_size)
+        if self.check_stackability:
+            logger.info("Checking stackability.")
+            batch_size = check_dataset_stackability(dataset, batch_size)
 
         return DataLoader(
             dataset=dataset,

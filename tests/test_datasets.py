@@ -1,3 +1,4 @@
+import gc
 import binascii
 import json
 import pickle
@@ -531,10 +532,10 @@ def crop_classification_data_root(tmp_path):
             img_data.rio.to_raster(str(image_path))
             mask_data.rio.to_raster(str(mask_path))
 
-    with open(training_dir / "training_data.txt", "w") as f:
+    with open(data_root / "training_data.txt", "w") as f:
         f.write("\n".join([f"chip_{i}" for i in range(2)]))
 
-    with open(validation_dir / "validation_data.txt", "w") as f:
+    with open(data_root / "validation_data.txt", "w") as f:
         f.write("\n".join([f"chip_{i}" for i in range(2)]))
 
     metadata = pd.DataFrame({
@@ -543,7 +544,7 @@ def crop_classification_data_root(tmp_path):
         "middle_img_date": ["2021-01-15", "2021-01-16"],
         "last_img_date": ["2021-02-01", "2021-02-02"],
     })
-    metadata.to_csv(data_root / "chip_df_final.csv", index=False)
+    metadata.to_csv(data_root / "chips_df.csv", index=False)
 
     return str(data_root)
 
@@ -565,6 +566,8 @@ class TestMNeonTreeNonGeo:
         assert sample["mask"].dtype == torch.long, "'mask' does not have dtype torch.long"
         assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
         assert sample["mask"].shape == (64, 64), f"'mask' has incorrect shape: {sample['mask'].shape}"
+
+        gc.collect()
 
     def test_plot(self, neontree_data_root):
         transform = A.Compose([ToTensorV2()])
@@ -594,6 +597,8 @@ class TestMBrickKilnNonGeo:
         assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
         assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
 
+        gc.collect()
+
     def test_plot(self, brickkiln_data_root):
         transform = A.Compose([ToTensorV2()])
 
@@ -620,6 +625,8 @@ class TestMEuroSATNonGeo:
         assert isinstance(sample["label"], int), "'label' is not an int"
         assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
         assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
+
+        gc.collect()
 
     def test_plot(self, eurosat_data_root):
         transform = A.Compose([ToTensorV2()])
@@ -651,6 +658,8 @@ class TestFireScarsNonGeo:
         assert sample["image"].ndim == 3, "'image' does not have 3 dimensions (C, H, W)"
         assert sample["mask"].ndim == 2, "'mask' does not have 2 dimensions (H, W)"
 
+        gc.collect()
+
     def test_plot(self, fire_scars_data_root):
         transform = A.Compose([ToTensorV2()])
 
@@ -681,6 +690,8 @@ class TestMBigEarthNonGeo:
         assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
         assert sample["label"].dtype == torch.float32, "'label' does not have dtype torch.float32"
 
+        gc.collect()
+
     def test_plot(self, m_bigearth_data_root):
         transform = A.Compose([ToTensorV2()])
 
@@ -710,6 +721,8 @@ class TestMForestNetNonGeo:
         assert isinstance(sample["label"], int), "'label' is not an int"
         assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
         assert isinstance(sample["label"], int), "'label' is not an int"
+
+        gc.collect()
 
     def test_plot(self, m_forestnet_data_root):
         transform = A.Compose([ToTensorV2()])
@@ -744,6 +757,8 @@ class TestMNzCattleNonGeo:
         assert sample["image"].shape == (3, 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
         assert sample["mask"].shape == (64, 64), f"'mask' has incorrect shape: {sample['mask'].shape}"
 
+        gc.collect()
+
     def test_plot(self, mnz_cattle_data_root):
         transform = A.Compose([ToTensorV2()])
 
@@ -777,6 +792,8 @@ class TestMPv4gerNonGeo:
         assert sample["location_coords"].dtype == torch.float32, "'location_coords' does not have dtype torch.float32"
         assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
         assert sample["location_coords"].shape == (2,), f"'location_coords' has incorrect shape: {sample['location_coords'].shape}"
+
+        gc.collect()
 
     def test_plot(self, pv4ger_data_root):
 
@@ -815,6 +832,8 @@ class TestMPv4gerSegNonGeo:
         assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
         assert sample["mask"].shape == (64, 64), f"'mask' has incorrect shape: {sample['mask'].shape}"
         assert sample["location_coords"].shape == (2,), f"'location_coords' has incorrect shape: {sample['location_coords'].shape}"
+
+        gc.collect()
 
     def test_plot(self, pv4gerseg_data_root):
         transform = A.Compose([ToTensorV2()])
@@ -882,6 +901,8 @@ class TestMSACropTypeNonGeo:
         assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
         assert sample["mask"].shape == (64, 64), f"'mask' has incorrect shape: {sample['mask'].shape}"
 
+        gc.collect()
+
     def test_plot(self, sacroptype_data_root):
         transform = A.Compose([ToTensorV2()])
 
@@ -909,6 +930,8 @@ class TestMSo2SatNonGeo:
         assert isinstance(sample["label"], int), "'label' is not an int"
         assert sample["image"].dtype == torch.float32, "'image' does not have dtype torch.float32"
         assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
+
+        gc.collect()
 
     def test_plot(self, so2sat_data_root):
         transform = A.Compose([ToTensorV2()])
@@ -943,6 +966,8 @@ class TestMBeninSmallHolderCashewsNonGeo:
         assert sample["mask"].shape == (64, 64), f"'mask' has incorrect shape: {sample['mask'].shape}"
         assert sample["temporal_coords"].shape == (1, 2), f"'temporal_coords' has incorrect shape: {sample['temporal_coords'].shape}"
 
+        gc.collect()
+
     def test_plot(self, cashews_data_root):
         transform = A.Compose([ToTensorV2()])
 
@@ -973,6 +998,8 @@ class TestMChesapeakeLandcoverNonGeo:
         assert sample["mask"].dtype == torch.long, "'mask' does not have dtype torch.long"
         assert sample["image"].shape == (len(dataset.bands), 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
         assert sample["mask"].shape == (64, 64), f"'mask' has incorrect shape: {sample['mask'].shape}"
+
+        gc.collect()
 
     def test_plot(self, chesapeake_data_root):
         transform = A.Compose([ToTensorV2()])
@@ -1009,6 +1036,8 @@ class TestSen1Floods11NonGeo:
         num_bands = len(dataset.bands)
         assert sample["image"].shape == (num_bands, 32, 32), f"'image' has incorrect shape: {sample['image'].shape}"
         assert sample["mask"].shape == (32, 32), f"'mask' has incorrect shape: {sample['mask'].shape}"
+
+        gc.collect()
 
     def test_plot(self, sen1floods_data_root):
         transform = A.Compose([ToTensorV2()])
@@ -1047,6 +1076,8 @@ class TestMultiTemporalCropClassification:
         assert sample["mask"].dtype == torch.long, "'mask' does not have dtype torch.long"
         assert sample["image"].shape == (6, 3, 64, 64), f"'image' has incorrect shape: {sample['image'].shape}"
         assert sample["mask"].shape == (64, 64), f"'mask' has incorrect shape: {sample['mask'].shape}"
+
+        gc.collect()
 
     def test_plot(self, crop_classification_data_root):
         transform = A.Compose(

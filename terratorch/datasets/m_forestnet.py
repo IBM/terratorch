@@ -21,7 +21,7 @@ from torchgeo.datasets import NonGeoDataset
 
 
 class MForestNetNonGeo(NonGeoDataset):
-    """NonGeo dataset implementation for M-ForestNet."""
+    """NonGeo dataset implementation for [M-ForestNet](https://github.com/ServiceNow/geo-bench?tab=readme-ov-file)."""
     all_band_names = (
         "BLUE",
         "GREEN",
