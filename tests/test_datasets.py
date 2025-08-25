@@ -6,7 +6,6 @@ from datetime import datetime
 import albumentations as A
 import h5py
 import matplotlib.pyplot as plt
-import netCDF4
 import numpy as np
 import pandas as pd
 import pytest
