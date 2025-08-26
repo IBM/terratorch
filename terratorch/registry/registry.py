@@ -168,7 +168,11 @@ class Registry(Set):
         """Build and return the component.
         Use prefixes ending with _ to forward to a specific source
         """
-        return self._registry[name](*constructor_args, **constructor_kwargs)
+        if name in self._registry.keys():
+            return self._registry[name](*constructor_args, **constructor_kwargs)
+        else:
+            msg = f"Could not build {name} from registry. Available factories: {list(self._registry.keys())}"
+            raise KeyError(msg)
 
     def __iter__(self):
         return iter(self._registry)
