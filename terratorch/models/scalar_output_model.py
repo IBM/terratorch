@@ -75,7 +75,7 @@ class ScalarOutputModel(Model, SegmentationModel):
 
             self.neck = model_defined_neck
         else:
-            self.neck = nn.Identity()
+            self.neck = lambda x, image_size: x
         self.patch_size = patch_size
         self.padding = padding
 
