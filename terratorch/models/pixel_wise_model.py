@@ -78,7 +78,7 @@ class PixelWiseModel(Model, SegmentationModel):
                 return self.encoder.prepare_features_for_image_model(x)  # Drop kwargs
             self.neck = model_defined_neck
         else:
-            self.neck = nn.Identity()
+            self.neck = lambda x, image_size: x
 
         self.rescale = rescale
         self.patch_size = patch_size
