@@ -1,5 +1,6 @@
 # Copyright contributors to the Terratorch project
 
+import gc
 import importlib
 
 import pytest
@@ -8,7 +9,6 @@ import torch
 from terratorch.models import EncoderDecoderFactory
 from terratorch.models.backbones.prithvi_vit import PRETRAINED_BANDS
 from terratorch.models.model import AuxiliaryHead
-import gc
 
 NUM_CHANNELS = 6
 NUM_CLASSES = 2
@@ -47,6 +47,7 @@ LORA_CONFIG = {
         },
     },
 }
+
 
 @pytest.fixture(scope="session")
 def model_factory() -> EncoderDecoderFactory:
@@ -404,7 +405,7 @@ def test_create_model_with_lora(backbone, task, expected, decoder, model_factory
         "backbone": backbone,
         "decoder": decoder,
         "backbone_bands": PRETRAINED_BANDS,
-        "backbone_pretrained": True,
+        "backbone_pretrained": False,
         "peft_config": LORA_CONFIG[backbone.split("_")[0]],
     }
 
