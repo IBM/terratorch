@@ -91,9 +91,10 @@ class ScalarOutputModel(Model, SegmentationModel):
     def forward(self, x: torch.Tensor, **kwargs) -> ModelOutput:
         """Sequentially pass `x` through model`s encoder, decoder and heads"""
 
-        if isinstance(x, torch.Tensor) and self.patch_size:
-            # Only works for single image modalities
-            x = pad_images(x, self.patch_size, self.padding)
+        if isinstance(x, torch.Tensor):
+            if self.patch_size:
+                # Only works for single image modalities
+                x = pad_images(x, self.patch_size, self.padding)
             input_size = x.shape[-2:]
         elif isinstance(x, dict):
             # Multimodal input in passed as dict (Assuming first modality to be an image)
@@ -105,7 +106,7 @@ class ScalarOutputModel(Model, SegmentationModel):
 
         features = self.encoder(x, **kwargs)
 
-        features = self.neck(features, input_size=input_size)
+        features = self.neck(features, image_size=input_size)
 
         decoder_output = self.decoder([f.clone() for f in features])
         mask = self.head(decoder_output)
