@@ -777,6 +777,7 @@ def terramind_v1_tiny_generate(**kwargs):
         gated_mlp=False,
         pretraining_mean=v1_pretraining_mean,
         pretraining_std=v1_pretraining_std,
+        tokenizer_dict=tokenizer_dict['v1'],
         **kwargs
     )
     return model
@@ -861,6 +862,7 @@ def terramind_v1_small_generate(**kwargs):
         gated_mlp=False,
         pretraining_mean=v1_pretraining_mean,
         pretraining_std=v1_pretraining_std,
+        tokenizer_dict=tokenizer_dict['v1'],
         **kwargs
     )
     return model
