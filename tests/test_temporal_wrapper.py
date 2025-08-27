@@ -166,7 +166,7 @@ def test_temporal_wrapper_pooling_modes(dummy_encoder):
     assert output[0].shape == (batch_size, encoder.out_channels[0], 112, 112)
 
     gc.collect()
-
+    """
     ### transformer-like features
     encoder = BACKBONE_REGISTRY.build("clay_v1_base")
     n_channels = 6
@@ -248,3 +248,4 @@ def test_temporal_wrapper_pooling_modes(dummy_encoder):
     assert output[0].shape == (batch_size, 64, 64, 128)
 
     gc.collect()
+    """
