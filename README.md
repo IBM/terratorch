@@ -28,6 +28,13 @@
 TerraTorch is a PyTorch domain library based on [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/) and the [TorchGeo](https://github.com/microsoft/torchgeo) domain library
 for geospatial data. 
 
+## Disclaimer
+TerraTorch provides tools for fine-tuning and using pretrained models.
+No models are hosted by TerraTorch. TerraTorch only provides the training and inference framework.  
+
+User responsibility: It is the sole responsibility of the user to verify that the license of any model they download, fine-tune, or deploy allows their intended use.
+The TerraTorch maintainers do not provide legal advice and are not liable for any misuse of third-party models.
+
 <hr>
 <a href="https://www.youtube.com/watch?v=CB3FKtmuPI8">
   <img src="https://upload.wikimedia.org/wikipedia/commons/4/42/YouTube_icon_%282013-2017%29.png" alt="YouTube" width="20">
