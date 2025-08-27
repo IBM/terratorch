@@ -179,18 +179,18 @@ def test_temporal_wrapper_pooling_modes(dummy_encoder):
     assert output[0].shape == (batch_size, encoder.out_channels[0], 112, 112)
 
     gc.collect()
-
-    # ### transformer-like features
-    # encoder = BACKBONE_REGISTRY.build("clay_v1_base")
-    # n_channels = 6
-    # x = torch.randn(batch_size, n_channels, timesteps, 256, 256)
-    # n_tokens = 1025
-    # # Test mean pooling
-    # wrapper = TemporalWrapper(encoder, pooling="mean")
-    # output = wrapper(x)
-    # assert isinstance(output, list)
-    # assert len(output) == 12
-    # assert output[0].shape == (batch_size, n_tokens, encoder.out_channels[0])
+    """
+    ### transformer-like features
+    encoder = BACKBONE_REGISTRY.build("clay_v1_base")
+    n_channels = 6
+    x = torch.randn(batch_size, n_channels, timesteps, 256, 256)
+    n_tokens = 1025
+    # Test mean pooling
+    wrapper = TemporalWrapper(encoder, pooling="mean")
+    output = wrapper(x)
+    assert isinstance(output, list)
+    assert len(output) == 12
+    assert output[0].shape == (batch_size, n_tokens, encoder.out_channels[0])
 
     # gc.collect()
     # # Test max pooling
@@ -260,4 +260,5 @@ def test_temporal_wrapper_pooling_modes(dummy_encoder):
     # assert len(output) == 4
     # assert output[0].shape == (batch_size, 64, 64, 128)
 
-    # gc.collect()
+    gc.collect()
+    """
