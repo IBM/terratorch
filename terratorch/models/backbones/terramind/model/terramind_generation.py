@@ -67,6 +67,7 @@ class TerraMindGeneration(nn.Module):
         gated_mlp (bool): If True, makes the feedforward gated (e.g., for SwiGLU)
         qk_norm (bool): If True, normalizes the query and keys (as in ViT-22B)
         tokenizer_dict (dict): Dictionary of tokenizers.
+        pretrained (bool): If True, loads pretrained tokenizers.
     """
 
     def __init__(
@@ -74,7 +75,6 @@ class TerraMindGeneration(nn.Module):
             img_size: int = 224,
             modalities: list[str] | dict[str, int | nn.Module] | None = None,
             output_modalities: list[str] | None = None,
-            pretrained: bool = False,
             decoding_steps: list[int] | int = 1,
             temps: list[float] | float = 1.0,
             top_p: float = 0.8,
@@ -98,6 +98,7 @@ class TerraMindGeneration(nn.Module):
             pretraining_mean: dict[str, list] | None = None,
             pretraining_std: dict[str, list] | None = None,
             tokenizer_dict: dict = None,
+            pretrained: bool = False,
     ):
         super().__init__()
 

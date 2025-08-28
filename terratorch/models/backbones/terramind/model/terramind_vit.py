@@ -56,6 +56,7 @@ class TerraMindViT(nn.Module):
         qk_norm (bool): If True, normalizes the query and keys (as in ViT-22B)
         encoder_norm (bool): If True, adds a norm layer after the last encoder block.
         tokenizer_dict (dict): Dictionary of tokenizers.
+        pretrained (bool): If True, loads pretrained tokenizers.
     """
     def __init__(
         self,
@@ -81,6 +82,7 @@ class TerraMindViT(nn.Module):
         qk_norm: bool = False,
         encoder_norm: bool = True,
         tokenizer_dict: dict | None = None,
+        pretrained: bool = False,
     ):
         super().__init__()
 
@@ -129,7 +131,8 @@ class TerraMindViT(nn.Module):
 
         if tokenizer_dict is not None:
             self.tokenizer = build_tokenizer(tokenizer_dict=tokenizer_dict,
-                                             input_modalities=list(self.encoder_embeddings.keys()))
+                                             input_modalities=list(self.encoder_embeddings.keys()),
+                                             pretrained=pretrained)
         else:
             self.tokenizer = {}
 
