@@ -87,6 +87,7 @@ model:
         - S2L1C
         - S1GRD
       merge_method: mean
+      pretrained: True
     output_format: parquet
     embed_file_key: file_id
     output_dir: 'output/terramind_embeddings'
