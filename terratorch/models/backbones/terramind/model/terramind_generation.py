@@ -62,11 +62,13 @@ class TerraMindGeneration(nn.Module):
         qkv_bias (bool): If True, add a learnable bias to query, key, value.
         proj_bias (bool): If True, adds a bias to the attention out proj layer.
         mlp_bias (bool): If True, adds a learnable bias for the feedforward.
+        num_register_tokens (int): Number of register tokens.
         act_layer (nn.Module): Activation layer.
         norm_layer (nn.Module): Normalization layer.
         gated_mlp (bool): If True, makes the feedforward gated (e.g., for SwiGLU)
         qk_norm (bool): If True, normalizes the query and keys (as in ViT-22B)
         tokenizer_dict (dict): Dictionary of tokenizers.
+        pretrained (bool): If True, loads pretrained tokenizers.
     """
 
     def __init__(
@@ -74,7 +76,6 @@ class TerraMindGeneration(nn.Module):
             img_size: int = 224,
             modalities: list[str] | dict[str, int | nn.Module] | None = None,
             output_modalities: list[str] | None = None,
-            pretrained: bool = False,
             decoding_steps: list[int] | int = 1,
             temps: list[float] | float = 1.0,
             top_p: float = 0.8,
@@ -89,6 +90,7 @@ class TerraMindGeneration(nn.Module):
             qkv_bias: bool = True,
             proj_bias: bool = True,
             mlp_bias: bool = True,
+            num_register_tokens: int = 0,
             act_layer: nn.Module = nn.GELU,
             norm_layer: partial | nn.Module = partial(LayerNorm, eps=1e-6),
             gated_mlp: bool = False,
@@ -98,6 +100,7 @@ class TerraMindGeneration(nn.Module):
             pretraining_mean: dict[str, list] | None = None,
             pretraining_std: dict[str, list] | None = None,
             tokenizer_dict: dict = None,
+            pretrained: bool = False,
     ):
         super().__init__()
 
@@ -166,6 +169,7 @@ class TerraMindGeneration(nn.Module):
             qkv_bias=qkv_bias,
             proj_bias=proj_bias,
             mlp_bias=mlp_bias,
+            num_register_tokens=num_register_tokens,
             act_layer=act_layer,
             norm_layer=norm_layer,
             gated_mlp=gated_mlp,

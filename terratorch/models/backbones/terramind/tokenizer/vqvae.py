@@ -410,7 +410,11 @@ class VQ(nn.Module, PyTorchModelHubMixin):
             Decoded image tensor of shape B C H W
         """
         quant = self.tokens_to_embedding(tokens)
-        dec = self.decode_quant(quant, **kwargs)
+        # Get image size from token shape
+        image_size = (kwargs.pop("image_size", None) or
+                      (tokens.shape[-2] * self.patch_size, tokens.shape[-1] * self.patch_size))
+
+        dec = self.decode_quant(quant, image_size=image_size, **kwargs)
         return dec
 
     def forward(self, x: torch.Tensor, **kwargs) -> Tuple[torch.Tensor, torch.Tensor]:
