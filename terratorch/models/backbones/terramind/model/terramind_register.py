@@ -713,6 +713,7 @@ def terramind_v1_tiny(**kwargs):
         act_layer=nn.GELU,
         gated_mlp=False,
         pretrained_bands=PRETRAINED_BANDS,
+        tokenizer_dict=tokenizer_dict['v1'],
         **kwargs
     )
     return model
@@ -734,6 +735,7 @@ def terramind_v1_tiny_tim(**kwargs):
         act_layer=nn.GELU,
         gated_mlp=False,
         pretrained_bands=PRETRAINED_BANDS,
+        tokenizer_dict=tokenizer_dict['v1'],
         **kwargs
     )
     return model
@@ -798,6 +800,7 @@ def terramind_v1_small(**kwargs):
         act_layer=nn.GELU,
         gated_mlp=False,
         pretrained_bands=PRETRAINED_BANDS,
+        tokenizer_dict=tokenizer_dict['v1'],
         **kwargs
     )
     return model
@@ -819,6 +822,7 @@ def terramind_v1_small_tim(**kwargs):
         act_layer=nn.GELU,
         gated_mlp=False,
         pretrained_bands=PRETRAINED_BANDS,
+        tokenizer_dict=tokenizer_dict['v1'],
         **kwargs
     )
     return model

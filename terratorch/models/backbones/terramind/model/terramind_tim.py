@@ -241,6 +241,8 @@ class TerraMindTiM(nn.Module):
         if tokenizer_dict is not None:
             self.tokenizer = build_tokenizer(tokenizer_dict=tokenizer_dict,
                                              input_modalities=list(self.encoder_embeddings.keys()))
+        else:
+            self.tokenizer = {}
 
         # Weight init
         self.init_weights()
