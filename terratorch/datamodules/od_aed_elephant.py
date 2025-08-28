@@ -26,9 +26,9 @@ class ElephantDataModule(pl.LightningDataModule):
         # Basic transforms (resize + normalize)
         self.train_transform = T.Compose([
             T.ToTensor(),
-            T.Resize((512, 512)),   # adjust if needed
+            """ T.Resize((512, 512)),   # adjust if needed
             T.Normalize(mean=[0.485, 0.456, 0.406],
-                        std=[0.229, 0.224, 0.225])
+                        std=[0.229, 0.224, 0.225]) """
         ])
 
     def detection_collate_fn(self, batch):
