@@ -1,5 +1,6 @@
 import math
 import pdb
+import warnings
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 
@@ -28,7 +29,22 @@ class Neck(ABC, nn.Module):
         return channel_list
 
     @abstractmethod
-    def forward(self, channel_list: list[torch.Tensor]) -> list[torch.Tensor]: ...
+    def forward(self, channel_list: list[torch.Tensor], **kwargs) -> list[torch.Tensor]: ...
+
+
+class NeckSequential(nn.Module):
+    def __init__(self, necks: list[Neck]):
+        super().__init__()
+        self.layers = nn.ModuleList(necks)
+
+    def forward(self, x, **kwargs):
+        for layer in self.layers:
+            try:
+                x = layer(x, **kwargs)
+            except TypeError:
+                x = layer(x)
+        return x
+
 
 
 @TERRATORCH_NECK_REGISTRY.register
@@ -42,7 +58,7 @@ class SelectIndices(Neck):
         super().__init__(channel_list)
         self.indices = indices
 
-    def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
+    def forward(self, features: list[torch.Tensor], **kwargs) -> list[torch.Tensor]:
         features = [features[i] for i in self.indices]
         return features
 
@@ -62,7 +78,7 @@ class PermuteDims(Neck):
         super().__init__(channel_list)
         self.new_order = new_order
 
-    def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
+    def forward(self, features: list[torch.Tensor], **kwargs) -> list[torch.Tensor]:
         features = [feat.permute(*self.new_order).contiguous() for feat in features]
         return features
 
@@ -84,7 +100,7 @@ class InterpolateToPyramidal(Neck):
         self.scale_factor = scale_factor
         self.mode = mode
 
-    def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
+    def forward(self, features: list[torch.Tensor], **kwargs) -> list[torch.Tensor]:
         out = []
         scale_exponents = list(range(len(features), 0, -1))
         for x, exponent in zip(features, scale_exponents, strict=True):
@@ -108,7 +124,7 @@ class MaxpoolToPyramidal(Neck):
         super().__init__(channel_list)
         self.kernel_size = kernel_size
 
-    def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
+    def forward(self, features: list[torch.Tensor], **kwargs) -> list[torch.Tensor]:
         out = []
         scale_exponents = list(range(len(features)))
         for x, exponent in zip(features, scale_exponents, strict=True):
@@ -153,67 +169,33 @@ class ReshapeTokensToImage(Neck):
         self.effective_time_dim = effective_time_dim
         self.h = h
 
-    def collapse_dims(self, x):
-        """
-        When the encoder output has more than 3 dimensions, is necessary to
-        reshape it.
-        """
-        shape = x.shape
-        batch = x.shape[0]
-        e = x.shape[-1]
-        collapsed_dim = np.prod(x.shape[1:-1])
-
-        return x.reshape(batch, collapsed_dim, e)
-
-    @staticmethod
-    def is_prime(n):
-        if n <= 1:
-            return False
-        for i in range(2, int(math.sqrt(n)) + 1):
-            if n % i == 0:
-                return False
-        return True
-
-    def factorize_to_get_h(self, tokens_per_timestep):
-        primes = [2, 3, 5, 7, 11]
-        j = primes[0]
-        i = 0
-        value = tokens_per_timestep
-        dividers = []
-        status = 0
-
-        while not status:
-            if self.is_prime(value):
-                status = 1
-            else:
-                if value % j == 0:
-                    value //= j
-                    dividers.append(j)
-                else:
-                    i += 1
-                    j = primes[i]
-
-                status = 0
-
-        return int(np.prod(dividers) / 2)
-
-    def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
+    def forward(self, features: list[torch.Tensor], image_size=None, **kwargs) -> list[torch.Tensor]:
         out = []
         for x in features:
-            if self.remove_cls_token:
-                x_no_token = x[:, 1:, :]
-            else:
-                x_no_token = x
-            x_no_token = self.collapse_dims(x_no_token)
+            x_no_token = x[:, 1:, :] if self.remove_cls_token else x
+            x_no_token = x_no_token.reshape(x.shape[0], -1, x.shape[-1])
             number_of_tokens = x_no_token.shape[1]
             tokens_per_timestep = number_of_tokens // self.effective_time_dim
 
-            # Adaptation to use non-square images
+            # Assume square images first
             h = self.h or math.sqrt(tokens_per_timestep)
             if h - int(h) == 0:
                 h = int(h)
             else:
-                h = self.factorize_to_get_h(tokens_per_timestep)
+                assert image_size is not None, "image_size is not provided for neck ReshapeTokensToImage."
+                # Handle non-square images
+                patch_size = (np.prod(image_size) / tokens_per_timestep) ** 0.5
+                if patch_size % 1:
+                    if self.remove_cls_token:
+                        warnings.warn(f"Cannot infer grid shape from input tokens ({x.shape[1]}), assuming a cls_token "
+                                      f"(default setting). Retry ReshapeTokensToImage with remove_cls_token to False. "
+                                      "Silence this warning with remove_cls_token=False for neck ReshapeTokensToImage.")
+                        self.remove_cls_token = False
+                        return self.forward(features, image_size, **kwargs)
+                    else:
+                        raise ValueError(f"Cannot infer grid shape from from input tokens ({x.shape[1]}) with "
+                                         f"image_size = {image_size} in neck ReshapeTokensToImage. ")
+                h = int(img_h // patch_size)
 
             encoded = rearrange(
                 x_no_token,
@@ -241,7 +223,7 @@ class AddBottleneckLayer(Neck):
         super().__init__(channel_list)
         self.bottleneck = nn.Conv2d(channel_list[-1], channel_list[-1] // 2, kernel_size=1)
 
-    def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
+    def forward(self, features: list[torch.Tensor], **kwargs) -> list[torch.Tensor]:
         new_embedding = self.bottleneck(features[-1])
         features.append(new_embedding)
         return features
@@ -273,7 +255,7 @@ class LearnedInterpolateToPyramidal(Neck):
         self.fpn4 = nn.Sequential(nn.MaxPool2d(kernel_size=2, stride=2))
         self.embedding_dim = [channel_list[0] // 4, channel_list[1] // 2, channel_list[2], channel_list[3]]
 
-    def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
+    def forward(self, features: list[torch.Tensor], **kwargs) -> list[torch.Tensor]:
         scaled_inputs = []
         scaled_inputs.append(self.fpn1(features[0]))
         scaled_inputs.append(self.fpn2(features[1]))
