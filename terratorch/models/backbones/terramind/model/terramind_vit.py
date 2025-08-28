@@ -46,6 +46,7 @@ class TerraMindViT(nn.Module):
         qkv_bias (bool): If True, add a learnable bias to query, key, value.
         proj_bias (bool): If True, adds a bias to the attention out proj layer.
         mlp_bias (bool): If True, adds a learnable bias for the feedforward.
+        num_register_tokens (int): Number of register tokens.
         drop_path_rate (float): Stochastic depth rate.
         drop_rate (float): Dropout rate.
         attn_drop_rate (float): Attention dropout rate.
@@ -72,6 +73,7 @@ class TerraMindViT(nn.Module):
         qkv_bias: bool = True,
         proj_bias: bool = True,
         mlp_bias: bool = True,
+        num_register_tokens: int = 0,
         drop_path_rate: float = 0.0,
         drop_rate: float = 0.0,
         attn_drop_rate: float = 0.0,
@@ -129,6 +131,15 @@ class TerraMindViT(nn.Module):
 
         self.encoder_norm = norm_layer(dim) if encoder_norm else nn.Identity()
 
+        # Additional register tokens that can be used by the encoder during fine-tuning
+        self.num_register_tokens = num_register_tokens
+        if self.num_register_tokens > 0:
+            self.register_tokens = nn.Parameter(torch.zeros(1, self.num_register_tokens, dim))
+            nn.init.normal_(self.register_tokens, std=0.02)
+        else:
+            self.register_tokens = None
+
+        # Init optional tokenizers
         if tokenizer_dict is not None:
             self.tokenizer = build_tokenizer(tokenizer_dict=tokenizer_dict,
                                              input_modalities=list(self.encoder_embeddings.keys()),
@@ -220,9 +231,10 @@ class TerraMindViT(nn.Module):
         if len(d) == 0:
             raise ValueError("No valid inputs provided.")
 
+        d_mod = list(d.keys())
         if self.training and self.modality_drop_rate:
             # Drop random modalities during training
-            for key in random.sample(list(d.keys()), k=len(d) - 1):
+            for key in random.sample(d_mod, k=len(d) - 1):
                 if random.random() < self.modality_drop_rate:
                     _ = d.pop(key)
 
@@ -248,6 +260,15 @@ class TerraMindViT(nn.Module):
         # Concatenate along token dim
         x = torch.cat(x, dim=1)  # Shape: (B, N, D)
 
+        if self.num_register_tokens > 0:
+            register_tokens = self.register_tokens.repeat((x.shape[0], 1, 1))
+            # We add register tokens at the beginning of the sequence
+            x = torch.cat([register_tokens, x], dim=1)
+            if self.merge_method == 'dict':
+                # Return register tokens as additional modality
+                d_mod.insert(0, "register_tokens")
+                num_tokens.insert(0, self.num_register_tokens)
+
         # Forward encoder blocks
         out = []
         for block in self.encoder:
@@ -257,6 +278,9 @@ class TerraMindViT(nn.Module):
         out[-1] = self.encoder_norm(x)  # Shape: (B, N, D)
 
         def _unstack_image_modalities(x):
+            if self.num_register_tokens:
+                # Remove register tokens
+                x = x[:, self.num_register_tokens:]
             x = torch.split(x, num_tokens, dim=1)  # Split tokens by modality
             x = [m for m, keep in zip(x, image_mod) if keep]  # Drop sequence modalities
             x = torch.stack(x, dim=1)  # (B, M, N, D)
@@ -283,7 +307,7 @@ class TerraMindViT(nn.Module):
 
         elif self.merge_method == 'dict':
             out = [torch.split(x, num_tokens, dim=1) for x in out]
-            out = [{mod: x[i] for i, mod in enumerate(d.keys())} for x in out]
+            out = [{mod: x[i] for i, mod in enumerate(d_mod)} for x in out]
 
         elif self.merge_method is None:
             pass  # Do nothing
