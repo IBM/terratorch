@@ -54,25 +54,6 @@ def test_temporal_wrapper_swin_forward_shapes(dummy_encoder):
         torch.Size([2, 7, 7, 1024]),
     ]
 
-    # Satlas Swin
-    # NUM_CHANNELS = 6
-    # encoder = BACKBONE_REGISTRY.build(
-    #     "satlas_swin_b_sentinel2_si_ms", model_bands=[0, 1, 2, 3, 4, 5], out_indices=[1, 3, 5, 7]
-    # )
-
-    # wrapper = TemporalWrapper(encoder)
-    # batch_size = 2
-
-    # # Test case 2: Valid input shape
-    # x = torch.randn(batch_size, NUM_CHANNELS, 4, 224, 224)  # [B, C, T, H, W]
-    # output = wrapper(x)
-    # assert [o.shape for o in output] == [
-    #     torch.Size([2, 56, 56, 128]),
-    #     torch.Size([2, 28, 28, 256]),
-    #     torch.Size([2, 14, 14, 512]),
-    #     torch.Size([2, 7, 7, 1024]),
-    # ]
-
     gc.collect()
 
 def test_encoder_returning_dict_modalities(dummy_dict_encoder):
@@ -213,7 +194,7 @@ def test_temporal_wrapper_pooling_modes(dummy_encoder):
     gc.collect()
 
     # Test concatenation
-    wrapper = TemporalWrapper(encoder, concat=True, n_timestamps=timesteps)
+    wrapper = TemporalWrapper(encoder, pooling="concat")
     output = wrapper(x)
     assert isinstance(output, list)
     assert len(output) == 12
@@ -225,7 +206,6 @@ def test_temporal_wrapper_pooling_modes(dummy_encoder):
 
     # Test diff
     wrapper = TemporalWrapper(encoder, pooling="diff")
-    print(x[:, :, [0, 1], ...].shape)
     output = wrapper(x[:, :, [0, 1], ...])
     assert isinstance(output, list)
     assert len(output) == 12
@@ -263,7 +243,7 @@ def test_temporal_wrapper_pooling_modes(dummy_encoder):
     gc.collect()
 
     # Test concatenation
-    wrapper = TemporalWrapper(encoder, concat=True, n_timestamps=timesteps, features_permute_op=(0, 3, 1, 2))
+    wrapper = TemporalWrapper(encoder, pooling="concat", features_permute_op=(0, 3, 1, 2))
     output = wrapper(x)
     assert isinstance(output, list)
     assert len(output) == 4
