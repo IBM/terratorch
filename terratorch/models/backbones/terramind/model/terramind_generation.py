@@ -62,6 +62,7 @@ class TerraMindGeneration(nn.Module):
         qkv_bias (bool): If True, add a learnable bias to query, key, value.
         proj_bias (bool): If True, adds a bias to the attention out proj layer.
         mlp_bias (bool): If True, adds a learnable bias for the feedforward.
+        num_register_tokens (int): Number of register tokens.
         act_layer (nn.Module): Activation layer.
         norm_layer (nn.Module): Normalization layer.
         gated_mlp (bool): If True, makes the feedforward gated (e.g., for SwiGLU)
@@ -89,6 +90,7 @@ class TerraMindGeneration(nn.Module):
             qkv_bias: bool = True,
             proj_bias: bool = True,
             mlp_bias: bool = True,
+            num_register_tokens: int = 0,
             act_layer: nn.Module = nn.GELU,
             norm_layer: partial | nn.Module = partial(LayerNorm, eps=1e-6),
             gated_mlp: bool = False,
@@ -167,6 +169,7 @@ class TerraMindGeneration(nn.Module):
             qkv_bias=qkv_bias,
             proj_bias=proj_bias,
             mlp_bias=mlp_bias,
+            num_register_tokens=num_register_tokens,
             act_layer=act_layer,
             norm_layer=norm_layer,
             gated_mlp=gated_mlp,
