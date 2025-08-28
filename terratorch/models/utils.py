@@ -137,7 +137,8 @@ class TemporalWrapper(nn.Module):
             return tensor.reshape(B, T, C, H, W)
         elif tensor.dim() == 3:  # ViT backbone: [BT, L, C]
             L, C = tensor.shape[-2:]
-            return tensor.reshape(B, T, C, L, 1)
+            x = tensor.reshape(B, T, L, C)
+            return x.permute(0, 1, 3, 2).unsqueeze(-1)
         raise ValueError(f"Expected latent tensor to be 3D or 4D, but got {tensor.dim()}.")
     
     def vit_postprocess(self, tensor: torch.Tensor) -> torch.Tensor:
