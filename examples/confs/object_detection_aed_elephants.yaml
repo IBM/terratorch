@@ -1,0 +1,82 @@
+# lightning.pytorch==2.1.1
+seed_everything: 0
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: 16-mixed
+  logger:
+    class_path: TensorBoardLogger
+    init_args:
+      save_dir: .
+      name: vit-large-timm_mask-rcnn
+  callbacks:
+    # - class_path: RichProgressBar
+    - class_path: LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+    - class_path: ModelCheckpoint
+      init_args:
+          # dirpath: output/agb/checkpoints
+          mode: max
+          monitor: val_map
+          filename: best-{epoch:02d}
+
+  max_epochs: 100
+  check_val_every_n_epoch: 1
+  log_every_n_steps: 50
+  enable_checkpointing: true
+  default_root_dir: .
+
+
+data:
+  class_path: terratorch.datamodules.od_aed_elephant.ElephantDataModule
+  init_args:
+    root: /home/romeokienzler/Downloads/AED/training_images
+    ann_file: /home/romeokienzler/Downloads/AED/annotations_elephants.json
+    batch_size: 8
+    num_workers: 8
+
+model:
+  class_path: terratorch.tasks.ObjectDetectionTask
+  init_args:
+    model_factory: ObjectDetectionModelFactory
+    model_args:
+      framework: faster-rcnn
+      backbone: terramind_v1_tiny
+      backbone_pretrained: true
+      num_classes: 2
+      framework_min_size: 512
+      framework_max_size: 512
+      backbone_modalities:
+      - RGB
+      in_channels: 3
+      necks:
+      - name: SelectIndices
+        indices:
+        - 2
+        - 5
+        - 8
+        - 11
+      - name: ReshapeTokensToImage
+        remove_cls_token: false
+      - name: LearnedInterpolateToPyramidal
+      - name: FeaturePyramidNetworkNeck
+    freeze_backbone: false
+    freeze_decoder: false
+    class_names:  # Optional class names (Alphabetic order for generic classification dataset)
+      - Background
+      - Elephant
+
+
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 1e-4
+    weight_decay: 0.05
+
+lr_scheduler:
+  class_path: CosineAnnealingLR
+  init_args:
+    T_max: 20
