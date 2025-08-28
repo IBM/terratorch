@@ -328,7 +328,7 @@ def build_terrammind_vit(
         pretrained_bands: dict[str, list] | None = None,
         **kwargs):
 
-    model = TerraMindViT(**kwargs)
+    model = TerraMindViT(pretrained=pretrained, **kwargs)
 
     if ckpt_path is not None:
         # Load model from checkpoint
@@ -389,7 +389,7 @@ def build_terrammind_tim(
         pretrained_bands: dict[str, list] | None = None,
         **kwargs):
 
-    model = TerraMindTiM(**kwargs)
+    model = TerraMindTiM(pretrained=pretrained, **kwargs)
 
     if ckpt_path is not None:
         # Load model from checkpoint
