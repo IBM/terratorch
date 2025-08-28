@@ -71,7 +71,8 @@ def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
     return model
 
 class TemporalWrapper(nn.Module):
-    def __init__(self, encoder: nn.Module, pooling: str='mean', concat=None, n_timestamps=None, features_permute_op = None):
+    def __init__(self, encoder: nn.Module, pooling: str = 'mean', concat: bool = None, n_timestamps: int = None,
+                 features_permute_op: list[int] = None):
         """
         Wrapper for applying a temporal encoder across multiple time steps.
 
@@ -80,7 +81,9 @@ class TemporalWrapper(nn.Module):
             pooling (str): Type of pooling ('mean', 'max', 'diff') with 'diff' working only with 2 timestamps.
             concat (bool): Deprecated - 'concat' now integrated as pooling option.
             n_timestamps (int): Deprecated 
-            features_permute_op (list): Permutation operation to perform on the features before aggregation. This is in case the features to do not match either 'BCHW' or 'BLC' formats. It is reversed once aggregation has happened.
+            features_permute_op (list): Permutation operation to perform on the features before aggregation.
+                This is in case the features to do not match either 'BCHW' or 'BLC' formats. It is reversed once
+                aggregation has happened.
         """
         super().__init__()
 
