@@ -33,8 +33,8 @@ trainer:
 data:
   class_path: terratorch.datamodules.od_aed_elephant.ElephantDataModule
   init_args:
-    root: /home/romeokienzler/Downloads/AED/training_images
-    ann_file: /home/romeokienzler/Downloads/AED/annotations_elephants.json
+    root: /dccstor/terratorch/shared/datasets/aed-elephant/AED/training_images
+    ann_file: /dccstor/terratorch/shared/datasets/aed-elephant/annotations_elephants_training.json
     batch_size: 8
     num_workers: 8
 
