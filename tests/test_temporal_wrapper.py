@@ -152,16 +152,20 @@ def test_temporal_wrapper_pooling_modes(dummy_encoder):
     assert isinstance(output, list)
     assert len(output) == 5
     assert output[0].shape == (batch_size, encoder.out_channels[0], 112, 112)
+    del wrapper, output
 
     gc.collect()
+
     # Test max pooling
     wrapper = TemporalWrapper(encoder, pooling="max")
     output = wrapper(x)
     assert isinstance(output, list)
     assert len(output) == 5
     assert output[0].shape == (batch_size, encoder.out_channels[0], 112, 112)
+    del wrapper, output
 
     gc.collect()
+
     # Test concatenation
     wrapper = TemporalWrapper(encoder, pooling="concat")
     output = wrapper(x)
@@ -169,95 +173,112 @@ def test_temporal_wrapper_pooling_modes(dummy_encoder):
     assert len(output) == 5
     # For concatenation, channels should be multiplied by number of timesteps
     assert output[0].shape == (batch_size, encoder.out_channels[0] * timesteps, 112, 112)
+    del wrapper, output
 
     gc.collect()
+
     # Test diff
     wrapper = TemporalWrapper(encoder, pooling="diff")
     output = wrapper(x[:, :, [0, 1], ...])
     assert isinstance(output, list)
     assert len(output) == 5
     assert output[0].shape == (batch_size, encoder.out_channels[0], 112, 112)
+    del wrapper, output
 
     gc.collect()
 
-    # ### transformer-like features
-    # encoder = BACKBONE_REGISTRY.build("clay_v1_base")
-    # n_channels = 6
-    # x = torch.randn(batch_size, n_channels, timesteps, 256, 256)
-    # n_tokens = 1025
-    # # Test mean pooling
-    # wrapper = TemporalWrapper(encoder, pooling="mean")
-    # output = wrapper(x)
-    # assert isinstance(output, list)
-    # assert len(output) == 12
-    # assert output[0].shape == (batch_size, n_tokens, encoder.out_channels[0])
+    ### transformer-like features
+    encoder = BACKBONE_REGISTRY.build("clay_v1_base")
+    n_channels = 6
+    x = torch.randn(batch_size, n_channels, timesteps, 256, 256)
+    n_tokens = 1025
+    # Test mean pooling
+    wrapper = TemporalWrapper(encoder, pooling="mean")
+    output = wrapper(x)
+    assert isinstance(output, list)
+    assert len(output) == 12
+    assert output[0].shape == (batch_size, n_tokens, encoder.out_channels[0])
+    del wrapper, output
 
-    # gc.collect()
-    # # Test max pooling
-    # wrapper = TemporalWrapper(encoder, pooling="max")
-    # output = wrapper(x)
-    # assert isinstance(output, list)
-    # assert len(output) == 12
-    # assert output[0].shape == (batch_size, n_tokens, encoder.out_channels[0])
+    gc.collect()
 
-    # gc.collect()
-    # # Test concatenation
-    # wrapper = TemporalWrapper(encoder, pooling="concat")
-    # output = wrapper(x)
-    # assert isinstance(output, list)
-    # assert len(output) == 12
-    # # For concatenation, channels should be multiplied by number of timesteps
-    # assert output[0].shape == (batch_size, n_tokens, encoder.out_channels[0] * timesteps)
+    # Test max pooling
+    wrapper = TemporalWrapper(encoder, pooling="max")
+    output = wrapper(x)
+    assert isinstance(output, list)
+    assert len(output) == 12
+    assert output[0].shape == (batch_size, n_tokens, encoder.out_channels[0])
+    del wrapper, output
 
-    # gc.collect()
-    # # Test diff
-    # wrapper = TemporalWrapper(encoder, pooling="diff")
-    # print(x[:, :, [0, 1], ...].shape)
-    # output = wrapper(x[:, :, [0, 1], ...])
-    # assert isinstance(output, list)
-    # assert len(output) == 12
-    # assert output[0].shape == (batch_size, n_tokens, encoder.out_channels[0])
+    gc.collect()
 
-    # gc.collect()
+    # Test concatenation
+    wrapper = TemporalWrapper(encoder, concat=True, n_timestamps=timesteps)
+    output = wrapper(x)
+    assert isinstance(output, list)
+    assert len(output) == 12
+    # For concatenation, channels should be multiplied by number of timesteps
+    assert output[0].shape == (batch_size, n_tokens, encoder.out_channels[0] * timesteps)
+    del output, wrapper 
 
-    # ### Swin-like features
-    # encoder = BACKBONE_REGISTRY.build(
-    #     "satlas_swin_b_sentinel2_si_ms", model_bands=[0, 1, 2, 3, 4, 5], out_indices=[1, 3, 5, 7]
-    # )
+    gc.collect()
 
-    # n_channels = 6
-    # x = torch.randn(batch_size, n_channels, timesteps, 256, 256)
-    # # pdb.set_trace()
-    # # Test mean pooling
-    # wrapper = TemporalWrapper(encoder, pooling="mean", features_permute_op=(0, 3, 1, 2))
-    # output = wrapper(x)
-    # assert isinstance(output, list)
-    # assert len(output) == 4
-    # assert output[0].shape == (batch_size, 64, 64, encoder.out_channels[0])
+    # Test diff
+    wrapper = TemporalWrapper(encoder, pooling="diff")
+    print(x[:, :, [0, 1], ...].shape)
+    output = wrapper(x[:, :, [0, 1], ...])
+    assert isinstance(output, list)
+    assert len(output) == 12
+    assert output[0].shape == (batch_size, n_tokens, encoder.out_channels[0])
+    del output, wrapper 
 
-    # gc.collect()
-    # # Test max pooling
-    # wrapper = TemporalWrapper(encoder, pooling="max", features_permute_op=(0, 3, 1, 2))
-    # output = wrapper(x)
-    # assert isinstance(output, list)
-    # assert len(output) == 4
-    # assert output[0].shape == (batch_size, 64, 64, encoder.out_channels[0])
+    gc.collect()
 
-    # gc.collect()
-    # # Test concatenation
-    # wrapper = TemporalWrapper(encoder, pooling="concat", features_permute_op=(0, 3, 1, 2))
-    # output = wrapper(x)
-    # assert isinstance(output, list)
-    # assert len(output) == 4
-    # # For concatenation, channels should be multiplied by number of timesteps
-    # assert output[0].shape == (batch_size, 64, 64, encoder.out_channels[0] * timesteps)
+    ### Swin-like features
+    encoder = BACKBONE_REGISTRY.build(
+        "satlas_swin_b_sentinel2_si_ms", model_bands=[0, 1, 2, 3, 4, 5], out_indices=[1, 3, 5, 7]
+    )
 
-    # gc.collect()
-    # # Test diff
-    # wrapper = TemporalWrapper(encoder, pooling="diff", features_permute_op=(0, 3, 1, 2))
-    # output = wrapper(x[:, :, [0, 1], ...])
-    # assert isinstance(output, list)
-    # assert len(output) == 4
-    # assert output[0].shape == (batch_size, 64, 64, 128)
+    n_channels = 6
+    x = torch.randn(batch_size, n_channels, timesteps, 256, 256)
+    # pdb.set_trace()
+    # Test mean pooling
+    wrapper = TemporalWrapper(encoder, pooling="mean", features_permute_op=(0, 3, 1, 2))
+    output = wrapper(x)
+    assert isinstance(output, list)
+    assert len(output) == 4
+    assert output[0].shape == (batch_size, 64, 64, encoder.out_channels[0])
+    del output, wrapper 
 
-    # gc.collect()
+    gc.collect()
+
+    # Test max pooling
+    wrapper = TemporalWrapper(encoder, pooling="max", features_permute_op=(0, 3, 1, 2))
+    output = wrapper(x)
+    assert isinstance(output, list)
+    assert len(output) == 4
+    assert output[0].shape == (batch_size, 64, 64, encoder.out_channels[0])
+    del output, wrapper 
+
+    gc.collect()
+
+    # Test concatenation
+    wrapper = TemporalWrapper(encoder, concat=True, n_timestamps=timesteps, features_permute_op=(0, 3, 1, 2))
+    output = wrapper(x)
+    assert isinstance(output, list)
+    assert len(output) == 4
+    # For concatenation, channels should be multiplied by number of timesteps
+    assert output[0].shape == (batch_size, 64, 64, encoder.out_channels[0] * timesteps)
+    del output, wrapper 
+
+    gc.collect()
+
+    # Test diff
+    wrapper = TemporalWrapper(encoder, pooling="diff", features_permute_op=(0, 3, 1, 2))
+    output = wrapper(x[:, :, [0, 1], ...])
+    assert isinstance(output, list)
+    assert len(output) == 4
+    assert output[0].shape == (batch_size, 64, 64, 128)
+    del output, wrapper 
+
+    gc.collect()
