@@ -1,4 +1,3 @@
-import os
 from typing import Optional
 
 import torch
@@ -7,13 +6,28 @@ from torchvision.datasets import CocoDetection
 import torchvision.transforms as T
 import lightning as pl
 from torch.utils.data import Dataset
+from terratorch.datasets.od_tiled_dataset_wrapper import TiledDataset
 from terratorch.datasets.od_aed_elephant import ElephantCocoDataset
 
 
 class ElephantDataModule(pl.LightningDataModule):
-    def __init__(self, dataset: Dataset, batch_size: int = 8, num_workers: int = 8):
+    def __init__(
+        self,
+        img_folder: str,
+        ann_file: str,
+        min_size: tuple = (5472,3648),
+        tile_size: tuple = (512, 512),
+        overlap: int = 128,
+        batch_size: int = 8,
+        num_workers: int = 8,
+    ):       
         super().__init__()
-        self.dataset = dataset
+        self.dataset = TiledDataset(
+            base_dataset=ElephantCocoDataset(img_folder=img_folder, ann_file=ann_file),
+            min_size=min_size,
+            tile_size=tile_size,
+            overlap=overlap,
+        )
         self.batch_size = batch_size
         self.num_workers = num_workers
 
@@ -39,14 +53,10 @@ class ElephantDataModule(pl.LightningDataModule):
         boxes = [b["boxes"] for b in batch]
         labels = [b["labels"] for b in batch]
 
-        # image_ids: optional, keep as tensor
-        image_ids = torch.tensor([b["image_id"] for b in batch], dtype=torch.int64)
-
         return {
             "image": images,
             "boxes": boxes,
             "labels": labels,
-            "image_ids": image_ids,
         }
 
 

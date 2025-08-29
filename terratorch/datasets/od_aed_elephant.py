@@ -8,6 +8,8 @@ import torchvision.transforms as T
 import lightning as pl
 
 
+
+
 class ElephantCocoDataset(CocoDetection):
     def __init__(self, img_folder, ann_file, transform=None):
         super().__init__(img_folder, ann_file)
@@ -55,11 +57,12 @@ class ElephantCocoDataset(CocoDetection):
         if self.transform:
             img = self.transform(img)
 
+        to_tensor = T.ToTensor()
 
         sample = {
             "boxes": boxes,
             "labels": labels,
-            "image": img,
+            "image": to_tensor(img),
             "image_id": torch.tensor([self.ids[idx]]),
         }
 
