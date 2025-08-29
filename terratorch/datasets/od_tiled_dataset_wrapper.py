@@ -3,32 +3,51 @@ from torch.utils.data import Dataset
 from torchvision.transforms import functional as F
 from PIL import Image
 
+
 class TiledDataset(Dataset):
-    def __init__(self, base_dataset: Dataset, tile_size=512, overlap=0):
+    def __init__(
+        self,
+        base_dataset: Dataset,
+        min_size=(1, 1),
+        tile_size=(512, 512),
+        overlap: int = 0,
+    ):
         """
         Args:
             base_dataset: dataset returning (image, target) where
-                image is a PIL.Image or tensor (H, W, C),
+                image is a PIL.Image or tensor (C, H, W),
                 target is a dict with 'boxes' in [x1,y1,x2,y2] format.
-            tile_size: size of square tiles (default 512)
-            overlap: overlap between tiles in pixels
+            min_size: (min_h, min_w). Skip images smaller than this.
+            tile_size: (tile_h, tile_w).
+            overlap: overlap in pixels (applied both H and W).
         """
         self.base_dataset = base_dataset
-        self.tile_size = tile_size
+        self.min_h, self.min_w = min_size
+        self.tile_h, self.tile_w = tile_size
         self.overlap = overlap
 
-        # Precompute mapping: (base_idx, tile_row, tile_col)
         self.tiles = []
         for idx in range(len(base_dataset)):
-            img, target = base_dataset[idx]
+            print('preprocessing image:', idx)
+            img= base_dataset[idx]['image']
             if isinstance(img, torch.Tensor):
                 h, w = img.shape[-2:]
-            else:  # PIL
-                w, h = img.size
+            else:  
+                raise RuntimeError(f'Only supported torch.Tensor (b,c,h,w), but got {type(img)}')
 
-            step = tile_size - overlap
-            for y0 in range(0, h, step):
-                for x0 in range(0, w, step):
+            # skip if smaller than required min size
+            if h < self.min_h or w < self.min_w:
+                print(' image too small, skipping:', idx, h, w)
+                continue
+            print(' image large enough:', idx)
+
+            step_h = self.tile_h - self.overlap
+            step_w = self.tile_w - self.overlap
+
+            # only keep tiles that fully fit into image (no remainder)
+            for y0 in range(0, h - self.tile_h + 1, step_h):
+                for x0 in range(0, w - self.tile_w + 1, step_w):
+                    print('appending tile')
                     self.tiles.append((idx, x0, y0))
 
     def __len__(self):
@@ -36,7 +55,9 @@ class TiledDataset(Dataset):
 
     def __getitem__(self, idx):
         base_idx, x0, y0 = self.tiles[idx]
-        img, target = self.base_dataset[base_idx]
+        img = self.base_dataset[base_idx]['image']
+        boxes = self.base_dataset[base_idx]['boxes']
+        labels = self.base_dataset[base_idx]['labels']
 
         if isinstance(img, torch.Tensor):
             c, h, w = img.shape
@@ -45,11 +66,12 @@ class TiledDataset(Dataset):
 
         # crop tile
         tile = F.crop(img, top=y0, left=x0,
-                      height=self.tile_size, width=self.tile_size)
+                      height=self.tile_h, width=self.tile_w)
 
-        # adjust boxes
-        boxes = target["boxes"].clone() if isinstance(target["boxes"], torch.Tensor) else torch.tensor(target["boxes"])
-        x1, y1, x2, y2 = boxes[:,0], boxes[:,1], boxes[:,2], boxes[:,3]
+        if not isinstance(boxes, torch.Tensor):
+            boxes = torch.tensor(boxes, dtype=torch.float32)
+
+        x1, y1, x2, y2 = boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3]
 
         # shift relative to crop
         x1 = x1 - x0
@@ -59,14 +81,13 @@ class TiledDataset(Dataset):
         boxes = torch.stack([x1, y1, x2, y2], dim=1)
 
         # keep only boxes that intersect tile
-        keep = (boxes[:,2] > 0) & (boxes[:,0] < self.tile_size) & \
-               (boxes[:,3] > 0) & (boxes[:,1] < self.tile_size)
+        keep = (boxes[:, 2] > 0) & (boxes[:, 0] < self.tile_w) & \
+               (boxes[:, 3] > 0) & (boxes[:, 1] < self.tile_h)
         boxes = boxes[keep]
+        labels = labels[keep]
 
         # clip to tile boundaries
-        boxes[:,0::2] = boxes[:,0::2].clamp(0, self.tile_size)
-        boxes[:,1::2] = boxes[:,1::2].clamp(0, self.tile_size)
+        boxes[:, 0::2] = boxes[:, 0::2].clamp(0, self.tile_w)
+        boxes[:, 1::2] = boxes[:, 1::2].clamp(0, self.tile_h)
 
-        new_target = {**target, "boxes": boxes}
-
-        return tile, new_target
+        return {"image": tile, "boxes": boxes, "labels": labels, "image_id": torch.Tensor(idx).int()}
