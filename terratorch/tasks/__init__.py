@@ -7,6 +7,7 @@ from terratorch.tasks.reconstruction_tasks import ReconstructionTask
 from terratorch.tasks.base_task import TerraTorchTask
 from terratorch.tasks.object_detection_task import ObjectDetectionTask
 from terratorch.tasks.inference_task import InferenceTask
+from terratorch.tasks.embedding_generation import EmbeddingGenerationTask
 
 try:
     wxc_present = True
@@ -23,9 +24,11 @@ __all__ = (
     "SemanticSegmentationTask",
     "PixelwiseRegressionTask",
     "ClassificationTask",
-    "MultiLabelClassificationTask"
+    "MultiLabelClassificationTask",
     "ReconstructionTask",
     "ObjectDetectionTask",
+    "InferenceTask",
+    "EmbeddingGenerationTask",
 )
 
 if wxc_present:
