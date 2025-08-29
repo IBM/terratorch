@@ -6,20 +6,14 @@ from torch.utils.data import DataLoader
 from torchvision.datasets import CocoDetection
 import torchvision.transforms as T
 import lightning as pl
+from torch.utils.data import Dataset
 from terratorch.datasets.od_aed_elephant import ElephantCocoDataset
 
 
 class ElephantDataModule(pl.LightningDataModule):
-    def __init__(
-        self,
-        root: str,
-        ann_file: str,
-        batch_size: int = 4,
-        num_workers: int = 4,
-    ):
+    def __init__(self, dataset: Dataset, batch_size: int = 8, num_workers: int = 8):
         super().__init__()
-        self.data_dir = root
-        self.ann_file = ann_file
+        self.dataset = dataset
         self.batch_size = batch_size
         self.num_workers = num_workers
 
@@ -60,13 +54,10 @@ class ElephantDataModule(pl.LightningDataModule):
 
 
     def setup(self, stage: Optional[str] = None):
-        # No train/val split yet → you can implement if you want
-        self.dataset_train = ElephantCocoDataset(
-            self.data_dir, self.ann_file, transform=self.train_transform
-        )
-        self.dataset_val = ElephantCocoDataset(
-            self.data_dir, self.ann_file, transform=self.train_transform
-        )
+        # TODO rkie implement train/val split
+        self.dataset_train = self.dataset
+        self.dataset_val = self.dataset
+
 
     def train_dataloader(self):
         return DataLoader(
