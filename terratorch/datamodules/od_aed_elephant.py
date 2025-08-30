@@ -20,6 +20,7 @@ class ElephantDataModule(pl.LightningDataModule):
         overlap: int = 128,
         batch_size: int = 8,
         num_workers: int = 8,
+        save_png: bool = False
     ):       
         super().__init__()
         self.dataset = TiledDataset(
@@ -27,6 +28,7 @@ class ElephantDataModule(pl.LightningDataModule):
             min_size=min_size,
             tile_size=tile_size,
             overlap=overlap,
+            save_png=save_png,
         )
         self.batch_size = batch_size
         self.num_workers = num_workers
