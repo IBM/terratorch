@@ -81,8 +81,22 @@ class TiledDataset(Dataset):
         boxes = torch.stack([x1, y1, x2, y2], dim=1)
 
         # keep only boxes that intersect tile
-        keep = (boxes[:, 2] > 0) & (boxes[:, 0] < self.tile_w) & \
-               (boxes[:, 3] > 0) & (boxes[:, 1] < self.tile_h)
+        # compute intersection area with tile
+        inter_x1 = boxes[:, 0].clamp(0, self.tile_w)
+        inter_y1 = boxes[:, 1].clamp(0, self.tile_h)
+        inter_x2 = boxes[:, 2].clamp(0, self.tile_w)
+        inter_y2 = boxes[:, 3].clamp(0, self.tile_h)
+        inter_w = (inter_x2 - inter_x1).clamp(min=0)
+        inter_h = (inter_y2 - inter_y1).clamp(min=0)
+        inter_area = inter_w * inter_h
+
+        # original box area
+        area = (boxes[:, 2] - boxes[:, 0]).clamp(min=0) * (boxes[:, 3] - boxes[:, 1]).clamp(min=0)
+
+        # keep only if overlap fraction > threshold
+        overlap_ratio = inter_area / (area + 1e-6)
+        keep = overlap_ratio > 0.2   # e.g. require at least 20% of box inside tile
+
         boxes = boxes[keep]
         labels = labels[keep]
 
