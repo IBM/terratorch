@@ -4,6 +4,7 @@ import torch
 from torch.utils.data import Dataset
 from torchvision.transforms import functional as F
 from PIL import Image
+import random
 
 
 def atomic_write_image(tensor, path):
