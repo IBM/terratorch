@@ -130,6 +130,10 @@ class TiledDataset(Dataset):
         with open(f_json, "r") as f:
             meta = json.load(f)
 
+        # If no boxes → recurse with another random index
+        if not meta["boxes"]:
+            return self.__getitem__(random.randint(0, len(self) - 1))
+
         boxes = torch.tensor(meta["boxes"], dtype=torch.float32)
         labels = torch.tensor(meta["labels"], dtype=torch.int64)
 
