@@ -22,9 +22,11 @@ trainer:
           mode: max
           monitor: val_map
           filename: best-{epoch:02d}
-
+          save_on_train_epoch_end: true
+          every_n_epochs: 1
+          save_top_k: -1
   max_epochs: 100
-  check_val_every_n_epoch: 1
+  check_val_every_n_epoch: 10
   log_every_n_steps: 50
   enable_checkpointing: true
   default_root_dir: .

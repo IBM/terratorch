@@ -101,6 +101,9 @@ class TiledDataset(Dataset):
                     box_shifted = box_shifted[keep]
                     label_shifted = labels[keep]
 
+                    if len(box_shifted) == 0: # skip empty boxes
+                        continue   
+
                     if len(box_shifted) > 0:
                         box_shifted[:, 0::2] = box_shifted[:, 0::2].clamp(0, self.tile_w)
                         box_shifted[:, 1::2] = box_shifted[:, 1::2].clamp(0, self.tile_h)
@@ -130,10 +133,6 @@ class TiledDataset(Dataset):
 
         with open(f_json, "r") as f:
             meta = json.load(f)
-
-        # If no boxes → recurse with another random index
-        if not meta["boxes"]:
-            return self.__getitem__(random.randint(0, len(self) - 1))
 
         boxes = torch.tensor(meta["boxes"], dtype=torch.float32)
         labels = torch.tensor(meta["labels"], dtype=torch.int64)
