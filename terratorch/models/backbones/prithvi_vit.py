@@ -65,6 +65,7 @@ prithvi_cfgs = {
         decoder_num_heads=16, coords_encoding=["time", "location"], coords_scale_learn=True,
     ),
     "prithvi_eo_v2_100": _cfg(),
+    "prithvi_eo_v2_100_tl": _cfg(coords_encoding=["time", "location"], coords_scale_learn=True,),
     "prithvi_eo_v2_300": _cfg(embed_dim=1024, depth=24, num_heads=16),
     "prithvi_eo_v2_300_tl": _cfg(
         embed_dim=1024, depth=24, num_heads=16, coords_encoding=["time", "location"], coords_scale_learn=True
@@ -88,6 +89,10 @@ pretrained_weights = {
     "prithvi_eo_v2_tiny_tl": {
         "hf_hub_id": "ibm-nasa-geospatial/Prithvi-EO-2.0-tiny-TL",
         "hf_hub_filename": "Prithvi_EO_V2_tiny_TL.pt",
+    },
+    "prithvi_eo_v2_100_tl": {
+        "hf_hub_id": "ibm-nasa-geospatial/Prithvi-EO-2.0-100M-TL",
+        "hf_hub_filename": "Prithvi_EO_V2_100M_TL.pt",
     },
     "prithvi_eo_v2_300": {
         "hf_hub_id": "ibm-nasa-geospatial/Prithvi-EO-2.0-300M",
@@ -327,8 +332,6 @@ def _create_prithvi(
             )
 
             try:
-                # Download config.json to count model downloads
-                _ = hf_hub_download(repo_id=pretrained_weights[variant]["hf_hub_id"], filename="config.json")
                 # Load model from Hugging Face
                 pretrained_path = hf_hub_download(
                     repo_id=pretrained_weights[variant]["hf_hub_id"],
@@ -403,6 +406,19 @@ def prithvi_eo_v2_tiny_tl(
 ) -> PrithviViT | PrithviViTAdapter:
     return _create_prithvi(
         "prithvi_eo_v2_tiny_tl", pretrained=pretrained, vit_adapter=vit_adapter, **dict({"model_bands": bands}),
+        **kwargs
+    )
+
+
+@TERRATORCH_BACKBONE_REGISTRY.register
+def prithvi_eo_v2_100_tl(
+    pretrained: bool = False,  # noqa: FBT001, FBT002
+    bands: list[HLSBands] | None = None,
+    vit_adapter: bool = False,
+    **kwargs,
+) -> PrithviViT | PrithviViTAdapter:
+    return _create_prithvi(
+        "prithvi_eo_v2_100_tl", pretrained=pretrained, vit_adapter=vit_adapter, **dict({"model_bands": bands}),
         **kwargs
     )
 
@@ -483,11 +499,28 @@ def prithvi_eo_v2_tiny_tl_mae(
     **kwargs,
 ) -> PrithviMAE:
     if encoder_only:
-        raise ValueError("Please use 'prithvi_eo_v1_100' for encoder only models.")
+        raise ValueError("Please use 'prithvi_eo_v2_tiny_tl' for encoder only models.")
     model_bands = kwargs.get("model_bands", bands)
 
     return _create_prithvi(
         "prithvi_eo_v2_tiny_tl", pretrained=pretrained, model_bands=model_bands, encoder_only=encoder_only,
+        **kwargs
+    )
+
+
+@TERRATORCH_FULL_MODEL_REGISTRY.register
+def prithvi_eo_v2_100_tl_mae(
+    pretrained: bool = False,  # noqa: FBT001, FBT002
+    bands: list[HLSBands] | None = None,
+    encoder_only: bool = False,
+    **kwargs,
+) -> PrithviMAE:
+    if encoder_only:
+        raise ValueError("Please use 'prithvi_eo_v2_100_tl' for encoder only models.")
+    model_bands = kwargs.get("model_bands", bands)
+
+    return _create_prithvi(
+        "prithvi_eo_v2_100_tl", pretrained=pretrained, model_bands=model_bands, encoder_only=encoder_only,
         **kwargs
     )
 
