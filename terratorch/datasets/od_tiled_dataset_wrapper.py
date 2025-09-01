@@ -5,6 +5,8 @@ from torch.utils.data import Dataset
 from torchvision.transforms import functional as F
 from PIL import Image
 import random
+from tqdm import tqdm
+import logging
 
 
 def atomic_write_image(tensor, path):
@@ -45,12 +47,12 @@ class TiledDataset(Dataset):
         self._prepare_tiles(rebuild=rebuild)
 
     def _prepare_tiles(self, rebuild=False):
-        print("[TiledDataset] Checking/building tiles...")
+        logging.getLogger("terratorch").info("[TiledDataset] Checking/building tiles...")
         step_h = self.tile_h - self.overlap
         step_w = self.tile_w - self.overlap
 
-        for idx in range(len(self.base_dataset)):
-            print(" preprocessing image:", idx)
+
+        for idx in tqdm(range(len(self.base_dataset)), desc="Processing items"):
             sample = self.base_dataset[idx]
             img, boxes, labels = sample["image"], sample["boxes"], sample["labels"]
 
@@ -59,7 +61,7 @@ class TiledDataset(Dataset):
 
             c, h, w = img.shape
             if h < self.min_h or w < self.min_w:
-                print(" image too small, skipping:", idx, h, w)
+                logging.getLogger("terratorch").debug(" image too small, skipping:", idx, h, w)
                 continue
 
             for y0 in range(0, h - self.tile_h + 1, step_h):
@@ -119,7 +121,7 @@ class TiledDataset(Dataset):
 
                     self.tiles.append(f_img)
 
-        print(f"[TiledDataset] Prepared {len(self.tiles)} tiles in {self.cache_dir}")
+        logging.getLogger("terratorch").info(f"[TiledDataset] Prepared {len(self.tiles)} tiles in {self.cache_dir}")
 
     def __len__(self):
         return len(self.tiles)
