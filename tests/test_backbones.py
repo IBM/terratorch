@@ -86,7 +86,7 @@ def test_can_create_timm_backbones_from_registry(model_name, input_224, prefix):
     gc.collect()
 
 
-@pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100"])
+@pytest.mark.parametrize("model_name", ["prithvi_eo_v2_600_tl"])
 def test_can_create_backbones_from_registry(model_name, input_224):
     backbone = BACKBONE_REGISTRY.build(model_name, pretrained=False)
     backbone(input_224)
@@ -100,7 +100,7 @@ def test_can_create_backbones_from_registry_torchgeo_vit(model_name, input_224):
     gc.collect()
 
 
-@pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100"])
+@pytest.mark.parametrize("model_name", ["prithvi_eo_v2_100_tl"])
 def test_vit_models_accept_multitemporal(model_name, input_224_multitemporal):
     backbone = BACKBONE_REGISTRY.build(model_name, pretrained=False, num_frames=NUM_FRAMES)
     backbone(input_224_multitemporal)
