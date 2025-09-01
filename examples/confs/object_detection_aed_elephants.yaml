@@ -18,7 +18,7 @@ trainer:
         logging_interval: epoch
     - class_path: ModelCheckpoint
       init_args:
-          # dirpath: output/agb/checkpoints
+          dirpath: output/elephants/checkpoints
           mode: max
           monitor: val_map
           filename: best-{epoch:02d}
