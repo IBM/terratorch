@@ -95,7 +95,7 @@ model:
     model_args:
       backbone: "UNet"
       backbone_in_channels: 6
-      backbone_base_channels: 16
+      backbone_out_channels: 16
       decoder: "ASPPRegressionHead"
       decoder_dilations: [1, 6, 12, 18]
       decoder_channels: 256
