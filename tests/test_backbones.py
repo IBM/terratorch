@@ -86,7 +86,7 @@ def test_can_create_timm_backbones_from_registry(model_name, input_224, prefix):
     gc.collect()
 
 
-@pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100"])
+@pytest.mark.parametrize("model_name", ["prithvi_eo_v2_600_tl"])
 def test_can_create_backbones_from_registry(model_name, input_224):
     backbone = BACKBONE_REGISTRY.build(model_name, pretrained=False)
     backbone(input_224)
@@ -100,7 +100,7 @@ def test_can_create_backbones_from_registry_torchgeo_vit(model_name, input_224):
     gc.collect()
 
 
-@pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100"])
+@pytest.mark.parametrize("model_name", ["prithvi_eo_v2_100_tl"])
 def test_vit_models_accept_multitemporal(model_name, input_224_multitemporal):
     backbone = BACKBONE_REGISTRY.build(model_name, pretrained=False, num_frames=NUM_FRAMES)
     backbone(input_224_multitemporal)
@@ -172,7 +172,7 @@ def test_vit_models_different_patch_tubelet_sizes(model_name, patch_size, patch_
     gc.collect()
 
 
-@pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100"])
+@pytest.mark.parametrize("model_name", ["prithvi_eo_v2_100_tl"])
 def test_out_indices(model_name, input_224):
     out_indices = (2, 4, 8, 10)
     backbone = BACKBONE_REGISTRY.build(model_name, pretrained=False, out_indices=out_indices)
