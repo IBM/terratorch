@@ -20,6 +20,7 @@ from terratorch.tasks.optimizer_factory import optimizer_factory
 from terratorch.tasks.tiled_inference import TiledInferenceParameters, tiled_inference
 from terratorch.tasks.base_task import TerraTorchTask
 from terratorch.models.model import ModelOutput
+import pdb
 
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
 
@@ -282,7 +283,15 @@ class SemanticSegmentationTask(TerraTorchTask):
             )
         else:
             self.test_metrics = nn.ModuleList([metrics.clone(prefix="test/")])
-
+    
+    def reformat_y(self, y):
+        
+        if len(y.shape) == 4:
+            if y.shape[1] == 1:
+                y = y.squeeze(1)
+        
+        return y
+    
     def training_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         """Compute the train loss and additional metrics.
 
@@ -294,6 +303,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         # Testing because of failures.
         x = batch["image"]
         y = batch["mask"]
+        y = self.reformat_y(y)
         other_keys = batch.keys() - {"image", "mask", "filename"}
 
         rest = {k: batch[k] for k in other_keys}
@@ -315,8 +325,9 @@ class SemanticSegmentationTask(TerraTorchTask):
         """
         x = batch["image"]
         y = batch["mask"]
+        y = self.reformat_y(y)
         other_keys = batch.keys() - {"image", "mask", "filename"}
-
+        
         rest = {k: batch[k] for k in other_keys}
 
         model_output = self.handle_full_or_tiled_inference(x, self.hparams["model_args"]["num_classes"], **rest)
@@ -344,11 +355,11 @@ class SemanticSegmentationTask(TerraTorchTask):
         """
         x = batch["image"]
         y = batch["mask"]
+        y = self.reformat_y(y)
 
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
-
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat_hard = to_segmentation_prediction(model_output)
