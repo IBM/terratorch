@@ -49,7 +49,7 @@ dependencies = [
   "torchmetrics",
   "geopandas",
   "lightly",
-  "jsonargparse<=4.37.0",
+  "jsonargparse<=4.36.0",
   "h5py",
   "mlflow",
   "lightning",
