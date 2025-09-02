@@ -375,6 +375,9 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             if modality in self.constant_scale:
                 data = data.astype(np.float32) * self.constant_scale[modality]
 
+            if data.dtype == np.float64:
+                data = data.astype(np.float32)
+
             output[modality] = data
 
         if "mask" in output:
