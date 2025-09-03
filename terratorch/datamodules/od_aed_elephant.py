@@ -13,8 +13,10 @@ from terratorch.datasets.od_aed_elephant import ElephantCocoDataset
 class ElephantDataModule(pl.LightningDataModule):
     def __init__(
         self,
-        img_folder: str,
-        ann_file: str,
+        img_folder_train: str,
+        ann_file_train: str,
+        img_folder_val: str,
+        ann_file_val: str,
         min_size: tuple = (5472,3648),
         tile_size: tuple = (512, 512),
         overlap: int = 128,
@@ -22,12 +24,26 @@ class ElephantDataModule(pl.LightningDataModule):
         num_workers: int = 8,
     ):       
         super().__init__()
-        self.dataset = TiledDataset(
-            base_dataset=ElephantCocoDataset(img_folder=img_folder, ann_file=ann_file),
+
+        self.dataset_val = TiledDataset(
+            base_dataset=ElephantCocoDataset(img_folder=img_folder_val, ann_file=ann_file_val),
             min_size=min_size,
             tile_size=tile_size,
             overlap=overlap,
+            cache_dir="tile_cache_val",
+            skip_empty_boxes=False,
         )
+
+        self.dataset_train = TiledDataset(
+            base_dataset=ElephantCocoDataset(img_folder=img_folder_train, ann_file=ann_file_train),
+            min_size=min_size,
+            tile_size=tile_size,
+            overlap=overlap,
+            cache_dir="tile_cache_train",
+        )
+
+
+
         self.batch_size = batch_size
         self.num_workers = num_workers
 
@@ -64,9 +80,8 @@ class ElephantDataModule(pl.LightningDataModule):
 
 
     def setup(self, stage: Optional[str] = None):
-        # TODO rkie implement train/val split
-        self.dataset_train = self.dataset
-        self.dataset_val = self.dataset
+        # nothing to do
+        pass
 
 
     def train_dataloader(self):

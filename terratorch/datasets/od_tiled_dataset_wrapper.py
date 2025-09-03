@@ -7,6 +7,8 @@ from PIL import Image
 import random
 from tqdm import tqdm
 import logging
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 
 
 def atomic_write_image(tensor, path):
@@ -34,12 +36,14 @@ class TiledDataset(Dataset):
         overlap=0,
         min_size=(1, 1),
         rebuild=False,
+        skip_empty_boxes=True,
     ):
         self.base_dataset = base_dataset
         self.cache_dir = cache_dir
         self.tile_h, self.tile_w = tile_size
         self.overlap = overlap
         self.min_h, self.min_w = min_size
+        self.skip_empty_boxes = skip_empty_boxes
 
         os.makedirs(cache_dir, exist_ok=True)
 
@@ -103,7 +107,7 @@ class TiledDataset(Dataset):
                     box_shifted = box_shifted[keep]
                     label_shifted = labels[keep]
 
-                    if len(box_shifted) == 0: # skip empty boxes
+                    if len(box_shifted) == 0 and self.skip_empty_boxes: # skip empty boxes
                         continue   
 
                     if len(box_shifted) > 0:
@@ -145,3 +149,37 @@ class TiledDataset(Dataset):
             "labels": labels,
             "image_id": meta["image_id"],
         }
+
+
+    def plot(self, sample: dict[str, torch.Tensor], suptitle: str | None = None) -> plt.Figure:
+        """Plot a sample with bounding boxes."""
+        img = sample["image"]
+        boxes = sample["boxes"]
+        labels = sample["labels"]
+
+        # convert to HWC for matplotlib
+        img_np = img.permute(1, 2, 0).cpu().numpy()
+
+        fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+        ax.imshow(img_np)
+        ax.axis("off")
+
+        # plot bounding boxes
+        for box, label in zip(boxes, labels):
+            x1, y1, x2, y2 = box.tolist()
+            w, h = x2 - x1, y2 - y1
+            rect = patches.Rectangle(
+                (x1, y1), w, h,
+                linewidth=2, edgecolor="r", facecolor="none"
+            )
+            ax.add_patch(rect)
+            ax.text(
+                x1, y1,
+                str(label.item()),
+                fontsize=8,
+                color="white",
+                bbox=dict(facecolor="red", alpha=0.5, edgecolor="none", pad=1)
+            )
+
+        if suptitle is not None:
+            fig.suptitle(suptitle)
