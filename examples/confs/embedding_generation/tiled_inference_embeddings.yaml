@@ -9,7 +9,7 @@ trainer:
   max_epochs: 0
 
 data:
-  class_path: terratorch.datamodules.GenericNonGeoPixelwiseRegressionDataModule
+  class_path: terratorch.datamodules.GenericNonGeoPixelwiseCustomDataModule
   init_args:
     batch_size: 1  # Set to 1 for tiled inference
     check_stackability: False
