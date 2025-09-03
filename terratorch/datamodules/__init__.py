@@ -4,6 +4,7 @@ from terratorch.datamodules.fire_scars import FireScarsNonGeoDataModule
 from terratorch.datamodules.generic_pixel_wise_data_module import (
     GenericNonGeoPixelwiseRegressionDataModule,
     GenericNonGeoSegmentationDataModule,
+    GenericNonGeoPixelwiseCustomDataModule
 )
 from terratorch.datamodules.generic_scalar_label_data_module import (
     GenericNonGeoClassificationDataModule,
@@ -65,6 +66,7 @@ from terratorch.datamodules.substation import SubstationDataModule
 __all__ = (
     "GenericNonGeoSegmentationDataModule",
     "GenericNonGeoPixelwiseRegressionDataModule",
+    "GenericNonGeoPixelwiseCustomDataModule",
     "GenericNonGeoSegmentationDataModule",
     "GenericNonGeoClassificationDataModule",
     # "GenericNonGeoRegressionDataModule",

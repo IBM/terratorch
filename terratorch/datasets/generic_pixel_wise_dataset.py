@@ -5,6 +5,7 @@
 
 import glob
 import os
+import re
 from abc import ABC
 from pathlib import Path
 from typing import Any
@@ -513,3 +514,110 @@ class GenericNonGeoPixelwiseRegressionDataset(GenericPixelWiseDataset):
         if suptitle is not None:
             plt.suptitle(suptitle)
         return fig
+
+class GenericNonGeoPixelwiseDataset_Custom(GenericPixelWiseDataset):
+    """GenericNonGeoPixelwiseRegressionDataset"""
+
+    def __init__(
+        self,
+        data_root: Path,
+        label_data_root: Path | None = None,
+        image_grep: str | None = "*",
+        label_grep: str | None = "*",
+        split: Path | None = None,
+        ignore_split_file_extensions: bool = True,
+        allow_substring_split_file: bool = True,
+        rgb_indices: list[int] | None = None,
+        dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
+        constant_scale: float = 1,
+        transform: A.Compose | None = None,
+        no_data_replace: float | None = None,
+        no_label_replace: int | None = None,
+        expand_temporal_dimension: bool = False,
+        reduce_zero_label: bool = False,
+    ) -> None:
+        """Constructor
+
+        Args:
+            data_root (Path): Path to data root directory
+            label_data_root (Path, optional): Path to data root directory with labels.
+                If not specified, will use the same as for images.
+            image_grep (str, optional): Regular expression appended to data_root to find input images.
+                Defaults to "*".
+            label_grep (str, optional): Regular expression appended to data_root to find ground truth masks.
+                Defaults to "*".
+            split (Path, optional): Path to file containing files to be used for this split.
+                The file should be a new-line separated prefixes contained in the desired files.
+                Files will be seached using glob with the form Path(data_root).glob(prefix + [image or label grep])
+            ignore_split_file_extensions (bool, optional): Whether to disregard extensions when using the split
+                file to determine which files to include in the dataset.
+                E.g. necessary for Eurosat, since the split files specify ".jpg" but files are
+                actually ".jpg". Defaults to True.
+            allow_substring_split_file (bool, optional): Whether the split files contain substrings
+                that must be present in file names to be included (as in mmsegmentation), or exact
+                matches (e.g. eurosat). Defaults to True.
+            rgb_indices (list[str], optional): Indices of RGB channels. Defaults to [0, 1, 2].
+            dataset_bands (list[HLSBands | int] | None): Bands present in the dataset.
+            output_bands (list[HLSBands | int] | None): Bands that should be output by the dataset.
+            constant_scale (float): Factor to multiply image values by. Defaults to 1.
+            transform (Albumentations.Compose | None): Albumentations transform to be applied.
+                Should end with ToTensorV2(). If used through the generic_data_module,
+                should not include normalization. Not supported for multi-temporal data.
+                Defaults to None, which simply applies ToTensorV2().
+            no_data_replace (float | None): Replace nan values in input images with this value. If none, does no replacement. Defaults to None.
+            no_label_replace (int | None): Replace nan values in label with this value. If none, does no replacement. Defaults to None.
+            expand_temporal_dimension (bool): Go from shape (time*channels, h, w) to (channels, time, h, w).
+                Defaults to False.
+            reduce_zero_label (bool): Subtract 1 from all labels. Useful when labels start from 1 instead of the
+                expected 0. Defaults to False.
+        """
+        super().__init__(
+            data_root,
+            label_data_root=label_data_root,
+            image_grep=image_grep,
+            label_grep=label_grep,
+            split=split,
+            ignore_split_file_extensions=ignore_split_file_extensions,
+            allow_substring_split_file=allow_substring_split_file,
+            rgb_indices=rgb_indices,
+            dataset_bands=dataset_bands,
+            output_bands=output_bands,
+            constant_scale=constant_scale,
+            transform=transform,
+            no_data_replace=no_data_replace,
+            no_label_replace=no_label_replace,
+            expand_temporal_dimension=expand_temporal_dimension,
+            reduce_zero_label=reduce_zero_label,
+        )
+    def _load_file(self, path, nan_replace: int | float | None = None) -> xr.DataArray:
+        
+        BAND_ORDER = ["B01","B02","B03","B04","B05","B06","B07","B08","B8A","B09","B10","B11","B12"]
+
+        paths = glob.glob(os.path.join(path, "*_B??_?0m.jp2")) + \
+            glob.glob(os.path.join(path, "*_B8A_?0m.jp2"))
+
+        def band_from(p):
+            m = re.search(r"_B(\d{2}|8A)_10m.jp2$", os.path.basename(p)) #TODO adapt
+            if not m: 
+                raise ValueError(f"Unrecognized band in filename: {p}")
+            return "B" + m.group(1)
+
+        band_map = {band_from(p): p for p in paths if band_from(p) in BAND_ORDER}
+        present = [b for b in BAND_ORDER if b in band_map]
+                
+        das = []
+        for b in present:
+            da = rioxarray.open_rasterio(band_map[b], masked=True)    
+            das.append(da)
+
+        cube = xr.concat(das*3, dim="band") #TODO adapt                      
+        data = cube.astype("float32")  
+
+        if nan_replace is not None:
+            data = data.fillna(nan_replace)
+        return data
+    
+    def __getitem__(self, index: int) -> dict[str, Any]:
+        item = super().__getitem__(index)
+        return item

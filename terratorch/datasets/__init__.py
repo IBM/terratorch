@@ -4,6 +4,7 @@ from terratorch.datasets.fire_scars import FireScarsHLS, FireScarsNonGeo, FireSc
 from terratorch.datasets.generic_pixel_wise_dataset import (
     GenericNonGeoPixelwiseRegressionDataset,
     GenericNonGeoSegmentationDataset,
+    GenericNonGeoPixelwiseDataset_Custom
 )
 from terratorch.datasets.generic_scalar_label_dataset import (
     GenericNonGeoClassificationDataset,
@@ -66,6 +67,7 @@ from terratorch.datasets.substation import Substation
 __all__ = (
     "GenericNonGeoSegmentationDataset",
     "GenericNonGeoPixelwiseRegressionDataset",
+    "GenericNonGeoPixelwiseDataset_Custom",
     "GenericNonGeoClassificationDataset",
     # "GenericNonGeoRegressionDataset",
     "GenericMultimodalDataset",
