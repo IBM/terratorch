@@ -9,6 +9,7 @@ from rasterio.errors import NotGeoreferencedWarning
 from torchgeo.trainers import BaseTask
 from terratorch.models.utils import TemporalWrapper
 from terratorch.registry import BACKBONE_REGISTRY
+from terratorch.tasks.tiled_inference import tiled_embeddings, TileEmbedding 
 
 warnings.filterwarnings("ignore", category=NotGeoreferencedWarning)
 warnings.simplefilter("once", UserWarning)
@@ -26,6 +27,8 @@ class EmbeddingGenerationTask(BaseTask):
             embed_file_key: str = "filename",
             layers: list[int] | None = None,
             temporal_cfg: dict | None = None,
+            use_tiled: bool = False,                     
+            tile_cfg: dict | None = None, 
             output_format: str = "tiff",
             has_cls: bool | None = None,
             embedding_pooling: str | None = None,
@@ -39,6 +42,8 @@ class EmbeddingGenerationTask(BaseTask):
             embed_file_key (str, optional): Identifier key for single file ids in input data, will be used as embedding identifiers. Defaults to "filename".
             layers (list[int], optional): List of layers to extract embeddings from. Defaults to [-1].
             temporal_cfg (dict, optional): Configuration for temporal processing. Defaults to None.
+            use_tiled (bool, optional): Whether to use tiled inference for large images. Defaults to False.
+            tile_cfg (dict, optional): Configuration for tiled inference. Defaults to None.
             output_format (str, optional): Format for saving embeddings ('tiff' for GeoTIFF, 'parquet' for GeoParquet). Defaults to "tiff".
             has_cls (bool | None, optional): Whether the model has a CLS token. Defaults to None.
             embedding_pooling (str | None, optional): Pooling method for embeddings. Defaults to None.
@@ -51,6 +56,8 @@ class EmbeddingGenerationTask(BaseTask):
         self.embed_file_key = embed_file_key
         self.layers = list(layers) if layers is not None else [-1]
         self.temporal_cfg = temporal_cfg or {}
+        self.use_tiled = use_tiled                               
+        self.tile_cfg = tile_cfg  
         self.output_format = output_format.lower()
         self.has_cls = has_cls
         self.embedding_pooling = embedding_pooling
@@ -136,22 +143,50 @@ class EmbeddingGenerationTask(BaseTask):
         Returns:
             tuple[list[torch.Tensor], list[int]]: Tuple containing list of embeddings and corresponding layer indices.
         """
-        try:
-            outputs = self.model(input)
-        except Exception as e:
-            raise RuntimeError(f"Model inference failed: {e}")
-        
-        if not isinstance(outputs, list):
-            outputs = [outputs]
+        if self.use_tiled:
+            if isinstance(input, torch.Tensor):
+                probe = self.model(input[..., :224, :224])
+            elif isinstance(input, dict):
+                probe = self.model({k: v[..., :224, :224] for k, v in input.items()})
+            probe = [probe] if not isinstance(probe, list) else probe
 
-        n = len(outputs)
-        layers = [l if l >= 0 else n + l for l in layers]
-        for l in layers:
-            if 0 > l or l >= n:
-                raise IndexError(f"Layer index {l} out of bounds for model with {n} layer outputs.")
-        
-        embeddings = [outputs[l] for l in layers]
-        return embeddings, layers
+            n = len(probe)
+            layers = [l if l >= 0 else n + l for l in layers]
+            for l in layers:
+                if 0 > l or l >= n:
+                    raise IndexError(f"Layer index {l} out of bounds for model with {n} layer outputs.")
+                                                                             
+            def model_forward(layer_idx):
+                def fwd(x):
+                    outs = self.model(x)
+                    outs = [outs] if not isinstance(outs, list) else outs      
+                    return outs[layer_idx] 
+                return fwd   
+                                                        
+            tiled_embeds = []                                                                                   
+            for idx in layers:                                                                          
+                emb = tiled_embeddings(model_forward(idx),       
+                                                input, **self.tile_cfg)  
+                tiled_embeds.append(emb)  
+
+            return tiled_embeds, layers  
+        else:
+            try:
+                outputs = self.model(input)
+            except Exception as e:
+                raise RuntimeError(f"Model inference failed: {e}")
+            
+            if not isinstance(outputs, list):
+                outputs = [outputs]
+
+            n = len(outputs)
+            layers = [l if l >= 0 else n + l for l in layers]
+            for l in layers:
+                if 0 > l or l >= n:
+                    raise IndexError(f"Layer index {l} out of bounds for model with {n} layer outputs.")
+            
+            embeddings = [outputs[l] for l in layers]
+            return embeddings, layers
     
     @torch.no_grad()
     def predict_step(self, batch: dict) -> None:
@@ -184,7 +219,17 @@ class EmbeddingGenerationTask(BaseTask):
         layer: int,
     ) -> None:
         """Save embeddings for a given layer (per sample, optional per timestep and per modality)."""
-        if isinstance(embedding, dict):
+        if isinstance(embedding, list) and isinstance(embedding[0], TileEmbedding):
+            for tile_embed in embedding:
+                base = Path(file_ids[tile_embed.tile_idx]).stem if file_ids is not None else f"sample{tile_embed.tile_idx}"
+                ys, xs = tile_embed.coords
+                y0, y1 = ys.start, ys.stop
+                x0, x1 = xs.start, xs.stop
+                fname = f"{base}__{y0}-{y1}_{x0}-{x1}"
+                path = self.output_path / f"layer_{layer}"
+                embedding = tile_embed.embedding.unsqueeze(0)
+                self.write_batch(embedding, [fname], metadata, path)
+        elif isinstance(embedding, dict):
             for modality, t in embedding.items():
                 path = self.output_path / f"layer_{layer}" / modality
                 self.write_batch(t, file_ids, metadata, path)

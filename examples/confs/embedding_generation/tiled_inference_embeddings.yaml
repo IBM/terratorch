@@ -1,0 +1,53 @@
+# lightning.pytorch==2.1.1
+seed_everything: 0
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  callbacks: []
+  max_epochs: 0
+
+data:
+  class_path: terratorch.datamodules.GenericNonGeoPixelwiseRegressionDataModule
+  init_args:
+    batch_size: 1  # Set to 1 for tiled inference
+    check_stackability: False
+    num_workers: 1
+    no_data_replace: 0
+    train_data_root: /path/to/s2l2a
+    val_data_root: /path/to/s2l2a
+    test_data_root: /path/to/s2l2a
+    predict_data_root: /path/to/s2l2a
+    means: [1390.458, 1503.317, 1718.197, 1853.910, 2199.100, 2779.975, 2987.011, 3083.234, 3132.220, 3162.988, 2424.884, 1857.648]
+    stds: [2106.761, 2141.107, 2038.973, 2134.138, 2085.321, 1889.926, 1820.257, 1871.918, 1753.829, 1797.379, 1434.261, 1334.311]
+      
+    test_transform:
+      - class_path: ToTensorV2
+
+predict_output_dir: './'
+
+model:
+  class_path: terratorch.tasks.EmbeddingGenerationTask
+  init_args:
+    model: terramind_v1_base 
+    model_args:
+      modalities:
+        - S2L2A
+      merge_method: mean
+      pretrained: True
+    output_format: tiff
+    embed_file_key: filename
+    output_dir: 'output/embeddings'
+    layers: [-1] # Model layers to extract embeddings from, -1 means the last layer
+    embedding_pooling: null
+    has_cls: False
+    temporal_cfg: 
+      temporal_wrapper: False
+      temporal_pooling: keep
+    use_tiled: True
+    tile_cfg: 
+      crop: 256
+      stride: 192
+      batch_size: 10000 # Current implementation processes one tile per predict step, and should process all patches in that tile, we therefore set this to a high number to ensure all patches in the tile are processed in one step
+      verbose: True

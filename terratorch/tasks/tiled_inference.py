@@ -393,3 +393,114 @@ def tiled_inference(
         return output
     output = preds.to(device)
     return output
+
+@dataclass
+class TileEmbedding:
+    tile_idx: int
+    coords: tuple[slice, slice]
+    embedding: torch.Tensor
+    blend_mask: torch.Tensor | None = None
+
+def to_tile_embedding(batch_input, embedding) -> TileEmbedding:
+    return TileEmbedding(
+        tile_idx=int(batch_input.batch),
+        coords=batch_input.input_coords,
+        embedding=embedding,
+        blend_mask=getattr(batch_input, "blend_mask", None),
+    )
+
+@torch.no_grad()
+def tiled_embeddings(
+    model_forward: Callable,
+    input_batch: torch.Tensor,
+    crop: int = 224,
+    stride: int = 192,
+    delta: int = 8,
+    h_crop: int | None = None,
+    w_crop: int | None = None,
+    h_stride: int | None = None,
+    w_stride: int | None = None,
+    batch_size: int = 16,
+    blend_overlaps: bool = True,
+    verbose: bool = False,
+    padding: str | bool = "reflect",
+    **kwargs,
+) -> list[TileEmbedding]:
+    """
+    Divide an image into overlapping chips and return per-tile embeddings.
+    No stitching is performed.
+    """
+    if isinstance(input_batch, dict):
+        # Handle dict inputs for tiled inference
+        modalities, tensors = list(input_batch.keys()), list(input_batch.values())
+
+        # Check that all values in dict are tensors and have a same image shape
+        if not all(isinstance(t, torch.Tensor) for t in tensors):
+            raise ValueError("input for tiled inference must be either a torch.Tensor or a dict of torch.Tensors")
+        img_shapes = [t.shape[-2:] for t in tensors]
+        if len(set(img_shapes)) != 1:
+            raise ValueError(
+                f"Tensors in input dict must have the same height and width for tiled inference, "
+                f"found {dict(zip(modalities, img_shapes, strict=False))}"
+            )
+        t_dims = [len(t.shape) for t in tensors]
+        if len(set(t_dims)) != 1:
+            raise ValueError(
+                f"Tensors in input dict must have the same number of dimensions for tiled inference, "
+                f"found {dict(zip(modalities, t_dims, strict=False))}"
+            )
+
+        # Tiled inference is implemented for single tensors.
+        # We concatenate all tensors and reshape them before the model forward
+        channel_length = [t.shape[-3] for t in tensors]
+        channel_start = torch.tensor([0] + channel_length).cumsum(0)
+        input_batch = torch.concat(tensors, dim=-3)
+
+        def tensor_reshape(t):
+            # Convert tensor back to dict of tensors
+            t = {m: t[..., s : s + l, :, :] for m, s, l in zip(modalities, channel_start, channel_length, strict=False)}
+            return t
+
+    elif isinstance(input_batch, torch.Tensor):
+        # Dummy function if input is a tensor
+        tensor_reshape = lambda x: x
+    else:
+        raise ValueError("input for tiled inference must be either a torch.Tensor or a dict of torch.Tensors")
+
+    device = input_batch.device
+
+    # Move inputs to CPU to avoid out-of-memory errors
+    input_batch = input_batch.cpu()
+
+    h_crop = h_crop or crop
+    w_crop = w_crop or crop
+    h_stride = h_stride or stride
+    w_stride = w_stride or stride
+
+    if (h_crop - h_stride) // 2 < delta or (w_crop - w_stride) // 2 < delta:
+        # Ensure that every pixel is covered
+        delta = min((h_crop - h_stride) // 2, (w_crop - w_stride) // 2)
+        warnings.warn(f"Tiled inference: delta is higher than overlap, reducing delta to {delta}.")
+
+    # Get smaller inputs
+    coordinates_and_inputs = get_input_chips(
+        input_batch, h_crop, h_stride, w_crop, w_stride, delta, blend_overlaps, padding
+    )
+    tiles: list[TileEmbedding] = []
+
+    with torch.no_grad():
+        for start in tqdm.tqdm(
+            range(0, len(coordinates_and_inputs), batch_size), desc="Tiled inference", disable=not verbose
+        ):
+            end = min(len(coordinates_and_inputs), start + batch_size)
+            batch = coordinates_and_inputs[start:end]
+            tensor_input = torch.stack([b.input_data for b in batch], dim=0)
+
+            tensor_input = tensor_input.to(device)
+            tensor_input = tensor_reshape(tensor_input)  # Optional reshaping for inputs other than plain tensors
+            output = model_forward(tensor_input, **kwargs).cpu()
+
+            for batch_input, predicted in zip(batch, output, strict=True):
+                tiles.append(to_tile_embedding(batch_input, predicted))
+            
+            return tiles      
