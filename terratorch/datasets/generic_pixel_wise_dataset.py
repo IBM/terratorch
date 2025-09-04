@@ -15,6 +15,7 @@ import matplotlib as mpl
 import numpy as np
 import rioxarray
 import xarray as xr
+from rasterio.enums import Resampling
 from einops import rearrange
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
@@ -591,28 +592,95 @@ class GenericNonGeoPixelwiseDataset_Custom(GenericPixelWiseDataset):
             reduce_zero_label=reduce_zero_label,
         )
     def _load_file(self, path, nan_replace: int | float | None = None) -> xr.DataArray:
-        
-        BAND_ORDER = ["B01","B02","B03","B04","B05","B06","B07","B08","B8A","B09","B10","B11","B12"]
+        # Target order of Sentinel-2 bands expected by the model
+        BAND_ORDER = ["B01","B02","B03","B04","B05","B06","B07","B08","B8A","B10","B11","B12"]
 
-        paths = glob.glob(os.path.join(path, "*_B??_?0m.jp2")) + \
-            glob.glob(os.path.join(path, "*_B8A_?0m.jp2"))
+        # Collect candidate files for 10m, 20m, 60m (e.g., Txx_yyy_B02_10m.jp2)
+        patterns = [
+            os.path.join(path, "*_B??_10m.jp2"),
+            os.path.join(path, "*_B??_20m.jp2"),
+            os.path.join(path, "*_B??_60m.jp2"),
+            os.path.join(path, "*_B8A_10m.jp2"),
+            os.path.join(path, "*_B8A_20m.jp2"),
+            os.path.join(path, "*_B8A_60m.jp2"),
+        ]
+        all_paths: list[str] = []
+        for pat in patterns:
+            all_paths.extend(glob.glob(pat))
 
-        def band_from(p):
-            m = re.search(r"_B(\d{2}|8A)_10m.jp2$", os.path.basename(p)) #TODO adapt
-            if not m: 
-                raise ValueError(f"Unrecognized band in filename: {p}")
-            return "B" + m.group(1)
+        # Parse band and resolution from filename
+        def parse(p: str) -> tuple[str, int] | None:
+            m = re.search(r"_B(\d{2}|8A)_(10|20|60)m\.jp2$", os.path.basename(p))
+            if not m:
+                return None
+            band = f"B{m.group(1)}"
+            res = int(m.group(2))
+            return band, res
 
-        band_map = {band_from(p): p for p in paths if band_from(p) in BAND_ORDER}
-        present = [b for b in BAND_ORDER if b in band_map]
-                
-        das = []
-        for b in present:
-            da = rioxarray.open_rasterio(band_map[b], masked=True)    
+        # Keep best available resolution per band: prefer 10m > 20m > 60m
+        # Candidates: {"B02": {"10": "xyz.jp2"}, {"B09": {"60": "xyz.jp2"}, ...}
+        candidates: dict[str, dict[int, str]] = {}
+        for p in all_paths:
+            parsed = parse(p)
+            if not parsed:
+                continue
+            band, res = parsed
+            candidates.setdefault(band, {})[res] = p
+
+        # Choose a 10m reference grid if available (prefer true 10m bands)
+        ref_path: str | None = None
+        for b in ["B02", "B03", "B04", "B08"] + BAND_ORDER:
+            if b in candidates and 10 in candidates[b]:
+                ref_path = candidates[b][10]
+                break
+
+        ref_da: xr.DataArray | None = None
+        if ref_path is not None:
+            ref_da = rioxarray.open_rasterio(ref_path, masked=True)
+        else:
+            # Fallback: build a 10m reference from any available band by resampling itself
+            # (extent/CRS preserved, only resolution changes)
+            if not candidates:
+                raise FileNotFoundError(f"No band files found in: {path}")
+            any_band = next(iter(candidates))
+            any_res = sorted(candidates[any_band].keys())[0]
+            base_da = rioxarray.open_rasterio(candidates[any_band][any_res], masked=True)
+            # Reproject to 10m grid using the same CRS and bounds
+            ref_da = base_da.rio.reproject(
+                base_da.rio.crs,
+                resolution=(10, 10),
+                resampling=Resampling.bilinear,
+            )
+
+        das: list[xr.DataArray] = []
+        template = ref_da
+        if template is None:
+            raise RuntimeError("Reference grid not initialized; cannot build band stack")
+
+        # Build stack in strict BAND_ORDER; fill missing with zeros
+        for b in BAND_ORDER:
+            if b in candidates:
+                # Prefer 10m, else 20m, else 60m
+                path_b = candidates[b].get(10) or candidates[b].get(20) or candidates[b].get(60)
+                da = rioxarray.open_rasterio(path_b, masked=True)
+                # If resolution differs, upsample to match 10m reference
+                try:
+                    # returns (xres, yres) tuple like (10.0, 10.0)
+                    da_res = da.rio.resolution()
+                    ref_res = template.rio.resolution()
+                except Exception:
+                    da_res = ref_res = (None, None)
+
+                if ref_res != da_res:
+                    da = da.rio.reproject_match(template, resampling=Resampling.bilinear)
+            else:
+                # Missing band on disk; use zeros
+                da = xr.zeros_like(template, dtype="float32")
+
             das.append(da)
 
-        cube = xr.concat(das*3, dim="band") #TODO adapt                      
-        data = cube.astype("float32")  
+        cube = xr.concat(das, dim="band")
+        data = cube.astype("float32")
 
         if nan_replace is not None:
             data = data.fillna(nan_replace)
