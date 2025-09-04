@@ -7,15 +7,16 @@ include = ["terratorch*"]
 
 [project]
 name = "terratorch"
-version = "0.99.8"
-description = "TerraTorch - A model training toolkit for geospatial tasks"
+version = "1.0.2"
+description = "TerraTorch - The geospatial foundatoin model fine-tuning toolkit"
 license = { "text" = "Apache License, Version 2.0" }
 readme = "README.md"
 requires-python = ">=3.10"
 keywords = ["fine-tuning", "geospatial foundation models", "artificial intelligence"]
 authors = [
-  { name = "Carlos Gomes", email = "carlos.gomes@ibm.com" },
-  { name = "Joao Lucas de Sousa Almeida", email = "joao.lucas.sousa.almeida@ibm.com"},
+  { email = "terratorch@ibm.com"},
+  { name = "Carlos Gomes"},
+  { name = "Joao Lucas de Sousa Almeida"},
   { name = "Romeo Kienzler"},
   { name = "Benedikt Blumenstiel"},
   { name = "Francesc Martí Escofet"},
@@ -32,17 +33,17 @@ authors = [
 classifiers = [
 #  "Development Status :: 2 - Pre-Alpha",
 #  "Programming Language :: Python",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
 #  "Programming Language :: Python :: Implementation :: CPython",
 ]
 
 dependencies = [
-  "torch",
+  "torch>2.0",
   "torchvision",
   "rioxarray",
-  "albumentations==1.4.6",
+  "albumentations==1.4.10",
   "albucore==0.0.16",
   "rasterio",
   "torchmetrics",
@@ -52,13 +53,16 @@ dependencies = [
   "h5py",
   "mlflow",
   "lightning",
-  "segmentation-models-pytorch",
+  "segmentation-models-pytorch<=0.4",
   "jsonargparse",
   "pytest",
-  #"torchgeo @ git+https://github.com/microsoft/torchgeo.git@fedf99375535f801565856cd774bfa9e5a251d55",
   "torchgeo",
   "einops",
-  "timm>=1.0.15"
+  "timm>=1.0.15",
+  "pycocotools",
+  "huggingface_hub",
+  "tifffile",
+  "python-box",
 ]
 
 
@@ -67,11 +71,19 @@ dev = [
   "black",
   "mkdocs-material",
   "mkdocstrings[python]",
-  "mike" # for building docs with versions
+  "mike", # for building docs with versions
+  "mkdocs-git-revision-date-localized-plugin",
+  "pre-commit"
 ]
+
 test = [
-  "coverage",
-  "pytest"
+  "pytest",
+  "pytest-coverage",
+  "coverage-badge",
+  "peft>=0.15.0",
+  "diffusers>=0.30.0",
+  "dask",
+  "wandb",
 ]
 
 mmseg = [
@@ -86,12 +98,13 @@ wxc = [
   "granitewxc"
 ]
 
-#geobench = [
-#  "geobench @ git+https://github.com/fmartiescofet/geo-bench.git" # pull from fork until depenedencies for geobench are relaxed
-#]
+visualize = [
+  "torchview",
+  "graphviz"
+]
 
 peft = [
-  "peft"
+  "peft>=0.15.0"
 ]
 
 [project.urls]

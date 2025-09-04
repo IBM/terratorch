@@ -30,7 +30,7 @@ STDS = {
 
 
 class MultiTemporalCropClassificationDataModule(NonGeoDataModule):
-    """NonGeo datamodule implementation for multi-temporal crop classification."""
+    """NonGeo LightningDataModule implementation for multi-temporal crop classification."""
 
     def __init__(
         self,
@@ -48,8 +48,31 @@ class MultiTemporalCropClassificationDataModule(NonGeoDataModule):
         expand_temporal_dimension: bool = True,
         reduce_zero_label: bool = True,
         use_metadata: bool = False,
+        metadata_file_name: str = "chips_df.csv",
         **kwargs: Any,
     ) -> None:
+        """
+        Initializes the MultiTemporalCropClassificationDataModule for multi-temporal crop classification.
+
+        Args:
+            data_root (str): Directory containing the dataset.
+            batch_size (int, optional): Batch size for DataLoaders. Defaults to 4.
+            num_workers (int, optional): Number of workers for data loading. Defaults to 0.
+            bands (Sequence[str], optional): List of bands to use. Defaults to MultiTemporalCropClassification.all_band_names.
+            train_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for training data.
+            val_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for validation data.
+            test_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for testing data.
+            predict_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for prediction data.
+            drop_last (bool, optional): Whether to drop the last incomplete batch during training. Defaults to True.
+            no_data_replace (float | None, optional): Replacement value for missing data. Defaults to 0.
+            no_label_replace (int | None, optional): Replacement value for missing labels. Defaults to -1.
+            expand_temporal_dimension (bool, optional): Go from shape (time*channels, h, w) to (channels, time, h, w).
+                Defaults to True.
+            reduce_zero_label (bool, optional): Subtract 1 from all labels. Useful when labels start from 1 instead of the
+                expected 0. Defaults to True.
+            use_metadata (bool): Whether to return metadata info (time and location).
+            **kwargs: Additional keyword arguments.
+        """
         super().__init__(MultiTemporalCropClassification, batch_size, num_workers, **kwargs)
         self.data_root = data_root
 
@@ -67,8 +90,14 @@ class MultiTemporalCropClassificationDataModule(NonGeoDataModule):
         self.expand_temporal_dimension = expand_temporal_dimension
         self.reduce_zero_label = reduce_zero_label
         self.use_metadata = use_metadata
+        self.metadata_file_name = metadata_file_name
 
     def setup(self, stage: str) -> None:
+        """Set up datasets.
+
+        Args:
+            stage: Either fit, validate, test, or predict.
+        """
         if stage in ["fit"]:
             self.train_dataset = self.dataset_class(
                 split="train",
@@ -80,6 +109,7 @@ class MultiTemporalCropClassificationDataModule(NonGeoDataModule):
                 expand_temporal_dimension = self.expand_temporal_dimension,
                 reduce_zero_label = self.reduce_zero_label,
                 use_metadata=self.use_metadata,
+                metadata_file_name=self.metadata_file_name,
             )
         if stage in ["fit", "validate"]:
             self.val_dataset = self.dataset_class(
@@ -92,6 +122,7 @@ class MultiTemporalCropClassificationDataModule(NonGeoDataModule):
                 expand_temporal_dimension = self.expand_temporal_dimension,
                 reduce_zero_label = self.reduce_zero_label,
                 use_metadata=self.use_metadata,
+                metadata_file_name=self.metadata_file_name,
             )
         if stage in ["test"]:
             self.test_dataset = self.dataset_class(
@@ -104,6 +135,7 @@ class MultiTemporalCropClassificationDataModule(NonGeoDataModule):
                 expand_temporal_dimension = self.expand_temporal_dimension,
                 reduce_zero_label = self.reduce_zero_label,
                 use_metadata=self.use_metadata,
+                metadata_file_name=self.metadata_file_name,
             )
         if stage in ["predict"]:
             self.predict_dataset = self.dataset_class(
@@ -116,6 +148,7 @@ class MultiTemporalCropClassificationDataModule(NonGeoDataModule):
                 expand_temporal_dimension = self.expand_temporal_dimension,
                 reduce_zero_label = self.reduce_zero_label,
                 use_metadata=self.use_metadata,
+                metadata_file_name=self.metadata_file_name,
             )
 
     def _dataloader_factory(self, split: str) -> DataLoader[dict[str, Tensor]]:

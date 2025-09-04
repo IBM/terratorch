@@ -66,7 +66,16 @@ class ScalarOutputModel(Model, SegmentationModel):
             aux_heads = {}
         self.aux_heads = nn.ModuleDict(aux_heads)
 
-        self.neck = neck
+        if neck is not None:
+            self.neck = neck
+        elif hasattr(self.encoder, "prepare_features_for_image_model"):
+            # only for backwards compatibility with pre-neck times.
+            def model_defined_neck(x, **kwargs):
+                return self.encoder.prepare_features_for_image_model(x)  # Drop kwargs
+
+            self.neck = model_defined_neck
+        else:
+            self.neck = lambda x, image_size: x
         self.patch_size = patch_size
         self.padding = padding
 
@@ -82,19 +91,22 @@ class ScalarOutputModel(Model, SegmentationModel):
     def forward(self, x: torch.Tensor, **kwargs) -> ModelOutput:
         """Sequentially pass `x` through model`s encoder, decoder and heads"""
 
-        if isinstance(x, torch.Tensor) and self.patch_size:
-            # Only works for single image modalities
-            x = pad_images(x, self.patch_size, self.padding)
+        if isinstance(x, torch.Tensor):
+            if self.patch_size:
+                # Only works for single image modalities
+                x = pad_images(x, self.patch_size, self.padding)
+            input_size = x.shape[-2:]
+        elif isinstance(x, dict):
+            # Multimodal input in passed as dict (Assuming first modality to be an image)
+            input_size = list(x.values())[0].shape[-2:]
+        elif hasattr(kwargs, 'image_size'):
+            input_size = kwargs['image_size']
+        else:
+            ValueError('Could not infer image shape.')
+
         features = self.encoder(x, **kwargs)
 
-        # only for backwards compatibility with pre-neck times.
-        if self.neck:
-            prepare = self.neck
-        else:
-            # for backwards compatibility, if this is defined in the encoder, use it
-            prepare = getattr(self.encoder, "prepare_features_for_image_model", lambda x: x)
-
-        features = prepare(features)
+        features = self.neck(features, image_size=input_size)
 
         decoder_output = self.decoder([f.clone() for f in features])
         mask = self.head(decoder_output)

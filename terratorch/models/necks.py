@@ -1,10 +1,15 @@
+import math
+import pdb
+import warnings
 from abc import ABC, abstractmethod
+from collections import OrderedDict
 
 import numpy as np
 import torch
 import torch.nn.functional as F
 from einops import rearrange
 from torch import nn
+from torchvision.ops import FeaturePyramidNetwork
 
 from terratorch.registry import NECK_REGISTRY, TERRATORCH_NECK_REGISTRY
 
@@ -24,7 +29,22 @@ class Neck(ABC, nn.Module):
         return channel_list
 
     @abstractmethod
-    def forward(self, channel_list: list[torch.Tensor]) -> list[torch.Tensor]: ...
+    def forward(self, channel_list: list[torch.Tensor], **kwargs) -> list[torch.Tensor]: ...
+
+
+class NeckSequential(nn.Module):
+    def __init__(self, necks: list[Neck]):
+        super().__init__()
+        self.layers = nn.ModuleList(necks)
+
+    def forward(self, x, **kwargs):
+        for layer in self.layers:
+            try:
+                x = layer(x, **kwargs)
+            except TypeError:
+                x = layer(x)
+        return x
+
 
 
 @TERRATORCH_NECK_REGISTRY.register
@@ -38,13 +58,14 @@ class SelectIndices(Neck):
         super().__init__(channel_list)
         self.indices = indices
 
-    def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
+    def forward(self, features: list[torch.Tensor], **kwargs) -> list[torch.Tensor]:
         features = [features[i] for i in self.indices]
         return features
 
     def process_channel_list(self, channel_list: list[int]) -> list[int]:
         channel_list = [channel_list[i] for i in self.indices]
         return channel_list
+
 
 @TERRATORCH_NECK_REGISTRY.register
 class PermuteDims(Neck):
@@ -57,12 +78,13 @@ class PermuteDims(Neck):
         super().__init__(channel_list)
         self.new_order = new_order
 
-    def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
+    def forward(self, features: list[torch.Tensor], **kwargs) -> list[torch.Tensor]:
         features = [feat.permute(*self.new_order).contiguous() for feat in features]
         return features
 
     def process_channel_list(self, channel_list: list[int]) -> list[int]:
         return super().process_channel_list(channel_list)
+
 
 @TERRATORCH_NECK_REGISTRY.register
 class InterpolateToPyramidal(Neck):
@@ -78,7 +100,7 @@ class InterpolateToPyramidal(Neck):
         self.scale_factor = scale_factor
         self.mode = mode
 
-    def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
+    def forward(self, features: list[torch.Tensor], **kwargs) -> list[torch.Tensor]:
         out = []
         scale_exponents = list(range(len(features), 0, -1))
         for x, exponent in zip(features, scale_exponents, strict=True):
@@ -102,7 +124,7 @@ class MaxpoolToPyramidal(Neck):
         super().__init__(channel_list)
         self.kernel_size = kernel_size
 
-    def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
+    def forward(self, features: list[torch.Tensor], **kwargs) -> list[torch.Tensor]:
         out = []
         scale_exponents = list(range(len(features)))
         for x, exponent in zip(features, scale_exponents, strict=True):
@@ -119,7 +141,9 @@ class MaxpoolToPyramidal(Neck):
 
 @TERRATORCH_NECK_REGISTRY.register
 class ReshapeTokensToImage(Neck):
-    def __init__(self, channel_list: list[int], remove_cls_token=True, effective_time_dim: int = 1):  # noqa: FBT002
+    def __init__(
+        self, channel_list: list[int], remove_cls_token=True, effective_time_dim: int = 1, h: int | None = None
+    ):
         """Reshape output of transformer encoder so it can be passed to a conv net.
 
         Args:
@@ -136,34 +160,42 @@ class ReshapeTokensToImage(Neck):
                 - A model which processes 12 frames with a tubelet size of 4 has an effective_time_dim of 3.
                     The embedding produced by this model has an embedding size embed_dim * 3.
                 Defaults to 1.
+            h (int | None):
+                You can choose a value for the height of the reshaped image.
+                The embedding size will be implicitly discovered from it.
         """
         super().__init__(channel_list)
         self.remove_cls_token = remove_cls_token
         self.effective_time_dim = effective_time_dim
+        self.h = h
 
-    def collapse_dims(self, x):
-        """
-        When the encoder output has more than 3 dimensions, is necessary to 
-        reshape it. 
-        """
-        shape = x.shape
-        batch = x.shape[0]
-        e = x.shape[-1]
-        collapsed_dim = np.prod(x.shape[1:-1])
-
-        return x.reshape(batch, collapsed_dim, e)
-
-    def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
+    def forward(self, features: list[torch.Tensor], image_size=None, **kwargs) -> list[torch.Tensor]:
         out = []
         for x in features:
-            if self.remove_cls_token:
-                x_no_token = x[:, 1:, :]
-            else:
-                x_no_token = x
-            x_no_token = self.collapse_dims(x_no_token)
+            x_no_token = x[:, 1:, :] if self.remove_cls_token else x
+            x_no_token = x_no_token.reshape(x.shape[0], -1, x.shape[-1])
             number_of_tokens = x_no_token.shape[1]
             tokens_per_timestep = number_of_tokens // self.effective_time_dim
-            h = int(np.sqrt(tokens_per_timestep))
+
+            # Assume square images first
+            h = self.h or math.sqrt(tokens_per_timestep)
+            if h - int(h) == 0:
+                h = int(h)
+            else:
+                assert image_size is not None, "image_size is not provided for neck ReshapeTokensToImage."
+                # Handle non-square images
+                patch_size = (np.prod(image_size) / tokens_per_timestep) ** 0.5
+                if patch_size % 1:
+                    if self.remove_cls_token:
+                        warnings.warn(f"Cannot infer grid shape from input tokens ({x.shape[1]}), assuming a cls_token "
+                                      f"(default setting). Retry ReshapeTokensToImage with remove_cls_token to False. "
+                                      "Silence this warning with remove_cls_token=False for neck ReshapeTokensToImage.")
+                        self.remove_cls_token = False
+                        return self.forward(features, image_size, **kwargs)
+                    else:
+                        raise ValueError(f"Cannot infer grid shape from from input tokens ({x.shape[1]}) with "
+                                         f"image_size = {image_size} in neck ReshapeTokensToImage. ")
+                h = int(img_h // patch_size)
 
             encoded = rearrange(
                 x_no_token,
@@ -172,11 +204,13 @@ class ReshapeTokensToImage(Neck):
                 t=self.effective_time_dim,
                 h=h,
             )
+
             out.append(encoded)
         return out
 
     def process_channel_list(self, channel_list: list[int]) -> list[int]:
         return super().process_channel_list(channel_list)
+
 
 @TERRATORCH_NECK_REGISTRY.register
 class AddBottleneckLayer(Neck):
@@ -187,15 +221,16 @@ class AddBottleneckLayer(Neck):
 
     def __init__(self, channel_list: list[int]):
         super().__init__(channel_list)
-        self.bottleneck = nn.Conv2d(channel_list[-1], channel_list[-1]//2, kernel_size=1)
+        self.bottleneck = nn.Conv2d(channel_list[-1], channel_list[-1] // 2, kernel_size=1)
 
-    def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
+    def forward(self, features: list[torch.Tensor], **kwargs) -> list[torch.Tensor]:
         new_embedding = self.bottleneck(features[-1])
         features.append(new_embedding)
         return features
 
     def process_channel_list(self, channel_list: list[int]) -> list[int]:
         return [*channel_list, channel_list[-1] // 2]
+
 
 @TERRATORCH_NECK_REGISTRY.register
 class LearnedInterpolateToPyramidal(Neck):
@@ -220,7 +255,7 @@ class LearnedInterpolateToPyramidal(Neck):
         self.fpn4 = nn.Sequential(nn.MaxPool2d(kernel_size=2, stride=2))
         self.embedding_dim = [channel_list[0] // 4, channel_list[1] // 2, channel_list[2], channel_list[3]]
 
-    def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
+    def forward(self, features: list[torch.Tensor], **kwargs) -> list[torch.Tensor]:
         scaled_inputs = []
         scaled_inputs.append(self.fpn1(features[0]))
         scaled_inputs.append(self.fpn2(features[1]))
@@ -228,8 +263,35 @@ class LearnedInterpolateToPyramidal(Neck):
         scaled_inputs.append(self.fpn4(features[3]))
         return scaled_inputs
 
-    def process_channel_list(self, channel_list: list[int]) -> list[int]:
+    def process_channel_list(self, channel_list: list[int] = None) -> list[int]:
         return [channel_list[0] // 4, channel_list[1] // 2, channel_list[2], channel_list[3]]
+
+
+@TERRATORCH_NECK_REGISTRY.register
+class FeaturePyramidNetworkNeck(Neck):
+    """Uses feature pyramid network from torchvision"""
+
+    def __init__(self, channel_list: list[int], out_channel: int = 256, output_ordered_dict: bool = True):
+        super().__init__(channel_list)
+        self.out_channel = out_channel
+        self.fpn = FeaturePyramidNetwork(self.channel_list, self.out_channel)
+        self.output_ordered_dict = output_ordered_dict
+
+    def forward(self, features: list[torch.Tensor]) -> list[torch.Tensor]:
+        if type(features) != "OrderedDict":
+            keys = [f"feat{i!s}" for i, x in enumerate(features)]
+            features = OrderedDict(zip(keys, features, strict=False))
+
+        reconstructed_features = self.fpn(features)
+
+        if self.output_ordered_dict == False:
+            reconstructed_features = list(reconstructed_features.values())
+
+        return reconstructed_features
+
+    def process_channel_list(self, channel_list: list[int]) -> list[int]:
+        channel_list = len(channel_list) * [self.out_channel]
+        return channel_list
 
 
 def build_neck_list(ops: list[dict], channel_list: list[int]) -> tuple[list[Neck], list[int]]:
@@ -240,6 +302,7 @@ def build_neck_list(ops: list[dict], channel_list: list[int]) -> tuple[list[Neck
             cur_op["name"], cur_channel_list, **{k: v for k, v in cur_op.items() if k != "name"}
         )
         cur_channel_list = op.process_channel_list(cur_channel_list)
+        op.channel_list = cur_channel_list
         neck_list.append(op)
 
     return neck_list, cur_channel_list

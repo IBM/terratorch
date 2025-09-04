@@ -1,0 +1,122 @@
+seed_everything: 0
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: 16-mixed
+  callbacks:
+    - class_path: RichProgressBar
+    - class_path: LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+    - class_path: ModelCheckpoint
+      init_args:
+        mode: min
+        monitor: val/loss
+        filename: best-state_dict-{epoch:02d}
+        dirpath: /dccstor/terratorch/tmp/enc_dec_resnet34/
+        save_weights_only: true
+    - class_path: EarlyStopping
+      init_args:
+        monitor: val/loss
+        patience: 20
+  max_epochs: 2
+  check_val_every_n_epoch: 1
+  log_every_n_steps: 5
+  enable_checkpointing: true
+  default_root_dir: /dccstor/terratorch/tmp/enc_dec_resnet34/
+  logger: true
+
+data:
+  # Tested with buildings data. Not available in ccc
+  class_path: terratorch.datamodules.GenericNonGeoSegmentationDataModule
+  init_args:
+    batch_size: 4
+    num_workers: 2
+    no_label_replace: -1
+    no_data_replace: 0
+    constant_scale: 1.0
+    dataset_bands:
+      - '0'
+      - '1'
+      - '2'
+    output_bands:
+      - '0'
+      - '1'
+      - '2'
+    rgb_indices:
+      - '0'
+      - '1'
+      - '2'
+    train_data_root:  /dccstor/geofm-datasets/datasets/Poland-Buildings/training_data/
+    train_label_data_root:  /dccstor/geofm-datasets/datasets/Poland-Buildings/labels/
+    val_data_root:  /dccstor/geofm-datasets/datasets/Poland-Buildings/training_data/
+    val_label_data_root:  /dccstor/geofm-datasets/datasets/Poland-Buildings/labels/
+    test_data_root:  /dccstor/geofm-datasets/datasets/Poland-Buildings/training_data/
+    test_label_data_root:  /dccstor/geofm-datasets/datasets/Poland-Buildings/labels/
+    train_split:  /dccstor/geofm-datasets/datasets/Poland-Buildings/split_files/train_data.txt
+    test_split:  /dccstor/geofm-datasets/datasets/Poland-Buildings/split_files/test_data.txt
+    val_split:  /dccstor/geofm-datasets/datasets/Poland-Buildings/split_files/val_data.txt
+    img_grep: '*-img.tiff'
+    label_grep: '*-lab.tiff'
+    means:
+      - 123.9093071640722
+      - 123.9890227665175
+      - 115.10178152930658
+    stds:
+      - 41.39636610977257
+      - 38.10232051141904
+      - 38.10214500983553
+    num_classes: 2
+    train_transform:
+      - class_path: albumentations.D4
+      - class_path: ToTensorV2
+    val_transform:
+      - class_path: ToTensorV2
+    test_transform:
+      - class_path: ToTensorV2
+model:
+  class_path: terratorch.tasks.SemanticSegmentationTask
+  init_args:
+    model_factory: EncoderDecoderFactory
+    model_args:
+      backbone: timm_resnet34
+      num_classes: 2
+      backbone_pretrained: true
+      necks:
+        - name: SelectIndices
+          indices:
+            - 0
+            - 1
+            - 2
+            - 3
+      decoder: UNetDecoder
+      decoder_channels:
+        - 512
+        - 256
+        - 128
+        - 64
+      head_channel_list:
+        - 256
+      head_dropout: 0.1
+    loss: ce
+    plot_on_val: 2
+    ignore_index: -1
+    freeze_backbone: false
+    freeze_decoder: false
+    tiled_inference_parameters:
+      h_crop: 512
+      h_stride: 448
+      w_crop: 512
+      w_stride: 448
+      average_patches: true
+optimizer:
+  class_path: torch.optim.Adam
+  init_args:
+    lr: 5.0e-05
+    weight_decay: 0.05
+lr_scheduler:
+  class_path: ReduceLROnPlateau
+  init_args:
+    monitor: val/loss

@@ -7,7 +7,7 @@ from terratorch.datamodules.generic_multimodal_data_module import MultimodalNorm
 from terratorch.datamodules.generic_multimodal_data_module import wrap_in_compose_is_list
 from terratorch.datasets import CarbonFluxNonGeo
 from torchgeo.datamodules import NonGeoDataModule
-from torchgeo.transforms import AugmentationSequential
+from kornia.augmentation import AugmentationSequential
 
 MEANS = {
     "image": {
@@ -39,7 +39,7 @@ STDS = {
 
 
 class CarbonFluxNonGeoDataModule(NonGeoDataModule):
-    """NonGeo datamodule implementation for Landslide4Sense."""
+    """NonGeo LightningDataModule implementation for Carbon FLux dataset."""
 
     def __init__(
         self,
@@ -56,6 +56,23 @@ class CarbonFluxNonGeoDataModule(NonGeoDataModule):
         use_metadata: bool = False,
         **kwargs: Any,
     ) -> None:
+        """
+        Initializes the CarbonFluxNonGeoDataModule.
+
+        Args:
+            data_root (str): Root directory of the dataset.
+            batch_size (int, optional): Batch size for DataLoaders. Defaults to 4.
+            num_workers (int, optional): Number of workers for data loading. Defaults to 0.
+            bands (Sequence[str], optional): List of bands to use. Defaults to CarbonFluxNonGeo.all_band_names.
+            train_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for training data.
+            val_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for validation data.
+            test_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for testing data.
+            predict_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for prediction data.
+            aug (AugmentationSequential, optional): Augmentation sequence; if None, applies multimodal normalization.
+            no_data_replace (float | None, optional): Value to replace missing data. Defaults to 0.0001.
+            use_metadata (bool): Whether to return metadata info.
+            **kwargs: Additional keyword arguments.
+        """
         super().__init__(CarbonFluxNonGeo, batch_size, num_workers, **kwargs)
         self.data_root = data_root
 
@@ -79,6 +96,11 @@ class CarbonFluxNonGeoDataModule(NonGeoDataModule):
         self.use_metadata = use_metadata
 
     def setup(self, stage: str) -> None:
+        """Set up datasets.
+
+        Args:
+            stage: Either fit, validate, test, or predict.
+        """
         if stage in ["fit"]:
             self.train_dataset = self.dataset_class(
                 split="train",

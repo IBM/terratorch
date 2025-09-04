@@ -1,7 +1,8 @@
-import logging
-
 from torch import nn, Tensor
 import torch 
+from terratorch.registry import BACKBONE_REGISTRY
+import pdb
+import warnings
 
 class DecoderNotFoundError(Exception):
     pass
@@ -53,3 +54,185 @@ def pad_images(imgs: Tensor, patch_size: int | list, padding: str) -> Tensor:
             for img in imgs  # Apply per image to avoid NotImplementedError from torch.nn.functional.pad
         ])
     return imgs
+
+def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
+    use_temporal = backbone_kwargs.pop('use_temporal', None)
+    temporal_pooling = backbone_kwargs.pop('temporal_pooling', None)
+    concat = backbone_kwargs.pop('temporal_concat', None)
+    if isinstance(backbone, nn.Module):
+        model = backbone
+    else:
+        model = BACKBONE_REGISTRY.build(backbone, **backbone_kwargs)
+
+    # Apply TemporalWrapper inside _get_backbone
+    if use_temporal:
+        model = TemporalWrapper(model, pooling=temporal_pooling, concat=concat)
+
+    return model
+
+class TemporalWrapper(nn.Module):
+    def __init__(self, encoder: nn.Module, pooling: str = 'mean', concat: bool = None, n_timestamps: int = None,
+                 features_permute_op: list[int] = None):
+        """
+        Wrapper for applying a temporal encoder across multiple time steps.
+
+        Args:
+            encoder (nn.Module): The feature extractor (backbone).
+            pooling (str): Type of pooling ('mean', 'max', 'diff') with 'diff' working only with 2 timestamps.
+            concat (bool): Deprecated - 'concat' now integrated as pooling option.
+            n_timestamps (int): Deprecated 
+            features_permute_op (list): Permutation operation to perform on the features before aggregation.
+                This is in case the features to do not match either 'BCHW' or 'BLC' formats. It is reversed once
+                aggregation has happened.
+        """
+        super().__init__()
+
+        # Warn if deprecated args are used
+        if concat or n_timestamps is not None:
+            warnings.warn(
+                "'concat' and 'n_timestamps' are deprecated in TemporalWrapper. "
+                "Use pooling='concat' instead.",
+                DeprecationWarning
+                )
+
+        # Check supported pooling modes
+        supported_poolings = ["mean", "max", "diff", "keep", "concat"]
+        if pooling not in supported_poolings:
+            raise ValueError(f"Unsupported pooling '{pooling}', choose from {supported_poolings}.")
+        
+        self.encoder = encoder
+        self.pooling = pooling
+        self.features_permute_op = features_permute_op
+
+        # Precompute reverse permutation for restoring original dims after processing
+        if features_permute_op is not None:
+            self.reverse_permute_op = [None] * len(features_permute_op)
+            for i, p in enumerate(features_permute_op):
+                self.reverse_permute_op[p] = i
+        else:
+            self.reverse_permute_op = None
+    
+    def subtract_along_dim1(self, tensor: torch.Tensor):
+        # Diff pooling: Difference between first and second timestep
+        return tensor[:, 0, ...] - tensor[:, 1, ...]
+    
+    def pool_temporal(self, stacked: torch.Tensor, pooling: str):
+        """
+        Pool per-timestep outputs based on the specified pooling method.
+        """
+        if pooling == "concat":
+            return stacked.flatten(1, 2) # concat over time → [B, T*C, ...] 
+        elif pooling == "max":
+            return torch.max(stacked, dim=1).values # max over time
+        elif pooling == "diff":
+            return self.subtract_along_dim1(stacked) # difference between first two timesteps
+        elif pooling == "mean":
+            return torch.mean(stacked, dim=1) # mean over time
+        else: 
+            return stacked # "keep" → return [B, T, ...] sequence
+        
+    def reshape_5d(self, tensor: torch.Tensor, B: int, T: int) -> torch.Tensor:
+        """
+        Reshape latent to [B, T, C, ...]. Appends dummy dim for ViTs.
+        """
+        if tensor.dim() == 4:  # Conv backbone: [BT, C, H, W]
+            C, H, W = tensor.shape[1:]
+            return tensor.reshape(B, T, C, H, W)
+        elif tensor.dim() == 3:  # ViT backbone: [BT, L, C]
+            L, C = tensor.shape[-2:]
+            x = tensor.reshape(B, T, L, C)
+            return x.permute(0, 1, 3, 2).unsqueeze(-1)
+        raise ValueError(f"Expected latent tensor to be 3D or 4D, but got {tensor.dim()}.")
+    
+    def vit_postprocess(self, tensor: torch.Tensor) -> torch.Tensor:
+        """
+        Reorders L and C dim and removes helper size-1 dim if present.
+        """
+        if tensor.shape[-1] != 1:
+            return tensor
+        return tensor.squeeze(-1).movedim(-1, -2)
+    
+    def permute_op(self, tensor: torch.Tensor, permute_op: list[int]) -> torch.Tensor:
+        """
+        Apply a permutation operation to the tensor.
+        """
+        if permute_op is not None:
+            if len(permute_op) != len(tensor.shape):
+                raise ValueError(f"Expected permute_op to have same number of dimensions as tensor, but got {len(permute_op)} and {len(tensor.shape)}")
+            return torch.permute(tensor, permute_op)
+        return tensor
+        
+    def forward(self, 
+                x: torch.Tensor | dict[str, torch.Tensor]
+                ) -> list[torch.Tensor | dict[str, torch.Tensor]]:
+        """
+        Forward pass for temporal processing.
+
+        Args:
+            x: Input tensor of shape [B, C, T, H, W] or dict with shape {modality: [B, C_mod, T, H, W]}.
+        Returns:
+            List: A list of processed tensors/dicts, one per feature map.
+        """
+
+        # Handle dict input (multimodal) or single tensor
+        is_dict = isinstance(x, dict)
+        sample = next(iter(x.values())) if is_dict else x
+
+        # Input must have 5 dims: [B, C, T, H, W]
+        if sample.dim() != 5:
+            raise ValueError(f"Expected input shape [B, C, T, H, W], got {tuple(sample.shape)}")
+
+        # Flatten temporal dimension into batch for encoder forward pass
+        if is_dict:
+            B, _, T, H, W = sample.shape
+            flat_input = {
+                k: v.permute(0, 2, 1, 3, 4).reshape(-1, v.shape[1], *v.shape[3:])
+                for k, v in x.items()
+            }
+        else:
+            B, C, T, H, W = sample.shape
+            flat_input = x.permute(0, 2, 1, 3, 4).reshape(B * T, C, H, W)
+
+        # Run encoder backbone
+        feat = self.encoder(flat_input)
+        if not isinstance(feat, (list, tuple)):
+            feat = [feat]
+        else:
+            feat = list(feat)
+
+        outputs = []
+
+        # Postprocess each feature map returned by encoder (layer outputs)
+        for feature_map in feat:
+            if isinstance(feature_map, dict): # multimodal output
+                mod_keys = feature_map.keys()
+                pooled = {}
+                for k in mod_keys:
+                    # Apply optional permutation before processing
+                    feature_map[k] = self.permute_op(feature_map[k], self.features_permute_op)
+
+                    # Reshape back to [B, T, ...]
+                    mod_stacked = self.reshape_5d(feature_map[k], B, T)
+
+                    # Temporal pooling
+                    pooled[k] = self.pool_temporal(mod_stacked, self.pooling)
+
+                    # Reverse permutation to restore original dim order
+                    pooled[k] = self.permute_op(pooled[k], self.reverse_permute_op)
+
+                    # ViT postprocessing if needed
+                    if pooled[k].shape[-1] == 1: 
+                        pooled[k] = self.vit_postprocess(pooled[k])
+
+            else: # single-modality feature map
+                feature_map = self.permute_op(feature_map, self.features_permute_op)
+                stacked = self.reshape_5d(feature_map, B, T)
+                pooled = self.pool_temporal(stacked, self.pooling)
+                pooled = self.permute_op(pooled, self.reverse_permute_op)
+
+                if pooled.shape[-1] == 1: 
+                    pooled = self.vit_postprocess(pooled)
+                    
+            outputs.append(pooled)
+
+        return outputs

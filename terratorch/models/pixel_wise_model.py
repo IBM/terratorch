@@ -3,7 +3,6 @@ from typing import List
 import logging 
 import torch
 import torch.nn.functional as F  # noqa: N812
-import torchvision.transforms as transforms
 from segmentation_models_pytorch.base import SegmentationModel
 from torch import nn
 
@@ -71,19 +70,35 @@ class PixelWiseModel(Model, SegmentationModel):
             aux_heads = {}
         self.aux_heads = nn.ModuleDict(aux_heads)
 
-        self.neck = neck
+        if neck is not None:
+            self.neck = neck
+        elif hasattr(self.encoder, "prepare_features_for_image_model"):
+            # only for backwards compatibility with pre-neck times.
+            def model_defined_neck(x, **kwargs):
+                return self.encoder.prepare_features_for_image_model(x)  # Drop kwargs
+            self.neck = model_defined_neck
+        else:
+            self.neck = lambda x, image_size: x
+
         self.rescale = rescale
         self.patch_size = patch_size
         self.padding = padding
 
     def freeze_encoder(self):
-        freeze_module(self.encoder)
+        if hasattr(self.encoder, "freeze"):
+            self.encoder.freeze()
+        else:
+            freeze_module(self.encoder)
 
     def freeze_decoder(self):
         freeze_module(self.decoder)
 
     def freeze_head(self):
         freeze_module(self.head)
+
+    # TODO: do this properly
+    def check_input_shape(self, x: torch.Tensor) -> bool:  # noqa: ARG002
+        return True
 
     @staticmethod
     def _check_for_single_channel_and_squeeze(x):
@@ -113,14 +128,8 @@ class PixelWiseModel(Model, SegmentationModel):
 
         features = self.encoder(x, **kwargs)
 
-        # only for backwards compatibility with pre-neck times.
-        if self.neck:
-            prepare = self.neck
-        else:
-            # for backwards compatibility, if this is defined in the encoder, use it
-            prepare = getattr(self.encoder, "prepare_features_for_image_model", lambda x: x)
+        features = self.neck(features, image_size=input_size)
 
-        features = prepare(features)
         decoder_output = self.decoder([f.clone() for f in features])
         mask = self.head(decoder_output)
         if self.rescale and mask.shape[-2:] != input_size:

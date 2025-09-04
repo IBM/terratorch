@@ -4,7 +4,7 @@ from typing import Any
 import albumentations as A
 import kornia.augmentation as K  # noqa: N812
 from torchgeo.datamodules import NonGeoDataModule
-from torchgeo.transforms import AugmentationSequential
+from kornia.augmentation import AugmentationSequential
 
 from terratorch.datamodules.generic_multimodal_data_module import wrap_in_compose_is_list
 from terratorch.datasets import Landslide4SenseNonGeo
@@ -45,7 +45,7 @@ STDS = {
 
 
 class Landslide4SenseNonGeoDataModule(NonGeoDataModule):
-    """NonGeo datamodule implementation for Landslide4Sense."""
+    """NonGeo LightningDataModule implementation for Landslide4Sense dataset."""
 
     def __init__(
         self,
@@ -60,6 +60,21 @@ class Landslide4SenseNonGeoDataModule(NonGeoDataModule):
         aug: AugmentationSequential = None,
         **kwargs: Any,
     ) -> None:
+        """
+        Initializes the Landslide4SenseNonGeoDataModule.
+
+        Args:
+            data_root (str): Root directory of the dataset.
+            batch_size (int, optional): Batch size for data loaders. Defaults to 4.
+            num_workers (int, optional): Number of workers for data loading. Defaults to 0.
+            bands (Sequence[str], optional): List of band names to use. Defaults to Landslide4SenseNonGeo.all_band_names.
+            train_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for training data.
+            val_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for validation data.
+            test_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for testing data.
+            predict_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for prediction data.
+            aug (AugmentationSequential, optional): Augmentation pipeline; if None, applies normalization using computed means and stds.
+            **kwargs (Any): Additional keyword arguments.
+        """
         super().__init__(Landslide4SenseNonGeo, batch_size, num_workers, **kwargs)
         self.data_root = data_root
 
@@ -71,10 +86,15 @@ class Landslide4SenseNonGeoDataModule(NonGeoDataModule):
         self.test_transform = wrap_in_compose_is_list(test_transform)
         self.predict_transform = wrap_in_compose_is_list(predict_transform)
         self.aug = (
-            AugmentationSequential(K.Normalize(self.means, self.stds), data_keys=["image"]) if aug is None else aug
+            AugmentationSequential(K.Normalize(self.means, self.stds), data_keys=None) if aug is None else aug
         )
 
     def setup(self, stage: str) -> None:
+        """Set up datasets.
+
+        Args:
+            stage: Either fit, validate, test, or predict.
+        """
         if stage in ["fit"]:
             self.train_dataset = self.dataset_class(
                 split="train",

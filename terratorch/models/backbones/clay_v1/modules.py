@@ -1,10 +1,12 @@
 import math
 import os
+
+import numpy as np
 import torch
 import torch.nn.functional as F
 from einops import rearrange, repeat
-from torch import nn, Tensor
 from timm.layers import use_fused_attn
+from torch import Tensor, nn
 
 from terratorch.models.backbones.clay_v1.utils import posemb_sincos_1d, posemb_sincos_2d_with_gsd
 
@@ -22,6 +24,28 @@ WAVELENGTHS = {
     "nir08": 0.865,
     "swir16": 1.61,
     "swir22": 2.19,
+    "COASTAL_AEROSOL": 0.44,
+    "BLUE": 0.49,
+    "GREEN": 0.56,
+    "RED": 0.665,
+    "RED_EDGE_1": 0.705,
+    "RED_EDGE_2": 0.74,
+    "RED_EDGE_3": 0.783,
+    "NIR_BROAD": 0.832,
+    "NIR_NARROW": 0.864,
+    "WATER_VAPOR": 0.945,
+    "CIRRUS": 1.373,
+    "SWIR_1": 1.61,
+    "SWIR_2": 2.20,
+    "THERMAL_INFRARED_1": 10.90,
+    "THERMAL_INFRARED_12": 12.00,
+    "VV": 5.405,
+    "VH": 5.405,
+    "ASC_VV": 5.405,
+    "ASC_VH": 5.405,
+    "DSC_VV": 5.405,
+    "DSC_VH": 5.405,
+    "VV-VH": 5.405,
 }
 
 
@@ -44,7 +68,7 @@ class Attention(nn.Module):
         super().__init__()
         inner_dim = dim_head * heads
         self.heads = heads
-        self.scale = dim_head ** -0.5
+        self.scale = dim_head**-0.5
         self.norm = nn.LayerNorm(dim)
 
         self.attend = nn.Softmax(dim=-1)
@@ -70,21 +94,59 @@ class Attention(nn.Module):
 
 
 class Transformer(nn.Module):
-    def __init__(self, dim, depth, heads, dim_head, mlp_dim):
+    def __init__(
+        self,
+        dim,
+        depth,
+        heads,
+        dim_head,
+        mlp_dim,
+        vpt: bool = False,
+        vpt_n_tokens: int | None = None,
+        vpt_dropout: float = 0.0,
+    ):
         super().__init__()
         self.norm = nn.LayerNorm(dim)
         self.layers = nn.ModuleList([])
+        self.vpt = vpt
+        self.vpt_n_tokens = vpt_n_tokens
+        self.vpt_dropout = vpt_dropout
+        if self.vpt:
+            if self.vpt_n_tokens is None:
+                msg = "vpt_n_tokens must be provided when using VPT"
+                raise ValueError(msg)
+            self.vpt_prompt_embeddings = nn.ParameterList(
+                [nn.Parameter(torch.zeros(1, self.vpt_n_tokens, dim)) for _ in range(depth)]
+            )
+            self.vpt_dropout_layers = nn.ModuleList([nn.Dropout(vpt_dropout) for _ in range(depth)])
+            val = np.sqrt(6.0 / float(3 * 8**2 + dim))
+            for emb in self.vpt_prompt_embeddings:
+                nn.init.uniform_(emb, -val, val)
         for _ in range(depth):
-            self.layers.append(nn.ModuleList([
-                Attention(dim, heads=heads, dim_head=dim_head),
-                FeedForward(dim, mlp_dim)
-            ]))
+            self.layers.append(
+                nn.ModuleList([Attention(dim, heads=heads, dim_head=dim_head), FeedForward(dim, mlp_dim)])
+            )
 
     def forward(self, x) -> list[torch.Tensor]:
+        bs = x.shape[0]
         out = []
-        for attn, ff in self.layers:
+        for idx, (attn, ff) in enumerate(self.layers):
+            if self.vpt:
+                x = torch.cat(
+                    (
+                        x[:, :1, :],
+                        self.vpt_dropout_layers[idx](self.vpt_prompt_embeddings[idx].expand(bs, -1, -1)),
+                        x[:, 1:, :],
+                    ),
+                    dim=1,
+                )  # (batch_size, cls_token + n_prompt + n_patches, hidden_dim)
             x = attn(x) + x
             x = ff(x) + x
+            if self.vpt:
+                x = torch.cat(
+                    (x[:, :1, :], x[:, (1 + self.vpt_n_tokens) :, :]),
+                    dim=1,
+                )  # (batch_size, cls_token + n_patches, hidden_dim)
             out.append(x.clone())
         x = self.norm(x)
         out[-1] = x.clone()
@@ -102,6 +164,9 @@ class Encoder(nn.Module):
         heads,
         dim_head,
         mlp_ratio,
+        vpt: bool = False,
+        vpt_n_tokens: int | None = None,
+        vpt_dropout: float = 0.0,
     ):
         super().__init__()
         self.mask_ratio = mask_ratio
@@ -124,6 +189,9 @@ class Encoder(nn.Module):
             heads=heads,
             dim_head=dim_head,
             mlp_dim=int(dim * mlp_ratio),
+            vpt=vpt,
+            vpt_n_tokens=vpt_n_tokens,
+            vpt_dropout=vpt_dropout,
         )
 
     def to_patch_embed(self, cube, waves):
@@ -149,15 +217,11 @@ class Encoder(nn.Module):
             .detach()
         )  # [L (D - 8)]
 
-        time_latlon = torch.hstack((time, latlon)).to(
-            patches.device).detach()  # [B 8]
+        time_latlon = torch.hstack((time, latlon)).to(patches.device).detach()  # [B 8]
 
-        pos_encoding = repeat(
-            pos_encoding, "L D -> B L D", B=B)  # [B L (D - 8)]
+        pos_encoding = repeat(pos_encoding, "L D -> B L D", B=B)  # [B L (D - 8)]
         time_latlon = repeat(time_latlon, "B D -> B L D", L=L)  # [B L 8]
-        pos_metadata_encoding = torch.cat(
-            (pos_encoding, time_latlon), dim=-1
-        )  # [B L D]
+        pos_metadata_encoding = torch.cat((pos_encoding, time_latlon), dim=-1)  # [B L D]
 
         # [B L D] + [B L D] -> [B L D]
         patches = patches + pos_metadata_encoding
@@ -195,16 +259,12 @@ class Encoder(nn.Module):
         if self.shuffle:  # Shuffle the patches
             noise = torch.randn((B, L), device=patches.device)  # [B L]
         else:  # Don't shuffle, useful for interpolation & inspection of embeddings
-            noise = rearrange(
-                torch.arange(B * L, device=patches.device), "(B L) -> B L", B=B, L=L
-            )
+            noise = rearrange(torch.arange(B * L, device=patches.device), "(B L) -> B L", B=B, L=L)
 
         random_indices = torch.argsort(noise, dim=-1)  # [B L]
         reverse_indices = torch.argsort(random_indices, dim=-1)  # [B L]
 
-        num_masked_patches = int(
-            self.mask_ratio * self.num_patches
-        )  # Number of patches to be masked out
+        num_masked_patches = int(self.mask_ratio * self.num_patches)  # Number of patches to be masked out
         masked_indices, unmasked_indices = (
             random_indices[:, :num_masked_patches],  # [B mask_ratio * L]
             random_indices[:, num_masked_patches:],  # [B (1 - mask_ratio) * L]
@@ -219,12 +279,8 @@ class Encoder(nn.Module):
         )  # [B L] -> [B L] - reorder the patches
 
         # mask out the patches
-        batch_indices = rearrange(
-            torch.arange(B, device=patches.device), "B -> B 1"
-        )  # [B 1]
-        unmasked_patches = patches[
-            batch_indices, unmasked_indices, :
-        ]  # [B L:(1 - mask_ratio) D]
+        batch_indices = rearrange(torch.arange(B, device=patches.device), "B -> B 1")  # [B 1]
+        unmasked_patches = patches[batch_indices, unmasked_indices, :]  # [B L:(1 - mask_ratio) D]
         _ = patches[batch_indices, masked_indices, :]  # [B L:mask_ratio D]
 
         return (
@@ -245,9 +301,7 @@ class Encoder(nn.Module):
 
         B, C, H, W = cube.shape
 
-        patches, waves_encoded = self.to_patch_embed(
-            cube, waves
-        )  # [B L D] - patchify & create embeddings per patch
+        patches, waves_encoded = self.to_patch_embed(cube, waves)  # [B L D] - patchify & create embeddings per patch
         patches = self.add_encodings(
             patches,
             time,
@@ -261,20 +315,14 @@ class Encoder(nn.Module):
             unmasked_indices,
             masked_indices,
             masked_matrix,
-        ) = self.mask_out(
-            patches
-        )  # [B L:(1 - mask_ratio) D], [(1-mask_ratio)], [mask_ratio], [B L]
+        ) = self.mask_out(patches)  # [B L:(1 - mask_ratio) D], [(1-mask_ratio)], [mask_ratio], [B L]
 
         # Add class tokens
         cls_tokens = repeat(self.cls_token, "1 1 D -> B 1 D", B=B)  # [B 1 D]
-        unmasked_patches = torch.cat(
-            (cls_tokens, unmasked_patches), dim=1
-        )  # [B (1 + L) D]
+        unmasked_patches = torch.cat((cls_tokens, unmasked_patches), dim=1)  # [B (1 + L) D]
 
         # pass the unmasked patches through the transformer
-        encoded_unmasked_patches = self.transformer(
-            unmasked_patches
-        )  # [B ((1 + L)):(1 - mask_ratio)) D]
+        encoded_unmasked_patches = self.transformer(unmasked_patches)  # [B ((1 + L)):(1 - mask_ratio)) D]
 
         return (
             encoded_unmasked_patches,
@@ -287,7 +335,7 @@ class Encoder(nn.Module):
 class EmbeddingEncoder(Encoder):
     """Clay Encoder without mask and shuffle."""
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         img_size,
         patch_size,
@@ -296,6 +344,9 @@ class EmbeddingEncoder(Encoder):
         heads,
         dim_head,
         mlp_ratio,
+        vpt: bool = False,
+        vpt_n_tokens: int | None = None,
+        vpt_dropout: float = 0.0,
     ):
         super().__init__(
             mask_ratio=0.0,
@@ -306,6 +357,9 @@ class EmbeddingEncoder(Encoder):
             heads=heads,
             dim_head=dim_head,
             mlp_ratio=mlp_ratio,
+            vpt=vpt,
+            vpt_n_tokens=vpt_n_tokens,
+            vpt_dropout=vpt_dropout,
         )
         self.img_size = img_size
 
@@ -330,15 +384,11 @@ class EmbeddingEncoder(Encoder):
             .detach()
         )  # [L (D - 8)]
 
-        time_latlon = torch.hstack((time, latlon)).to(
-            patches.device).detach()  # [B 8]
+        time_latlon = torch.hstack((time, latlon)).to(patches.device).detach()  # [B 8]
 
-        pos_encoding = repeat(
-            pos_encoding, "L D -> B L D", B=B)  # [B L (D - 8)]
+        pos_encoding = repeat(pos_encoding, "L D -> B L D", B=B)  # [B L (D - 8)]
         time_latlon = repeat(time_latlon, "B D -> B L D", L=L)  # [B L 8]
-        pos_metadata_encoding = torch.cat(
-            (pos_encoding, time_latlon), dim=-1
-        )  # [B L D]
+        pos_metadata_encoding = torch.cat((pos_encoding, time_latlon), dim=-1)  # [B L D]
 
         # [B L D] + [B L D] -> [B L D]
         patches = patches + pos_metadata_encoding
@@ -355,9 +405,7 @@ class EmbeddingEncoder(Encoder):
         )  # [B C H W]
         B, C, H, W = cube.shape
 
-        patches, _ = self.to_patch_embed(
-            cube, waves
-        )  # [B L D] - patchify & create embeddings per patch
+        patches, _ = self.to_patch_embed(cube, waves)  # [B L D] - patchify & create embeddings per patch
 
         # Add time & latlon as encoding to patches
         patches = self.add_encodings(
@@ -393,7 +441,7 @@ class FCBlock(nn.Module):
 
 
 class WavesTransformer(nn.Module):
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         wave_dim,
         output_dim,
@@ -417,20 +465,15 @@ class WavesTransformer(nn.Module):
         self.encoder = nn.TransformerEncoder(layer, num_layers)
 
         self.fc_weight = nn.Linear(wave_dim, output_dim)
-        self.fc_bias = None if self.is_decoder else nn.Linear(
-            wave_dim, embed_dim)
+        self.fc_bias = None if self.is_decoder else nn.Linear(wave_dim, embed_dim)
 
-        self.weight_tokens = nn.Parameter(
-            torch.randn(self.num_latent_tokens, wave_dim) * 0.02
-        )
+        self.weight_tokens = nn.Parameter(torch.randn(self.num_latent_tokens, wave_dim) * 0.02)
         self.bias_token = nn.Parameter(torch.randn(1, wave_dim) * 0.02)
 
     def forward(self, x):
         x = torch.cat([self.weight_tokens, x, self.bias_token], dim=0)
         out = self.encoder(x)
-        weights = self.fc_weight(
-            out[self.num_latent_tokens: -1] + x[self.num_latent_tokens: -1]
-        )
+        weights = self.fc_weight(out[self.num_latent_tokens : -1] + x[self.num_latent_tokens : -1])
         bias = None if self.is_decoder else self.fc_bias(out[-1])
         return weights, bias
 
@@ -489,9 +532,7 @@ class DynamicEmbedding(nn.Module):
             )
             if bias is not None:
                 bias = rearrange(bias, "b -> (b)")
-            dynamic_out = F.conv2d(
-                batch, dynamic_weight * 0.02, bias=bias, stride=self.patch_size
-            )
+            dynamic_out = F.conv2d(batch, dynamic_weight * 0.02, bias=bias, stride=self.patch_size)
             x = rearrange(dynamic_out, "b c h w -> b (h w) c")
 
         return x, waves
@@ -527,7 +568,10 @@ class Datacuber(nn.Module):
         return datacube
 
     def _parse_wavelengths(self, bands, channels):
-        if bands is not None and all([_ in WAVELENGTHS for _ in bands]):
-            return torch.tensor([WAVELENGTHS[_] for _ in bands])
-        else:
-            return torch.zeros(channels)
+        waves = torch.tensor([WAVELENGTHS[band] if band in WAVELENGTHS.keys() else 0.0 for band in bands])
+        print(waves)
+        return waves
+        # if bands is not None and all([_ in WAVELENGTHS for _ in bands]):
+        #     return torch.tensor([WAVELENGTHS[_] for _ in bands])
+        # else:
+        #     return torch.zeros(channels)

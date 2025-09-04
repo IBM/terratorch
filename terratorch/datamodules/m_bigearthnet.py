@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from typing import Any
 
 import albumentations as A
-from torchgeo.transforms import AugmentationSequential
+from kornia.augmentation import AugmentationSequential
 
 from terratorch.datamodules.geobench_data_module import GeobenchDataModule
 from terratorch.datasets import MBigEarthNonGeo
@@ -39,6 +39,8 @@ STDS = {
 
 
 class MBigEarthNonGeoDataModule(GeobenchDataModule):
+    """NonGeo LightningDataModule implementation for M-BigEarthNet dataset."""
+
     def __init__(
         self,
         batch_size: int = 8,
@@ -52,6 +54,21 @@ class MBigEarthNonGeoDataModule(GeobenchDataModule):
         partition: str = "default",
         **kwargs: Any,
     ) -> None:
+        """
+        Initializes the MBigEarthNonGeoDataModule for the M-BigEarthNet dataset.
+
+        Args:
+            batch_size (int, optional): Batch size for DataLoaders. Defaults to 8.
+            num_workers (int, optional): Number of workers for data loading. Defaults to 0.
+            data_root (str, optional): Root directory of the dataset. Defaults to "./".
+            bands (Sequence[str] | None, optional): List of bands to use. Defaults to None.
+            train_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for training.
+            val_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for validation.
+            test_transform (A.Compose | None | list[A.BasicTransform], optional): Transformations for testing.
+            aug (AugmentationSequential, optional): Augmentation/normalization pipeline. Defaults to None.
+            partition (str, optional): Partition size. Defaults to "default".
+            **kwargs (Any): Additional keyword arguments.
+        """
         super().__init__(
             MBigEarthNonGeo,
             MEANS,

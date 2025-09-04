@@ -4,6 +4,7 @@
 This module contains generic data modules for instantiation at runtime.
 """
 
+import logging
 from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
@@ -24,9 +25,13 @@ from terratorch.io.file import load_from_file_or_attribute
 
 from .utils import check_dataset_stackability
 
+logger = logging.getLogger("terratorch")
+
+
 def wrap_in_compose_is_list(transform_list):
     # set check shapes to false because of the multitemporal case
     return A.Compose(transform_list, is_check_shapes=False) if isinstance(transform_list, Iterable) else transform_list
+
 
 class Normalize(Callable):
     def __init__(self, means, stds):
@@ -223,6 +228,7 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
             self.predict_dataset = self.dataset_class(
                 self.predict_root,
                 self.num_classes,
+                require_label=False,
                 dataset_bands=self.predict_dataset_bands,
                 output_bands=self.output_bands,
                 constant_scale=self.constant_scale,
@@ -249,7 +255,7 @@ class GenericNonGeoClassificationDataModule(NonGeoDataModule):
         batch_size = self._valid_attribute(f"{split}_batch_size", "batch_size")
 
         if self.check_stackability:
-            print("Checking stackability.")
+            logger.info("Checking stackability.")
             batch_size = check_dataset_stackability(dataset, batch_size)
 
         return DataLoader(

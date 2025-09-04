@@ -80,6 +80,15 @@ vit_s_meta = {
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_vit_small_patch16_224_landsat_tm_toa_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ViTSmall16_Weights.LANDSAT_TM_TOA_MOCO, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = vit_small_patch16_224(**kwargs)
     if pretrained:
@@ -89,6 +98,15 @@ def ssl4eol_vit_small_patch16_224_landsat_tm_toa_moco(model_bands, pretrained = 
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_vit_small_patch16_224_landsat_tm_toa_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ViTSmall16_Weights.LANDSAT_TM_TOA_SIMCLR, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = vit_small_patch16_224(**kwargs)
     if pretrained:
@@ -97,6 +115,15 @@ def ssl4eol_vit_small_patch16_224_landsat_tm_toa_simclr(model_bands, pretrained 
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_vit_small_patch16_224_landsat_etm_toa_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ViTSmall16_Weights.LANDSAT_ETM_TOA_MOCO, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = vit_small_patch16_224(**kwargs)
     if pretrained:
@@ -105,6 +132,15 @@ def ssl4eol_vit_small_patch16_224_landsat_etm_toa_moco(model_bands, pretrained =
     
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_vit_small_patch16_224_landsat_etm_toa_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ViTSmall16_Weights.LANDSAT_ETM_TOA_SIMCLR, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = vit_small_patch16_224(**kwargs)
     if pretrained:
@@ -113,6 +149,15 @@ def ssl4eol_vit_small_patch16_224_landsat_etm_toa_simclr(model_bands, pretrained
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_vit_small_patch16_224_landsat_etm_sr_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None = ViTSmall16_Weights.LANDSAT_ETM_SR_MOCO, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = vit_small_patch16_224(**kwargs)
     if pretrained:
@@ -121,6 +166,15 @@ def ssl4eol_vit_small_patch16_224_landsat_etm_sr_moco(model_bands, pretrained = 
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_vit_small_patch16_224_landsat_etm_sr_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None =  ViTSmall16_Weights.LANDSAT_ETM_SR_SIMCLR, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = vit_small_patch16_224(**kwargs)
     if pretrained:
@@ -129,6 +183,15 @@ def ssl4eol_vit_small_patch16_224_landsat_etm_sr_simclr(model_bands, pretrained 
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_vit_small_patch16_224_landsat_oli_tirs_toa_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None =  ViTSmall16_Weights.LANDSAT_OLI_TIRS_TOA_SIMCLR, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = vit_small_patch16_224(**kwargs)
     if pretrained:
@@ -137,6 +200,15 @@ def ssl4eol_vit_small_patch16_224_landsat_oli_tirs_toa_simclr(model_bands, pretr
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_vit_small_patch16_224_landsat_oli_sr_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None =  ViTSmall16_Weights.LANDSAT_OLI_SR_MOCO, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = vit_small_patch16_224(**kwargs)
     if pretrained:
@@ -145,6 +217,15 @@ def ssl4eol_vit_small_patch16_224_landsat_oli_sr_moco(model_bands, pretrained = 
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eol_vit_small_patch16_224_landsat_oli_sr_simclr(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None =   ViTSmall16_Weights.LANDSAT_OLI_SR_SIMCLR, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = vit_small_patch16_224(**kwargs)
     if pretrained:
@@ -153,6 +234,15 @@ def ssl4eol_vit_small_patch16_224_landsat_oli_sr_simclr(model_bands, pretrained 
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eos12_vit_small_patch16_224_sentinel2_all_dino(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None =   ViTSmall16_Weights.SENTINEL2_ALL_DINO, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = vit_small_patch16_224(**kwargs)
     if pretrained:
@@ -161,6 +251,15 @@ def ssl4eos12_vit_small_patch16_224_sentinel2_all_dino(model_bands, pretrained =
 
 @TERRATORCH_BACKBONE_REGISTRY.register
 def ssl4eos12_vit_small_patch16_224_sentinel2_all_moco(model_bands, pretrained = False, ckpt_data: str | None = None,  weights: Weights | None =   ViTSmall16_Weights.SENTINEL2_ALL_MOCO, out_indices: list | None = None, **kwargs):
+    """
+    Args:
+        model_bands (list[str]): A list containing the names for the bands expected by the model.
+        pretrained (bool): The model is already pretrained (weights are available and can be restored) or not.
+        ckpt_data (str | None): Path for a checkpoint containing the model weights.
+    Returns:
+        ViTEncoderWrapper
+    """
+
     if "in_chans" not in kwargs: kwargs["in_chans"] = len(model_bands)
     model = vit_small_patch16_224(**kwargs)
     if pretrained:

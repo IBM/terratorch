@@ -1,27 +1,48 @@
+import logging
 import typing
 from collections import OrderedDict
 from collections.abc import Callable, Mapping, Set
 from contextlib import suppress
 from reprlib import recursive_repr as _recursive_repr
 
+from huggingface_hub import ModelCard
+
+logger = logging.getLogger(__name__)
+
+
+def explore_model_card(model_address):
+    from rich.console import Console
+    from rich.markdown import Markdown
+
+    console = Console()
+
+    metadata = ModelCard.load(model_address)
+    content = metadata.content
+    md = Markdown(content)
+    console.print(md)
+
+
 class BuildableRegistry(typing.Protocol):
     def __iter__(self): ...
     def __len__(self) -> int: ...
     def __contains__(self, name: str) -> bool: ...
     def build(self, name: str, *args, **kwargs):
-        """Should raise KeyError if model not found.
-        """
+        """Should raise KeyError if model not found."""
 
 
 class DecoderRegistry(BuildableRegistry, typing.Protocol):
     includes_head: bool
 
+
 T = typing.TypeVar("T", bound=BuildableRegistry)
+
+
 class MultiSourceRegistry(Mapping[str, T], typing.Generic[T]):
     """Registry that searches in multiple sources
 
-        Correct functioning of this class depends on registries raising a KeyError when the model is not found.
+    Correct functioning of this class depends on registries raising a KeyError when the model is not found.
     """
+
     def __init__(self, **sources) -> None:
         self._sources: OrderedDict[str, T] = OrderedDict(sources)
 
@@ -46,6 +67,14 @@ class MultiSourceRegistry(Mapping[str, T], typing.Generic[T]):
                 return registry
         msg = f"Model {name} not found in any registry"
         raise KeyError(msg)
+
+    def find_class(self, name: str) -> type:
+        parsed_prefix = self._parse_prefix(name)
+        registry = self.find_registry(name)
+        if parsed_prefix:
+            prefix, name_without_prefix = parsed_prefix
+            return registry[name_without_prefix]
+        return registry[name]
 
     def build(self, name: str, *constructor_args, **constructor_kwargs):
         parsed_prefix = self._parse_prefix(name)
@@ -90,7 +119,7 @@ class MultiSourceRegistry(Mapping[str, T], typing.Generic[T]):
     @_recursive_repr()
     def __repr__(self):
         args = [f"{name}={source!r}" for name, source in self._sources.items()]
-        return f'{self.__class__.__name__}({", ".join(args)})'
+        return f"{self.__class__.__name__}({', '.join(args)})"
 
     def __str__(self):
         sources_str = str(" | ".join([f"{prefix}: {source!s}" for prefix, source in self._sources.items()]))
@@ -109,7 +138,7 @@ class Registry(Set):
     In addition, it can instantiate models with the build method.
 
     Add constructors to the registry by annotating them with @registry.register.
-
+    ```
     >>> registry = Registry()
     >>> @registry.register
     ... def model(*args, **kwargs):
@@ -117,6 +146,7 @@ class Registry(Set):
     >>> "model" in registry
     True
     >>> model_instance = registry.build("model")
+    ```
     """
 
     def __init__(self, **elements) -> None:
@@ -143,8 +173,8 @@ class Registry(Set):
     def __iter__(self):
         return iter(self._registry)
 
-    # def __getitem__(self, key):
-    #     return self._registry[key]
+    def __getitem__(self, key):
+        return self._registry[key]
 
     def __len__(self):
         return len(self._registry)
@@ -157,6 +187,7 @@ class Registry(Set):
 
     def __str__(self):
         return f"Registry with {len(self)} registered items"
+
 
 ## Declare library level registries below
 
@@ -175,6 +206,11 @@ TERRATORCH_DECODER_REGISTRY = typing.cast(DecoderRegistry, Registry())
 TERRATORCH_DECODER_REGISTRY.includes_head = False
 DECODER_REGISTRY: MultiSourceRegistry[DecoderRegistry] = MultiSourceRegistry()
 DECODER_REGISTRY.register_source("terratorch", TERRATORCH_DECODER_REGISTRY)
+
+# Full model registry
+TERRATORCH_FULL_MODEL_REGISTRY = Registry()
+FULL_MODEL_REGISTRY: MultiSourceRegistry[BuildableRegistry] = MultiSourceRegistry()
+FULL_MODEL_REGISTRY.register_source("terratorch", TERRATORCH_FULL_MODEL_REGISTRY)
 
 ### Model Factory Registry
 MODEL_FACTORY_REGISTRY = Registry()
