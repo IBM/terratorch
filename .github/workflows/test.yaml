@@ -63,8 +63,6 @@ jobs:
           pytest -s --cov=terratorch -v --cov-report term-missing tests
           coverage-badge -o coverage_badge.svg
       - name: Update coverage badge
-        with:
-          python-version: 3.13
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
