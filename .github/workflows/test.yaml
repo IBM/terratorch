@@ -63,7 +63,7 @@ jobs:
           pytest -s --cov=terratorch -v --cov-report term-missing tests
           coverage-badge -o coverage_badge.svg
       - name: Update coverage badge
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage_badge.svg
           path: ./assets
