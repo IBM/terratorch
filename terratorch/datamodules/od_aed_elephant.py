@@ -1,7 +1,7 @@
 from typing import Optional
 
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 from torchvision.datasets import CocoDetection
 import torchvision.transforms as T
 import lightning as pl
@@ -22,10 +22,14 @@ class ElephantDataModule(pl.LightningDataModule):
         overlap: int = 128,
         batch_size: int = 8,
         num_workers: int = 8,
-    ):       
+        train_test_split: float = 0.8,
+    ):
+        if not 0.0 <= train_test_split <= 1.0:
+            raise ValueError(f"train_test_split must be between 0 and 1, got {train_test_split}")
+        
         super().__init__()
 
-        self.dataset_val = TiledDataset(
+        self.dataset_test = TiledDataset(
             base_dataset=ElephantCocoDataset(img_folder=img_folder_val, ann_file=ann_file_val),
             min_size=min_size,
             tile_size=tile_size,
@@ -34,7 +38,7 @@ class ElephantDataModule(pl.LightningDataModule):
             skip_empty_boxes=False,
         )
 
-        self.dataset_train = TiledDataset(
+        train_val_dataset = TiledDataset(
             base_dataset=ElephantCocoDataset(img_folder=img_folder_train, ann_file=ann_file_train),
             min_size=min_size,
             tile_size=tile_size,
@@ -42,7 +46,10 @@ class ElephantDataModule(pl.LightningDataModule):
             cache_dir="tile_cache_train",
         )
 
+        train_size = int(train_test_split * len(train_val_dataset))
+        val_size = len(train_val_dataset) - train_size
 
+        self.dataset_train, self.dataset_val = random_split(train_val_dataset, [train_size, val_size])
 
         self.batch_size = batch_size
         self.num_workers = num_workers
@@ -96,6 +103,15 @@ class ElephantDataModule(pl.LightningDataModule):
     def val_dataloader(self):
         return DataLoader(
             self.dataset_val,
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=self.num_workers,
+            collate_fn=self.detection_collate_fn,        
+        )    
+    
+    def test_dataloader(self):
+        return DataLoader(
+            self.dataset_test,
             batch_size=self.batch_size,
             shuffle=False,
             num_workers=self.num_workers,
