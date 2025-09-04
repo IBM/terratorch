@@ -8,6 +8,12 @@
   <center><img style="display: block; margin-left: auto; margin-right: auto"; src="https://github.com/user-attachments/assets/f7c9586f-6220-4a53-9669-2aee3300b492" alt="TerraTorch"  width="400"/></center>
 </picture>
 
+
+<img src="https://github.com/user-attachments/assets/f8c9586f-6220-4a53-9669-2aee3300b492" alt="TerraTorch"  width="400"/>
+<!--
++ [![cov](https://ibm.github.io/terratorch/badges/coverage.svg)](https://github.com/ibm/terratorch/actions)
+-->
+
 <!--
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/figs/logo_inv.png">
@@ -19,7 +25,7 @@
 [![pypi](https://badge.fury.io/py/terratorch.svg)](https://pypi.org/project/terratorch)
 [![tests](https://github.com/IBM/terratorch/actions/workflows/test.yaml/badge.svg)](https://github.com/ibm/terratorch/actions/workflows/test.yaml)
 [![MkDocs](https://img.shields.io/badge/MkDocs-526CFE?logo=materialformkdocs&logoColor=fff)](https://ibm.github.io/terratorch/)
-![cov](https://github.com/IBM/terratorch/raw/main/assets/coverage-badge.svg)
+![cov](https://github.com/IBM/terratorch/raw/main/coverage-badge.svg)
 <!--
 [![PyPI Downloads](https://img.shields.io/pypi/dm/terratorch.svg?label=PyPI%20downloads)](https://pypi.org/project/terratorch/)
 -->
