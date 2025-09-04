@@ -68,4 +68,5 @@ jobs:
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git add coverage_badge.svg 
           git commit -s -m "Updating coverage badge"
+          git pull 
           git push origin HEAD:automatic/coverage 
