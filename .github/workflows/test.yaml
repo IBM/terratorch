@@ -61,11 +61,12 @@ jobs:
         run: |
           pytest -s -v --testmon tests
       - name: Uploading artifacts
-          uses: actions/upload-artifact@v4
-          with:
-            name: testmondata-artifact
-            path: |
-              .testmondata
+        #if: ${{ hashFiles('.testmondata') == '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: testmondata-artifact
+          path: |
+            .testmondata
 
 
 
