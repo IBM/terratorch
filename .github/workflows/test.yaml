@@ -64,7 +64,7 @@ jobs:
           if: startsWith(github.event_name, 'push') && steps.generate-files.outputs.file-created == 'true'
           uses: actions/upload-artifact@v4
           with:
-            name: testmondata-artifacts
+            name: testmondata-artifact
             path: |
               .testmondata
 
