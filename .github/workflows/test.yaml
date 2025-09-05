@@ -68,7 +68,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           if-no-files-found: ignore
-          name: testmondata-artifact
+          name: testmondata-artifact-${{ matrix.python-version }}
           path: testmondir/testmondata
 
 
