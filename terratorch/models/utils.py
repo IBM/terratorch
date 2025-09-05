@@ -80,7 +80,7 @@ class TemporalWrapper(nn.Module):
             encoder (nn.Module): The feature extractor (backbone).
             pooling (str): Type of pooling ('mean', 'max', 'diff') with 'diff' working only with 2 timestamps.
             concat (bool): Deprecated - 'concat' now integrated as pooling option.
-            n_timestamps (int): Deprecated 
+            n_timestamps (int): Used only to compute backbone out_channels when constructing encoder–decoder pipelines in case of 'concat' pooling.
             features_permute_op (list): Permutation operation to perform on the features before aggregation.
                 This is in case the features to do not match either 'BCHW' or 'BLC' formats. It is reversed once
                 aggregation has happened.
@@ -88,9 +88,9 @@ class TemporalWrapper(nn.Module):
         super().__init__()
 
         # Warn if deprecated args are used
-        if concat or n_timestamps is not None:
+        if concat is not None:
             warnings.warn(
-                "'concat' and 'n_timestamps' are deprecated in TemporalWrapper. "
+                "'concat' is deprecated in TemporalWrapper. "
                 "Use pooling='concat' instead.",
                 DeprecationWarning
                 )
@@ -111,7 +111,22 @@ class TemporalWrapper(nn.Module):
                 self.reverse_permute_op[p] = i
         else:
             self.reverse_permute_op = None
+
+        if hasattr(encoder, "out_channels"):
+            if pooling == "concat":
+                if n_timestamps is None:
+                    warnings.warn(
+                        "Cannot derive `out_channels` for 'concat' pooling without `n_timestamps`"
+                        "(Required to build Encoder–Decoder models).",
+                        UserWarning,
+                    )
+                    self.out_channels = None
+                else:
+                    self.out_channels = [c * n_timestamps for c in encoder.out_channels]
+            else:
+                self.out_channels = encoder.out_channels
     
+
     def subtract_along_dim1(self, tensor: torch.Tensor):
         # Diff pooling: Difference between first and second timestep
         return tensor[:, 0, ...] - tensor[:, 1, ...]
