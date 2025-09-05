@@ -61,7 +61,7 @@ jobs:
         run: |
           pytest -s -v --testmon tests
       - name: Uploading artifacts
-          if: startsWith(github.event_name, 'push') && steps.generate-files.outputs.file-created == 'true'
+          if: ${{ hashFiles('.testmondata') == '' }}
           uses: actions/upload-artifact@v4
           with:
             name: testmondata-artifact
