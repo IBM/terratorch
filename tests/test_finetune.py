@@ -28,9 +28,7 @@ def setup_and_cleanup(model_name):
 
 # The backbones `prithvi_eo_v2_300` and `prithvi_swin_B` are already used in
 # others tests and don't need be tested here again
-@pytest.mark.parametrize(
-    "model_name", ["terramind_v1_base", "prithvi_eo_v1_100"]
-)
+@pytest.mark.parametrize("model_name", ["terramind_v1_base", "prithvi_eo_v1_100"])
 @pytest.mark.parametrize("case", ["fit", "test", "validate", "compute_statistics"])
 def test_finetune_multiple_backbones(model_name, case):
     if model_name == "terramind_v1_base" and case == "compute_statistics":
@@ -43,9 +41,7 @@ def test_finetune_multiple_backbones(model_name, case):
     gc.collect()
 
 
-@pytest.mark.parametrize(
-    "model_name", ["prithvi_eo_v1_100", "prithvi_swin_L"]
-)
+@pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100", "prithvi_swin_L"])
 def test_finetune_multiple_backbones_with_prediction(model_name):
     command_list = ["fit", "-c", f"tests/resources/configs/manufactured-finetune_{model_name}.yaml"]
     _ = build_lightning_cli(command_list)
