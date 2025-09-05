@@ -63,6 +63,7 @@ dependencies = [
   "huggingface_hub",
   "tifffile",
   "python-box",
+  "pytest-sugar",
 ]
 
 
