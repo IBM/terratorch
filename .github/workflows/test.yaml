@@ -48,6 +48,7 @@ jobs:
           pip install pip==24.2
           pip --version
           pip install -e .[wxc,test]
+          pip install pytest-testmon
           # Installing dependencies required to test Galileo (temporary)
           pip install git+https://github.com/Joao-L-S-Almeida/terratorch-galileo.git
       - name: Clean pip cache
@@ -58,6 +59,14 @@ jobs:
         run: pip cache purge
       - name: Test with pytest
         run: |
-          pytest -s --cov=terratorch -v --cov-report term-missing tests
+          pytest -s -v --testmon tests
+      - name: Uploading artifacts
+          if: startsWith(github.event_name, 'push') && steps.generate-files.outputs.file-created == 'true'
+          uses: actions/upload-artifact@v4
+          with:
+            name: testmondata-artifacts
+            path: |
+              .testmondata
+
 
 
