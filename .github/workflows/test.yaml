@@ -62,12 +62,13 @@ jobs:
           pytest -s -v --testmon tests
           mkdir testmondir
           mv .testmondata* testmondir
+          ls testmondir
       - name: Uploading artifacts
         #if: ${{ hashFiles('.testmondata') == '' }}
         uses: actions/upload-artifact@v4
         with:
           name: testmondata-artifact
-          path: ${{ github.workspace }}/testmondir/*
+          path: testmondir/*
 
 
 
