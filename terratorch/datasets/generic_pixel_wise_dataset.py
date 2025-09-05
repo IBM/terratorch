@@ -593,7 +593,7 @@ class GenericNonGeoPixelwiseDataset_Custom(GenericPixelWiseDataset):
         )
     def _load_file(self, path, nan_replace: int | float | None = None) -> xr.DataArray:
         # Target order of Sentinel-2 bands expected by the model
-        BAND_ORDER = ["B01","B02","B03","B04","B05","B06","B07","B08","B8A","B10","B11","B12"]
+        BAND_ORDER = ["B01","B02","B03","B04","B05","B06","B07","B08","B8A","B09","B11","B12"]
 
         # Collect candidate files for 10m, 20m, 60m (e.g., Txx_yyy_B02_10m.jp2)
         patterns = [
