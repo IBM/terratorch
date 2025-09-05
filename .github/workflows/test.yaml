@@ -67,6 +67,7 @@ jobs:
         #if: ${{ hashFiles('.testmondata') == '' }}
         uses: actions/upload-artifact@v4
         with:
+          if-no-files-found: ignore
           name: testmondata-artifact
           path: testmondir/testmondata
 
