@@ -60,6 +60,7 @@ jobs:
       - name: Test with pytest
         run: |
           pytest -s -v --testmon tests
+          ls -a .test*
       - name: Uploading artifacts
         #if: ${{ hashFiles('.testmondata') == '' }}
         uses: actions/upload-artifact@v4
