@@ -6,10 +6,13 @@ from torch.utils.data import DataLoader
 from utils import create_dummy_image
 
 
-def create_biomasters_dummy_image(base_dir: str, split: str, image_type: str, filename: str, shape: tuple, pixel_values: list[int]) -> None:
-    dir_name = f"{split}_{'features' if image_type=='features' else 'agbm'}"
+def create_biomasters_dummy_image(
+    base_dir: str, split: str, image_type: str, filename: str, shape: tuple, pixel_values: list[int]
+) -> None:
+    dir_name = f"{split}_{'features' if image_type == 'features' else 'agbm'}"
     path = os.path.join(base_dir, dir_name, filename)
     create_dummy_image(path, shape, pixel_values)
+
 
 @pytest.fixture
 def dummy_biomasters_data(tmp_path) -> str:
@@ -26,30 +29,85 @@ def dummy_biomasters_data(tmp_path) -> str:
         "satellite": ["S1", "S2", "S1", "S2"],
         "split": ["train", "train", "test", "test"],
         "filename": ["chip1_0_9_S1.tif", "chip1_0_9_S2.tif", "chip2_0_10_S1.tif", "chip2_0_10_S2.tif"],
-        "corresponding_agbm": ["chip1_0_9_S1.tif", "chip1_0_9_S2.tif", "chip2_0_10_S1.tif", "chip2_0_10_S2.tif"]
+        "corresponding_agbm": ["chip1_0_9_S1.tif", "chip1_0_9_S2.tif", "chip2_0_10_S1.tif", "chip2_0_10_S2.tif"],
     }
     df = pd.DataFrame(data)
     df.to_csv(csv_path, index=False)
     feature_shape = (256, 256, 3)
     mask_shape = (256, 256)
-    create_biomasters_dummy_image(base_dir=str(base_dir), split="train", image_type="features", filename="chip1_0_9_S1.tif", shape=feature_shape, pixel_values=list(range(256)))
-    create_biomasters_dummy_image(base_dir=str(base_dir), split="train", image_type="features", filename="chip1_0_9_S2.tif", shape=feature_shape, pixel_values=list(range(256)))
-    create_biomasters_dummy_image(base_dir=str(base_dir), split="train", image_type="agbm", filename="chip1_0_9_S1.tif", shape=mask_shape, pixel_values=[0, 128, 255])
-    create_biomasters_dummy_image(base_dir=str(base_dir), split="train", image_type="agbm", filename="chip1_0_9_S2.tif", shape=mask_shape, pixel_values=[0, 128, 255])
-    create_biomasters_dummy_image(base_dir=str(base_dir), split="test", image_type="features", filename="chip2_0_10_S1.tif", shape=feature_shape, pixel_values=list(range(256)))
-    create_biomasters_dummy_image(base_dir=str(base_dir), split="test", image_type="features", filename="chip2_0_10_S2.tif", shape=feature_shape, pixel_values=list(range(256)))
-    create_biomasters_dummy_image(base_dir=str(base_dir), split="test", image_type="agbm", filename="chip2_0_10_S1.tif", shape=mask_shape, pixel_values=[0, 128, 255])
-    create_biomasters_dummy_image(base_dir=str(base_dir), split="test", image_type="agbm", filename="chip2_0_10_S2.tif", shape=mask_shape, pixel_values=[0, 128, 255])
+    create_biomasters_dummy_image(
+        base_dir=str(base_dir),
+        split="train",
+        image_type="features",
+        filename="chip1_0_9_S1.tif",
+        shape=feature_shape,
+        pixel_values=list(range(256)),
+    )
+    create_biomasters_dummy_image(
+        base_dir=str(base_dir),
+        split="train",
+        image_type="features",
+        filename="chip1_0_9_S2.tif",
+        shape=feature_shape,
+        pixel_values=list(range(256)),
+    )
+    create_biomasters_dummy_image(
+        base_dir=str(base_dir),
+        split="train",
+        image_type="agbm",
+        filename="chip1_0_9_S1.tif",
+        shape=mask_shape,
+        pixel_values=[0, 128, 255],
+    )
+    create_biomasters_dummy_image(
+        base_dir=str(base_dir),
+        split="train",
+        image_type="agbm",
+        filename="chip1_0_9_S2.tif",
+        shape=mask_shape,
+        pixel_values=[0, 128, 255],
+    )
+    create_biomasters_dummy_image(
+        base_dir=str(base_dir),
+        split="test",
+        image_type="features",
+        filename="chip2_0_10_S1.tif",
+        shape=feature_shape,
+        pixel_values=list(range(256)),
+    )
+    create_biomasters_dummy_image(
+        base_dir=str(base_dir),
+        split="test",
+        image_type="features",
+        filename="chip2_0_10_S2.tif",
+        shape=feature_shape,
+        pixel_values=list(range(256)),
+    )
+    create_biomasters_dummy_image(
+        base_dir=str(base_dir),
+        split="test",
+        image_type="agbm",
+        filename="chip2_0_10_S1.tif",
+        shape=mask_shape,
+        pixel_values=[0, 128, 255],
+    )
+    create_biomasters_dummy_image(
+        base_dir=str(base_dir),
+        split="test",
+        image_type="agbm",
+        filename="chip2_0_10_S2.tif",
+        shape=mask_shape,
+        pixel_values=[0, 128, 255],
+    )
     return str(base_dir)
+
 
 def test_biomasters_datamodule(dummy_biomasters_data):
     from terratorch.datamodules import BioMasstersNonGeoDataModule
+
     batch_size = 1
     num_workers = 0
-    bands = {
-        "S1": ["VV_Asc", "VH_Asc", "VV_Desc"],
-        "S2": ["RED", "GREEN", "BLUE"]
-    }
+    bands = {"S1": ["VV_Asc", "VH_Asc", "VV_Desc"], "S2": ["RED", "GREEN", "BLUE"]}
     sensors = ["S1", "S2"]
     datamodule = BioMasstersNonGeoDataModule(
         data_root=dummy_biomasters_data,
