@@ -71,7 +71,7 @@ jobs:
           name: testmondata-artifact-${{ matrix.python-version }}
           path: testmondir/testmondata
       - name: Downloading artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v5
         with:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
