@@ -51,13 +51,6 @@ jobs:
           pip install pytest-testmon
           # Installing dependencies required to test Galileo (temporary)
           pip install git+https://github.com/Joao-L-S-Almeida/terratorch-galileo.git
-      - name: Downloading artifacts
-        uses: actions/download-artifact@v4
-        with:
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ github.token }}
-          name: testmondata-artifact-${{ matrix.python-version }}
-          path: .
       - name: Clean pip cache
         run: pip cache purge
       - name: List pip dependencies
@@ -78,6 +71,13 @@ jobs:
           if-no-files-found: ignore
           name: testmondata-artifact-${{ matrix.python-version }}
           path: testmondir/testmondata
+      - name: Downloading artifacts
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+          name: testmondata-artifact-${{ matrix.python-version }}
+          path: .
 
 
 
