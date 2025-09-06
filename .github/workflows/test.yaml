@@ -59,7 +59,6 @@ jobs:
         run: pip cache purge
       - name: Test with pytest
         run: |
-          mv testmondata .testmondata
           pytest -s -v --testmon tests
           mkdir testmondir
           mv .testmondata testmondir/testmondata
@@ -78,6 +77,7 @@ jobs:
           github-token: ${{ github.token }}
           name: testmondata-artifact-${{ matrix.python-version }}
           path: .
-
+      - name: list files
+        run: ls -a .testmon*
 
 
