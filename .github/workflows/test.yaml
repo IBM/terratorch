@@ -54,6 +54,8 @@ jobs:
       - name: Downloading artifacts
         uses: actions/download-artifact@v4
         with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
           name: testmondata-artifact-${{ matrix.python-version }}
           path: .
       - name: Clean pip cache
