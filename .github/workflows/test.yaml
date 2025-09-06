@@ -57,27 +57,24 @@ jobs:
         run: pip list
       - name: Cleaning cache
         run: pip cache purge
+          #- name: Downloading artifacts
+          #uses: actions/download-artifact@v5
+          #with:
+          #run-id: ${{ github.event.workflow_run.id }}
+          #github-token: ${{ github.token }}
+          #name: testmondata-artifact-${{ matrix.python-version }}
+          #path: .
       - name: Test with pytest
         run: |
           pytest -s -v --testmon tests
-          mkdir testmondir
-          mv .testmondata testmondir/testmondata
-          ls -a testmondir
-      - name: Uploading artifacts
-        #if: ${{ hashFiles('.testmondata') == '' }}
-        uses: actions/upload-artifact@v4
-        with:
-          if-no-files-found: ignore
-          name: testmondata-artifact-${{ matrix.python-version }}
-          path: testmondir/testmondata
-      - name: Downloading artifacts
-        uses: actions/download-artifact@v5
-        with:
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ github.token }}
-          name: testmondata-artifact-${{ matrix.python-version }}
-          path: .
-      - name: list files
-        run: ls -a .testmon*
+          #- name: Uploading artifacts
+          #if: ${{ hashFiles('.testmondata') == '' }}
+          #uses: actions/upload-artifact@v4
+          #with:
+          #  if-no-files-found: ignore
+          #  name: testmondata-artifact-${{ matrix.python-version }}
+          #  path: testmondir/testmondata
+          #- name: list files
+          #run: ls -a .testmon*
 
 
