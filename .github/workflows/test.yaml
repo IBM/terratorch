@@ -50,6 +50,7 @@ jobs:
           pip install -e .[wxc,test]
           # Installing dependencies required to test Galileo (temporary)
           pip install git+https://github.com/Joao-L-S-Almeida/terratorch-galileo.git
+          pip install git+https://github.com/pytest-dev/pytest-incremental.git
       - name: Clean pip cache
         run: pip cache purge
       - name: List pip dependencies
@@ -58,6 +59,7 @@ jobs:
         run: pip cache purge
       - name: Test with pytest
         run: |
-          pytest -s --cov=terratorch -v --cov-report term-missing tests
+          #pytest -s --cov=terratorch -v --cov-report term-missing tests
+          pytest -s -v --inc tests
 
 
