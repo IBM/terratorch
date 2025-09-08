@@ -396,7 +396,8 @@ def test_create_pixelwise_model_with_extra_bands(
 
     gc.collect()
 
-@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "clay_v1_base"])
+
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "prithvi_eo_v2_300", "clay_v1_base"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
 @pytest.mark.parametrize("decoder", ["UNetDecoder"])
 def test_create_model_with_lora(backbone, task, expected, decoder, model_factory: EncoderDecoderFactory, model_input):

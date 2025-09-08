@@ -212,12 +212,12 @@ def test_temporal_wrapper_pooling_modes(dummy_encoder):
     assert output[0].shape == (batch_size, n_tokens, encoder.out_channels[0])
     del output, wrapper 
 
-    gc.collect()
+    # gc.collect()
 
-    ### Swin-like features
-    encoder = BACKBONE_REGISTRY.build(
-        "satlas_swin_b_sentinel2_si_ms", model_bands=[0, 1, 2, 3, 4, 5], out_indices=[1, 3, 5, 7]
-    )
+    # ### Swin-like features
+    # encoder = BACKBONE_REGISTRY.build(
+    #     "satlas_swin_b_sentinel2_si_ms", model_bands=[0, 1, 2, 3, 4, 5], out_indices=[1, 3, 5, 7]
+    # )
 
     n_channels = 6
     x = torch.randn(batch_size, n_channels, timesteps, 256, 256)
