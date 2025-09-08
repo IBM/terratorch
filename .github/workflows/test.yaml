@@ -59,13 +59,12 @@ jobs:
       - name: Test with pytest
         run: |
           pytest -s --cov=terratorch -v --cov-report term-missing tests
-          coverage-badge -o coverage-badge.svg
-      - name: Uploading artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          if-no-files-found: ignore
-          name: coverage-badge-${{ matrix.python-version }}
-          path: ./coverage-badge.svg
-
-
+          coverage-badge -o assets/coverage-badge.svg
+      - name: Committing changed badge
+        run: | 
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add assets/coverage-badge.svg
+          git commit -s -m "Updating coverage badge"
+          git push origin coverage
 
