@@ -28,6 +28,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     timeout-minutes: 40
     strategy:
       matrix:
@@ -67,8 +70,6 @@ jobs:
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git add assets/coverage-badge.svg
           git commit -s -m "Updating coverage badge"
-     - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.ref }}
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+
