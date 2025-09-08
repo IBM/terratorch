@@ -64,7 +64,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           if-no-files-found: ignore
-          name: testmondata-artifact
           name: coverage-badge-${{ matrix.python-version }}
           path: ./coverage-badge.svg
 
