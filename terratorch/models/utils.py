@@ -56,9 +56,12 @@ def pad_images(imgs: Tensor, patch_size: int | list, padding: str) -> Tensor:
     return imgs
 
 def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
-    use_temporal = backbone_kwargs.pop('use_temporal', None)
-    temporal_pooling = backbone_kwargs.pop('temporal_pooling', None)
+    use_temporal = backbone_kwargs.pop('use_temporal', False)
+    pooling = backbone_kwargs.pop('temporal_pooling', 'mean')
     concat = backbone_kwargs.pop('temporal_concat', None)
+    n_timestamps = backbone_kwargs.pop('temporal_n_timestamps', None)
+    features_permute_op = backbone_kwargs.pop('temporal_features_permute_op', None)
+
     if isinstance(backbone, nn.Module):
         model = backbone
     else:
@@ -66,12 +69,14 @@ def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
 
     # Apply TemporalWrapper inside _get_backbone
     if use_temporal:
-        model = TemporalWrapper(model, pooling=temporal_pooling, concat=concat)
+        model = TemporalWrapper(model, pooling=pooling, concat=concat, n_timestamps=n_timestamps,
+                                features_permute_op=features_permute_op)
 
     return model
 
+
 class TemporalWrapper(nn.Module):
-    def __init__(self, encoder: nn.Module, pooling: str = 'mean', concat: bool = None, n_timestamps: int = None,
+    def __init__(self, encoder: nn.Module, pooling: str = 'mean', concat: bool = None, n_timestamps: int | None = None,
                  features_permute_op: list[int] = None):
         """
         Wrapper for applying a temporal encoder across multiple time steps.
