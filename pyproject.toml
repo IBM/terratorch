@@ -63,6 +63,7 @@ dependencies = [
   "huggingface_hub",
   "tifffile",
   "python-box",
+  "tqdm", # progress bar for lazy OD tiled DS wrapper
 ]
 
 
