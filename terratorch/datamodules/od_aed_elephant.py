@@ -23,6 +23,8 @@ class ElephantDataModule(pl.LightningDataModule):
         batch_size: int = 8,
         num_workers: int = 8,
         train_test_split: float = 0.8,
+        tile_cache_test: Optional[str] = "tile_cache_test",
+        tile_cache_train: Optional[str] = "tile_cache_train",
     ):
         if not 0.0 <= train_test_split <= 1.0:
             raise ValueError(f"train_test_split must be between 0 and 1, got {train_test_split}")
@@ -34,7 +36,7 @@ class ElephantDataModule(pl.LightningDataModule):
             min_size=min_size,
             tile_size=tile_size,
             overlap=overlap,
-            cache_dir="tile_cache_val",
+            cache_dir=tile_cache_test,
             skip_empty_boxes=False,
         )
 
@@ -43,7 +45,7 @@ class ElephantDataModule(pl.LightningDataModule):
             min_size=min_size,
             tile_size=tile_size,
             overlap=overlap,
-            cache_dir="tile_cache_train",
+            cache_dir=tile_cache_train,
         )
 
         train_size = int(train_test_split * len(train_val_dataset))
