@@ -68,6 +68,47 @@ class SelectIndices(Neck):
 
 
 @TERRATORCH_NECK_REGISTRY.register
+class AggregateTokens(Neck):
+    def __init__(self, channel_list: list[int], pooling: str | int = "mean", index: int  = -1):
+        """Aggregate tokens/patch embeddings to a single embedding. Mainly used for classification models.
+
+        Args:
+            pooling (str, int): Pooling method. Options: 'mean', 'max', 'CLS', or token index (int).
+            index (int): Select the layer index if mulitple outputs are provided. Defaults to -1.
+        """
+        super().__init__(channel_list)
+        self.pooling = pooling
+        self.index = index
+
+    def forward(self, features: list[torch.Tensor], **kwargs) -> list[torch.Tensor]:
+        if len(features) > 1:
+            features = [features[self.index]]
+
+        if features[0].dim() == 4:
+            # Assuming token grid, flattening token dimension
+            B, H, W, L  = features[0].shape
+            features = [features[0].reshape(B, H*W, L)]
+        elif features[0].dim() > 4:
+            raise NotImplementedError('Aggregate tokens only supports 4 dimensions or less.')
+
+        if isinstance(self.pooling, int):
+            # Select token index
+            return [features[0][..., pooling, :]]
+        elif self.pooling == "CLS":
+            # Assuming CLS token is on first position
+            return [features[0][..., 0, :]]
+        elif self.pooling == "mean":
+            return [features[0].mean(dim=-2)]
+        elif self.pooling == "max":
+            return [features[0].max(dim=-2)]
+        else:
+            raise ValueError(f"Pooling method {self.pooling} not recognized.")
+
+    def process_channel_list(self, channel_list: list[int]) -> list[int]:
+        return channel_list
+
+
+@TERRATORCH_NECK_REGISTRY.register
 class PermuteDims(Neck):
     def __init__(self, channel_list: list[int], new_order: list[int]):
         """Permute dimensions of each element in the embedding list
