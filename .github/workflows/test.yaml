@@ -48,7 +48,6 @@ jobs:
           pip install pip==24.2
           pip --version
           pip install -e .[wxc,test]
-          pip install pytest-testmon
           # Installing dependencies required to test Galileo (temporary)
           pip install git+https://github.com/Joao-L-S-Almeida/terratorch-galileo.git
       - name: Clean pip cache
@@ -59,17 +58,15 @@ jobs:
         run: pip cache purge
       - name: Test with pytest
         run: |
-          pytest -s -v --testmon tests
-          mkdir testmondir
-          mv .testmondata testmondir/testmondata
-          ls -a testmondir
+          pytest -s --cov=terratorch -v --cov-report term-missing tests
+          coverage-badge -o coverage-badge.svg
       - name: Uploading artifacts
-        #if: ${{ hashFiles('.testmondata') == '' }}
         uses: actions/upload-artifact@v4
         with:
           if-no-files-found: ignore
           name: testmondata-artifact
-          path: testmondir/testmondata
+          name: coverage-badge-${{ matrix.python-version }}
+          path: ./coverage-badge.svg
 
 
 
