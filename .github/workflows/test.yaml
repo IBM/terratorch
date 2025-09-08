@@ -59,7 +59,8 @@ jobs:
       - name: Test with pytest
         run: |
           pytest -s --cov=terratorch -v --cov-report term-missing tests
-          coverage-badge -o assets/coverage-badge.svg
+          coverage-badge -o coverage-badge.svg
+          mv coverage-badge.svg assets
       - name: Committing changed badge
         run: | 
           git config user.name 'github-actions[bot]'
