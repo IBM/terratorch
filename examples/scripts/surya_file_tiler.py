@@ -30,3 +30,4 @@ for file in files:
             datarray = xr.merge(dataset)
             filename = os.path.basename(file)
             datarray.to_netcdf(os.path.join(output_data_root, filename.replace(".nc", f"_tile_{i}_{j}.nc")), "w")
+
