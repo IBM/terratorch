@@ -37,7 +37,9 @@ from terratorch.cli_tools import LightningInferenceModel
 )
 def test_models_fit(model_name):
     result = subprocess.run(
-        ['terratorch', 'fit', '-c', f"./integrationtests/configs/test_{model_name}.yaml"], capture_output=True, text=True
+        ['terratorch', 'fit', '-c', f"./integrationtests/configs/test_{model_name}.yaml"],
+        capture_output=True,
+        text=True,
     )
 
     # Print the captured output
@@ -240,7 +242,8 @@ def test_surya():
         batch_ = {k: torch.from_numpy(v).to("cuda:0") for k, v in batch[0].items()}
     print(f"Elapsed time: {time.time() - start_time} s")
 
-    assert isinstance(batch_, dict) and len(batch_)>0
+    assert isinstance(batch_, dict) and len(batch_) > 0
+
 
 ## Only run these tests after running test_finetune.py.
 ## Uses the recently created checkpoints to test if the
