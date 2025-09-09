@@ -520,12 +520,12 @@ class GenerationSampler(nn.Module):
         mod_mask = torch.gather(mod_mask_all, dim=1, index=ids_keep)
 
         if self.model.num_register_tokens > 0:
-            prompt_tokens = repeat(self.prompt_tokens, '() n d -> b n d', b=B)
+            register_tokens = repeat(self.model.register_tokens, '() n d -> b n d', b=B)
             # We add prompt tokens at the beginning of the sequence
-            encoder_tokens = torch.cat([prompt_tokens, encoder_tokens], dim=1)
-            encoder_emb = torch.cat([torch.zeros_like(prompt_tokens), encoder_emb], dim=1)
-            encoder_mask = torch.cat([torch.zeros((B, prompt_tokens.shape[1]), dtype=torch.bool, device=encoder_mask.device), encoder_mask], dim=1)
-            mod_mask = torch.cat([torch.full((B, prompt_tokens.shape[1]), -1, dtype=torch.int16, device=mod_mask.device), mod_mask], dim=1)
+            encoder_tokens = torch.cat([register_tokens, encoder_tokens], dim=1)
+            encoder_emb = torch.cat([torch.zeros_like(register_tokens), encoder_emb], dim=1)
+            encoder_mask = torch.cat([torch.zeros((B, register_tokens.shape[1]), dtype=torch.bool, device=encoder_mask.device), encoder_mask], dim=1)
+            mod_mask = torch.cat([torch.full((B, register_tokens.shape[1]), -1, dtype=torch.int16, device=mod_mask.device), mod_mask], dim=1)
 
         encoder_tokens[encoder_mask] = 0.
         encoder_emb[encoder_mask] = 0.

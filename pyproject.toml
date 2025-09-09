@@ -43,7 +43,7 @@ dependencies = [
   "torch>2.0",
   "torchvision",
   "rioxarray",
-  "albumentations==1.4.6",
+  "albumentations==1.4.10",
   "albucore==0.0.16",
   "rasterio",
   "torchmetrics",
@@ -64,6 +64,7 @@ dependencies = [
   "tifffile",
   "python-box",
   "diffusers>=0.30.0",
+  "pytest-sugar",
 ]
 
 

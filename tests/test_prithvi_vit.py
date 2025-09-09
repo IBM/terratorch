@@ -16,14 +16,14 @@ def input_224():
 @pytest.mark.parametrize("patch_size_time,num_frames", [(1, 1), (1, 2), (1, 3), (2, 2), (3,3)])
 def test_prithvi_vit_patch_embed_loading_compatible(patch_size, patch_size_time, num_frames):
     model = BACKBONE_REGISTRY.build(
-        "prithvi_eo_v1_100",
+        "prithvi_eo_v2_300",
         pretrained=False,
         num_frames=num_frames,
         patch_size=[patch_size_time, 16, 16],
     )
 
     weights = BACKBONE_REGISTRY.build(
-        "prithvi_eo_v1_100",
+        "prithvi_eo_v2_300",
         pretrained=False,
         num_frames=num_frames,
         patch_size=[patch_size_time, 16, 16],
@@ -36,14 +36,14 @@ def test_prithvi_vit_patch_embed_loading_compatible(patch_size, patch_size_time,
 @pytest.mark.parametrize("patch_size_time,patch_size_time_other", [(1, 2), (2, 4)])
 def test_prithvi_vit_patch_embed_loading_time_patch_size_other(patch_size_time,patch_size_time_other):
     model = BACKBONE_REGISTRY.build(
-        "prithvi_eo_v1_100",
+        "prithvi_eo_v2_600",
         pretrained=False,
         num_frames=4,
         patch_size=[patch_size_time, 16, 16],
     )
 
     weights = BACKBONE_REGISTRY.build(
-        "prithvi_eo_v1_100",
+        "prithvi_eo_v2_600",
         pretrained=False,
         num_frames=4,
         patch_size=[patch_size_time_other, 16, 16],
