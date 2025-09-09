@@ -9,10 +9,14 @@ import subprocess
 import gc
 import pandas as pd
 from datetime import datetime
+import lightning.pytorch as pl
 import time
 
 from huggingface_hub import hf_hub_download
 from terratorch.datasets import HelioNetCDFDataset
+from terratorch.datamodules import HelioNetCDFDataModule
+from terratorch.registry import BACKBONE_REGISTRY
+from terratorch.tasks import InferenceTask
 from terratorch.cli_tools import LightningInferenceModel
 
 
@@ -227,22 +231,50 @@ def test_surya():
         "hmi_v",
     ]
 
-    dataset = HelioNetCDFDataset(
-        index_path=index_path,
-        time_delta_input_minutes=[-60, 0],
-        time_delta_target_minutes=+60,
-        channels=channels,
-        n_input_timestamps=2,
-        rollout_steps=1,
-        scalers=scalers_path,
-    )
+    run = "predict"
 
     start_time = time.time()
-    for batch in dataset:
-        batch_ = {k: torch.from_numpy(v).to("cuda:0") for k, v in batch[0].items()}
-    print(f"Elapsed time: {time.time() - start_time} s")
+    if run == "predict":
+        datamodule = HelioNetCDFDataModule(
+            train_index_path=index_path,
+            test_index_path=index_path,
+            val_index_path=index_path,
+            predict_index_path=index_path,
+            batch_size=1,
+            num_workers=0,
+            time_delta_input_minutes=[-60, 0],
+            time_delta_target_minutes=+60,
+            channels=channels,
+            n_input_timestamps=2,
+            rollout_steps=1,
+            scalers=scalers_path,
+        )
 
-    assert isinstance(batch_, dict) and len(batch_) > 0
+        model_name = "heliofm_backbone_surya"
+        backbone = BACKBONE_REGISTRY.build(model_name, pretrained=True)
+        datamodule.setup("predict")
+        model = InferenceTask(model=backbone)
+        pl.seed_everything(0)
+        # Lightning Trainer
+        trainer = pl.Trainer(
+            accelerator="gpu",
+            strategy="auto",
+            devices=1,
+            # precision='bf16-mixed',
+            num_nodes=1,
+            logger=True,
+            max_epochs=1,
+            log_every_n_steps=1,
+            enable_checkpointing=True,
+            callbacks=[pl.callbacks.RichProgressBar()],
+            default_root_dir="output/heliofm",
+        )
+
+        # Training
+        prediction = trainer.predict(model, datamodule=datamodule)
+        print(f"Elapsed time: {time.time() - start_time} s")
+
+        assert isinstance(prediction, torch) and len(prediction) > 0
 
 
 ## Only run these tests after running test_finetune.py.
