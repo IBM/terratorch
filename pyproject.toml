@@ -65,6 +65,11 @@ dependencies = [
   "huggingface_hub",
   "tifffile",
   "python-box",
+  "wandb",
+  "termcolor",
+  "numba",
+  "hdf5plugin",
+  "h5netcdf",
   "pytest-sugar",
 ]
 
