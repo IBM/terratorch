@@ -161,9 +161,11 @@ def terramind_v1_tokenizer_s2l2a(**kwargs):
         prediction_type="sample",
         post_mlp=True,
         patch_size=16,
+        patch_size_dec=4,
         quant_type="fsq",
         codebook_size="8-8-8-6-5",
         latent_dim=5,
+        clip_sample=True,
         **kwargs
     )
 
@@ -187,9 +189,11 @@ def terramind_v1_tokenizer_s1rtc(**kwargs):
         prediction_type="sample",
         post_mlp=True,
         patch_size=16,
+        patch_size_dec=4,
         quant_type="fsq",
         codebook_size="8-8-8-6-5",
         latent_dim=5,
+        clip_sample=True,
         **kwargs
     )
 
@@ -212,9 +216,11 @@ def terramind_v1_tokenizer_s1grd(**kwargs):
         prediction_type="sample",
         post_mlp=True,
         patch_size=16,
+        patch_size_dec=4,
         quant_type="fsq",
         codebook_size="8-8-8-6-5",
         latent_dim=5,
+        clip_sample=True,
         **kwargs
     )
 
@@ -238,9 +244,11 @@ def terramind_v1_tokenizer_dem(**kwargs):
         prediction_type="sample",
         post_mlp=True,
         patch_size=16,
+        patch_size_dec=4,
         quant_type="fsq",
         codebook_size="8-8-8-6-5",
         latent_dim=5,
+        clip_sample=True,
         **kwargs
     )
 
@@ -292,9 +300,11 @@ def terramind_v1_tokenizer_ndvi(**kwargs):
         prediction_type="sample",
         post_mlp=True,
         patch_size=16,
+        patch_size_dec=4,
         quant_type="fsq",
         codebook_size="8-8-8-6-5",
         latent_dim=5,
+        clip_sample=True,
         **kwargs
     )
 
@@ -321,9 +331,11 @@ def terramind_v01_tokenizer_s2l2a(**kwargs):
         prediction_type="sample",
         post_mlp=True,
         patch_size=16,
+        patch_size_dec=4,
         quant_type="fsq",
         codebook_size="8-8-8-6-5",
         latent_dim=5,
+        clip_sample=True,
         **kwargs
     )
 
@@ -350,9 +362,11 @@ def terramind_v01_tokenizer_s1grd(**kwargs):
         prediction_type="sample",
         post_mlp=True,
         patch_size=16,
+        patch_size_dec=4,
         quant_type="fsq",
         codebook_size="8-8-8-6-5",
         latent_dim=5,
+        clip_sample=True,
         **kwargs
     )
 
@@ -379,9 +393,11 @@ def terramind_v01_tokenizer_dem(**kwargs):
         prediction_type="sample",
         post_mlp=True,
         patch_size=16,
+        patch_size_dec=4,
         quant_type="fsq",
         codebook_size="8-8-8-6-5",
         latent_dim=5,
+        clip_sample=True,
         **kwargs
     )
 
