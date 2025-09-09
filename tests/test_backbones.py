@@ -3,15 +3,21 @@ import gc
 import os
 import warnings
 
+import numpy as np
+import pandas as pd
 import pytest
 import timm
 import torch
+import xarray as xr
+from huggingface_hub import hf_hub_download
 
 from terratorch.models.backbones import scalemae, torchgeo_vit
 from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY
 
 NUM_CHANNELS = 6
 NUM_FRAMES = 4
+REPO_ID = "nasa-ibm-ai4science/Surya-1.0_validation_data"
+INDEX_FILE = "index_2011_test.csv"
 
 IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "false") == "true"
 
@@ -250,3 +256,31 @@ def test_terramind_tim(model_name):
     output = backbone({"S2L2A": torch.ones((1, 12, 224, 224))}, LULC=torch.ones((1, 1, 224, 224)))
 
     gc.collect()
+
+
+@pytest.mark.parametrize("model_name", ["heliofm_backbone_surya"])
+def test_heliofm(model_name):
+    B = 8
+    C = 6
+    T = 3
+    H = 256
+    W = 256
+
+    backbone = BACKBONE_REGISTRY.build(
+        model_name,
+        img_size=256,
+        in_chans=C,
+        embed_dim=64,
+        num_heads=8,
+        time_embedding={"type": "linear", "n_queries": None, "time_dim": 3},
+        depth=2,
+        n_spectral_blocks=0,
+        dp_rank=2,
+    )
+
+    data = {"ts": torch.rand(B, C, T, H, W), "time_delta_input": torch.rand(B, T)}
+
+    with torch.no_grad():
+        x_hat = backbone(data)
+
+    assert x_hat.shape == (B, C, H, W)
