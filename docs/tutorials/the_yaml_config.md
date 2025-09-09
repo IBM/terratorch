@@ -88,9 +88,9 @@ The rest of the arguments are:
 ## Datamodule
 
 In this section, we start direclty handling TerraTorch's built-in structures. The field `data` is expected to
-receive a [generic datamodule](../generic_datamodules.md) or any other datamodule compatible with [Lightning
+receive a [generic datamodule](../package/generic_datamodules.md) or any other datamodule compatible with [Lightning
 Datamodules](https://lightning.ai/docs/pytorch/stable/data/datamodule.html), as those defined
-in our [collection of datamodules](../datamodules.md). 
+in our [collection of datamodules](../package/datamodules.md). 
 
 In the beginning of the field we have:
 ```
@@ -151,7 +151,7 @@ is possible do define which arguments will be sent to each component by includin
 names, as `backbone_<argument>` or `decoder_<other_argument>`. Alternatively, it is possible to pass the
 arguments using dictionaries `backbone_kwargs`, `decoder_kwargs` and `head_kwargs`. The same recommendation
 made for the `data` field is repeated here, check the documentation of the [task](../tasks.md) and
-model classes ([backbones](../backbones), [decoders](../decoders.md) and [heads](../heads)) you are using in
+model classes ([backbones](../package/backbones.md), [decoders](../decoders.md) and [heads](../package/heads.md)) you are using in
 order to define which arguments to write for each subfield of `model`. 
 
 ## Optimizer and Learning Rate Scheduler

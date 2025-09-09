@@ -32,7 +32,7 @@ from terratorch.cli_tools import LightningInferenceModel
 )
 def test_models_fit(model_name):
     result = subprocess.run(
-        ['terratorch', 'fit', '-c', f"./configs/test_{model_name}.yaml"], capture_output=True, text=True
+        ['terratorch', 'fit', '-c', f"./integrationtests/configs/test_{model_name}.yaml"], capture_output=True, text=True
     )
 
     # Print the captured output

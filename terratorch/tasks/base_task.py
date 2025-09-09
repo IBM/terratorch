@@ -182,3 +182,10 @@ class TerraTorchTask(BaseTask):
             filename = os.path.join(self.path_to_record_metrics, "metrics.csv")
             metrics_record.to_csv(filename)
 
+    def load_state_dict(self, state_dict, strict=True):
+        # Update neck layer name for backwards compatibility
+        for key in list(state_dict.keys()):
+            if ".neck." in key and ".neck.layers" not in key:
+                state_dict[key.replace(".neck.", ".neck.layers.")] = state_dict.pop(key)
+
+        return super().load_state_dict(state_dict, strict=strict)

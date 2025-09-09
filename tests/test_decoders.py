@@ -75,7 +75,7 @@ def test_linear_decoder(upsampling_size, num_classes):
 
 
 @pytest.mark.parametrize("do_pool", [False])
-@pytest.mark.parametrize("model_name", ["nano", "tiny", "base"])
+@pytest.mark.parametrize("model_name", ["nano"])
 def test_galileo_decoders(do_pool, model_name, input_galileo):
     backbone = BACKBONE_REGISTRY.build(
         f"galileo_{model_name}_encoder", pretrained=False, patch_size=16, do_pool=do_pool

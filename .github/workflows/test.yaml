@@ -47,7 +47,9 @@ jobs:
           #python -m pip install --upgrade pip
           pip install pip==24.2
           pip --version
-          pip install -e .[wxc,galileo,test]
+          pip install -e .[wxc,test]
+          # Installing dependencies required to test Galileo (temporary)
+          pip install git+https://github.com/Joao-L-S-Almeida/terratorch-galileo.git
       - name: Clean pip cache
         run: pip cache purge
       - name: List pip dependencies
