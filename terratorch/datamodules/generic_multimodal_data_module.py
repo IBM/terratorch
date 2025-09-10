@@ -388,20 +388,20 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         for name, data_root in [("train", train_data_root), ("val", val_data_root), ("test", test_data_root),
                                 ("predict", predict_data_root)]:
             if data_root is None:
-                pass
+                filtered = None
             else:
                 filtered = {m: data_root[m] for m in modalities if m in data_root} # Filter out modalities not used
                 if not allow_missing_modalities:
                     if not set(filtered.keys()) == set(modalities):
                         raise ValueError(f"Paths in {name}_data_root do not match modalities {modalities}: {data_root}")
-                if name == "train":
-                    self.train_root = filtered
-                elif name == "val":
-                    self.val_root = filtered
-                elif name == "test":
-                    self.test_root = filtered
-                elif name == "predict":
-                    self.predict_root = filtered
+            if name == "train":
+                self.train_root = filtered
+            elif name == "val":
+                self.val_root = filtered
+            elif name == "test":
+                self.test_root = filtered
+            elif name == "predict":
+                self.predict_root = filtered
 
         self.train_split = train_split
         self.val_split = val_split
