@@ -72,6 +72,7 @@ dependencies = [
   "hdf5plugin",
   "h5netcdf",
   "pytest-sugar",
+  "dask",
 ]
 
 
@@ -90,8 +91,6 @@ test = [
   "pytest-coverage",
   "coverage-badge",
   "peft>=0.15.0",
-  "diffusers>=0.30.0",
-  "dask",
   "wandb",
 ]
 
