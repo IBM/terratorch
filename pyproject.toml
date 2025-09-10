@@ -73,6 +73,7 @@ dependencies = [
   "h5netcdf",
   "pytest-sugar",
   "dask",
+  "tokenizers"
 ]
 
 
