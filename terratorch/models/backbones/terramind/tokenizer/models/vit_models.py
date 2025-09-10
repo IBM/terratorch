@@ -468,7 +468,7 @@ class ViTEncoder(nn.Module):
         """Get number of transformer layers."""
         return len(self.blocks)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, return_intermediates: bool = False) -> torch.Tensor | list[torch.Tensor]:
         """ViT encoder forward pass.
         
         Args:
@@ -506,16 +506,20 @@ class ViTEncoder(nn.Module):
             x = x + x_pos_emb
 
         # Transformer forward pass
-        x = self.blocks(x)
+        out = []
+        for block in self.blocks:
+            x = block(x)
+            out.append(x)
 
         if hasattr(self, 'post_mlp'):
             with autocast('cuda', enabled=False):
                 x = x.float() + self.post_mlp(self.norm_mlp(x.float()))
+            out[-1] = x
 
         # Reshape into 2D grid
-        x = rearrange(x, 'b (nh nw) d -> b d nh nw', nh=N_H, nw=N_W)
+        out = [rearrange(x, 'b (nh nw) d -> b d nh nw', nh=N_H, nw=N_W) for x in out]
 
-        return x
+        return out if return_intermediates else out[-1]
 
 
 class ViTDecoder(nn.Module):
