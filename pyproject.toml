@@ -65,6 +65,7 @@ dependencies = [
   "huggingface_hub",
   "tifffile",
   "python-box",
+  "diffusers>=0.30.0",
   "wandb",
   "termcolor",
   "numba",
