@@ -111,7 +111,7 @@ def update_grep_config_in_file(config_path: str, new_img_pattern: str):
 def buildings_image(tmp_path_factory):
     url = "https://s3.waw3-2.cloudferro.com/swift/v1/geobuildings/78957_1250257_N-33-141-A-b-1-1.tif"
     temp_dir = tmp_path_factory.mktemp("data")
-    local_path = temp_dir / "burnscars_image.tif"
+    local_path = temp_dir / "buildings-img.tiff"
 
     download_and_open_tiff(url=url, dest_path=local_path)
 
@@ -122,7 +122,7 @@ def buildings_image(tmp_path_factory):
 def burnscars_image(tmp_path_factory):
     url = " https://s3.us-east.cloud-object-storage.appdomain.cloud/geospatial-studio-example-data/examples-for-inference/park_fire_scaled.tif"
     temp_dir = tmp_path_factory.mktemp("data")
-    local_path = temp_dir / "burnscars_image.tif"
+    local_path = temp_dir / "burnscars_merged.tif"
 
     download_and_open_tiff(url=url, dest_path=local_path)
 
@@ -131,9 +131,9 @@ def burnscars_image(tmp_path_factory):
 
 @pytest.fixture(scope="session")
 def floods_image(tmp_path_factory):
-    url = 'https://s3.us-east.cloud-object-storage.appdomain.cloud/geospatial-studio-example-data/examples-for-[…]porto-allegre-floods-20240506-S2L2A.wgs84.tif'
+    url = 'https://s3.us-east.cloud-object-storage.appdomain.cloud/geospatial-studio-example-data/examples-for-inference/montenegro-brazil-floods-20231120-S1L2A.wgs84.tif'
     temp_dir = tmp_path_factory.mktemp("data")
-    local_path = temp_dir / "burnscars_image.tif"
+    local_path = temp_dir / "floods_image.tif"
 
     download_and_open_tiff(url=url, dest_path=local_path)
 
