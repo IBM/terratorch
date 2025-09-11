@@ -9,10 +9,14 @@ import subprocess
 import gc
 import pandas as pd
 from datetime import datetime
+import lightning.pytorch as pl
 import time
 
 from huggingface_hub import hf_hub_download
 from terratorch.datasets import HelioNetCDFDataset
+from terratorch.datamodules import HelioNetCDFDataModule
+from terratorch.registry import BACKBONE_REGISTRY
+from terratorch.tasks import InferenceTask
 from terratorch.cli_tools import LightningInferenceModel
 
 
@@ -107,7 +111,7 @@ def update_grep_config_in_file(config_path: str, new_img_pattern: str):
 def buildings_image(tmp_path_factory):
     url = "https://s3.waw3-2.cloudferro.com/swift/v1/geobuildings/78957_1250257_N-33-141-A-b-1-1.tif"
     temp_dir = tmp_path_factory.mktemp("data")
-    local_path = temp_dir / "burnscars_image.tif"
+    local_path = temp_dir / "buildings-img.tiff"
 
     download_and_open_tiff(url=url, dest_path=local_path)
 
@@ -118,7 +122,7 @@ def buildings_image(tmp_path_factory):
 def burnscars_image(tmp_path_factory):
     url = " https://s3.us-east.cloud-object-storage.appdomain.cloud/geospatial-studio-example-data/examples-for-inference/park_fire_scaled.tif"
     temp_dir = tmp_path_factory.mktemp("data")
-    local_path = temp_dir / "burnscars_image.tif"
+    local_path = temp_dir / "burnscars_merged.tif"
 
     download_and_open_tiff(url=url, dest_path=local_path)
 
@@ -127,9 +131,9 @@ def burnscars_image(tmp_path_factory):
 
 @pytest.fixture(scope="session")
 def floods_image(tmp_path_factory):
-    url = 'https://s3.us-east.cloud-object-storage.appdomain.cloud/geospatial-studio-example-data/examples-for-[…]porto-allegre-floods-20240506-S2L2A.wgs84.tif'
+    url = 'https://s3.us-east.cloud-object-storage.appdomain.cloud/geospatial-studio-example-data/examples-for-inference/montenegro-brazil-floods-20231120-S1L2A.wgs84.tif'
     temp_dir = tmp_path_factory.mktemp("data")
-    local_path = temp_dir / "burnscars_image.tif"
+    local_path = temp_dir / "floods_image.tif"
 
     download_and_open_tiff(url=url, dest_path=local_path)
 
@@ -227,22 +231,50 @@ def test_surya():
         "hmi_v",
     ]
 
-    dataset = HelioNetCDFDataset(
-        index_path=index_path,
-        time_delta_input_minutes=[-60, 0],
-        time_delta_target_minutes=+60,
-        channels=channels,
-        n_input_timestamps=2,
-        rollout_steps=1,
-        scalers=scalers_path,
-    )
+    run = "predict"
 
     start_time = time.time()
-    for batch in dataset:
-        batch_ = {k: torch.from_numpy(v).to("cuda:0") for k, v in batch[0].items()}
-    print(f"Elapsed time: {time.time() - start_time} s")
+    if run == "predict":
+        datamodule = HelioNetCDFDataModule(
+            train_index_path=index_path,
+            test_index_path=index_path,
+            val_index_path=index_path,
+            predict_index_path=index_path,
+            batch_size=1,
+            num_workers=0,
+            time_delta_input_minutes=[-60, 0],
+            time_delta_target_minutes=+60,
+            channels=channels,
+            n_input_timestamps=2,
+            rollout_steps=1,
+            scalers=scalers_path,
+        )
 
-    assert isinstance(batch_, dict) and len(batch_) > 0
+        model_name = "heliofm_backbone_surya"
+        backbone = BACKBONE_REGISTRY.build(model_name, pretrained=True)
+        datamodule.setup("predict")
+        model = InferenceTask(model=backbone)
+        pl.seed_everything(0)
+        # Lightning Trainer
+        trainer = pl.Trainer(
+            accelerator="gpu",
+            strategy="auto",
+            devices=1,
+            # precision='bf16-mixed',
+            num_nodes=1,
+            logger=True,
+            max_epochs=1,
+            log_every_n_steps=1,
+            enable_checkpointing=True,
+            callbacks=[pl.callbacks.RichProgressBar()],
+            default_root_dir="output/heliofm",
+        )
+
+        # Training
+        prediction = trainer.predict(model, datamodule=datamodule)
+        print(f"Elapsed time: {time.time() - start_time} s")
+
+        assert isinstance(prediction, torch) and len(prediction) > 0
 
 
 ## Only run these tests after running test_finetune.py.
