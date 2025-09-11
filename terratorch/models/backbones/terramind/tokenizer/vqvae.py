@@ -18,7 +18,6 @@
 # licensed under the Apache License, Version 2.0.
 # Source: https://github.com/apple/ml-4m/
 
-from typing import List, Tuple, Dict, Optional, Union, Any
 from contextlib import nullcontext
 import copy
 import torch
@@ -98,15 +97,15 @@ class VQ(nn.Module, PyTorchModelHubMixin):
     def __init__(
         self,
         image_size: int = 224,
-        image_size_enc: Optional[int] = None,
+        image_size_enc: int | None = None,
         n_channels: str = 12,
-        n_labels: Optional[int] = None,
+        n_labels: int | None = None,
         enc_type: str = "vit_b_enc",
         patch_proj: bool = True,
         post_mlp: bool = False,
         patch_size: int = 16,
         quant_type: str = "lucid",
-        codebook_size: Union[int, str] = 16384,
+        codebook_size: int | str = 16384,
         num_codebooks: int = 1,
         latent_dim: int = 32,
         norm_codes: bool = True,
@@ -117,8 +116,8 @@ class VQ(nn.Module, PyTorchModelHubMixin):
         code_replacement_policy: str = "batch_random",
         commitment_weight: float = 1.0,
         kmeans_init: bool = False,
-        ckpt_path: Optional[str] = None,
-        ignore_keys: List[str] = [
+        ckpt_path: str | None = None,
+        ignore_keys: list[str] = [
             "decoder",
             "loss",
             "post_quant_conv",
@@ -127,7 +126,7 @@ class VQ(nn.Module, PyTorchModelHubMixin):
         ],
         freeze_enc: bool = False,
         undo_std: bool = False,
-        config: Optional[Dict[str, Any]] = None,
+        config: dict[str, object] | None = None,
         **kwargs,
     ):
         if config is not None:
@@ -247,7 +246,7 @@ class VQ(nn.Module, PyTorchModelHubMixin):
             module.train(mode)
         return self
 
-    def init_from_ckpt(self, path: str, ignore_keys: List[str] = list()) -> "VQ":
+    def init_from_ckpt(self, path: str, ignore_keys: list[str] = list()) -> "VQ":
         """Loads the state_dict from a checkpoint file and initializes the model with it.
         Renames the keys in the state_dict if necessary (e.g. when loading VQ-GAN weights).
 
@@ -334,7 +333,7 @@ class VQ(nn.Module, PyTorchModelHubMixin):
 
     def encode(
         self, x: torch.Tensor, *args, **kwargs,
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.LongTensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.LongTensor]:
         """Encodes an input image tensor and quantizes the latent code.
 
         Args:
@@ -417,7 +416,7 @@ class VQ(nn.Module, PyTorchModelHubMixin):
         dec = self.decode_quant(quant, image_size=image_size, **kwargs)
         return dec
 
-    def forward(self, x: torch.Tensor, **kwargs) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: torch.Tensor, **kwargs) -> tuple[torch.Tensor, torch.Tensor]:
         """Forward pass of the encoder and quantizer.
 
         Args:
@@ -455,7 +454,7 @@ class VQVAE(VQ):
         out_conv: bool = False,
         image_size_dec: int = None,
         patch_size_dec: int = None,
-        config: Optional[Dict[str, Any]] = None,
+        config: dict[str, object] | None = None,
         *args,
         **kwargs,
     ):
@@ -511,7 +510,7 @@ class VQVAE(VQ):
         dec = self.decoder(quant)
         return dec
 
-    def forward(self, x: torch.Tensor, **kwargs) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: torch.Tensor, **kwargs) -> tuple[torch.Tensor, torch.Tensor]:
         """Forward pass of the encoder, quantizer, and decoder.
 
         Args:
@@ -591,7 +590,7 @@ class DiVAE(VQ):
         cls_free_guidance_dropout: float = 0.0,
         masked_cfg: bool = False,
         masked_cfg_low: int = 0,
-        masked_cfg_high: Optional[int] = None,
+        masked_cfg_high: int | None = None,
         scheduler: str = "ddim",
         beta_schedule: str = "linear",
         prediction_type: str = "sample",
@@ -600,8 +599,8 @@ class DiVAE(VQ):
         conditioning: str = "concat",
         dec_transformer_dropout: float = 0.2,
         zero_terminal_snr: bool = True,
-        image_size_dec: Optional[int] = None,
-        config: Optional[Dict[str, Any]] = None,
+        image_size_dec: int | None = None,
+        config: dict[str, object] | None = None,
         *args,
         **kwargs,
     ):
@@ -678,7 +677,7 @@ class DiVAE(VQ):
             self.init_from_ckpt(self.ckpt_path, ignore_keys=self.ignore_keys)
 
     def sample_mask(
-        self, quant: torch.Tensor, low: int = 0, high: Optional[int] = None
+        self, quant: torch.Tensor, low: int = 0, high: int | None = None
     ) -> torch.BoolTensor:
         """Returns a mask of shape B H_Q W_Q, where True = masked-out, False = keep.
 
@@ -707,7 +706,7 @@ class DiVAE(VQ):
 
         return mask
 
-    def _get_pipeline(self, scheduler: Optional[SchedulerMixin] = None) -> PipelineCond:
+    def _get_pipeline(self, scheduler: SchedulerMixin | None = None) -> PipelineCond:
         """Creates a conditional diffusion pipeline with the given scheduler.
 
         Args:
@@ -725,12 +724,12 @@ class DiVAE(VQ):
         self,
         quant: torch.Tensor,
         timesteps: int = 50,
-        scheduler: Optional[SchedulerMixin] = None,
-        generator: Optional[torch.Generator] = None,
-        image_size: Optional[Union[Tuple[int, int], int]] = None,
+        scheduler: SchedulerMixin | None = None,
+        generator: torch.Generator | None = None,
+        image_size: tuple[int, int] | int | None = None,
         verbose: bool = False,
         scheduler_timesteps_mode: str = "trailing",
-        orig_res: Optional[Union[torch.LongTensor, Tuple[int, int]]] = None,
+        orig_res: torch.LongTensor | tuple[int, int] | None = None,
     ) -> torch.Tensor:
         """Decodes quantized latent codes back to an image.
 
@@ -771,11 +770,11 @@ class DiVAE(VQ):
         self,
         input_clean: torch.Tensor,
         timesteps: int = 50,
-        scheduler: Optional[SchedulerMixin] = None,
-        generator: Optional[torch.Generator] = None,
+        scheduler: SchedulerMixin | None = None,
+        generator: torch.Generator | None = None,
         verbose: bool = True,
         scheduler_timesteps_mode: str = "trailing",
-        orig_res: Optional[Union[torch.LongTensor, Tuple[int, int]]] = None,
+        orig_res: torch.Tensor | tuple[int, int] | None = None,
         **kwargs,
     ) -> torch.Tensor:
         """Autoencodes an input image tensor by encoding it, quantizing the latent code,
@@ -817,10 +816,10 @@ class DiVAE(VQ):
         self,
         input_clean: torch.Tensor,
         input_noised: torch.Tensor,
-        timesteps: Union[torch.Tensor, float, int],
-        cond_mask: Optional[torch.Tensor] = None,
-        orig_res: Optional[Union[torch.LongTensor, Tuple[int, int]]] = None,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        timesteps: torch.Tensor |float | int,
+        cond_mask: torch.Tensor | None = None,
+        orig_res: torch.LongTensor | tuple[int, int] | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """Forward pass of the encoder, quantizer, and decoder.
 
         Args:
