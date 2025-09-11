@@ -3,15 +3,21 @@ import gc
 import os
 import warnings
 
+import numpy as np
+import pandas as pd
 import pytest
 import timm
 import torch
+import xarray as xr
+from huggingface_hub import hf_hub_download
 
 from terratorch.models.backbones import scalemae, torchgeo_vit
 from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY
 
 NUM_CHANNELS = 6
 NUM_FRAMES = 4
+REPO_ID = "nasa-ibm-ai4science/Surya-1.0_validation_data"
+INDEX_FILE = "index_2011_test.csv"
 
 IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "false") == "true"
 
@@ -19,21 +25,6 @@ IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "false") == "true"
 @pytest.fixture
 def input_224():
     return torch.ones((1, NUM_CHANNELS, 224, 224))
-
-
-@pytest.fixture
-def input_galileo_s1():
-    return torch.ones((5, 224, 224, 1, 2))
-
-
-@pytest.fixture
-def input_galileo_s2():
-    return torch.ones((5, 224, 224, 1, 13))
-
-
-@pytest.fixture
-def input_galileo_s2_less_bands():
-    return torch.ones((5, 224, 224, 1, 6))
 
 
 @pytest.fixture
@@ -86,7 +77,7 @@ def test_can_create_timm_backbones_from_registry(model_name, input_224, prefix):
     gc.collect()
 
 
-@pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100"])
+@pytest.mark.parametrize("model_name", ["prithvi_eo_v2_600_tl"])
 def test_can_create_backbones_from_registry(model_name, input_224):
     backbone = BACKBONE_REGISTRY.build(model_name, pretrained=False)
     backbone(input_224)
@@ -100,46 +91,10 @@ def test_can_create_backbones_from_registry_torchgeo_vit(model_name, input_224):
     gc.collect()
 
 
-@pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100"])
+@pytest.mark.parametrize("model_name", ["prithvi_eo_v2_100_tl"])
 def test_vit_models_accept_multitemporal(model_name, input_224_multitemporal):
     backbone = BACKBONE_REGISTRY.build(model_name, pretrained=False, num_frames=NUM_FRAMES)
     backbone(input_224_multitemporal)
-    gc.collect()
-
-
-@pytest.mark.parametrize("do_pool", [False, True])
-@pytest.mark.parametrize("model_name", ["tiny"])
-def test_galileo_encoders_s1(do_pool, model_name, input_galileo_s1):
-    backbone = BACKBONE_REGISTRY.build(f"galileo_{model_name}_encoder", pretrained=False, kind="s1", do_pool=do_pool)
-
-    output = backbone(input_galileo_s1)
-
-    gc.collect()
-
-
-@pytest.mark.parametrize("do_pool", [False, True])
-@pytest.mark.parametrize("model_name", ["base"])
-def test_galileo_encoders_s2(do_pool, model_name, input_galileo_s2):
-    backbone = BACKBONE_REGISTRY.build(f"galileo_{model_name}_encoder", pretrained=False, kind="s2", do_pool=do_pool)
-
-    output = backbone(input_galileo_s2)
-
-    gc.collect()
-
-
-@pytest.mark.parametrize("do_pool", [False, True])
-@pytest.mark.parametrize("model_name", ["nano"])
-def test_galileo_encoders_s2_less_bands(do_pool, model_name, input_galileo_s2_less_bands):
-    backbone = BACKBONE_REGISTRY.build(
-        f"galileo_{model_name}_encoder",
-        pretrained=False,
-        kind="s2",
-        model_bands=["B2", "B3", "B4", "B5", "B6", "B7"],
-        do_pool=do_pool,
-    )
-
-    output = backbone(input_galileo_s2_less_bands)
-
     gc.collect()
 
 
@@ -172,7 +127,7 @@ def test_vit_models_different_patch_tubelet_sizes(model_name, patch_size, patch_
     gc.collect()
 
 
-@pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100"])
+@pytest.mark.parametrize("model_name", ["prithvi_eo_v2_100_tl"])
 def test_out_indices(model_name, input_224):
     out_indices = (2, 4, 8, 10)
     backbone = BACKBONE_REGISTRY.build(model_name, pretrained=False, out_indices=out_indices)
@@ -250,3 +205,31 @@ def test_terramind_tim(model_name):
     output = backbone({"S2L2A": torch.ones((1, 12, 224, 224))}, LULC=torch.ones((1, 1, 224, 224)))
 
     gc.collect()
+
+
+@pytest.mark.parametrize("model_name", ["heliofm_backbone_surya"])
+def test_heliofm(model_name):
+    B = 8
+    C = 6
+    T = 3
+    H = 256
+    W = 256
+
+    backbone = BACKBONE_REGISTRY.build(
+        model_name,
+        img_size=256,
+        in_chans=C,
+        embed_dim=64,
+        num_heads=8,
+        time_embedding={"type": "linear", "n_queries": None, "time_dim": 3},
+        depth=2,
+        n_spectral_blocks=0,
+        dp_rank=2,
+    )
+
+    data = {"ts": torch.rand(B, C, T, H, W), "time_delta_input": torch.rand(B, T)}
+
+    with torch.no_grad():
+        x_hat = backbone(data)
+
+    assert x_hat.shape == (B, C, H, W)

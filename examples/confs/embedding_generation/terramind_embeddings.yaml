@@ -1,0 +1,99 @@
+# lightning.pytorch==2.1.1
+seed_everything: 0
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  callbacks: []
+  max_epochs: 0
+
+data:
+  class_path: terratorch.datamodules.GenericMultiModalDataModule
+  init_args:
+    batch_size: 1  # num zarr files (64 samples)
+    check_stackability: False
+    data_with_sample_dim: True
+    num_workers: 8
+    concat_bands: False  # Concatenate all modalities along the band dim and returns a tensor
+    no_data_replace: 0
+    allow_substring_file_names: False
+
+    modalities:
+      - S2L1C
+      - S2L2A
+      - S1GRD
+      - file_id
+      # - center_lat
+      # - center_lon
+      # - crs
+      # - time_
+    image_modalities:
+      - S2L1C
+      - S2L2A
+      - S1GRD
+    train_data_root:
+      S2L1C: /path/to/s2l1c
+      S2L2A: /path/to/s2l2a
+      S1GRD: /path/to/s1
+      file_id: /path/to/s1 # Insert path to one of the image modalities
+    val_data_root: 
+      S2L1C: /path/to/s2l1c
+      S2L2A: /path/to/s2l2a
+      S1GRD: /path/to/s1
+      file_id: /path/to/s1 # Insert path to one of the image modalities
+    test_data_root: 
+      S2L1C: /path/to/s2l1c
+      S2L2A: /path/to/s2l2a
+      S1GRD: /path/to/s1
+      file_id: /path/to/s1 # Insert path to one of the image modalities
+    predict_data_root:  
+      S2L1C: /path/to/s2l1c
+      S2L2A: /path/to/s2l2a
+      S1GRD: /path/to/s1
+      file_id: /path/to/s1 # Insert path to one of the image modalities
+    means:
+      S2L1C: [2357.089, 2137.385, 2018.788, 2082.986, 2295.651, 2854.537, 3122.849, 3040.560, 3306.481, 1473.847, 506.070, 2472.825, 1838.929]
+      S2L2A: [1390.458, 1503.317, 1718.197, 1853.910, 2199.100, 2779.975, 2987.011, 3083.234, 3132.220, 3162.988, 2424.884, 1857.648]
+      S1GRD: [-12.599, -20.293]
+
+    stds:
+      S2L1C: [1624.683, 1675.806, 1557.708, 1833.702, 1823.738, 1733.977, 1732.131, 1679.732, 1727.26, 1024.687, 442.165, 1331.411, 1160.419]
+      S2L2A: [2106.761, 2141.107, 2038.973, 2134.138, 2085.321, 1889.926, 1820.257, 1871.918, 1753.829, 1797.379, 1434.261, 1334.311]
+      S1GRD: [5.195, 5.890]
+      
+    test_transform:
+      - class_path: terratorch.datasets.transforms.FlattenSamplesIntoChannels
+      - class_path: albumentations.CenterCrop
+        init_args:
+          height: 256
+          width: 256
+      - class_path: ToTensorV2
+      - class_path: terratorch.datasets.transforms.UnflattenSamplesFromChannels
+        init_args:
+          time_dim: True
+          n_timesteps: 4
+          n_samples: 64
+
+predict_output_dir: './'
+
+model:
+  class_path: terratorch.tasks.EmbeddingGenerationTask
+  init_args:
+    model: terramind_v1_base 
+    model_args:
+      modalities:
+        - S2L2A
+        - S2L1C
+        - S1GRD
+      merge_method: mean
+      pretrained: True
+    output_format: parquet
+    embed_file_key: file_id
+    output_dir: 'output/terramind_embeddings'
+    layers: [-1] # Model layers to extract embeddings from, -1 means the last layer
+    embedding_pooling: null
+    has_cls: False
+    temporal_cfg: 
+      temporal_wrapper: True
+      temporal_pooling: keep

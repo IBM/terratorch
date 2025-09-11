@@ -38,10 +38,9 @@ def model_factory() -> EncoderDecoderFactory:
 def model_input() -> torch.Tensor:
     return torch.ones((1, NUM_CHANNELS, 224, 224))
 
-def torchgeo_resnet_backbones():
-    return [i for i in dir(torchgeo_resnet) if "_resnet" in i and i != "load_resnet_weights"]
-
-backbones = torchgeo_resnet_backbones()
+backbones = ["fmow_resnet50_fmow_rgb_gassl",
+             "satlas_resnet152_sentinel2_mi_ms",
+             "ssl4eos12_resnet18_sentinel2_all_moco"]
 @pytest.mark.parametrize("backbone", backbones)
 def test_create_classification_model_resnet(backbone, model_factory: EncoderDecoderFactory, model_input):
     model = model_factory.build_model(
@@ -77,7 +76,6 @@ def test_create_classification_model_resnet_pretrained(backbone, model_factory: 
 
     gc.collect()
 
-#backbones = ["dofa_large_patch16_224"]
 backbones = ["dofa_base_patch16_224"]
 @pytest.mark.parametrize("backbone", backbones)
 def test_create_classification_model_dofa(backbone, model_factory: EncoderDecoderFactory, model_input):

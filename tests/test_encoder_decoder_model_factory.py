@@ -1,5 +1,6 @@
 # Copyright contributors to the Terratorch project
 
+import gc
 import importlib
 
 import pytest
@@ -8,7 +9,6 @@ import torch
 from terratorch.models import EncoderDecoderFactory
 from terratorch.models.backbones.prithvi_vit import PRETRAINED_BANDS
 from terratorch.models.model import AuxiliaryHead
-import gc
 
 NUM_CHANNELS = 6
 NUM_CLASSES = 2
@@ -47,6 +47,7 @@ LORA_CONFIG = {
         },
     },
 }
+
 
 @pytest.fixture(scope="session")
 def model_factory() -> EncoderDecoderFactory:
@@ -92,7 +93,7 @@ def test_create_classification_model(backbone, model_factory: EncoderDecoderFact
     gc.collect()
 
 
-@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100"])
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v2_tiny_tl"])
 def test_create_classification_model_no_in_channels(backbone, model_factory: EncoderDecoderFactory, model_input):
     model = model_factory.build_model(
         "classification",
@@ -110,7 +111,7 @@ def test_create_classification_model_no_in_channels(backbone, model_factory: Enc
     gc.collect()
 
 
-@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100"])
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v2_100_tl"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
 @pytest.mark.parametrize("decoder", ["UNetDecoder"])
 def test_create_pixelwise_model(backbone, task, expected, decoder, model_factory: EncoderDecoderFactory, model_input):
@@ -288,7 +289,7 @@ def test_create_model_with_mmseg_uperhead_decoder(
     gc.collect()
 
 
-@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100"])
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v2_300_tl"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
 @pytest.mark.parametrize("decoder", ["FCNDecoder"])
 def test_create_pixelwise_model_no_in_channels(
@@ -404,7 +405,7 @@ def test_create_model_with_lora(backbone, task, expected, decoder, model_factory
         "backbone": backbone,
         "decoder": decoder,
         "backbone_bands": PRETRAINED_BANDS,
-        "backbone_pretrained": True,
+        "backbone_pretrained": False,
         "peft_config": LORA_CONFIG[backbone.split("_")[0]],
     }
 

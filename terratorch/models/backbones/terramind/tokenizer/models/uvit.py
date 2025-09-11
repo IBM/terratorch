@@ -31,7 +31,11 @@ from diffusers.models.embeddings import (
     TimestepEmbedding,
     Timesteps,
 )
-from diffusers.models.unets.unet_2d_blocks import DownBlock2D, UpBlock2D
+try:
+    from diffusers.models.unets.unet_2d_blocks import DownBlock2D, UpBlock2D
+except:
+    # Fall back for diffusers ~0.20.0
+    from diffusers.models.unet_2d_blocks import DownBlock2D, UpBlock2D
 from diffusers.models.resnet import Downsample2D, Upsample2D
 from diffusers.configuration_utils import ConfigMixin
 from diffusers.models.modeling_utils import ModelMixin
