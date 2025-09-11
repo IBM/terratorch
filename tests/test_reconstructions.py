@@ -37,8 +37,9 @@ def test_prithvi_mae_reconstruction(model_name):
 def test_terramind_v01_generation(model_name):
     try:
         import diffusers
+        import tokenizers
     except ImportError:
-        pytest.skip("diffusers not installed")
+        pytest.skip("diffusers or tokenizers not installed")
 
     model = FULL_MODEL_REGISTRY.build(
         model_name,
@@ -75,8 +76,9 @@ def test_terramind_v01_generation(model_name):
 def test_terramind_generation(model_name):
     try:
         import diffusers
+        import tokenizers
     except ImportError:
-        pytest.skip("diffusers not installed")
+        pytest.skip("diffusers or tokenizers not installed")
 
     model = FULL_MODEL_REGISTRY.build(
         model_name,

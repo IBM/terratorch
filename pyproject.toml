@@ -65,7 +65,6 @@ dependencies = [
   "huggingface_hub",
   "tifffile",
   "python-box",
-  "diffusers>=0.30.0",
   "wandb",
   "termcolor",
   "numba",
@@ -90,7 +89,8 @@ test = [
   "pytest-coverage",
   "coverage-badge",
   "peft>=0.15.0",
-  "diffusers>=0.30.0",
+  "diffusers<=0.34.0",
+  "tokenizers",
   "dask",
   "wandb",
 ]
