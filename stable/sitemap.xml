@@ -2,154 +2,162 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://ibm.github.io/terratorch/stable/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/about/changelog/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/about/citation/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/about/contributing/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/about/license/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/about/related_packages/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/guide/architecture/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/guide/custom_datasets/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/guide/data/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/guide/encoder_decoder_factory/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/guide/faqs/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/guide/glossary/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/guide/inference/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/guide/models/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/guide/prithvi_eo/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/guide/quick_start/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/guide/registry/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
+    </url>
+    <url>
+         <loc>https://ibm.github.io/terratorch/stable/guide/temporal_wrapper/</loc>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/guide/terramind/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/package/backbones/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/package/datamodules/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/package/datasets/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/package/decoders/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/package/extra_model_structures/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/package/generic_datamodules/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/package/generic_datasets/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/package/heads/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/package/loss/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/package/meta_models/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/package/model_factories/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/package/necks/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/package/tasks/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/package/transforms/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/tutorials/adding_custom_modules/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/tutorials/basic_inference_burn_scars/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/tutorials/burn_scars_finetuning/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/tutorials/burn_scars_inference_simplified/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
+    </url>
+    <url>
+         <loc>https://ibm.github.io/terratorch/stable/tutorials/embedding_generation/</loc>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/tutorials/the_yaml_config/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
     <url>
          <loc>https://ibm.github.io/terratorch/stable/tutorials/using_datamodule_multitemporalclassificationModule/</loc>
-         <lastmod>2025-08-25</lastmod>
+         <lastmod>2025-09-11</lastmod>
     </url>
 </urlset>

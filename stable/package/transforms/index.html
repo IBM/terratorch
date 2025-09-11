@@ -18,7 +18,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.18">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.19">
     
     
       
@@ -433,6 +433,8 @@
       
         
       
+        
+      
     
     
     
@@ -571,6 +573,29 @@
   
   <span class="md-ellipsis">
     Prithvi EO
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/temporal_wrapper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Temporal Wrapper
     
   </span>
   
@@ -1822,7 +1847,9 @@
 
 
 
+
   <div class="doc doc-children">
+
 
 
 
@@ -1850,6 +1877,7 @@
         <p>FlattenSamplesIntoChannels is an image transformation that merges the sample (and optionally temporal) dimensions into the channel dimension.</p>
 <p>This transform rearranges an input tensor by flattening the sample dimension, and if specified, also the temporal dimension,
 thereby concatenating these dimensions into a single channel dimension.</p>
+
 
 
 
@@ -1918,6 +1946,7 @@ thereby concatenating these dimensions into a single channel dimension.</p>
 
 
   <div class="doc doc-children">
+
 
 
 
@@ -2031,6 +2060,7 @@ are merged. It expects the input to have a fixed number of dimensions defined by
 
 
 
+
               <details class="quote">
                 <summary>Source code in <code>terratorch/datasets/transforms.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-64">64</a></span>
@@ -2082,6 +2112,7 @@ are merged. It expects the input to have a fixed number of dimensions defined by
 
 
   <div class="doc doc-children">
+
 
 
 
@@ -2147,6 +2178,7 @@ are merged. It expects the input to have a fixed number of dimensions defined by
         <p>MultimodalTransforms applies albumentations transforms to multiple image modalities.</p>
 <p>This class supports both shared transformations across modalities and separate transformations for each modality.
 It also handles non-image modalities by applying a specified non-image transform.</p>
+
 
 
 
@@ -2253,6 +2285,7 @@ It also handles non-image modalities by applying a specified non-image transform
 
 
   <div class="doc doc-children">
+
 
 
 
@@ -2434,6 +2467,7 @@ It also handles non-image modalities by applying a specified non-image transform
 
 
 
+
               <details class="quote">
                 <summary>Source code in <code>terratorch/datasets/transforms.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-42">42</a></span>
@@ -2494,6 +2528,7 @@ It also handles non-image modalities by applying a specified non-image transform
 
 
 
+
   </div>
 
     </div>
@@ -2518,6 +2553,7 @@ It also handles non-image modalities by applying a specified non-image transform
 
         <p>Rearrange is a generic image transformation that reshapes an input tensor using a custom einops pattern.</p>
 <p>This transform allows flexible reordering of tensor dimensions based on the provided pattern and arguments.</p>
+
 
 
 
@@ -2588,6 +2624,7 @@ It also handles non-image modalities by applying a specified non-image transform
 
 
   <div class="doc doc-children">
+
 
 
 
@@ -2760,6 +2797,7 @@ It also handles non-image modalities by applying a specified non-image transform
 
 
 
+
               <details class="quote">
                 <summary>Source code in <code>terratorch/datasets/transforms.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-248">248</a></span>
@@ -2811,6 +2849,7 @@ It also handles non-image modalities by applying a specified non-image transform
 
 
   <div class="doc doc-children">
+
 
 
 
@@ -2917,6 +2956,7 @@ It also handles non-image modalities by applying a specified non-image transform
         <p>UnflattenSamplesFromChannels is an image transformation that restores the sample (and optionally temporal) dimensions from the channel dimension.</p>
 <p>This transform is designed to reverse the flattening performed by FlattenSamplesIntoChannels and is typically applied
 after converting images to a channels-first format.</p>
+
 
 
 
@@ -3051,6 +3091,7 @@ after converting images to a channels-first format.</p>
 
 
   <div class="doc doc-children">
+
 
 
 
@@ -3303,6 +3344,7 @@ and rearranges the flattened temporal information back into separate time and ch
 
 
 
+
               <details class="quote">
                 <summary>Source code in <code>terratorch/datasets/transforms.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-88"> 88</a></span>
@@ -3386,6 +3428,7 @@ and rearranges the flattened temporal information back into separate time and ch
 
 
   <div class="doc doc-children">
+
 
 
 

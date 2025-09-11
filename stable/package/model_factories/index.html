@@ -18,7 +18,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.18">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.19">
     
     
       
@@ -433,6 +433,8 @@
       
         
       
+        
+      
     
     
     
@@ -571,6 +573,29 @@
   
   <span class="md-ellipsis">
     Prithvi EO
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/temporal_wrapper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Temporal Wrapper
     
   </span>
   
@@ -1851,6 +1876,7 @@ Necks are using to reshape the encoder output to be compatible with the decoder 
 
 
 
+
               <details class="quote">
                 <summary>Source code in <code>terratorch/models/encoder_decoder_factory.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-78"> 78</a></span>
@@ -2181,6 +2207,7 @@ Necks are using to reshape the encoder output to be compatible with the decoder 
 
 
 
+
 <div class="doc doc-object doc-function">
 
 
@@ -2265,10 +2292,9 @@ directly. The backbone should have and <code>out_channels</code> attribute and i
           </tr>
           <tr class="doc-section-item">
             <td>
-                <code>backbone_kwargs</code>
+                <code>backbone_kwargs (dict, optional) </code>
             </td>
             <td>
-                  <code>dict, optional) </code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2276,15 +2302,14 @@ directly. The backbone should have and <code>out_channels</code> attribute and i
               </div>
             </td>
             <td>
-                  <code>None</code>
+                <em>required</em>
             </td>
           </tr>
           <tr class="doc-section-item">
             <td>
-                <code>decoder_kwargs</code>
+                <code>decoder_kwargs (dict, optional) </code>
             </td>
             <td>
-                  <code>dict, optional) </code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2292,15 +2317,14 @@ directly. The backbone should have and <code>out_channels</code> attribute and i
               </div>
             </td>
             <td>
-                  <code>None</code>
+                <em>required</em>
             </td>
           </tr>
           <tr class="doc-section-item">
             <td>
-                <code>head_kwargs</code>
+                <code>head_kwargs (dict, optional) </code>
             </td>
             <td>
-                  <code>dict, optional) </code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2308,7 +2332,7 @@ directly. The backbone should have and <code>out_channels</code> attribute and i
               </div>
             </td>
             <td>
-                  <code>None</code>
+                <em>required</em>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -2785,6 +2809,7 @@ The dictionary should have the following keys:</p>
 
 
 
+
               <details class="quote">
                 <summary>Source code in <code>terratorch/models/object_detection_model_factory.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-42"> 42</a></span>
@@ -3012,7 +3037,7 @@ The dictionary should have the following keys:</p>
 </span><span id="__span-0-93"><a id="__codelineno-0-93" name="__codelineno-0-93"></a>            <span class="n">necks</span> <span class="o">=</span> <span class="p">[]</span>
 </span><span id="__span-0-94"><a id="__codelineno-0-94" name="__codelineno-0-94"></a>        <span class="n">neck_list</span><span class="p">,</span> <span class="n">channel_list</span> <span class="o">=</span> <span class="n">build_neck_list</span><span class="p">(</span><span class="n">necks</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">)</span>
 </span><span id="__span-0-95"><a id="__codelineno-0-95" name="__codelineno-0-95"></a>
-</span><span id="__span-0-96"><a id="__codelineno-0-96" name="__codelineno-0-96"></a>        <span class="n">neck_module</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">neck_list</span><span class="p">)</span>
+</span><span id="__span-0-96"><a id="__codelineno-0-96" name="__codelineno-0-96"></a>        <span class="n">neck_module</span> <span class="o">=</span> <span class="n">NeckSequential</span><span class="p">(</span><span class="n">neck_list</span><span class="p">)</span>
 </span><span id="__span-0-97"><a id="__codelineno-0-97" name="__codelineno-0-97"></a>
 </span><span id="__span-0-98"><a id="__codelineno-0-98" name="__codelineno-0-98"></a>        <span class="n">combined_backbone</span> <span class="o">=</span> <span class="n">BackboneWrapper</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="n">neck_module</span><span class="p">,</span> <span class="n">channel_list</span><span class="p">)</span>
 </span><span id="__span-0-99"><a id="__codelineno-0-99" name="__codelineno-0-99"></a>        <span class="c1"># pdb.set_trace()</span>
@@ -3136,6 +3161,7 @@ The dictionary should have the following keys:</p>
 
 
   <div class="doc doc-children">
+
 
 
 
@@ -3506,7 +3532,7 @@ Defaults to None, which applies the identity function.</p>
 </span><span id="__span-0-93"><a id="__codelineno-0-93" name="__codelineno-0-93"></a>        <span class="n">necks</span> <span class="o">=</span> <span class="p">[]</span>
 </span><span id="__span-0-94"><a id="__codelineno-0-94" name="__codelineno-0-94"></a>    <span class="n">neck_list</span><span class="p">,</span> <span class="n">channel_list</span> <span class="o">=</span> <span class="n">build_neck_list</span><span class="p">(</span><span class="n">necks</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">)</span>
 </span><span id="__span-0-95"><a id="__codelineno-0-95" name="__codelineno-0-95"></a>
-</span><span id="__span-0-96"><a id="__codelineno-0-96" name="__codelineno-0-96"></a>    <span class="n">neck_module</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">neck_list</span><span class="p">)</span>
+</span><span id="__span-0-96"><a id="__codelineno-0-96" name="__codelineno-0-96"></a>    <span class="n">neck_module</span> <span class="o">=</span> <span class="n">NeckSequential</span><span class="p">(</span><span class="n">neck_list</span><span class="p">)</span>
 </span><span id="__span-0-97"><a id="__codelineno-0-97" name="__codelineno-0-97"></a>
 </span><span id="__span-0-98"><a id="__codelineno-0-98" name="__codelineno-0-98"></a>    <span class="n">combined_backbone</span> <span class="o">=</span> <span class="n">BackboneWrapper</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="n">neck_module</span><span class="p">,</span> <span class="n">channel_list</span><span class="p">)</span>
 </span><span id="__span-0-99"><a id="__codelineno-0-99" name="__codelineno-0-99"></a>    <span class="c1"># pdb.set_trace()</span>
@@ -3660,6 +3686,7 @@ Defaults to None, which applies the identity function.</p>
 
 
 
+
               <details class="quote">
                 <summary>Source code in <code>terratorch/models/full_model_factory.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-23">23</a></span>
@@ -3787,6 +3814,7 @@ Defaults to None, which applies the identity function.</p>
 
 
   <div class="doc doc-children">
+
 
 
 
@@ -4093,6 +4121,7 @@ The dictionary should have the following keys:
 
 
 
+
               <details class="quote">
                 <summary>Source code in <code>terratorch/models/smp_model_factory.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-79"> 79</a></span>
@@ -4358,6 +4387,7 @@ The dictionary should have the following keys:
 
 
   <div class="doc doc-children">
+
 
 
 
@@ -4862,6 +4892,7 @@ as auxiliary decoders or modified encoders.</p>
 
 
 
+
               <details class="quote">
                 <summary>Source code in <code>terratorch/models/timm_model_factory.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-20">20</a></span>
@@ -4963,6 +4994,7 @@ as auxiliary decoders or modified encoders.</p>
 
 
   <div class="doc doc-children">
+
 
 
 
@@ -5215,6 +5247,7 @@ as auxiliary decoders or modified encoders.</p>
 
 
 
+
               <details class="quote">
                 <summary>Source code in <code>terratorch/models/generic_model_factory.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-22">22</a></span>
@@ -5291,6 +5324,7 @@ as auxiliary decoders or modified encoders.</p>
 
 
 
+
 <div class="doc doc-object doc-function">
 
 
@@ -5350,10 +5384,10 @@ as auxiliary decoders or modified encoders.</p>
           </tr>
           <tr class="doc-section-item">
             <td>
-                <code>pretrained(str</code>
+                <code>pretrained</code>
             </td>
             <td>
-                  <code>| bool</code>
+                  <code><span title="str">str</span> | <span title="bool">bool</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5361,7 +5395,7 @@ as auxiliary decoders or modified encoders.</p>
               </div>
             </td>
             <td>
-                <em>required</em>
+                  <code>True</code>
             </td>
           </tr>
       </tbody>
@@ -5474,6 +5508,7 @@ as auxiliary decoders or modified encoders.</p>
     <div class="doc doc-contents first">
             <p class="doc doc-class-bases">
               Bases: <code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;code&gt;terratorch.models.model.ModelFactory&lt;/code&gt;" href="#terratorch.models.model.ModelFactory">ModelFactory</a></code></p>
+
 
 
 
@@ -5787,6 +5822,7 @@ as auxiliary decoders or modified encoders.</p>
 
 
   <div class="doc doc-children">
+
 
 
 
@@ -6387,6 +6423,7 @@ is different from the ground truth. Only applicable to pixel wise models (e.g. s
 
 
 
+
               <details class="quote">
                 <summary>Source code in <code>terratorch/models/generic_unet_model_factory.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-23"> 23</a></span>
@@ -6611,6 +6648,7 @@ is different from the ground truth. Only applicable to pixel wise models (e.g. s
 
 
 
+
 <div class="doc doc-object doc-function">
 
 
@@ -6686,10 +6724,10 @@ is different from the ground truth. Only applicable to pixel wise models (e.g. s
           </tr>
           <tr class="doc-section-item">
             <td>
-                <code>pretrained(str</code>
+                <code>pretrained</code>
             </td>
             <td>
-                  <code>| bool</code>
+                  <code><span title="str">str</span> | <span title="bool">bool</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -6697,7 +6735,7 @@ is different from the ground truth. Only applicable to pixel wise models (e.g. s
               </div>
             </td>
             <td>
-                <em>required</em>
+                  <code>True</code>
             </td>
           </tr>
       </tbody>
@@ -6904,6 +6942,7 @@ is different from the ground truth. Only applicable to pixel wise models (e.g. s
     <div class="doc doc-contents first">
             <p class="doc doc-class-bases">
               Bases: <code><a class="autorefs autorefs-internal" title="&lt;code class=&quot;doc-symbol doc-symbol-heading doc-symbol-class&quot;&gt;&lt;/code&gt;            &lt;code&gt;terratorch.models.model.ModelFactory&lt;/code&gt;" href="#terratorch.models.model.ModelFactory">ModelFactory</a></code></p>
+
 
 
 
@@ -7331,6 +7370,7 @@ is different from the ground truth. Only applicable to pixel wise models (e.g. s
 
 
   <div class="doc doc-children">
+
 
 
 
@@ -8064,6 +8104,7 @@ is different from the ground truth. Only applicable to pixel wise models (e.g. s
 
 
 
+
               <details class="quote">
                 <summary>Source code in <code>terratorch/models/model.py</code></summary>
                 <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-46">46</a></span>
@@ -8075,6 +8116,7 @@ is different from the ground truth. Only applicable to pixel wise models (e.g. s
 
 
   <div class="doc doc-children">
+
 
 
 
