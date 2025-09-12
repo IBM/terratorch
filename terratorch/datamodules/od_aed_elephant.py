@@ -8,9 +8,10 @@ import lightning as pl
 from torch.utils.data import Dataset
 from terratorch.datasets.od_tiled_dataset_wrapper import TiledDataset
 from terratorch.datasets.od_aed_elephant import ElephantCocoDataset
+from  torchgeo.datamodules import BaseDataModule
 
 
-class ElephantDataModule(pl.LightningDataModule):
+class ElephantDataModule(BaseDataModule):
     def __init__(
         self,
         img_folder_train: str,
