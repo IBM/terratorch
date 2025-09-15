@@ -89,7 +89,7 @@ test = [
   "pytest-coverage",
   "coverage-badge",
   "peft>=0.15.0",
-  "diffusers<=0.34.0",
+  "diffusers<=0.35.1",
   "tokenizers",
   "dask",
   "wandb",
