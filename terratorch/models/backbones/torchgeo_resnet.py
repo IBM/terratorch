@@ -77,7 +77,10 @@ look_up_table = {
     "VH": "VH",
     "R": "RED",
     "G": "GREEN",
-    "B": "BLUE"
+    "B": "BLUE",
+    "B2": "BLUE",
+    "B3": "GREEN",
+    "B4": "RED",
 }
 
 resnet18_meta = {
