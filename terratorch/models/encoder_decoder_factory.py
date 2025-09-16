@@ -16,7 +16,7 @@ from terratorch.models.necks import Neck, build_neck_list
 from terratorch.models.peft_utils import get_peft_backbone
 from terratorch.models.pixel_wise_model import PixelWiseModel
 from terratorch.models.scalar_output_model import ScalarOutputModel
-from terratorch.models.utils import extract_prefix_keys
+from terratorch.models.utils import extract_prefix_keys, TemporalWrapper
 from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY, MODEL_FACTORY_REGISTRY
 
 from .utils import _get_backbone

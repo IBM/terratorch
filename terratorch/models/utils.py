@@ -1,7 +1,7 @@
 from torch import nn, Tensor
 import torch 
 from terratorch.registry import BACKBONE_REGISTRY
-import pdb
+from typing import Dict
 
 class DecoderNotFoundError(Exception):
     pass
@@ -113,21 +113,37 @@ class TemporalWrapper(nn.Module):
         Returns:
             List[Tensor]: A list of processed tensors, one per feature map.
         """
-
-        if x.dim() != 5:
+        if isinstance(x, Dict):
+            first_key = [key for key in x.keys() if "image" in key][0]
+            x_dim = x[first_key].dim()
+        else:
+            x_dim = x.dim()
+        if x_dim != 5:
             raise ValueError(f"Expected input shape [B, C, T, H, W], but got {x.shape}")
 
-        if (self.pooling_type == 'diff') & (x.shape[2] != 2):
+
+        if isinstance(x, Dict):
+            check_diff = (x[first_key].shape[2] != 2)
+        else:
+            check_diff = (x.shape[2] != 2)
+        if (self.pooling_type == 'diff') & check_diff:
             raise ValueError(f"Expected 2 timestamps for aggregation method 'diff'")
 
-        batch_size, _, timesteps, _, _ = x.shape
+
+        if isinstance(x, Dict):
+            batch_size, _, timesteps, _, _ = x[first_key].shape
+        else:
+            batch_size, _, timesteps, _, _ = x.shape
 
         # Initialize lists to store feature maps at each timestamp
         num_feature_maps = None  # Will determine dynamically
         features_per_map = []  # Stores feature maps across timestamps
 
         for t in range(timesteps):
-            feat = self.encoder(x[:, :, t, :, :])  # Extract features at timestamp t
+            if isinstance(x, Dict):
+                feat = self.encoder({key: val[:, :, t, :, :] for key, val in x.items()})
+            else:
+                feat = self.encoder(x[:, :, t, :, :])  # Extract features at timestamp t
                 
             if not isinstance(feat, list):  # If the encoder outputs a single feature map, convert to list
                 if isinstance(feat, tuple):
@@ -146,11 +162,13 @@ class TemporalWrapper(nn.Module):
                 if self.features_permute_op is not None:
                     if len(self.features_permute_op) != len(feature_map.shape):
                         ValueError(f"Expected features_permute_op to have same number of dimensions of features, but got {len(self.features_permute_op)} and {len(feature_map.shape)}")
-                    # print('Old shape:', feature_map.shape)
                     feature_map = torch.permute(feature_map, self.features_permute_op)
-                    # print('New shape:', feature_map.shape)
-                    
+
+
                 features_per_map[i].append(feature_map)  # Store feature map at time t
+
+
+        
                     
         # Stack features along the temporal dimension
         for i in range(num_feature_maps):

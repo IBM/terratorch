@@ -22,13 +22,16 @@ from torch import Tensor
 from torch.utils.data import default_collate
 import kornia.augmentation as K
 from kornia.augmentation._2d.geometric.base import GeometricAugmentationBase2D
+from kornia.augmentation._2d.intensity.base import IntensityAugmentationBase2D
 from typing import Union
 from geobench_v2.datamodules import (
     GeoBenchClassificationDataModule, 
     GeoBenchSegmentationDataModule, 
     GeoBenchObjectDetectionDataModule,
-    MultiTemporalSegmentationAugmentation
+    MultiTemporalSegmentationAugmentation,
+    MultiModalSegmentationAugmentation,
     )
+import torch.nn as nn
 from terratorch.datasets.transforms import kornia_augmentations_to_callable_with_dict
 
 
@@ -48,8 +51,8 @@ class GeoBenchV2ClassificationDataModule(GeoBenchClassificationDataModule):
         band_order: list | dict,
         batch_size: int | None = None,
         num_workers: int = 0,
-        train_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential]] | str = "default",
-        eval_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential]] | str = "default",
+        train_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential, IntensityAugmentationBase2D]] | str = "default",
+        eval_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential, IntensityAugmentationBase2D]] | str = "default",
         **kwargs: Any,
     ):
         """Constructor
@@ -77,16 +80,14 @@ class GeoBenchV2ClassificationDataModule(GeoBenchClassificationDataModule):
             kwargs["batch_size"] = batch_size
 
         if not train_augmentations in [None, "default", "multi_temporal_default"]:
-            kwargs["train_augmentations"] = kornia_augmentations_to_callable_with_dict(train_augmentations)
-        else:
-            kwargs["train_augmentations"] = train_augmentations
+            train_augmentations = kornia_augmentations_to_callable_with_dict(train_augmentations)
+        kwargs["train_augmentations"] = train_augmentations
             
         if not eval_augmentations in [None, "default", "multi_temporal_default"]:
-            kwargs["eval_augmentations"] = kornia_augmentations_to_callable_with_dict(eval_augmentations)
-        else:
-            kwargs["eval_augmentations"] = eval_augmentations
+            eval_augmentations = kornia_augmentations_to_callable_with_dict(eval_augmentations)
+        kwargs["eval_augmentations"] = eval_augmentations
         
-        if isinstance(band_order, list): #REMOVE THIS FOR FINAL VERSION, IF LIST ASSUME IT CONTAIN BANDS DIRECTLY
+        if isinstance(band_order, list): 
             if len(band_order) > 0:
                 if isinstance(band_order[0], dict):
                     band_order_dict = {}
@@ -124,6 +125,9 @@ class GeoBenchV2ClassificationDataModule(GeoBenchClassificationDataModule):
     def _valid_attribute(self, *args: str):
         return self._proxy._valid_attribute(args)
 
+    def plot(self, args):
+        return self._proxy.visualize_batch(args)
+
 
 
 class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
@@ -142,8 +146,8 @@ class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
         band_order: list,
         batch_size: int | None = None,
         num_workers: int = 0,
-        train_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential]]| str = "default",
-        eval_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential]] | str = "default",
+        train_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential, IntensityAugmentationBase2D]]| str = "default",
+        eval_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential, IntensityAugmentationBase2D]] | str = "default",
         **kwargs: Any,
     ):
         """Constructor
@@ -171,14 +175,12 @@ class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
             kwargs["batch_size"] = batch_size
 
         if not train_augmentations in [None, "default", "multi_temporal_default"]:
-            kwargs["train_augmentations"] = kornia_augmentations_to_callable_with_dict(train_augmentations)
-        else:
-            kwargs["train_augmentations"] = train_augmentations
+            train_augmentations = kornia_augmentations_to_callable_with_dict(train_augmentations)
+        kwargs["train_augmentations"] = train_augmentations
             
         if not eval_augmentations in [None, "default", "multi_temporal_default"]:
-            kwargs["eval_augmentations"] =kornia_augmentations_to_callable_with_dict(eval_augmentations)
-        else:
-            kwargs["eval_augmentations"] = eval_augmentations
+            eval_augmentations = kornia_augmentations_to_callable_with_dict(eval_augmentations)
+        kwargs["eval_augmentations"] = eval_augmentations
         
         if len(band_order) > 0:
             if isinstance(band_order[0], dict):
@@ -243,8 +245,9 @@ class GeoBenchV2SegmentationDataModule(GeoBenchSegmentationDataModule):
         band_order: list,
         batch_size: int | None = None,
         num_workers: int = 0,
-        train_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential]] | str = "default",
-        eval_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential]] | str = "default",
+        train_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential, IntensityAugmentationBase2D]] | str = "default",
+        eval_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential, IntensityAugmentationBase2D]] | str = "default",
+        collate_fn: Callable = None,
         **kwargs: Any,
     ):
         """Constructor
@@ -271,26 +274,41 @@ class GeoBenchV2SegmentationDataModule(GeoBenchSegmentationDataModule):
         if batch_size is not None:
             kwargs["batch_size"] = batch_size
 
-        if not train_augmentations in [None, "default", "multi_temporal_default"]:
-            if isinstance(train_augmentations[0], K.VideoSequential):
-                train_augmentations = kornia_augmentations_to_callable_with_dict(train_augmentations)
-                kwargs["train_augmentations"] = MultiTemporalSegmentationAugmentation(transforms=train_augmentations)
-            else:
-                kwargs["train_augmentations"] = kornia_augmentations_to_callable_with_dict(train_augmentations)
+        if "rename_modalities" in kwargs:
+            if train_augmentations == "default":
+                train_augmentations = [ K.RandomHorizontalFlip(p=0.5), K.RandomVerticalFlip(p=0.5)]
+            elif train_augmentations == "multi_temporal_default":
+                train_augmentations = [K.VideoSequential(), K.RandomHorizontalFlip(p=0.5), K.RandomVerticalFlip(p=0.5)]
+            elif train_augmentations is None:
+                train_augmentations = [nn.Identity()]
+            train_augmentations = kornia_augmentations_to_callable_with_dict(train_augmentations)
+            train_augmentations = MultiModalSegmentationAugmentation(transforms=train_augmentations)
+
+            if eval_augmentations in ["default", None]:
+                eval_augmentations = [nn.Identity()]
+            elif eval_augmentations == "multi_temporal_default":
+                eval_augmentations = [K.VideoSequential(), nn.Identity()]
+            eval_augmentations = kornia_augmentations_to_callable_with_dict(eval_augmentations)
+            eval_augmentations = MultiModalSegmentationAugmentation(transforms=eval_augmentations)
         else:
-            kwargs["train_augmentations"] = train_augmentations
+            if not train_augmentations in [None, "default", "multi_temporal_default"]:
+                if isinstance(train_augmentations[0], K.VideoSequential):
+                    train_augmentations = kornia_augmentations_to_callable_with_dict(train_augmentations)
+                    train_augmentations = MultiTemporalSegmentationAugmentation(transforms=train_augmentations)
+                else:
+                    train_augmentations = kornia_augmentations_to_callable_with_dict(train_augmentations)
             
-        if not eval_augmentations in [None, "default", "multi_temporal_default"]:
-            if isinstance(eval_augmentations[0], K.VideoSequential):
-                eval_augmentations = kornia_augmentations_to_callable_with_dict(eval_augmentations)
-                kwargs["eval_augmentations"] = MultiTemporalSegmentationAugmentation(transforms=eval_augmentations)
-            else:
-                kwargs["eval_augmentations"] = kornia_augmentations_to_callable_with_dict(eval_augmentations)
-        else:
-            kwargs["eval_augmentations"] = eval_augmentations
+            if not eval_augmentations in [None, "default", "multi_temporal_default"]:
+                if isinstance(eval_augmentations[0], K.VideoSequential):
+                    eval_augmentations = kornia_augmentations_to_callable_with_dict(eval_augmentations)
+                    eval_augmentations = MultiTemporalSegmentationAugmentation(transforms=eval_augmentations)
+                else:
+                    eval_augmentations = kornia_augmentations_to_callable_with_dict(eval_augmentations)
+
+        kwargs["train_augmentations"] = train_augmentations
+        kwargs["eval_augmentations"] = eval_augmentations
 
         if len(band_order) > 0:
-            print(f"\n\nband_order before: {band_order}")
             if isinstance(band_order[0], dict):
                 band_order_dict = {}
                 for modality in band_order:
@@ -305,6 +323,9 @@ class GeoBenchV2SegmentationDataModule(GeoBenchSegmentationDataModule):
             img_size = img_size,
             band_order = band_order
             )  # dummy arg
+
+
+        self.collate_fn = collate_fn
 
     @property
     def collate_fn(self):
@@ -340,6 +361,9 @@ class GeoBenchV2SegmentationDataModule(GeoBenchSegmentationDataModule):
 
     def _valid_attribute(self, *args: str):
         return self._proxy._valid_attribute(args)
+
+    def plot(self, args):
+        return self._proxy.visualize_batch(args)
 
 
 
