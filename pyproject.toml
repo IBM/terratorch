@@ -58,7 +58,7 @@ dependencies = [
   "segmentation-models-pytorch<=0.4",
   "jsonargparse",
   "pytest",
-  "torchgeo",
+  "torchgeo>=0.7.0",
   "einops",
   "timm>=1.0.15",
   "pycocotools",
