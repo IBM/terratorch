@@ -1,5 +1,3 @@
-# Copyright contributors to the Terratorch project
-
 """Ugly proxy objects so parsing config file works with transforms.
 
     These are necessary since, for LightningCLI to instantiate arguments as
@@ -19,36 +17,22 @@
 from collections.abc import Callable
 from typing import Any
 from functools import partial
-
-
 import numpy as np
-from albumentations import BasicTransform
 from torch import Tensor
 from torch.utils.data import default_collate
-
-from geobench_v2.datamodules import GeoBenchClassificationDataModule, GeoBenchSegmentationDataModule, GeoBenchObjectDetectionDataModule
-
-#from torchgeo.datamodules import GeoDataModule, NonGeoDataModule
-
-from terratorch.datasets.transforms import albumentations_to_callable_with_dict
-
-ALBUMENTATIONS_TARGETS = ["image", "mask"]
-
-
-def build_callable_transform_from_torch_tensor(
-    callable_transform: Callable[[dict[str, Tensor]], dict[str, Tensor]],
-) -> Callable[[dict[str, np.ndarray]], dict[str, np.ndarray]]:
-    # Take a function from dicts of str->Tensor to dicts of str->Tensor
-    # Return a function from dicts of str->np to dicts of str->np
-    # Additionally permute the image back to channels last
-
-    def transforms_from_torch_tensor(tensor_dict: dict[str, Tensor]):
-        numpy_dict = {k: (v.numpy() if k in ALBUMENTATIONS_TARGETS else v) for k, v in tensor_dict.items()}
-        #numpy_dict["image"] = np.moveaxis(numpy_dict["image"], 0, -1)  # image to channels last
-        return callable_transform(numpy_dict)
-    return transforms_from_torch_tensor
-
-
+import kornia.augmentation as K
+from kornia.augmentation._2d.geometric.base import GeometricAugmentationBase2D
+from kornia.augmentation._2d.intensity.base import IntensityAugmentationBase2D
+from typing import Union
+from geobench_v2.datamodules import (
+    GeoBenchClassificationDataModule, 
+    GeoBenchSegmentationDataModule, 
+    GeoBenchObjectDetectionDataModule,
+    MultiTemporalSegmentationAugmentation,
+    MultiModalSegmentationAugmentation,
+    )
+import torch.nn as nn
+from terratorch.datasets.transforms import kornia_augmentations_to_callable_with_dict
 
 
 class GeoBenchV2ClassificationDataModule(GeoBenchClassificationDataModule):
@@ -64,11 +48,11 @@ class GeoBenchV2ClassificationDataModule(GeoBenchClassificationDataModule):
         self,
         cls: type[GeoBenchClassificationDataModule],
         img_size: int,
-        band_order: list,
+        band_order: list | dict,
         batch_size: int | None = None,
         num_workers: int = 0,
-        train_augmentations: None | list[BasicTransform] | str = "default",
-        eval_augmentations: None | list[BasicTransform] | str = "default",
+        train_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential, IntensityAugmentationBase2D]] | str = "default",
+        eval_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential, IntensityAugmentationBase2D]] | str = "default",
         **kwargs: Any,
     ):
         """Constructor
@@ -77,48 +61,41 @@ class GeoBenchV2ClassificationDataModule(GeoBenchClassificationDataModule):
             cls (type[GeoBenchClassificationDataModule]): geobench_v2 Classification DataModule class to be instantiated
             batch_size (int | None, optional): batch_size. Defaults to None.
             num_workers (int, optional): num_workers. Defaults to 0.
-            transforms (None | list[BasicTransform], optional): List of Albumentations Transforms.
+            transforms (None | list[Union[GeometricAugmentationBase2D, K.VideoSequential]], optional): List of Albumentations Transforms.
                 Should enc with ToTensorV2. Defaults to None.
             **kwargs (Any): Arguments passed to instantiate `cls`.
         """
+        if isinstance(train_augmentations, str):
+            msg = "If train_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            assert train_augmentations in ["default", "multi_temporal_default"], msg
+            
+        if isinstance(eval_augmentations, str):
+            msg = "If eval_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            assert eval_augmentations in ["default", "multi_temporal_default"], msg
+
         kwargs["img_size"] = img_size
         kwargs["band_order"] = band_order
 
         if batch_size is not None:
             kwargs["batch_size"] = batch_size
 
-        if not train_augmentations in [None, "default"]:
-            transforms_as_callable = albumentations_to_callable_with_dict(train_augmentations)
-            kwargs["train_augmentations"] = build_callable_transform_from_torch_tensor(transforms_as_callable)
-        else:
-            kwargs["train_augmentations"] = train_augmentations
+        if not train_augmentations in [None, "default", "multi_temporal_default"]:
+            train_augmentations = kornia_augmentations_to_callable_with_dict(train_augmentations)
+        kwargs["train_augmentations"] = train_augmentations
             
-        if not eval_augmentations in [None, "default"]:
-            transforms_as_callable = albumentations_to_callable_with_dict(eval_augmentations)
-            kwargs["eval_augmentations"] = build_callable_transform_from_torch_tensor(transforms_as_callable)
-        else:
-            kwargs["eval_augmentations"] = eval_augmentations
+        if not eval_augmentations in [None, "default", "multi_temporal_default"]:
+            eval_augmentations = kornia_augmentations_to_callable_with_dict(eval_augmentations)
+        kwargs["eval_augmentations"] = eval_augmentations
         
-        if len(band_order) > 0:
-            if isinstance(band_order[0], dict):
-                band_order_dict = {}
-                for modality in band_order:
-                    band_order_dict.update(modality)
-                band_order = band_order_dict
-                kwargs["band_order"] = band_order
-        print(f"\n\n CHECKING BAND ORDER: {kwargs['band_order']}")
+        if isinstance(band_order, list): 
+            if len(band_order) > 0:
+                if isinstance(band_order[0], dict):
+                    band_order_dict = {}
+                    for modality in band_order:
+                        band_order_dict.update(modality)
+                    band_order = band_order_dict
+                    kwargs["band_order"] = band_order
 
-                
-                #self.bands = band_order
-                #kwargs["collate_fn"] = self.multimodal_collate_fn
-                #collate_fn = self.multimodal_collate_fn
-                
-                #import inspect
-                #source_foo = inspect.getsource(self.multimodal_collate_fn) 
-                #print(f"\nUSING collate_fn: {source_foo}")
-
-
-        # self.__dict__["datamodule"] = cls(num_workers=num_workers, **kwargs)
         self._proxy = cls(num_workers=num_workers, **kwargs)
         super().__init__(
             dataset_class = self._proxy.dataset_class, 
@@ -148,16 +125,9 @@ class GeoBenchV2ClassificationDataModule(GeoBenchClassificationDataModule):
     def _valid_attribute(self, *args: str):
         return self._proxy._valid_attribute(args)
 
-    #def multimodal_collate_fn(self, batch):
-        #batch = default_collate(batch)
-        #batch["image"] = [batch[f"image_{modality}"] for modality in self._proxy.band_order]
-        #batch["image"] = torch.cat(stacked_image, dim=1)
-        #for key in self.band_order_dict:
-        #    batch.pop(f"image_{modality}", None)
-        #return batch
+    def plot(self, args):
+        return self._proxy.visualize_batch(args)
 
-    #def predict_dataloader(self):
-    #    return self._proxy.predict_dataloader()
 
 
 class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
@@ -176,8 +146,8 @@ class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
         band_order: list,
         batch_size: int | None = None,
         num_workers: int = 0,
-        train_augmentations: None | list[BasicTransform] | str = "default",
-        eval_augmentations: None | list[BasicTransform] | str = "default",
+        train_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential, IntensityAugmentationBase2D]]| str = "default",
+        eval_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential, IntensityAugmentationBase2D]] | str = "default",
         **kwargs: Any,
     ):
         """Constructor
@@ -186,27 +156,31 @@ class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
             cls (type[GeoBenchObjectDetectionDataModule]): geobench_v2 Object Detection DataModule class to be instantiated
             batch_size (int | None, optional): batch_size. Defaults to None.
             num_workers (int, optional): num_workers. Defaults to 0.
-            transforms (None | list[BasicTransform], optional): List of Albumentations Transforms.
+            transforms (None | list[Union[GeometricAugmentationBase2D, K.VideoSequential]], optional): List of Albumentations Transforms.
                 Should enc with ToTensorV2. Defaults to None.
             **kwargs (Any): Arguments passed to instantiate `cls`.
         """
+        if isinstance(train_augmentations, str):
+            msg = "If train_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            assert train_augmentations in ["default", "multi_temporal_default"], msg
+            
+        if isinstance(eval_augmentations, str):
+            msg = "If eval_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            assert eval_augmentations in ["default", "multi_temporal_default"], msg
+
         kwargs["img_size"] = img_size
         kwargs["band_order"] = band_order
 
         if batch_size is not None:
             kwargs["batch_size"] = batch_size
 
-        if not train_augmentations in [None, "default"]:
-            transforms_as_callable = albumentations_to_callable_with_dict(train_augmentations)
-            kwargs["train_augmentations"] = build_callable_transform_from_torch_tensor(transforms_as_callable)
-        else:
-            kwargs["train_augmentations"] = train_augmentations
-
-        if not eval_augmentations in [None, "default"]:
-            transforms_as_callable = albumentations_to_callable_with_dict(eval_augmentations)
-            kwargs["eval_augmentations"] = build_callable_transform_from_torch_tensor(transforms_as_callable)
-        else:
-            kwargs["eval_augmentations"] = eval_augmentations
+        if not train_augmentations in [None, "default", "multi_temporal_default"]:
+            train_augmentations = kornia_augmentations_to_callable_with_dict(train_augmentations)
+        kwargs["train_augmentations"] = train_augmentations
+            
+        if not eval_augmentations in [None, "default", "multi_temporal_default"]:
+            eval_augmentations = kornia_augmentations_to_callable_with_dict(eval_augmentations)
+        kwargs["eval_augmentations"] = eval_augmentations
         
         if len(band_order) > 0:
             if isinstance(band_order[0], dict):
@@ -215,15 +189,6 @@ class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
                     band_order_dict.update(modality)
                 band_order = band_order_dict
                 kwargs["band_order"] = band_order
-                #self.bands = band_order
-                #kwargs["collate_fn"] = self.multimodal_collate_fn
-                #collate_fn = self.multimodal_collate_fn
-                
-                #import inspect
-                #source_foo = inspect.getsource(self.multimodal_collate_fn) 
-                #print(f"\nUSING collate_fn: {source_foo}")
-
-        # self.__dict__["datamodule"] = cls(num_workers=num_workers, **kwargs)
 
         self._proxy = cls(num_workers=num_workers, **kwargs)
         super().__init__(
@@ -262,21 +227,6 @@ class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
     def _valid_attribute(self, *args: str):
         return self._proxy._valid_attribute(args)
 
-    #def multimodal_collate_fn(self, batch):
-        #batch = default_collate(batch)
-        #batch["image"] = [batch[f"image_{modality}"] for modality in self._proxy.band_order]
-        #batch["image"] = torch.cat(stacked_image, dim=1)
-        #for key in self.band_order_dict:
-        #    batch.pop(f"image_{modality}", None)
-        #return batch
-
-    #def predict_dataloader(self):
-    #    return self._proxy.predict_dataloader()
-
-    #def transfer_batch_to_device(self, batch, device, dataloader_idx):
-    #    return self._proxy.predict_dataloader(batch, device, dataloader_idx)
-
-
 
 
 class GeoBenchV2SegmentationDataModule(GeoBenchSegmentationDataModule):
@@ -295,8 +245,10 @@ class GeoBenchV2SegmentationDataModule(GeoBenchSegmentationDataModule):
         band_order: list,
         batch_size: int | None = None,
         num_workers: int = 0,
-        train_augmentations: None | list[BasicTransform] | str = "default",
-        eval_augmentations: None | list[BasicTransform] | str = "default",
+        train_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential, IntensityAugmentationBase2D]] | str = "default",
+        eval_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential, IntensityAugmentationBase2D]] | str = "default",
+        plot_indexes: list = [0,1,2],
+        collate_fn: Callable = None,
         **kwargs: Any,
     ):
         """Constructor
@@ -305,66 +257,77 @@ class GeoBenchV2SegmentationDataModule(GeoBenchSegmentationDataModule):
             cls (type[GeoDataModule]): geobench_v2 Segmentation DataModule class to be instantiated
             batch_size (int | None, optional): batch_size. Defaults to None.
             num_workers (int, optional): num_workers. Defaults to 0.
-            transforms (None | list[BasicTransform], optional): List of Albumentations Transforms.
+            transforms (None | list[Union[GeometricAugmentationBase2D, K.VideoSequential]], optional): List of Kornia Transforms.
                 Should enc with ToTensorV2. Defaults to None.
             **kwargs (Any): Arguments passed to instantiate `cls`.
         """
-        print(f"\n\n\n\ncls: {cls}")
-        print(f"batch_size: {batch_size}")
-        print(f"num_workers: {num_workers}")
-        print(f"train_augmentations: {train_augmentations}")
-        print(f"eval_augmentations: {eval_augmentations}")
-        print(f"img_size: {img_size}")
-        print(f"band_order: {band_order}")
-        print(f"kwargs: {kwargs}")
-
+        if isinstance(train_augmentations, str):
+            msg = "If train_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            assert train_augmentations in ["default", "multi_temporal_default"], msg
+            
+        if isinstance(eval_augmentations, str):
+            msg = "If eval_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            assert eval_augmentations in ["default", "multi_temporal_default"], msg
+            
         kwargs["img_size"] = img_size
         kwargs["band_order"] = band_order
         
         if batch_size is not None:
             kwargs["batch_size"] = batch_size
 
-        if not train_augmentations in [None, "default"]:
-            transforms_as_callable = albumentations_to_callable_with_dict(train_augmentations)
-            kwargs["train_augmentations"] = build_callable_transform_from_torch_tensor(transforms_as_callable)
-        else:
-            kwargs["train_augmentations"] = train_augmentations
+        if "rename_modalities" in kwargs:
+            if train_augmentations == "default":
+                train_augmentations = [ K.RandomHorizontalFlip(p=0.5), K.RandomVerticalFlip(p=0.5)]
+            elif train_augmentations == "multi_temporal_default":
+                train_augmentations = [K.VideoSequential(), K.RandomHorizontalFlip(p=0.5), K.RandomVerticalFlip(p=0.5)]
+            elif train_augmentations is None:
+                train_augmentations = [nn.Identity()]
+            train_augmentations = kornia_augmentations_to_callable_with_dict(train_augmentations)
+            train_augmentations = MultiModalSegmentationAugmentation(transforms=train_augmentations)
 
-        if not eval_augmentations in [None, "default"]:
-            transforms_as_callable = albumentations_to_callable_with_dict(eval_augmentations)
-            kwargs["eval_augmentations"] = build_callable_transform_from_torch_tensor(transforms_as_callable)
+            if eval_augmentations in ["default", None]:
+                eval_augmentations = [nn.Identity()]
+            elif eval_augmentations == "multi_temporal_default":
+                eval_augmentations = [K.VideoSequential(), nn.Identity()]
+            eval_augmentations = kornia_augmentations_to_callable_with_dict(eval_augmentations)
+            eval_augmentations = MultiModalSegmentationAugmentation(transforms=eval_augmentations)
         else:
-            kwargs["eval_augmentations"] = eval_augmentations
+            if not train_augmentations in [None, "default", "multi_temporal_default"]:
+                if isinstance(train_augmentations[0], K.VideoSequential):
+                    train_augmentations = kornia_augmentations_to_callable_with_dict(train_augmentations)
+                    train_augmentations = MultiTemporalSegmentationAugmentation(transforms=train_augmentations)
+                else:
+                    train_augmentations = kornia_augmentations_to_callable_with_dict(train_augmentations)
+            
+            if not eval_augmentations in [None, "default", "multi_temporal_default"]:
+                if isinstance(eval_augmentations[0], K.VideoSequential):
+                    eval_augmentations = kornia_augmentations_to_callable_with_dict(eval_augmentations)
+                    eval_augmentations = MultiTemporalSegmentationAugmentation(transforms=eval_augmentations)
+                else:
+                    eval_augmentations = kornia_augmentations_to_callable_with_dict(eval_augmentations)
+
+        kwargs["train_augmentations"] = train_augmentations
+        kwargs["eval_augmentations"] = eval_augmentations
 
         if len(band_order) > 0:
-            print(f"\n\nband_order before: {band_order}")
             if isinstance(band_order[0], dict):
                 band_order_dict = {}
                 for modality in band_order:
                     band_order_dict.update(modality)
                 band_order = band_order_dict
                 kwargs["band_order"] = band_order
-                #self.bands = band_order
-                #kwargs["collate_fn"] = self.multimodal_collate_fn
-                #collate_fn = self.multimodal_collate_fn
-                
-                #import inspect
-                #source_foo = inspect.getsource(self.multimodal_collate_fn) 
-                #print(f"\nUSING collate_fn: {source_foo}")
-        print(f"\n\new#band_order after: {band_order}")
-
-        # self.__dict__["datamodule"] = cls(num_workers=num_workers, **kwargs)
-
-        print(f"kwargs: {kwargs}")
 
         self._proxy = cls(num_workers=num_workers, **kwargs)
 
-        print("initialized proxy")
         super().__init__(
             dataset_class = self._proxy.dataset_class, 
             img_size = img_size,
             band_order = band_order
             )  # dummy arg
+
+
+        self.collate_fn = collate_fn
+        self.plot_indexes = plot_indexes
 
     @property
     def collate_fn(self):
@@ -382,6 +345,10 @@ class GeoBenchV2SegmentationDataModule(GeoBenchSegmentationDataModule):
     def length(self):
         return self._proxy.length
 
+    @property
+    def val_dataset(self):
+        return self._proxy.val_dataset
+
     def setup(self, stage: str):
         return self._proxy.setup(stage)
 
@@ -397,19 +364,8 @@ class GeoBenchV2SegmentationDataModule(GeoBenchSegmentationDataModule):
     def _valid_attribute(self, *args: str):
         return self._proxy._valid_attribute(args)
 
-    #def multimodal_collate_fn(self, batch):
-        #batch = default_collate(batch)
-        #batch["image"] = [batch[f"image_{modality}"] for modality in self._proxy.band_order]
-        #batch["image"] = torch.cat(stacked_image, dim=1)
-        #for key in self.band_order_dict:
-        #    batch.pop(f"image_{modality}", None)
-        #return batch
-
-    #def predict_dataloader(self):
-    #    return self._proxy.predict_dataloader()
-
-    #def transfer_batch_to_device(self, batch, device, dataloader_idx):
-    #    return self._proxy.predict_dataloader(batch, device, dataloader_idx)
+    def plot(self, args):
+        return self._proxy.visualize_batch(args)
 
 
 

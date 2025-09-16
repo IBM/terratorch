@@ -65,13 +65,14 @@ class SemanticSegmentationTask(TerraTorchTask):
         freeze_head: bool = False, 
         plot_on_val: bool | int = 10,
         class_names: list[str] | None = None,
-        tiled_inference_parameters: TiledInferenceParameters = None,
+        tiled_inference_parameters = None,# TiledInferenceParameters = None,
         test_dataloaders_names: list[str] | None = None,
         lr_overrides: dict[str, float] | None = None,
         output_on_inference: str | list[str] = "prediction",
         output_most_probable: bool = True,
         path_to_record_metrics: str = None,
         tiled_inference_on_testing: bool = False,
+        tiled_inference_on_validation: bool = False,
     ) -> None:
         """Constructor
 
@@ -121,8 +122,8 @@ class SemanticSegmentationTask(TerraTorchTask):
                 it can be "prediction", to save just the most probable class, or ["prediction", "probabilities"] to save both prediction and probabilities.
             output_most_probable (bool): A boolean to define if the prediction step will output just the most probable logit or all of them.
                 This argument has been deprecated and will be replaced with `output_on_inference`. 
-            tiled_inference_on_testing (bool): A boolean to define if tiled inference will be used when full inference 
-                fails during the test step. 
+            tiled_inference_on_testing (bool): A boolean to define if tiled inference will be used during the test step.
+            tiled_inference_on_validation (bool): A boolean to define if tiled inference will be used during the val step.
             path_to_record_metrics (str): A path to save the file containing the metrics log. 
         """
 
@@ -138,8 +139,11 @@ class SemanticSegmentationTask(TerraTorchTask):
         if model_factory and model is None:
             self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
 
-        super().__init__(task="segmentation", tiled_inference_on_testing=tiled_inference_on_testing,
-                         path_to_record_metrics=path_to_record_metrics)
+        super().__init__(
+            task="segmentation", 
+            tiled_inference_on_testing=tiled_inference_on_testing,
+            tiled_inference_on_validation=tiled_inference_on_validation,
+            path_to_record_metrics=path_to_record_metrics)
 
         if model is not None:
             # Custom model
@@ -310,7 +314,7 @@ class SemanticSegmentationTask(TerraTorchTask):
 
         rest = {k: batch[k] for k in other_keys}
 
-        model_output = self.handle_full_or_tiled_inference(x, self.hparams["model_args"]["num_classes"], **rest)
+        model_output = self.handle_full_or_tiled_inference(x, self.tiled_inference_on_testing, **rest)
 
         if dataloader_idx >= len(self.test_loss_handler):
             msg = "You are returning more than one test dataloader but not defining enough test_dataloaders_names."
@@ -338,7 +342,7 @@ class SemanticSegmentationTask(TerraTorchTask):
 
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
-        model_output: ModelOutput = self(x, **rest)
+        model_output = self.handle_full_or_tiled_inference(x, self.tiled_inference_on_validation, **rest)
 
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])

@@ -15,18 +15,16 @@ from terratorch.models.necks import Neck, build_neck_list
 from terratorch.models.peft_utils import get_peft_backbone
 from terratorch.models.pixel_wise_model import PixelWiseModel
 from terratorch.models.scalar_output_model import ScalarOutputModel
-from terratorch.models.utils import extract_prefix_keys
+from terratorch.models.utils import extract_prefix_keys, TemporalWrapper
 from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY, MODEL_FACTORY_REGISTRY
+
+from .utils import _get_backbone
+
 
 PIXEL_WISE_TASKS = ["segmentation", "regression"]
 SCALAR_TASKS = ["classification"]
 SUPPORTED_TASKS = PIXEL_WISE_TASKS + SCALAR_TASKS
 
-
-def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
-    if isinstance(backbone, nn.Module):
-        return backbone
-    return BACKBONE_REGISTRY.build(backbone, **backbone_kwargs)
 
 
 def _get_decoder_and_head_kwargs(
