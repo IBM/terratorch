@@ -412,6 +412,16 @@ To define a single new modality directly:
 
 This creates a random patch embedding named `image`, usable with a raw tensor or `{"image": tensor}` as model input.
 
+### Inference
+
+In order to run inference with multimodal data using the multimodal generic data module, you can pass a dict with your modalities as `predict_data_root`: 
+
+```shell
+terratorch predict -c "config_deploy.yaml" --ckpt_path "best-state_dict-epoch=09.ckpt" --predict_output_dir /data/ --data.init_args.predict_data_root '{"S1GRD": "/data/task_0", "S2L1C": "/data/task_0"}'
+```
+
+You can also add the `predict_data_root` directly in your config instead of using a CLI. If you have the tiff files of all modalities in a single folder like this example, make sure to set `image_grep` to identify the files per modality.
+
 ---
 
 ## Thinking-in-Modalities (TiM)
