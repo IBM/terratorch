@@ -15,7 +15,7 @@
     arguments, and as numpy. We handle that conversion here. 
 """
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Union
 from functools import partial
 import numpy as np
 from torch import Tensor
@@ -23,16 +23,19 @@ from torch.utils.data import default_collate
 import kornia.augmentation as K
 from kornia.augmentation._2d.geometric.base import GeometricAugmentationBase2D
 from kornia.augmentation._2d.intensity.base import IntensityAugmentationBase2D
-from typing import Union
-from geobench_v2.datamodules import (
-    GeoBenchClassificationDataModule, 
-    GeoBenchSegmentationDataModule, 
-    GeoBenchObjectDetectionDataModule,
-    MultiTemporalSegmentationAugmentation,
-    MultiModalSegmentationAugmentation,
-    )
 import torch.nn as nn
 from terratorch.datasets.transforms import kornia_augmentations_to_callable_with_dict
+try:
+    from geobench_v2.datamodules import (
+        GeoBenchClassificationDataModule, 
+        GeoBenchSegmentationDataModule, 
+        GeoBenchObjectDetectionDataModule,
+        MultiTemporalSegmentationAugmentation,
+        MultiModalSegmentationAugmentation,
+        )
+except ImportError as e:
+    import logging
+    logging.getLogger("terratorch").debug("geobench_v2 not installed")
 
 
 class GeoBenchV2ClassificationDataModule(GeoBenchClassificationDataModule):
