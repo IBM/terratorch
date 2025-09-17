@@ -6,6 +6,8 @@ import terratorch.models.backbones.dofa_vit
 import terratorch.models.backbones.heliofm_register
 import terratorch.models.backbones.prithvi_swin
 import terratorch.models.backbones.prithvi_vit
+import terratorch.models.backbones.SatMAE
+import terratorch.models.backbones.satmae_register
 import terratorch.models.backbones.scalemae
 import terratorch.models.backbones.Surya
 import terratorch.models.backbones.terramind
