@@ -368,7 +368,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         y_hat_hard = to_segmentation_prediction(model_output)
         self.val_metrics.update(y_hat_hard, y)
 
-        if self._do_plot_samples(batch_idx):
+        if False: #if self._do_plot_samples(batch_idx):
             try:
                 datamodule = self.trainer.datamodule
                 batch["prediction"] = y_hat_hard

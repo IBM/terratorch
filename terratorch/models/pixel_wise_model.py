@@ -108,9 +108,10 @@ class PixelWiseModel(Model, SegmentationModel):
 
     def forward(self, x: torch.Tensor, **kwargs) -> ModelOutput:
         """Sequentially pass `x` through model`s encoder, decoder and heads"""
-
         def _get_size(x):
-            if isinstance(x, torch.Tensor):
+            if True: #TO-DO: Fix logic
+                return (224,224) #return kwargs['image_h'][0], kwargs['image_w'][0]
+            elif isinstance(x, torch.Tensor):
                 return x.shape[-2:]
             elif isinstance(x, dict):
                 # Multimodal input in passed as dict (Assuming first modality to be an image)

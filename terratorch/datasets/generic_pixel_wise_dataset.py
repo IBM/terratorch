@@ -7,7 +7,10 @@ import glob
 import os
 from abc import ABC
 from pathlib import Path
-from typing import Any
+from typing import Any, Tuple, Optional
+import numpy as np
+import numpy.typing as npt
+import pandas as pd
 
 import albumentations as A
 import matplotlib as mpl
@@ -513,3 +516,103 @@ class GenericNonGeoPixelwiseRegressionDataset(GenericPixelWiseDataset):
         if suptitle is not None:
             plt.suptitle(suptitle)
         return fig
+
+class GenericNonGeoEmbeddingDataset(GenericPixelWiseDataset):
+    """GenericNonGeoEmbeddingDataset"""
+
+    def __init__(
+        self,
+        data_root: Path,
+        image_grep: str | None = "*",
+        transform: A.Compose | None = None,
+        no_data_replace: float | None = None,
+    ) -> None:
+        """Constructor
+
+        Args:
+            data_root (Path): Path to data root directory
+            image_grep (str, optional): Regular expression appended to data_root to find input images.
+                Defaults to "*".
+            transform (Albumentations.Compose | None): Albumentations transform to be applied.
+                Should end with ToTensorV2(). If used through the generic_data_module,
+                should not include normalization. Not supported for multi-temporal data.
+                Defaults to None, which simply applies ToTensorV2().
+            no_data_replace (float | None): Replace nan values in input images with this value. If none, does no replacement. Defaults to None.
+        """
+        super().__init__(
+            data_root,
+            image_grep=image_grep,
+            transform=transform,
+            no_data_replace=no_data_replace,
+        )
+
+    def _load_file(self, 
+                    path: str | Path,
+                    nan_replace: Optional[int | float] = None,
+                    stack_dtype: npt.DTypeLike = np.uint16,
+                    mask_dtype: npt.DTypeLike = np.uint8,
+                    img_size: Tuple[int, int, int] = (12, 224, 224)):
+
+        B, H, W = img_size
+
+        # Normalize dtypes to numpy dtypes (handles both np.uint16 and "uint16" etc.)
+        STACK_DT = np.dtype(stack_dtype)
+        MASK_DT  = np.dtype(mask_dtype)
+
+        # Pre-compute expected byte lengths (fast fail on corrupt rows)
+        EXPECTED_STACK_BYTES = B * H * W * STACK_DT.itemsize
+        EXPECTED_MASK_BYTES  = H * W * MASK_DT.itemsize
+
+        # Load Parquet
+        df = pd.read_parquet(path)
+
+        if len(df) == 0:
+            raise FileNotFoundError(f"No rows in parquet: {path}")
+
+        if "stack_patch" not in df.columns:
+            raise KeyError("Column 'stack_patch' not found in Parquet.")
+
+        has_mask = "mask_patch" in df.columns
+
+        N = len(df)
+        data = np.empty((N, B, H, W), dtype=np.float32)
+        mask = np.empty((N, H, W), dtype=np.uint8) if has_mask else None
+
+        for i, row in enumerate(df.itertuples(index=False)):
+            stack_bytes: bytes = getattr(row, "stack_patch")
+
+            # Byte-length checks help catch shape/dtype mismatches early
+            if len(stack_bytes) != EXPECTED_STACK_BYTES:
+                raise ValueError(
+                    f"Row {i}: unexpected stack byte length {len(stack_bytes)} "
+                    f"(expected {EXPECTED_STACK_BYTES} for shape {(B,H,W)} and dtype {STACK_DT})."
+                )
+
+            # Zero-copy view to typed array, then reshape and cast to float32
+            stack = np.frombuffer(stack_bytes, dtype=STACK_DT).reshape(B, H, W).astype(np.float32, copy=False)
+
+            if has_mask:
+                mask_bytes: bytes = getattr(row, "mask_patch")
+                if len(mask_bytes) != EXPECTED_MASK_BYTES:
+                    raise ValueError(
+                        f"Row {i}: unexpected mask byte length {len(mask_bytes)} "
+                        f"(expected {EXPECTED_MASK_BYTES} for shape {(H,W)} and dtype {MASK_DT})."
+                    )
+                m = np.frombuffer(mask_bytes, dtype=MASK_DT).reshape(H, W)
+                mask[i] = m
+
+                # Apply mask: set invalid pixels (mask==0) to NaN across all B bands
+                invalid = (m == 0)
+                if invalid.any():
+                    stack[:, invalid] = np.nan
+
+            data[i] = stack
+
+        if nan_replace is not None:
+            np.nan_to_num(data, copy=False, nan=float(nan_replace))
+
+        return data, mask
+    
+    def __getitem__(self, index: int) -> dict[str, Any]:
+        item = super().__getitem__(index)
+        return item
