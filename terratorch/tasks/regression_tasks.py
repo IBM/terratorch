@@ -206,7 +206,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
                 contained in the parameter name)and the value should be the new lr. Defaults to None.
             tiled_inference_on_testing (bool): A boolean to define if tiled inference will be used during the test step. 
             tiled_inference_on_validation (bool): A boolean to define if tiled inference will be used during the val step. 
-            path_to_record_metrics (str): A path to save the file containing the metrics log.
+            path_to_record_metrics (str): A path to save the file containing the metrics log. 
         """
 
         self.tiled_inference_parameters = tiled_inference_parameters
@@ -327,9 +327,9 @@ class PixelwiseRegressionTask(TerraTorchTask):
         y = batch["mask"]
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
-        #model_output: ModelOutput = self(x, **rest)
         model_output = self.handle_full_or_tiled_inference(x, self.tiled_inference_on_validation, **rest)
-
+        if self.tiled_inference_on_validation:
+            model_output.output =  torch.squeeze(model_output.output, 1)
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat = model_output.output
@@ -345,7 +345,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
                 for key in ["image", "mask", "prediction"]:
                     batch[key] = batch[key].cpu()
                 sample = unbind_samples(batch)[0]
-                fig = datamodule.val_dataset.plot(sample)
+                fig = False #datamodule.val_dataset.plot(sample)
                 if fig:
                     summary_writer = self.logger.experiment
                     if hasattr(summary_writer, "add_figure"):
@@ -373,6 +373,8 @@ class PixelwiseRegressionTask(TerraTorchTask):
         rest = {k: batch[k] for k in other_keys}
 
         model_output = self.handle_full_or_tiled_inference(x, self.tiled_inference_on_testing, **rest)
+        if self.tiled_inference_on_testing:
+            model_output.output =  torch.squeeze(model_output.output, 1)
 
         if dataloader_idx >= len(self.test_loss_handler):
             msg = "You are returning more than one test dataloader but not defining enough test_dataloaders_names."
