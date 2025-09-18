@@ -28,7 +28,7 @@ from vllm.plugins.io_processors.interface import (IOProcessor,
                                                   IOProcessorInput,
                                                   IOProcessorOutput)
 import os
-from .types import ImagePrompt, ImageRequestOutput, PluginConfig
+from .types import RequestData, RequestOutput, PluginConfig
 
 logger = init_logger(__name__)
 
@@ -108,7 +108,7 @@ class SegmentationIOProcessor(IOProcessor):
                         dest.write(image[i, :, :], i + 1)
 
                 file_data = tmpfile.read()
-                return base64.b64encode(file_data)
+                return base64.b64encode(file_data).decode('utf-8')
 
         else:
             raise ValueError("Unknown output format")
@@ -234,7 +234,7 @@ class SegmentationIOProcessor(IOProcessor):
 
     def parse_request(self, request: Any) -> IOProcessorInput:
         if type(request) is dict:
-            image_prompt = ImagePrompt(**request)
+            image_prompt = RequestData(**request)
             return image_prompt
         if isinstance(request, IOProcessorRequest):
             if not hasattr(request, "data"):
@@ -244,7 +244,7 @@ class SegmentationIOProcessor(IOProcessor):
             request_data = request.data
 
             if type(request_data) is dict:
-                return ImagePrompt(**request_data)
+                return RequestData(**request_data)
             else:
                 raise ValueError("Unable to parse the request data")
 
@@ -397,7 +397,6 @@ class SegmentationIOProcessor(IOProcessor):
         out_data = self.save_geotiff(self._convert_np_uint8(pred_imgs), request_info["meta_data"],
                                 request_info["out_data_format"], request_id)
 
-        return ImageRequestOutput(type=request_info["out_data_format"],
-                                  format="tiff",
+        return RequestOutput(data_format=request_info["out_data_format"],
                                   data=out_data,
                                   request_id=request_id)

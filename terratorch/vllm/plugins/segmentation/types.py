@@ -9,6 +9,10 @@ from pydantic import BaseModel, model_validator
 
 class PluginConfig(BaseModel):
     output_path: str = None
+    """
+    Default output folder path to be used when the out_data_format is set to path. 
+    If omitted, the plugin will default to the current user home directory.
+    """
 
     @model_validator(mode="after")
     def validate_values(self) -> Self:
@@ -22,19 +26,19 @@ class PluginConfig(BaseModel):
                 
         return self
 
-class ImagePrompt(BaseModel):
+class RequestData(BaseModel):
 
     data_format: Literal["b64_json", "path", "url"]
     """
-    This is the data type for the input image
-    """
-
-    image_format: str
-    """
-    This is the image format (e.g., jpeg, png, etc.)
+    Data type for the input image.
+    Allowed values are: [`b64_json`, `path`, `url`]
     """
 
     out_data_format: Literal["b64_json", "path"]
+    """
+    Data type for the output image.
+    Allowed values are: [`b64_json`, `url`]
+    """
 
     data: Any
     """
@@ -44,20 +48,23 @@ class ImagePrompt(BaseModel):
     indices: Optional[list[int]] = None
 
 
-MultiModalPromptType = Union[ImagePrompt]
+MultiModalPromptType = Union[RequestData]
 
 
-class ImageRequestOutput(BaseModel):
+class RequestOutput(BaseModel):
+    
+    data_format: Literal["b64_json", "path"]
     """
-    The output data of an image request to vLLM. 
-
-    Args:
-        type (str): The data content type [path, object]
-        format (str): The image format (e.g., jpeg, png, etc.)
-        data (Any): The resulting data.
+    Data type for the output image.
+    Allowed values are: [`b64_json`, `path`]
     """
 
-    type: Literal["path", "b64_json"]
-    format: str
-    data: str
+    data: Any
+    """
+    Output image data
+    """
+
     request_id: Optional[str] = None
+    """
+    The vlLM request ID if applicable
+    """
