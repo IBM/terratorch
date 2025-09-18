@@ -7,7 +7,16 @@ import shutil
 import re
 import subprocess
 import gc
+import pandas as pd
+from datetime import datetime
+import lightning.pytorch as pl
+import time
 
+from huggingface_hub import hf_hub_download
+from terratorch.datasets import HelioNetCDFDataset
+from terratorch.datamodules import HelioNetCDFDataModule
+from terratorch.registry import BACKBONE_REGISTRY
+from terratorch.tasks import InferenceTask
 from terratorch.cli_tools import LightningInferenceModel
 
 
@@ -32,7 +41,9 @@ from terratorch.cli_tools import LightningInferenceModel
 )
 def test_models_fit(model_name):
     result = subprocess.run(
-        ['terratorch', 'fit', '-c', f"./integrationtests/configs/test_{model_name}.yaml"], capture_output=True, text=True
+        ['terratorch', 'fit', '-c', f"./integrationtests/configs/test_{model_name}.yaml"],
+        capture_output=True,
+        text=True,
     )
 
     # Print the captured output
@@ -100,7 +111,7 @@ def update_grep_config_in_file(config_path: str, new_img_pattern: str):
 def buildings_image(tmp_path_factory):
     url = "https://s3.waw3-2.cloudferro.com/swift/v1/geobuildings/78957_1250257_N-33-141-A-b-1-1.tif"
     temp_dir = tmp_path_factory.mktemp("data")
-    local_path = temp_dir / "burnscars_image.tif"
+    local_path = temp_dir / "buildings-img.tiff"
 
     download_and_open_tiff(url=url, dest_path=local_path)
 
@@ -111,7 +122,7 @@ def buildings_image(tmp_path_factory):
 def burnscars_image(tmp_path_factory):
     url = " https://s3.us-east.cloud-object-storage.appdomain.cloud/geospatial-studio-example-data/examples-for-inference/park_fire_scaled.tif"
     temp_dir = tmp_path_factory.mktemp("data")
-    local_path = temp_dir / "burnscars_image.tif"
+    local_path = temp_dir / "burnscars_merged.tif"
 
     download_and_open_tiff(url=url, dest_path=local_path)
 
@@ -120,9 +131,9 @@ def burnscars_image(tmp_path_factory):
 
 @pytest.fixture(scope="session")
 def floods_image(tmp_path_factory):
-    url = 'https://s3.us-east.cloud-object-storage.appdomain.cloud/geospatial-studio-example-data/examples-for-[…]porto-allegre-floods-20240506-S2L2A.wgs84.tif'
+    url = 'https://s3.us-east.cloud-object-storage.appdomain.cloud/geospatial-studio-example-data/examples-for-inference/montenegro-brazil-floods-20231120-S1L2A.wgs84.tif'
     temp_dir = tmp_path_factory.mktemp("data")
-    local_path = temp_dir / "burnscars_image.tif"
+    local_path = temp_dir / "floods_image.tif"
 
     download_and_open_tiff(url=url, dest_path=local_path)
 
@@ -167,6 +178,103 @@ def test_burnscars_predict(burnscars_image, model_name):
     assert isinstance(preds, torch.Tensor), f"Expected predictions to be type torch.Tensor, got {type(preds)}"
 
     gc.collect()
+
+
+def test_surya():
+    """
+    Additional test for the Surya model
+    """
+    root_dir = "/dccstor/terratorch/users/wanjiru/surya-data/experiment"
+
+    hf_hub_download(repo_id="nasa-ibm-ai4science/Surya-1.0", filename="scalers.yaml", local_dir=root_dir)
+
+    # Creating index file
+    sample_files = glob.glob(os.path.join(root_dir, "*.nc"))
+    paths = sorted(sample_files)
+    present = len(paths) * [1]
+
+    timestamps = []
+    for ff in paths:
+        filename = os.path.basename(ff).replace(".nc", "")
+        date, timestamp = filename.split("_")
+
+        year = int(date[:4])
+        month = int(date[4:6])
+        day = int(date[6:])
+        hour = int(timestamp[:2])
+        minutes = int(timestamp[2:])
+        seconds = 0
+
+        date_datetime = datetime(year, month, day, hour, minutes, seconds).strftime("%Y-%m-%d %H:%M:%S")
+
+        timestamps.append(date_datetime)
+
+    index_dict = {"path": paths, "timestep": timestamps, "present": present}
+    index_dataframe = pd.DataFrame(index_dict)
+    index_dataframe.to_csv(os.path.join(root_dir, "index.csv"))
+    index_path = os.path.join(root_dir, "index.csv")
+    scalers_path = os.path.join(root_dir, "scalers.yaml")
+
+    channels = [
+        "aia94",
+        "aia131",
+        "aia171",
+        "aia193",
+        "aia211",
+        "aia304",
+        "aia335",
+        "aia1600",
+        "hmi_m",
+        "hmi_bx",
+        "hmi_by",
+        "hmi_bz",
+        "hmi_v",
+    ]
+
+    run = "predict"
+
+    start_time = time.time()
+    if run == "predict":
+        datamodule = HelioNetCDFDataModule(
+            train_index_path=index_path,
+            test_index_path=index_path,
+            val_index_path=index_path,
+            predict_index_path=index_path,
+            batch_size=1,
+            num_workers=0,
+            time_delta_input_minutes=[-60, 0],
+            time_delta_target_minutes=+60,
+            channels=channels,
+            n_input_timestamps=2,
+            rollout_steps=1,
+            scalers=scalers_path,
+        )
+
+        model_name = "heliofm_backbone_surya"
+        backbone = BACKBONE_REGISTRY.build(model_name, pretrained=True)
+        datamodule.setup("predict")
+        model = InferenceTask(model=backbone)
+        pl.seed_everything(0)
+        # Lightning Trainer
+        trainer = pl.Trainer(
+            accelerator="gpu",
+            strategy="auto",
+            devices=1,
+            # precision='bf16-mixed',
+            num_nodes=1,
+            logger=True,
+            max_epochs=1,
+            log_every_n_steps=1,
+            enable_checkpointing=True,
+            callbacks=[pl.callbacks.RichProgressBar()],
+            default_root_dir="output/heliofm",
+        )
+
+        # Training
+        prediction = trainer.predict(model, datamodule=datamodule)
+        print(f"Elapsed time: {time.time() - start_time} s")
+
+        assert isinstance(prediction, torch) and len(prediction) > 0
 
 
 ## Only run these tests after running test_finetune.py.

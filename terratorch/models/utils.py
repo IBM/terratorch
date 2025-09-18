@@ -56,9 +56,12 @@ def pad_images(imgs: Tensor, patch_size: int | list, padding: str) -> Tensor:
     return imgs
 
 def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
-    use_temporal = backbone_kwargs.pop('use_temporal', None)
-    temporal_pooling = backbone_kwargs.pop('temporal_pooling', None)
+    use_temporal = backbone_kwargs.pop('use_temporal', False)
+    pooling = backbone_kwargs.pop('temporal_pooling', 'mean')
     concat = backbone_kwargs.pop('temporal_concat', None)
+    n_timestamps = backbone_kwargs.pop('temporal_n_timestamps', None)
+    features_permute_op = backbone_kwargs.pop('temporal_features_permute_op', None)
+
     if isinstance(backbone, nn.Module):
         model = backbone
     else:
@@ -66,12 +69,14 @@ def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
 
     # Apply TemporalWrapper inside _get_backbone
     if use_temporal:
-        model = TemporalWrapper(model, pooling=temporal_pooling, concat=concat)
+        model = TemporalWrapper(model, pooling=pooling, concat=concat, n_timestamps=n_timestamps,
+                                features_permute_op=features_permute_op)
 
     return model
 
+
 class TemporalWrapper(nn.Module):
-    def __init__(self, encoder: nn.Module, pooling: str = 'mean', concat: bool = None, n_timestamps: int = None,
+    def __init__(self, encoder: nn.Module, pooling: str = 'mean', concat: bool = None, n_timestamps: int | None = None,
                  features_permute_op: list[int] = None):
         """
         Wrapper for applying a temporal encoder across multiple time steps.
@@ -80,7 +85,7 @@ class TemporalWrapper(nn.Module):
             encoder (nn.Module): The feature extractor (backbone).
             pooling (str): Type of pooling ('mean', 'max', 'diff') with 'diff' working only with 2 timestamps.
             concat (bool): Deprecated - 'concat' now integrated as pooling option.
-            n_timestamps (int): Deprecated 
+            n_timestamps (int): Used only to compute backbone out_channels when constructing encoder–decoder pipelines in case of 'concat' pooling.
             features_permute_op (list): Permutation operation to perform on the features before aggregation.
                 This is in case the features to do not match either 'BCHW' or 'BLC' formats. It is reversed once
                 aggregation has happened.
@@ -88,9 +93,9 @@ class TemporalWrapper(nn.Module):
         super().__init__()
 
         # Warn if deprecated args are used
-        if concat or n_timestamps is not None:
+        if concat is not None:
             warnings.warn(
-                "'concat' and 'n_timestamps' are deprecated in TemporalWrapper. "
+                "'concat' is deprecated in TemporalWrapper. "
                 "Use pooling='concat' instead.",
                 DeprecationWarning
                 )
@@ -111,7 +116,22 @@ class TemporalWrapper(nn.Module):
                 self.reverse_permute_op[p] = i
         else:
             self.reverse_permute_op = None
+
+        if hasattr(encoder, "out_channels"):
+            if pooling == "concat":
+                if n_timestamps is None:
+                    warnings.warn(
+                        "Cannot derive `out_channels` for 'concat' pooling without `n_timestamps`"
+                        "(Required to build Encoder–Decoder models).",
+                        UserWarning,
+                    )
+                    self.out_channels = None
+                else:
+                    self.out_channels = [c * n_timestamps for c in encoder.out_channels]
+            else:
+                self.out_channels = encoder.out_channels
     
+
     def subtract_along_dim1(self, tensor: torch.Tensor):
         # Diff pooling: Difference between first and second timestep
         return tensor[:, 0, ...] - tensor[:, 1, ...]
