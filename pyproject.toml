@@ -74,9 +74,6 @@ dependencies = [
 ]
 
 
-[project.entry-points."vllm.io_processor_plugins"]
-terratorch_segmentation = "terratorch.vllm.plugins.segmentation:register_segmentation_plugin"
-
 [project.optional-dependencies]
 dev = [
   "black",
