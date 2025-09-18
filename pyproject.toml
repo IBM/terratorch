@@ -58,7 +58,7 @@ dependencies = [
   "segmentation-models-pytorch<=0.4",
   "jsonargparse",
   "pytest",
-  "torchgeo",
+  "torchgeo>=0.7.0",
   "einops",
   "timm>=1.0.15",
   "pycocotools",
@@ -73,6 +73,9 @@ dependencies = [
   "pytest-sugar",
 ]
 
+
+[project.entry-points."vllm.io_processor_plugins"]
+terratorch_segmentation = "terratorch.vllm.plugins.segmentation:register_segmentation_plugin"
 
 [project.optional-dependencies]
 dev = [
