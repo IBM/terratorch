@@ -151,9 +151,9 @@ class TerraMindGeneration(nn.Module):
                 pretraining_mean[self.mod_name_mapping[mod]] = \
                     np.array(pretraining_mean[self.mod_name_mapping[mod]], dtype=float) + o
 
-        self.pretraining_mean = {mod: torch.tensor(mean)[None, :, None, None]
+        self.pretraining_mean = {mod: torch.tensor(mean, dtype=torch.float)[None, :, None, None]
                                  for mod, mean in pretraining_mean.items()} if pretraining_mean else {}
-        self.pretraining_std = {mod: torch.tensor(std)[None, :, None, None]
+        self.pretraining_std = {mod: torch.tensor(std, dtype=torch.float)[None, :, None, None]
                                 for mod, std in pretraining_std.items()} if pretraining_std else {}
 
         # Build MAE model
