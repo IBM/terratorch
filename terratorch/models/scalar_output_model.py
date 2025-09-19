@@ -7,6 +7,7 @@ import torchvision.transforms as transforms
 from terratorch.models.heads import ClassificationHead
 from terratorch.models.model import AuxiliaryHeadWithDecoderWithoutInstantiatedHead, Model, ModelOutput
 from terratorch.models.utils import pad_images
+from terratorch.models.moe_utils import MoELayer
 import pdb
 
 
@@ -50,6 +51,13 @@ class ScalarOutputModel(Model, SegmentationModel):
         self.task = task
         self.encoder = encoder
         self.decoder = decoder
+
+        if "moe_kwargs" in head_kwargs:
+            assert "n_experts" in  head_kwargs["moe_kwargs"]
+            self._get_head = self._get_head_moe
+        else:
+            self._get_head = self._get_head_
+
         self.head = (
             self._get_head(task, decoder.out_channels, head_kwargs) if not decoder_includes_head else nn.Identity()
         )
@@ -118,11 +126,30 @@ class ScalarOutputModel(Model, SegmentationModel):
 
         return ModelOutput(output=mask, auxiliary_heads=aux_outputs)
 
-    def _get_head(self, task: str, input_embed_dim: int, head_kwargs: dict):
+    def _get_head_(self, task: str, input_embed_dim: int, head_kwargs: dict):
         if task == "classification":
             if "num_classes" not in head_kwargs:
                 msg = "num_classes must be defined for classification task"
                 raise Exception(msg)
             return ClassificationHead(input_embed_dim, **head_kwargs)
+        msg = "Task must be classification."
+        raise Exception(msg)
+
+    def _get_head_moe(self, task: str, input_embed_dim: int, head_kwargs: dict):
+        if task == "classification":
+            if "num_classes" not in head_kwargs:
+                msg = "num_classes must be defined for classification task"
+                raise Exception(msg)
+
+            moe_kwargs = head_kwargs.pop("moe_kwargs")
+            n_experts = moe_kwargs.pop("n_experts")
+
+            experts_list = [ClassificationHead(input_embed_dim, **head_kwargs)
+                            for e in range(n_experts)]
+
+            head = MoELayer(experts_list=experts_list, **moe_kwargs)
+
+            return head 
+
         msg = "Task must be classification."
         raise Exception(msg)
