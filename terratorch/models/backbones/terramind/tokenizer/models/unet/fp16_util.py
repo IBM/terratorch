@@ -239,9 +239,9 @@ class MixedPrecisionTrainer:
         param_norm = 0.0
         for p in self.master_params:
             with th.no_grad():
-                param_norm += th.norm(p, p=2, dtype=th.float32).item() ** 2
+                param_norm += th.norm(p, p=2, dtype=th.float).item() ** 2
                 if p.grad is not None:
-                    grad_norm += th.norm(p.grad, p=2, dtype=th.float32).item() ** 2
+                    grad_norm += th.norm(p.grad, p=2, dtype=th.float).item() ** 2
         return np.sqrt(grad_norm) / grad_scale, np.sqrt(param_norm)
 
     def master_params_to_state_dict(self, master_params):
