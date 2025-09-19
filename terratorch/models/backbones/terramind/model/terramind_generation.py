@@ -149,7 +149,7 @@ class TerraMindGeneration(nn.Module):
                     warnings.warn(f"offset {mod} not defined in input or output modalities, ignoring offset.")
                     continue
                 pretraining_mean[self.mod_name_mapping[mod]] = \
-                    np.array(pretraining_mean[self.mod_name_mapping[mod]], dtype=np.float32) + o
+                    np.array(pretraining_mean[self.mod_name_mapping[mod]], dtype=float) + o
 
         self.pretraining_mean = {mod: torch.tensor(mean)[None, :, None, None]
                                  for mod, mean in pretraining_mean.items()} if pretraining_mean else {}
