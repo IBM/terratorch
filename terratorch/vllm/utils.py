@@ -1,10 +1,9 @@
+# Copyright contributors to the Terratorch project
 
 import torch
 import torch.nn as nn
-from terratorch.cli_tools import SemanticSegmentationTask
+from terratorch.registry import MODEL_FACTORY_REGISTRY
 from typing import Optional
-from collections.abc import Iterable,Iterator
-import terratorch
 
 from pydantic import BaseModel
 from typing import List,Dict
@@ -38,8 +37,6 @@ class MultiModalDataGenerator():
 
 class DummyDataGenerator():
     def __init__(self,config: dict):
-        #print("DummyDataGenerator called")
-        #self.task_type= config["task_args"]["task"] 
         self.config = config
         self.input_definition = InputDefinition(**config["input"])
         self.task_type= config['model']["class_path"]
@@ -57,8 +54,6 @@ def lookup_task_name(class_path):
         return 'segmentation'
     elif "PixelwiseRegressionTask" in class_path:
         return 'regression'
-    #if "WxCDownscalingTask" in class_path:
-    #    return 'WxCModelFactory'
     else:
         return None
         
@@ -71,7 +66,7 @@ class InferenceRunner(nn.Module):
         model_conf=  config["model"]
         self.task_type= config['model']["class_path"]
         task_name = lookup_task_name(model_conf["class_path"])
-        model_factory = terratorch.registry.MODEL_FACTORY_REGISTRY.build(model_conf["init_args"]["model_factory"])
+        model_factory = MODEL_FACTORY_REGISTRY.build(model_conf["init_args"]["model_factory"])
         self.model = model_factory.build_model(task=task_name,**model_conf['init_args']['model_args'])
         self.input_definition = InputDefinition(**config["input"])
 
@@ -101,4 +96,3 @@ class InferenceRunner(nn.Module):
         else:
             model_output = self.model(input)
         return model_output
-    

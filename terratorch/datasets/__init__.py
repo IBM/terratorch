@@ -64,7 +64,10 @@ from terratorch.datasets.m_VHR10 import mVHR10
 from terratorch.datasets.substation import Substation
 
 # Surya datasets
-from terratorch.datasets.helio import HelioNetCDFDataset
+try:
+    from terratorch.datasets.helio import HelioNetCDFDataset
+except ImportError:
+    pass
 
 __all__ = (
     "GenericNonGeoSegmentationDataset",

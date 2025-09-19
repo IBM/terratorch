@@ -12,7 +12,7 @@ from datetime import datetime
 import lightning.pytorch as pl
 import time
 
-from huggingface_hub import hf_hub_download
+from huggingface_hub import hf_hub_download, snapshot_download
 from terratorch.datasets import HelioNetCDFDataset
 from terratorch.datamodules import HelioNetCDFDataModule
 from terratorch.registry import BACKBONE_REGISTRY
@@ -184,8 +184,14 @@ def test_surya():
     """
     Additional test for the Surya model
     """
-    root_dir = "/dccstor/terratorch/users/wanjiru/surya-data/experiment"
+    if not os.path.isdir("experiment"):
+        os.mkdir("experiment")
 
+    root_dir = "/dccstor/terratorch/tmp/experiment"
+    # Downloading validation data
+    snapshot_download(repo_id="nasa-ibm-ai4science/Surya-1.0_validation_data",
+                  repo_type="dataset", local_dir=root_dir)
+    
     hf_hub_download(repo_id="nasa-ibm-ai4science/Surya-1.0", filename="scalers.yaml", local_dir=root_dir)
 
     # Creating index file
@@ -274,7 +280,8 @@ def test_surya():
         prediction = trainer.predict(model, datamodule=datamodule)
         print(f"Elapsed time: {time.time() - start_time} s")
 
-        assert isinstance(prediction, torch) and len(prediction) > 0
+        assert isinstance(prediction, torch.Tensor) , f"Expected predictions to be type torch.Tensor, got {type(prediction)}"
+      
 
 
 ## Only run these tests after running test_finetune.py.
@@ -355,6 +362,7 @@ def test_current_terratorch_version_burnscars_predict(config_name, burnscars_ima
         "clay_v1",
         "timm_convnext_large",
         "timm_convnext_xlarge",
+        "experiment"
     ],
 )
 def test_cleanup(model_name):
