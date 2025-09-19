@@ -1951,6 +1951,11 @@ a pipeline with hundreds of unit and integration tests to verify that the packag
 modification be merged to <code>main</code>. In this way, when an user wants to modify
 <code>terratorch</code> for adding new features or bufixes, this are the best practices. </p>
 <ul>
+<li>Clone the repository and guarantee the submodules were also intialized:
+    <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>    git clone git@github.com:IBM/terratorch.git
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    git submodule init
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    git submodule update
+</span></code></pre></div></li>
 <li>This repository uses <code>pre-commit</code>, a tool which automatically runs basic
     steps before sending modifications to the remote (as linting, for example).
     See how to configure it <a href="https://pre-commit.com/#installation">here</a>. </li>
@@ -1961,7 +1966,7 @@ modification be merged to <code>main</code>. In this way, when an user wants to 
     anything. If your feature is something more complex, as a new model or auxiliary algorithm, you can also
     (optionally) to add a complete example, as a notebook or Python script, demonstrating how the feature works.</li>
 <li>After finishing your modifications, we recommend you to test locally using <code>pytest</code>, for example:
-    <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pytest -s -v tests/
+    <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pytest -s -v tests/
 </span></code></pre></div></li>
 <li>If all the tests are passing, you can open a PR to <code>terratorch:main</code> describing what you are adding and why
     that is important to be merged. You
@@ -1984,9 +1989,9 @@ deployed by a bot just after the push or merge to the branch dedicated to store 
 These are the steps to configure your environment to work with documentation.</p>
 <ul>
 <li>Clone the documentation branch to your machine:
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>    git fetch origin docs
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    git checkout docs
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    git pull origin docs
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>    git fetch origin docs
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    git checkout docs
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    git pull origin docs
 </span></code></pre></div></li>
 <li>Add your modifications and open a PR to the branch <code>docs</code>. It is recommended to add the label <code>documentation</code> to your PR.</li>
 <li>The PR will be reviewed and approved if it is considered relevant by the maintainers. </li>
@@ -2016,7 +2021,7 @@ look on an example of <a href="https://github.com/IBM/terratorch/issues/506">a v
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="August 25, 2025 14:06:46 UTC">August 25, 2025</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 19, 2025 15:47:57 UTC">September 19, 2025</span>
   </span>
 
     
