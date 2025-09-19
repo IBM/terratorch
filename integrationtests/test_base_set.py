@@ -362,6 +362,7 @@ def test_current_terratorch_version_burnscars_predict(config_name, burnscars_ima
         "clay_v1",
         "timm_convnext_large",
         "timm_convnext_xlarge",
+        "experiment"
     ],
 )
 def test_cleanup(model_name):
