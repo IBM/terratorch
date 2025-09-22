@@ -151,3 +151,41 @@ class MChesapeakeLandcoverNonGeo(NonGeoDataset):
             plt.suptitle(suptitle)
 
         return fig
+
+
+
+    def plot_rgb(self, sample: dict[str, torch.Tensor], suptitle: str | None = None) -> plt.Figure:
+        """Plot only the RGB image of a sample.
+
+        Args:
+            sample (dict[str, torch.Tensor]): A sample returned by :meth:`__getitem__`.
+            suptitle (str | None): Optional string to use as a suptitle.
+
+        Returns:
+            matplotlib.figure.Figure: A matplotlib Figure with only the RGB image.
+        """
+        # Select RGB channels
+        rgb_indices = [self.bands.index(band) for band in self.rgb_bands if band in self.bands]
+        if len(rgb_indices) != 3:
+            raise ValueError("Dataset doesn't contain all RGB bands")
+
+        image = sample["image"]
+
+        # Ensure tensor is 3D (C,H,W)
+        if image.dim() == 4:
+            image = image.squeeze(0)
+
+        # Convert to numpy and select RGB channels
+        if torch.is_tensor(image):
+            image = image.permute(1, 2, 0).numpy()  # (H, W, C)
+        rgb_image = image[:, :, rgb_indices]
+        rgb_image = clip_image(rgb_image)
+
+        # Create figure with a single subplot
+        fig, ax = plt.subplots(1, 1, figsize=(4, 4), tight_layout=True)
+        ax.imshow(rgb_image)
+        ax.axis("off")
+
+ 
+
+        return fig

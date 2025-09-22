@@ -27,3 +27,5 @@ examples/**/*tif*
 annotations.json
 **/*.tif
 replicate
+**/*.hdf5
+**/*.png
