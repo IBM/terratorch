@@ -15,7 +15,7 @@ trainer:
         mode: min
         monitor: val/loss
         filename: best-state_dict-{epoch:02d}
-        dirpath: /dccstor/terratorch/tmp/enc_dec_resnet34/
+        dirpath: /dccstor/terratorch/tmp/timm_resnet34/
         save_weights_only: true
     - class_path: EarlyStopping
       init_args:
