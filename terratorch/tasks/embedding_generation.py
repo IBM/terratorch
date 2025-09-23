@@ -288,8 +288,46 @@ class EmbeddingGenerationTask(BaseTask):
             metadata: dict,
             dir_path: Path,
     ) -> None:  
-        """Write a batch (and optional timesteps) to GeoTIFF/GeoParquet."""
+        """Write a batch (and optional timesteps) to GeoTIFF/GeoParquet.
+
+        Files are grouped into per-scene subfolders under `dir_path`.
+        The scene name is derived from the filename stem; for tiled outputs
+        produced by this task (filenames like 'scene__y0-y1_x0-x1'), the
+        scene name is the part before the first double underscore.
+        """
         dir_path.mkdir(parents=True, exist_ok=True)
+
+        B = len(file_ids)
+        T = len(file_ids[0]) if isinstance(file_ids[0], (list, tuple, np.ndarray)) else None
+
+        for b in range(B):
+            if T is not None:
+                for t in range(T):
+                    filename = file_ids[b][t]
+                    metadata_sample = {k: v[b][t] for k, v in metadata.items()}
+                    embedding_sample = self.pool_embedding(embedding[b, t, ...], self.embedding_pooling, self.has_cls)
+                    # Determine per-scene subfolder from filename
+                    stem = Path(filename).stem
+                    scene_name = stem.split("__")[0] if "__" in stem else stem
+                    out_dir = dir_path / scene_name
+                    out_dir.mkdir(parents=True, exist_ok=True)
+                    if self.output_format == "tiff":
+                        self.write_tiff(embedding_sample, filename, metadata_sample, out_dir)
+                    elif self.output_format == "parquet":
+                        self.write_parquet(embedding_sample, filename, metadata_sample, out_dir)
+            else:
+                filename = file_ids[b]
+                metadata_sample = {k: v[b] for k, v in metadata.items()}
+                embedding_sample = self.pool_embedding(embedding[b, ...], self.embedding_pooling, self.has_cls)
+                # Determine per-scene subfolder from filename
+                stem = Path(filename).stem
+                scene_name = stem.split("__")[0] if "__" in stem else stem
+                out_dir = dir_path / scene_name
+                out_dir.mkdir(parents=True, exist_ok=True)
+                if self.output_format == "tiff":
+                    self.write_tiff(embedding_sample, filename, metadata_sample, out_dir)
+                elif self.output_format == "parquet":
+                    self.write_parquet(embedding_sample, filename, metadata_sample, out_dir)
 
         B = len(file_ids)
         T = len(file_ids[0]) if isinstance(file_ids[0], (list, tuple, np.ndarray)) else None
@@ -300,18 +338,28 @@ class EmbeddingGenerationTask(BaseTask):
                     filename = file_ids[b][t]
                     metadata_sample = {k: v[b][t] for k, v in metadata.items()}
                     embedding_sample = self.pool_embedding(embedding[b, t, ...], self.embedding_pooling, self.has_cls)
+                    # Determine per-scene subfolder from filename
+                    stem = Path(filename).stem
+                    scene_name = stem.split("__")[0] if "__" in stem else stem
+                    out_dir = dir_path / scene_name
+                    out_dir.mkdir(parents=True, exist_ok=True)
                     if self.output_format == "tiff":
-                        self.write_tiff(embedding_sample, filename, metadata_sample, dir_path)
+                        self.write_tiff(embedding_sample, filename, metadata_sample, out_dir)
                     elif self.output_format == "parquet":
-                        self.write_parquet(embedding_sample, filename, metadata_sample, dir_path)
+                        self.write_parquet(embedding_sample, filename, metadata_sample, out_dir)
             else:
                 filename = file_ids[b]
                 metadata_sample = {k: v[b] for k, v in metadata.items()}
                 embedding_sample = self.pool_embedding(embedding[b, ...], self.embedding_pooling, self.has_cls)
+                # Determine per-scene subfolder from filename
+                stem = Path(filename).stem
+                scene_name = stem.split("__")[0] if "__" in stem else stem
+                out_dir = dir_path / scene_name
+                out_dir.mkdir(parents=True, exist_ok=True)
                 if self.output_format == "tiff":
-                    self.write_tiff(embedding_sample, filename, metadata_sample, dir_path)
+                    self.write_tiff(embedding_sample, filename, metadata_sample, out_dir)
                 elif self.output_format == "parquet":
-                    self.write_parquet(embedding_sample, filename, metadata_sample, dir_path)
+                    self.write_parquet(embedding_sample, filename, metadata_sample, out_dir)
     
     def pool_embedding(
         self,
