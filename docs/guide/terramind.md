@@ -151,6 +151,9 @@ You can find an example for fine-tuning TerraMind with multi-modal inputs in thi
 Set `modality_drop_rate` to train TerraMind that supports multiple modalities but can handle inference on a subset (e.g., a single input). 
 During training, modalities are randomly dropped according to the rate (e.g., with `0.1` each modality is dropped in 10% of all batches).
 
+!!! info "Local checkpoint"
+    You can load model weights from a local checkpoint by passing `ckpt_path` to `BACKBONE_REGISTRY.build()` or define `backbone_ckpt_path` in the model args.
+
 ### Model Input
 
 The model expects the input as a dict `model({"mod1": input1, "mod2": input2, ...})` or as keyword args `model(mod1=input1, mod2=input2)` with inputs being torch tensors.
