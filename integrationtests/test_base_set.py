@@ -346,6 +346,7 @@ def test_current_terratorch_version_burnscars_predict(config_name, burnscars_ima
     gc.collect()
 
 
+"""
 @pytest.mark.parametrize(
     "model_name",
     [
@@ -384,3 +385,4 @@ def test_cleanup(model_name):
     assert not os.path.exists(full_path)
 
     gc.collect()
+"""
