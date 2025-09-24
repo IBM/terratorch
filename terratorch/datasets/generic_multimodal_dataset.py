@@ -162,9 +162,6 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         self.non_image_modalities = list(set(self.modalities) - set(image_modalities))
         self.modalities = self.image_modalities + self.non_image_modalities  # Ensure image modalities to be first
 
-        if scalar_label:
-            self.non_image_modalities += ["label"]
-
         # Order by modalities and convert path strings to lists as the code expects a list of paths per modality
         data_root = {m: data_root[m] for m in self.modalities}
 
@@ -188,6 +185,9 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         if self.expand_temporal_dimension and dataset_bands is None:
             msg = "Please provide dataset_bands when expand_temporal_dimension is True"
             raise Exception(msg)
+
+        if scalar_label:
+            self.non_image_modalities += ["label"]
 
         # Load samples based on split file
         if self.split_file is not None:
