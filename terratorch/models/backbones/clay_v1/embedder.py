@@ -15,7 +15,7 @@ from terratorch.models.backbones.clay_v1.modules import EmbeddingEncoder, Datacu
 default_cfgs = generate_default_cfgs(
     {
         "clay_v1_base": {
-            "hf_hub_id": "made-with-clay/Clay",
+            "hf_hub_id": "made-with-clay/Clay-legacy",
             "hf_hub_filename": "v1/clay-v1-base.ckpt",
         }
     }
