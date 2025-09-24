@@ -275,8 +275,6 @@ class SegmentationIOProcessor(IOProcessor):
             path_type=image_data["data_format"],
         )
 
-        self.meta_data = meta_data[0]
-
         if input_data.mean() > 1:
             input_data = input_data / 10000  # Convert to range 0-1
 
@@ -313,7 +311,7 @@ class SegmentationIOProcessor(IOProcessor):
             "original_h": original_h,
             "original_w": original_w,
             "h1": h1,
-            "w1": w1
+            "w1": w1,
         }
 
         # Split into batches if number of windows > batch_size
@@ -335,7 +333,12 @@ class SegmentationIOProcessor(IOProcessor):
             # Apply standardization
             window = self.datamodule.test_transform(
                 image=window.squeeze().numpy().transpose(1, 2, 0))
-            window = self.datamodule.aug(window)["image"]
+            try:
+                window = self.datamodule.aug(window)["image"]
+            except:
+                window["image"] = window["image"][None, :, :, :]
+                window = self.datamodule.aug(window)["image"]
+
             prompts.append({
                 "prompt_token_ids": [1],
                 "multi_modal_data": {
@@ -391,10 +394,9 @@ class SegmentationIOProcessor(IOProcessor):
         # Squeeze (batch size 1)
         pred_imgs = pred_imgs[0]
 
-        if not self.meta_data:
-            raise ValueError("No metadata available for the current task")
-        self.meta_data.update(count=1, dtype="uint8", compress="lzw", nodata=0)
-        out_data = self.save_geotiff(self._convert_np_uint8(pred_imgs), request_info["meta_data"],
+        meta_data = request_info["meta_data"]
+        meta_data.update(count=1, dtype="uint8", compress="lzw", nodata=0)
+        out_data = self.save_geotiff(self._convert_np_uint8(pred_imgs), meta_data,
                                 request_info["out_data_format"], request_id)
 
         return RequestOutput(data_format=request_info["out_data_format"],
