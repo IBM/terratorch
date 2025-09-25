@@ -57,7 +57,6 @@ dependencies = [
   "lightning",
   "segmentation-models-pytorch<=0.4",
   "jsonargparse",
-  "pytest",
   "torchgeo>=0.7.0",
   "einops",
   "timm>=1.0.15",
@@ -70,7 +69,6 @@ dependencies = [
   "numba",
   "hdf5plugin",
   "h5netcdf",
-  "pytest-sugar",
 ]
 
 
@@ -96,6 +94,7 @@ test = [
   "tokenizers",
   "dask",
   "wandb",
+  "pytest-sugar",
 ]
 
 mmseg = [
