@@ -64,7 +64,7 @@ class IgnoreIndexLossWrapper(nn.Module):
         return loss * mask.float(), mask.sum() + eps
 
     def forward(self, output: Tensor, target: Tensor) -> Tensor:
-        loss: Tensor = self.loss_function(output, target)
+        loss: Tensor = self.loss_function(output, target.float())
         if self.ignore_index is not None:
             loss, norm_value = self._mask(loss, target)
         else:
@@ -102,6 +102,9 @@ class IgnoreIndexMetricWrapper(WrapperMetric):
             items_to_take[torch.isnan(target)] = False  # Filter NaN values as well
             target = target[items_to_take]
             preds = preds[items_to_take]
+        else:
+            preds = preds.flatten()
+            target = target.flatten()
         return self.metric.update(preds, target)
 
     def forward(self, preds: Tensor, target: Tensor, *args, **kwargs) -> Any:
@@ -157,7 +160,8 @@ class PixelwiseRegressionTask(TerraTorchTask):
         tiled_inference_parameters: dict | None = None,
         test_dataloaders_names: list[str] | None = None,
         lr_overrides: dict[str, float] | None = None,
-        tiled_inference_on_testing: bool = None,
+        tiled_inference_on_testing: bool = False,
+        tiled_inference_on_validation: bool = False,
         path_to_record_metrics: str = None,
     ) -> None:
         """Constructor
@@ -200,8 +204,8 @@ class PixelwiseRegressionTask(TerraTorchTask):
             lr_overrides (dict[str, float] | None, optional): Dictionary to override the default lr in specific
                 parameters. The key should be a substring of the parameter names (it will check the substring is
                 contained in the parameter name)and the value should be the new lr. Defaults to None.
-            tiled_inference_on_testing (bool): A boolean to the fine if tiled inference will be used when full inference
-                fails during the test step.
+            tiled_inference_on_testing (bool): A boolean to define if tiled inference will be used during the test step. 
+            tiled_inference_on_validation (bool): A boolean to define if tiled inference will be used during the val step. 
             path_to_record_metrics (str): A path to save the file containing the metrics log.
         """
 
@@ -217,8 +221,12 @@ class PixelwiseRegressionTask(TerraTorchTask):
         if model_factory and model is None:
             self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
 
-        super().__init__(task="regression", tiled_inference_on_testing=tiled_inference_on_testing,
-                         path_to_record_metrics=path_to_record_metrics)
+        super().__init__(
+            task="regression", 
+            tiled_inference_on_testing=tiled_inference_on_testing,
+            tiled_inference_on_validation=tiled_inference_on_validation,
+            path_to_record_metrics=path_to_record_metrics
+            )
 
         if model:
             # Custom_model
@@ -319,7 +327,9 @@ class PixelwiseRegressionTask(TerraTorchTask):
         y = batch["mask"]
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
-        model_output: ModelOutput = self(x, **rest)
+        #model_output: ModelOutput = self(x, **rest)
+        model_output = self.handle_full_or_tiled_inference(x, self.tiled_inference_on_validation, **rest)
+
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
         self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat = model_output.output
@@ -362,7 +372,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
 
-        model_output = self.handle_full_or_tiled_inference(x, 1, **rest)
+        model_output = self.handle_full_or_tiled_inference(x, self.tiled_inference_on_testing, **rest)
 
         if dataloader_idx >= len(self.test_loss_handler):
             msg = "You are returning more than one test dataloader but not defining enough test_dataloaders_names."

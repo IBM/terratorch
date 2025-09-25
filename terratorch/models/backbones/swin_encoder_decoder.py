@@ -576,7 +576,7 @@ class ShiftWindowMSA(nn.Module):
             shifted_query = torch.roll(query, shifts=(-self.shift_size, -self.shift_size), dims=(1, 2))
 
             # calculate attention mask for SW-MSA
-            img_mask = torch.zeros((1, H_pad, W_pad, 1), device=query.device)
+            img_mask = torch.zeros((1, H_pad, W_pad, 1), device=query.device,dtype=query.dtype)
             h_slices = (
                 slice(0, -self.window_size),
                 slice(-self.window_size, -self.shift_size),

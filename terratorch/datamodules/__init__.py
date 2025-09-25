@@ -62,6 +62,11 @@ from terratorch.datamodules.sen4map import Sen4MapLucasDataModule
 from terratorch.datamodules.m_VHR10 import mVHR10DataModule
 from terratorch.datamodules.substation import SubstationDataModule
 
+try:
+    from terratorch.datamodules.helio import HelioNetCDFDataModule
+except ImportError:
+    pass
+
 __all__ = (
     "GenericNonGeoSegmentationDataModule",
     "GenericNonGeoPixelwiseRegressionDataModule",
@@ -97,7 +102,8 @@ __all__ = (
     "Sen4AgriNetDataModule",
     "GenericMultiModalDataModule",
     "mVHR10DataModule",
-    "SubstationDataModule"
+    "SubstationDataModule",
+    "HelioNetCDFDataModule",
 )
 
 if wxc_present:

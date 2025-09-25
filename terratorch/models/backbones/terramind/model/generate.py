@@ -20,6 +20,8 @@
 
 import copy
 import math
+import warnings
+
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -59,37 +61,6 @@ def merge_span_masking(input_seq, decoder_seq, sentinel_ids):
     return out_seq
 
 
-def sample_to_batch(mod_dict, device, domains):
-    mod_dict = {
-        modality: {k: v.unsqueeze(0).to(device, non_blocking=True) for k, v in d.items()}
-        for modality, d in mod_dict.items() if modality in domains
-    }
-
-    return mod_dict
-
-
-def unbatch(tensor):
-    return tensor.detach().squeeze(0).cpu()
-
-
-def batch_to_sample(mod_dict, domains):
-    mod_dict = {
-        modality: {k: unbatch(v) for k, v in d.items()}
-        for modality, d in mod_dict.items() if modality in domains
-    }
-
-    return mod_dict
-
-
-def batch_to_device(mod_dict, device, domains):
-    mod_dict = {
-        modality: {k: v.to(device, non_blocking=True) for k, v in d.items()}
-        for modality, d in mod_dict.items() if modality in domains
-    }
-
-    return mod_dict
-
-
 def cosine_schedule(num_steps, total_tokens):
     iters = np.arange(num_steps)
     base_value = 1
@@ -107,21 +78,6 @@ def linear_schedule(num_steps, total_tokens):
     schedule_tokens.sort()  # Sorts the array in ascending order.
     schedule_tokens = schedule_tokens[::-1]  # Reverses the array to descending order.
     return np.trim_zeros(schedule_tokens, 'b')  # Trims trailing zeros.
-
-
-def continue_schedule(schedule, num_current_tokens):
-    schedule_cumsum = np.cumsum(schedule)
-    keep_mask = schedule_cumsum > num_current_tokens
-    diff = schedule_cumsum[keep_mask][0] - num_current_tokens
-    new_schedule = schedule[keep_mask]
-    new_schedule[0] = diff
-    return new_schedule
-
-
-def decreasing_temp_schedule(max, min, token_schedule):
-    schedule_cumsum = np.cumsum(token_schedule) / np.sum(token_schedule)
-    temp_schedule = np.array([min + (max - min) * (1 - s) for s in schedule_cumsum])
-    return temp_schedule
 
 
 def onex_temp_schedule(max_t, min_t, token_schedule, power=0.5, min_linspace=1, max_linspace=100):
@@ -154,114 +110,152 @@ def empty_img_modality(mod_dict, key):
     
     return mod_dict
 
-def empty_seq_modality(mod_dict, key, s1_id=5):
+def empty_seq_modality(mod_dict, s1_id=5):
     # To create an empty sequence, we suppose an input budget of 1, and the rest assigned to targets
 
     # Input tensor
     # Input is [S_1], target is [S_1] ...... [S_2]
     # (so [S_1] [S_1] ..... [S_2] when combined)
-    mod_dict[key]['tensor'][:] = 0
-    mod_dict[key]['tensor'][:,[0,1]] = s1_id # s1_id is id of the first sentinel token ([S_1])
-    mod_dict[key]['tensor'][:,-1] = s1_id + 1
+    mod_dict['tensor'][:] = 0
+    mod_dict['tensor'][:,[0,1]] = s1_id  # s1_id is id of the first sentinel token ([S_1])
+    mod_dict['tensor'][:,-1] = s1_id + 1
 
     # Input mask
     # Set first token to input (i.e. 0), rest to target (i.e. 1)
-    mod_dict[key]['input_mask'][:] = True
-    mod_dict[key]['input_mask'][:,0] = False
+    mod_dict['input_mask'][:] = True
+    mod_dict['input_mask'][:,0] = False
     
     # Target Mask
-    mod_dict[key]['target_mask'] = ~mod_dict[key]['input_mask']
+    mod_dict['target_mask'] = ~mod_dict['input_mask']
 
     # Decoder attn mask
     # WARNING: Not needed / used in GenerationSampler, where causal mask is enforced
     # First token is input, not part of target
-    mod_dict[key]['decoder_attention_mask'][:] = 1
-    mod_dict[key]['decoder_attention_mask'][:, 0] = 0
+    mod_dict['decoder_attention_mask'][:] = 1
+    mod_dict['decoder_attention_mask'][:, 0] = 0
 
     return mod_dict
 
-def empty_seq_emb_modality(mod_dict, key):
-     # Tensor
-    mod_dict[key]['tensor'] = torch.zeros_like(mod_dict[key]['tensor'])
-    
-    # Input mask
-    mod_dict[key]['input_mask'] = torch.ones_like(mod_dict[key]['input_mask'])
+def empty_seq_emb_modality(mod_dict):
     # It is crucial to specify the input mask as such, CFG won't work otherwise!
-    mod_dict[key]['input_mask'][:, 0] = False
-    
-    # Target Mask
-    mod_dict[key]['target_mask'] = torch.ones_like(mod_dict[key]['target_mask'])
-    
-    # Decoder attn mask
-    mod_dict[key]['decoder_attention_mask'][:] = False
-    
+    mod_dict['input_mask'][:, 0] = False
     return mod_dict
     
 
-def init_empty_target_modality(mod_dict, modality_info, domain, batch_size, num_tokens, device):
+def init_empty_target_modality(modality_info, domain, batch_size, num_tokens, device, s1_id=5):
     """
     Initializes an empty target modality dictionary for a given domain. 
     Used to initialize target modality dictionaries for generation. 
     """
     if modality_info[domain]['type'] == 'img':
         # Initialize mod dict
-        mod_dict[domain] = {
+        mod_dict = {
             'tensor': torch.zeros((batch_size, num_tokens), dtype=torch.int64, device=device),
             'input_mask': torch.ones((batch_size, num_tokens), dtype=torch.bool, device=device),
             'target_mask': torch.zeros((batch_size, num_tokens), dtype=torch.bool, device=device),
         }
-        # Set it to the correct values
-        mod_dict = empty_img_modality(mod_dict, domain)
 
     elif modality_info[domain]['type'] in ['seq', 'seq_token', 'seq_emb']:
         # Initialize mod dict
-        mod_dict[domain] = {
-            'tensor': torch.zeros((batch_size, num_tokens), dtype=torch.int32, device=device),
+        mod_dict = {
+            'tensor': torch.zeros((batch_size, num_tokens), dtype=torch.int, device=device),
             'input_mask': torch.ones((batch_size, num_tokens), dtype=torch.bool, device=device),
             'target_mask': torch.zeros((batch_size, num_tokens), dtype=torch.bool, device=device),
             'decoder_attention_mask': torch.zeros((batch_size, num_tokens), dtype=torch.bool, device=device),
         }
         # Set it to the correct values
         if modality_info[domain]['type'] in ['seq', 'seq_token']:
-            mod_dict = empty_seq_modality(mod_dict, domain)
+            mod_dict = empty_seq_modality(mod_dict, s1_id=s1_id)
         elif modality_info[domain]['type'] == 'seq_emb':
-            mod_dict = empty_seq_emb_modality(mod_dict, domain)
+            mod_dict = empty_seq_emb_modality(mod_dict)
     else:
         raise ValueError()
         
     return mod_dict
 
-def init_full_input_modality(mod_dict, modality_info, domain, device, eos_id=3):
-    if 'input_mask' not in mod_dict[domain]:
-        mod_dict[domain]['input_mask'] = torch.zeros(mod_dict[domain]['tensor'].shape, dtype=torch.bool, device=device)
-    if 'target_mask' not in mod_dict[domain]:
-        mod_dict[domain]['target_mask'] = torch.ones(mod_dict[domain]['tensor'].shape, dtype=torch.bool, device=device)
-    if 'decoder_attention_mask' not in mod_dict[domain]:
-        mod_dict[domain]['decoder_attention_mask'] = torch.zeros(mod_dict[domain]['tensor'].shape, dtype=torch.bool, device=device)
+def init_conditioned_target_modality(mod_dict, modality_info, domain, num_target_tokens, eos_id=3, s1_id=5):
+    batch_size, input_length = mod_dict["tensor"].shape[:2]
+    device = mod_dict["tensor"].device
+
+    if modality_info[domain]['type'] in ['seq', 'seq_token']:
+        # Extend the input tokens with target tokens
+        mod_dict["tensor"] = torch.cat([
+            mod_dict["tensor"],
+            torch.zeros((batch_size, num_target_tokens), dtype=torch.int, device=device)
+        ], dim=1)
+        mod_dict["input_mask"] = torch.cat([
+            mod_dict["input_mask"],
+            torch.ones((batch_size, num_target_tokens), dtype=torch.bool, device=device)
+        ], dim=1)
+        mod_dict["target_mask"] = torch.cat([
+            mod_dict["target_mask"],
+            torch.zeros((batch_size, num_target_tokens), dtype=torch.bool, device=device)
+        ], dim=1)
+        mod_dict["decoder_attention_mask"] = torch.cat([
+            mod_dict["decoder_attention_mask"],
+            torch.ones((batch_size, num_target_tokens), dtype=torch.bool, device=device)
+        ], dim=1)
+
+        if eos_id in mod_dict['tensor']:
+            eos_indices = torch.where(mod_dict['tensor'] == eos_id)[1]
+        else:
+            warnings.warn(f'Cannot find EOS token in {domain} input, assuming last input position.')
+            eos_indices = [input_length] * len(mod_dict['tensor'])
+        for i in range(len(mod_dict['tensor'])):
+            eos_idx = eos_indices[i]
+            # Update input tensor
+            # Input is [S_1], target is [S_1] ...... [S_2] (so Input [S_1] [S_1] ..... [S_2] when combined)
+            mod_dict['tensor'][i, [eos_idx, eos_idx+1]] = s1_id
+            mod_dict['tensor'][i, -1] = s1_id + 1
+
+            mod_dict['input_mask'][i, :eos_idx+1] = False
+            mod_dict['input_mask'][i, eos_idx+1:] = True
+        mod_dict['target_mask'] = ~mod_dict['input_mask']
+        mod_dict["decoder_attention_mask"] = mod_dict['input_mask']
+
+    elif modality_info[domain]['type'] in ['img']:
+        # TODO: Implement image masking in input
+        raise NotImplementedError(f'Conditioned target modality not implemented for {domain}')
+    else:
+        raise NotImplementedError(f'Conditioned target modality not implemented for {domain}')
+
+    return mod_dict
+
+
+def init_full_input_modality(value, modality_info, domain, device, eos_id=3):
+    mod_dict = value if isinstance(value, dict) else {"tensor": value}
+
+    if 'input_mask' not in mod_dict:
+        mod_dict['input_mask'] = torch.zeros(mod_dict['tensor'].shape, dtype=torch.bool, device=device)
+    if 'target_mask' not in mod_dict:
+        mod_dict['target_mask'] = torch.ones(mod_dict['tensor'].shape, dtype=torch.bool, device=device)
+    if 'decoder_attention_mask' not in mod_dict:
+        mod_dict['decoder_attention_mask'] = torch.zeros(mod_dict['tensor'].shape, dtype=torch.bool, device=device)
 
     if modality_info[domain]['type'] == 'img':
-        mod_dict[domain]['input_mask'][:] = False
-        mod_dict[domain]['target_mask'][:] = True
+        mod_dict['input_mask'][:] = False
+        mod_dict['target_mask'][:] = True
 
     elif modality_info[domain]['type'] in ['seq', 'seq_token']:
-        if eos_id in mod_dict[domain]['tensor']:
-            eos_idx = torch.where(mod_dict[domain]['tensor'] == eos_id)[1][0].item()
+        if eos_id in mod_dict['tensor']:
+            eos_idx = torch.where(mod_dict['tensor'] == eos_id)[1][0].item()
         else:
-            mod_dict[domain]['tensor'][:,0] = eos_id
+            warnings.warn(f'Cannot find EOS token in {domain} input, ignoring input.')
+            mod_dict['tensor'][:,0] = eos_id
             eos_idx = 0
-        mod_dict[domain]['input_mask'][:,:eos_idx+1] = False
-        mod_dict[domain]['input_mask'][:,eos_idx+1:] = True
-        mod_dict[domain]['target_mask'][:] = True
+        mod_dict['input_mask'][:,:eos_idx+1] = False
+        mod_dict['input_mask'][:,eos_idx+1:] = True
+        mod_dict['target_mask'][:] = True
 
     elif modality_info[domain]['type'] in ['seq_emb']:
         # T5 caption has the valid mask saved alongside the embeddings
-        mod_dict[domain]['input_mask'] = ~mod_dict[domain]['mask_valid']
-        mod_dict[domain]['target_mask'] = torch.ones_like(mod_dict[domain]['mask_valid'])
-        mod_dict[domain]['decoder_attention_mask'] = torch.zeros_like(mod_dict[domain]['mask_valid'])
+        mod_dict['input_mask'] = ~mod_dict['mask_valid']
+        mod_dict['target_mask'] = torch.ones_like(mod_dict['mask_valid'])
+        mod_dict['decoder_attention_mask'] = torch.zeros_like(mod_dict['mask_valid'])
         
     return mod_dict
 
-def custom_text(sample, input_text, eos_token, key, device, text_tokenizer, target_max_len=50, start_token="[S_1]"):
+def custom_text(input_text, device, text_tokenizer, target_max_len=50, start_token="[S_1]", eos_token="[EOS]"):
     input_ids = text_tokenizer.encode(input_text).ids
     input_ids = torch.tensor(input_ids).unsqueeze(0)
 
@@ -284,24 +278,12 @@ def custom_text(sample, input_text, eos_token, key, device, text_tokenizer, targ
         torch.zeros_like(target_ids, dtype=torch.bool),
         ], dim=1)
 
-    sample[key] = {}
-    sample[key]['tensor'] = all_ids.to(device)
-    sample[key]['input_mask'] = input_mask.to(device)
-    sample[key]['target_mask'] = target_mask.to(device)
-    sample[key]['decoder_attention_mask'] = torch.zeros(all_ids.shape, dtype=torch.bool, device=device)
+    mod_dict = {}
+    mod_dict['tensor'] = all_ids.to(device)
+    mod_dict['input_mask'] = input_mask.to(device)
+    mod_dict['target_mask'] = target_mask.to(device)
+    mod_dict['decoder_attention_mask'] = torch.zeros(all_ids.shape, dtype=torch.bool, device=device)
 
-    return sample
-
-def expand_to_batch(mod_dict, batch_size):
-    for mod, d in mod_dict.items():
-        for k, v in d.items():
-            if k in ['tensor', 'input_mask', 'target_mask', 'decoder_attention_mask', 'mask_valid']:
-                B = v.shape[0]
-                if B == 1:
-                    mod_dict[mod][k] = repeat(v, "1 ... -> b ...", b=batch_size)
-                elif B != batch_size:
-                    raise ValueError(f"Invalid batch size: {B} instead of {batch_size}")
-                
     return mod_dict
 
 
@@ -313,7 +295,7 @@ def build_chained_generation_schedules(
         decoding_steps: list[int], 
         token_decoding_schedules: list[str],
         temps: list[float],
-        temp_schedules: list[float],
+        temp_schedules: list[str],
         cfg_scales: list[float], 
         cfg_schedules: list[str],
         cfg_grow_conditioning: bool = False, 
@@ -473,7 +455,7 @@ class GenerationSampler(nn.Module):
         if np.isclose(temperature, 0, atol=1e-10):
             samples = torch.argmax(logits, dim=-1)
             # Since argmax is used, all sampled_probs will be 1 as we're selecting the max probability
-            sampled_probs = torch.ones_like(samples, dtype=torch.float32)
+            sampled_probs = torch.ones_like(samples, dtype=torch.float)
         else:
             filtered_logits = self.top_k_top_p_filtering(logits, top_k, top_p)
             probs = F.softmax(filtered_logits / temperature, dim=-1)
@@ -538,12 +520,12 @@ class GenerationSampler(nn.Module):
         mod_mask = torch.gather(mod_mask_all, dim=1, index=ids_keep)
 
         if self.model.num_register_tokens > 0:
-            prompt_tokens = repeat(self.prompt_tokens, '() n d -> b n d', b=B)
+            register_tokens = repeat(self.model.register_tokens, '() n d -> b n d', b=B)
             # We add prompt tokens at the beginning of the sequence
-            encoder_tokens = torch.cat([prompt_tokens, encoder_tokens], dim=1)
-            encoder_emb = torch.cat([torch.zeros_like(prompt_tokens), encoder_emb], dim=1)
-            encoder_mask = torch.cat([torch.zeros((B, prompt_tokens.shape[1]), dtype=torch.bool, device=encoder_mask.device), encoder_mask], dim=1)
-            mod_mask = torch.cat([torch.full((B, prompt_tokens.shape[1]), -1, dtype=torch.int16, device=mod_mask.device), mod_mask], dim=1)
+            encoder_tokens = torch.cat([register_tokens, encoder_tokens], dim=1)
+            encoder_emb = torch.cat([torch.zeros_like(register_tokens), encoder_emb], dim=1)
+            encoder_mask = torch.cat([torch.zeros((B, register_tokens.shape[1]), dtype=torch.bool, device=encoder_mask.device), encoder_mask], dim=1)
+            mod_mask = torch.cat([torch.full((B, register_tokens.shape[1]), -1, dtype=torch.int, device=mod_mask.device), mod_mask], dim=1)
 
         encoder_tokens[encoder_mask] = 0.
         encoder_emb[encoder_mask] = 0.
@@ -565,7 +547,7 @@ class GenerationSampler(nn.Module):
         emb_all = d['emb']
         decoder_mask_all = d['target_mask']
         B = decoder_tokens_all.shape[0] # Get batch size
-        mod_mask_all = torch.full_like(d['ids'], self.model.modality_info[target_mod]['id'], dtype=torch.int16)
+        mod_mask_all = torch.full_like(d['ids'], self.model.modality_info[target_mod]['id'], dtype=torch.int)
         mod_pos_all = torch.arange(d['x'].shape[1], device=d['x'].device).unsqueeze(0)
         mod_pos_all = repeat(mod_pos_all, '1 n -> b n', b=B) # Added: Expansion for batching
         num_decoder_tokens = (~decoder_mask_all[0]).sum()  # Adapted for batching / Assumes num_decoder_tokens is the same across the batch
@@ -599,7 +581,7 @@ class GenerationSampler(nn.Module):
         emb_all = d['emb']
         decoder_mask_all = d['target_mask']
         B = decoder_tokens_all.shape[0] # Get batch size
-        mod_mask_all = torch.full_like(d['ids'], self.model.modality_info[target_mod]['id'], dtype=torch.int16)
+        mod_mask_all = torch.full_like(d['ids'], self.model.modality_info[target_mod]['id'], dtype=torch.int)
         mod_pos_all = torch.arange(d['x'].shape[1], device=d['x'].device).unsqueeze(0)
         mod_pos_all = repeat(mod_pos_all, '1 n -> b n', b=B) # Added: Expansion for batching
         # Only keep the first num_select tokens
@@ -634,7 +616,7 @@ class GenerationSampler(nn.Module):
         emb_all = d['emb']
         decoder_mask_all = d['target_mask']
         B = decoder_ids_all.shape[0] # Get batch size
-        mod_mask_all = torch.full_like(d['ids'], self.model.modality_info[target_mod]['id'], dtype=torch.int16)
+        mod_mask_all = torch.full_like(d['ids'], self.model.modality_info[target_mod]['id'], dtype=torch.int)
         mod_pos_all = torch.arange(d['x'].shape[1], device=d['x'].device).unsqueeze(0)
         mod_pos_all = repeat(mod_pos_all, '1 n -> b n', b=B) 
         num_decoder_tokens = (~decoder_mask_all[0]).sum() # Adapted for batching, but assumes num_decoder_tokens is the same across the batch
@@ -1137,7 +1119,7 @@ class GenerationSampler(nn.Module):
 
 
     @torch.no_grad()
-    def generate(self, mod_dict, schedule, top_k=0.0, top_p=0.0, text_tokenizer=None, verbose=False, seed=None,
+    def generate(self, mod_dict, schedule, top_k=0.0, top_p=0.0, tokenizer=None, verbose=False, seed=None,
                  num_tokens=None):
         """ Generates a sequence of tokens from the input modalities.
         :param mod_dict: Dictionary of modalities.
@@ -1145,7 +1127,7 @@ class GenerationSampler(nn.Module):
             list of dictionaries containing {target_domain, scheme, num_tokens, temperature, cfg_scale, cfg_cond_domains}.
         :param top_k: top_k > 0: Keep only top k tokens with highest probability (a.k.a. top-k filtering).
         :param top_p: top_p > 0.0: Keep the top tokens with cumulative probability >= top_p (a.k.a. nucleus filtering).
-        :param text_tokenizer: Text tokenizer.
+        :param tokenizer: Modality tokenizers: dict[domain, module] with each module having an text_tokenizer attribute
         :param verbose: Whether to print progress.
         :param seed: Random seed.
         :return: Generated mod dict.
@@ -1193,12 +1175,12 @@ class GenerationSampler(nn.Module):
                 if cfg_scale == 1.0 or len(cfg_conditioning) == 0:
                     mod_dict = self.autoregressive_step_batched(
                         mod_dict, target_mod, temperature=temp, top_k=top_k, top_p=top_p,
-                        text_tokenizer=text_tokenizer, seed=seed_i
+                        text_tokenizer=tokenizer[target_mod].text_tokenizer, seed=seed_i
                     )
                 else:
                     mod_dict = self.guided_autoregressive_step_batched(
                         mod_dict, target_mod, temperature=temp, top_k=top_k, top_p=top_p,
-                        text_tokenizer=text_tokenizer, conditioning=cfg_conditioning, 
+                        text_tokenizer=tokenizer[target_mod].text_tokenizer, conditioning=cfg_conditioning,
                         guidance_scale=cfg_scale, seed=seed_i
                     )
             else:

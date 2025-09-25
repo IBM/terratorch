@@ -20,66 +20,10 @@ import torch
 from torch import nn
 from functools import partial
 
-from .encoder_embeddings import ImageEncoderEmbedding
+from .encoder_embeddings import ImageEncoderEmbedding, ImageTokenEncoderEmbedding
 from .tm_utils import Block, LayerNorm
 from .modality_info import MODALITY_INFO
-
-
-def build_modality_embeddings(modalities, img_size=None, dim=None, patch_size=None):
-    mod_embeddings = {}
-    mod_name_mapping = {}
-    for modality in modalities:
-        # New modalities can be provided as {'name': <num_channels>}
-        if isinstance(modality, dict):
-            for key, value in modality.items():
-                if isinstance(value, nn.Module):
-                    mod_embeddings[key] = value
-                elif isinstance(value, int):
-                    mod_embeddings[key] = ImageEncoderEmbedding(num_channels=value, dim_tokens=dim, image_size=img_size,
-                                                                    patch_size=patch_size, sincos_pos_emb=True)
-                else:
-                    raise ValueError(f'Modalities must be provided as a list of strings or dicts, or as a dict with '
-                                     f'the values being nn.Module or int (number of channels of the modality). '
-                                     f'Found {key}: {value} ({type(value)})')
-                mod_name_mapping[key] = key
-            continue
-
-        # Cover multiple naming conventions
-        modality_renamed = (modality.lower()
-                            .replace('s2', 'sen2')
-                            .replace('s1', 'sen1')
-                            .replace('text', 'caption')
-                            .replace('coordinates', 'coords')
-                            )
-
-        # Get modality key in MODALITY_INFO
-        if 'sen2l2a' in modality_renamed:
-            key = 'untok_sen2l2a@224'
-        elif 'sen2l1c' in modality_renamed:
-            key = 'untok_sen2l1c@224'
-        elif 'sen1rtc' in modality_renamed:
-            key = 'untok_sen1rtc@224'
-        elif 'sen1grd' in modality_renamed:
-            key = 'untok_sen1grd@224'
-        elif 'rgb' in modality_renamed:
-            key = 'untok_sen2rgb@224'
-        elif 'dem' in modality_renamed:
-            key = 'untok_dem@224'
-        elif 'caption' in modality_renamed:
-            raise NotImplementedError('Captions are not yet supported.')
-        elif 'coords' in modality_renamed:
-            raise NotImplementedError('Captions are not yet supported.')
-        else:
-            key = modality
-
-        if key in MODALITY_INFO.keys():
-            mod_info = MODALITY_INFO[key]
-            mod_embeddings[key] = mod_info['encoder_embedding'](image_size=img_size, dim_tokens=dim, **mod_info)
-            mod_name_mapping[modality] = key  # Requires manual mapping for loading model weights
-        else:
-            raise NotImplementedError(f'Could not find modality {modality} in default modality info.')
-
-    return mod_embeddings, mod_name_mapping
+from .terramind import build_modality_embeddings, build_tokenizer
 
 
 class TerraMindViT(nn.Module):
@@ -102,6 +46,7 @@ class TerraMindViT(nn.Module):
         qkv_bias (bool): If True, add a learnable bias to query, key, value.
         proj_bias (bool): If True, adds a bias to the attention out proj layer.
         mlp_bias (bool): If True, adds a learnable bias for the feedforward.
+        num_register_tokens (int): Number of register tokens.
         drop_path_rate (float): Stochastic depth rate.
         drop_rate (float): Dropout rate.
         attn_drop_rate (float): Attention dropout rate.
@@ -110,8 +55,9 @@ class TerraMindViT(nn.Module):
         norm_layer (nn.Module): Normalization layer.
         gated_mlp (bool): If True, makes the feedforward gated (e.g., for SwiGLU)
         qk_norm (bool): If True, normalizes the query and keys (as in ViT-22B)
-        use_act_checkpoint (bool): If True, use activation checkpointing.
         encoder_norm (bool): If True, adds a norm layer after the last encoder block.
+        tokenizer_dict (dict): Dictionary of tokenizers.
+        pretrained (bool): If True, loads pretrained tokenizers.
     """
     def __init__(
         self,
@@ -127,6 +73,7 @@ class TerraMindViT(nn.Module):
         qkv_bias: bool = True,
         proj_bias: bool = True,
         mlp_bias: bool = True,
+        num_register_tokens: int = 0,
         drop_path_rate: float = 0.0,
         drop_rate: float = 0.0,
         attn_drop_rate: float = 0.0,
@@ -136,6 +83,8 @@ class TerraMindViT(nn.Module):
         gated_mlp: bool = False,  # Make the feedforward gated for e.g. SwiGLU
         qk_norm: bool = False,
         encoder_norm: bool = True,
+        tokenizer_dict: dict | None = None,
+        pretrained: bool = False,
     ):
         super().__init__()
 
@@ -148,8 +97,8 @@ class TerraMindViT(nn.Module):
             raise ValueError(f'Modalities must be None, a list of modality keys or a dict with ints/embedding layers.')
 
         # Build embedding layers for all defined modalities
-        mod_embeddings, mod_name_mapping = build_modality_embeddings(modalities, img_size=img_size, dim=dim,
-                                                                     patch_size=patch_size)
+        mod_embeddings, mod_name_mapping = build_modality_embeddings(MODALITY_INFO, modalities, img_size=img_size,
+                                                                     dim=dim, patch_size=patch_size)
         self.encoder_embeddings = nn.ModuleDict(mod_embeddings)
         self.mod_name_mapping = mod_name_mapping
         self.modalities = list(mod_name_mapping.keys())  # Further code expects list
@@ -157,7 +106,7 @@ class TerraMindViT(nn.Module):
         self.img_size = img_size
         self.merge_method = merge_method
         self.image_modalities = [key for key, value in self.encoder_embeddings.items()
-                                 if isinstance(value, ImageEncoderEmbedding)]
+             if isinstance(value, ImageEncoderEmbedding) or isinstance(value, ImageTokenEncoderEmbedding)]
         self.modality_drop_rate = modality_drop_rate
         assert 0 <= self.modality_drop_rate <= 1, "modality_drop_rate must be in [0, 1]"
         # New learned parameter for handling missing modalities
@@ -181,6 +130,22 @@ class TerraMindViT(nn.Module):
             self.out_channels = [dim for i in range(encoder_depth)]
 
         self.encoder_norm = norm_layer(dim) if encoder_norm else nn.Identity()
+
+        # Additional register tokens that can be used by the encoder during fine-tuning
+        self.num_register_tokens = num_register_tokens
+        if self.num_register_tokens > 0:
+            self.register_tokens = nn.Parameter(torch.zeros(1, self.num_register_tokens, dim))
+            nn.init.normal_(self.register_tokens, std=0.02)
+        else:
+            self.register_tokens = None
+
+        # Init optional tokenizers
+        if tokenizer_dict is not None:
+            self.tokenizer = build_tokenizer(tokenizer_dict=tokenizer_dict,
+                                             input_modalities=list(self.encoder_embeddings.keys()),
+                                             pretrained=pretrained)
+        else:
+            self.tokenizer = {}
 
         # Weight init
         self.init_weights()
@@ -246,10 +211,10 @@ class TerraMindViT(nn.Module):
             list[torch.Tensor]: List of transformer layer outputs. Shape (B, L, D).
         """
         # Handle single image modality
-        if isinstance(d, torch.Tensor):
+        if not isinstance(d, dict):
             # Assuming first modality
             d = {self.modalities[0]: d}
-        elif d is None:
+        elif d is None or len(d) == 0:
             d = {}
             if not len(kwargs):
                 raise ValueError("No input provided.")
@@ -258,9 +223,18 @@ class TerraMindViT(nn.Module):
         for key, value in kwargs.items():
             d[key] = value
 
+        # Check for unknown modalities in input
+        for mod in list(d.keys()):
+            if mod not in self.mod_name_mapping:
+                warnings.warn(f"Unknown input modality: {mod}. Ignoring input.")
+                del d[mod]
+        if len(d) == 0:
+            raise ValueError("No valid inputs provided.")
+
+        d_mod = list(d.keys())
         if self.training and self.modality_drop_rate:
             # Drop random modalities during training
-            for key in random.sample(list(d.keys()), k=len(d) - 1):
+            for key in random.sample(d_mod, k=len(d) - 1):
                 if random.random() < self.modality_drop_rate:
                     _ = d.pop(key)
 
@@ -268,8 +242,14 @@ class TerraMindViT(nn.Module):
         num_tokens = []
         image_mod = []
         for mod, tensor in d.items():
-            if mod not in self.mod_name_mapping.keys():
-                raise ValueError(f'No patch embedding layer found for modality {mod}.')
+            if self.mod_name_mapping[mod] in self.tokenizer:
+                # Tokenize input if required
+                device = next(self.parameters()).device
+                tensor = self.tokenizer[self.mod_name_mapping[mod]].encode(tensor, device)
+                if self.mod_name_mapping[mod] in self.image_modalities:
+                    tensor = tensor[-1]
+                else:
+                    tensor = tensor["tensor"]
 
             mod_dict = self.encoder_embeddings[self.mod_name_mapping[mod]](tensor)
             # Add embeddings to patchified data
@@ -280,6 +260,16 @@ class TerraMindViT(nn.Module):
         # Concatenate along token dim
         x = torch.cat(x, dim=1)  # Shape: (B, N, D)
 
+        if self.num_register_tokens > 0:
+            register_tokens = self.register_tokens.repeat((x.shape[0], 1, 1))
+            # We add register tokens at the beginning of the sequence
+            x = torch.cat([register_tokens, x], dim=1)
+            if self.merge_method == 'dict':
+                # Return register tokens as additional modality
+                d_mod.insert(0, "register_tokens")
+                num_tokens.insert(0, self.num_register_tokens)
+
+        # Forward encoder blocks
         out = []
         for block in self.encoder:
             x = block(x)
@@ -288,6 +278,9 @@ class TerraMindViT(nn.Module):
         out[-1] = self.encoder_norm(x)  # Shape: (B, N, D)
 
         def _unstack_image_modalities(x):
+            if self.num_register_tokens:
+                # Remove register tokens
+                x = x[:, self.num_register_tokens:]
             x = torch.split(x, num_tokens, dim=1)  # Split tokens by modality
             x = [m for m, keep in zip(x, image_mod) if keep]  # Drop sequence modalities
             x = torch.stack(x, dim=1)  # (B, M, N, D)
@@ -314,7 +307,7 @@ class TerraMindViT(nn.Module):
 
         elif self.merge_method == 'dict':
             out = [torch.split(x, num_tokens, dim=1) for x in out]
-            out = [{mod: x[i] for i, mod in enumerate(d.keys())} for x in out]
+            out = [{mod: x[i] for i, mod in enumerate(d_mod)} for x in out]
 
         elif self.merge_method is None:
             pass  # Do nothing

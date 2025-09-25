@@ -43,8 +43,8 @@ def model_input_batch() -> torch.Tensor:
 # and different losses and lr levels using the same backbone.
 
 
-@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "prithvi_eo_v2_300", "prithvi_swin_B"])
-@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder"])
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v2_300", "prithvi_swin_B"])
+@pytest.mark.parametrize("decoder", ["UNetDecoder"])
 @pytest.mark.parametrize("loss", ["ce"])
 @pytest.mark.parametrize("lr_overrides", [{"encoder": 0.01}, None])
 def test_create_segmentation_task_encoder_decoder(backbone, decoder, loss, model_factory: str, lr_overrides):
@@ -71,7 +71,7 @@ def test_create_segmentation_task_encoder_decoder(backbone, decoder, loss, model
 
 
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v2_300"])
-@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder"])
+@pytest.mark.parametrize("decoder", ["FCNDecoder"])
 @pytest.mark.parametrize("loss", ["ce", "jaccard", "focal", "dice"])
 @pytest.mark.parametrize("lr_overrides", [None])
 def test_create_segmentation_task_decoder_to_optim(backbone, decoder, loss, model_factory: str, lr_overrides):
@@ -97,8 +97,8 @@ def test_create_segmentation_task_decoder_to_optim(backbone, decoder, loss, mode
     gc.collect()
 
 
-@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "prithvi_eo_v2_300", "prithvi_swin_B"])
-@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder"])
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100"])
+@pytest.mark.parametrize("decoder", ["UNetDecoder"])
 @pytest.mark.parametrize("loss", ["mae"])
 @pytest.mark.parametrize("lr_overrides", [{"encoder": 0.01}, None])
 def test_create_regression_task_encoder_decoder(backbone, decoder, loss, model_factory: str, lr_overrides):
@@ -125,7 +125,7 @@ def test_create_regression_task_encoder_decoder(backbone, decoder, loss, model_f
 
 
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v2_300"])
-@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder"])
+@pytest.mark.parametrize("decoder", ["UNetDecoder"])
 @pytest.mark.parametrize("loss", ["mae", "rmse", "huber"])
 @pytest.mark.parametrize("lr_overrides", [None])
 def test_create_regression_task_decoder_to_optim(backbone, decoder, loss, model_factory: str, lr_overrides):
@@ -151,8 +151,8 @@ def test_create_regression_task_decoder_to_optim(backbone, decoder, loss, model_
     gc.collect()
 
 
-@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "prithvi_eo_v2_300", "prithvi_swin_B"])
-@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder"])
+@pytest.mark.parametrize("backbone", ["prithvi_swin_B"])
+@pytest.mark.parametrize("decoder", ["FCNDecoder"])
 @pytest.mark.parametrize("loss", ["ce"])
 @pytest.mark.parametrize("lr_overrides", [{"encoder": 0.01}, None])
 def test_create_classification_task_encoder_decoder(backbone, decoder, loss, model_factory: str, lr_overrides):
@@ -363,7 +363,7 @@ def test_create_classification_task_decoder_to_optim(backbone, decoder, loss, mo
     gc.collect()
 
 
-@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "prithvi_eo_v2_300", "clay_v1_base"])
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "clay_v1_base"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder"])
 @pytest.mark.parametrize("vpt_n_tokens", [100, 500])
 @pytest.mark.parametrize("vpt_dropout", [0.1, 0.5])

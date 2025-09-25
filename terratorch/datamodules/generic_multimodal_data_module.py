@@ -347,34 +347,61 @@ class GenericMultiModalDataModule(NonGeoDataModule):
             self.non_image_modalities += ["label"]
 
         if img_grep is not None:
-            warnings.warn(f'img_grep was renamed to image_grep and will be removed in a future version.',
+            warnings.warn(f"img_grep was renamed to image_grep and will be removed in a future version.",
                           DeprecationWarning)
             image_grep = img_grep
 
         if isinstance(image_grep, dict):
+            # Check if image_grep is valid
+            for key, grep in image_grep.items():
+                if "*" not in grep:
+                    warnings.warn(f"image_grep requires a wildcard with a suffix. "
+                                  f"Adding '*' to image_grep[{key}]={grep}.")
+                    image_grep[key] = "*" + grep
+                if "*" in grep.strip("*/\\"):
+                    raise ValueError(f"GenericMultiModalDataModule can only handle image_grep with suffixes "
+                                     f"(e.g. '*_mod.tif'). Intermediate wildcards do not work, found {grep}.")
             self.image_grep = {m: image_grep[m] if m in image_grep else "*" for m in modalities}
         else:
-            self.image_grep = {m: image_grep or "*" for m in modalities}
-        self.label_grep = label_grep or "*"
-        self.train_root = train_data_root
-        self.val_root = val_data_root
-        self.test_root = test_data_root
+            image_grep = image_grep or "*"  # Handle None
+            if "*" not in image_grep:
+                warnings.warn(f"image_grep requires a wildcard with a suffix. Adding '*' to image_grep={image_grep}.")
+                image_grep = "*" + image_grep
+            if "*" in image_grep.strip("*/\\"):
+                raise ValueError(f"GenericMultiModalDataModule can only handle image_grep with suffixes "
+                                 f"(e.g. '*_mod.tif'). Intermediate wildcards do not work, found {image_grep}.")
+            self.image_grep = {m: image_grep for m in modalities}
+        label_grep = label_grep or "*"  # Handle None
+        # Check if label_grep is valid
+        if '*' not in label_grep:
+            warnings.warn(f"label_grep requires a wildcard with a suffix. Adding '*' to label_grep={label_grep}")
+            label_grep = "*" + label_grep
+        if "*" in label_grep.strip("*/\\"):
+            raise ValueError(f"GenericMultiModalDataModule can only handle label_grep with suffixes "
+                             f"(e.g. '*_mask.tif'). Intermediate wildcards do not work, found {label_grep}.")
+        self.label_grep = label_grep
         self.train_label_data_root = train_label_data_root
         self.val_label_data_root = val_label_data_root
         self.test_label_data_root = test_label_data_root
-        self.predict_root = predict_data_root
 
         # Check paths and modalities
         for name, data_root in [("train", train_data_root), ("val", val_data_root), ("test", test_data_root),
                                 ("predict", predict_data_root)]:
             if data_root is None:
-                pass
-            elif allow_missing_modalities:
-                if not set(data_root.keys()) <= set(modalities):
-                    raise ValueError(f"Modalities {modalities} do not match {name}_data_root: {data_root}")
+                filtered = None
             else:
-                if not set(data_root.keys()) == set(modalities):
-                    raise ValueError(f"Paths in {name}_data_root do not match modalities {modalities}: {data_root}")
+                filtered = {m: data_root[m] for m in modalities if m in data_root} # Filter out modalities not used
+                if not allow_missing_modalities:
+                    if not set(filtered.keys()) == set(modalities):
+                        raise ValueError(f"Paths in {name}_data_root do not match modalities {modalities}: {data_root}")
+            if name == "train":
+                self.train_root = filtered
+            elif name == "val":
+                self.val_root = filtered
+            elif name == "test":
+                self.test_root = filtered
+            elif name == "predict":
+                self.predict_root = filtered
 
         self.train_split = train_split
         self.val_split = val_split

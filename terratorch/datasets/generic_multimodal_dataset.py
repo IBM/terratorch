@@ -162,9 +162,6 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         self.non_image_modalities = list(set(self.modalities) - set(image_modalities))
         self.modalities = self.image_modalities + self.non_image_modalities  # Ensure image modalities to be first
 
-        if scalar_label:
-            self.non_image_modalities += ["label"]
-
         # Order by modalities and convert path strings to lists as the code expects a list of paths per modality
         data_root = {m: data_root[m] for m in self.modalities}
 
@@ -189,6 +186,9 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             msg = "Please provide dataset_bands when expand_temporal_dimension is True"
             raise Exception(msg)
 
+        if scalar_label:
+            self.non_image_modalities += ["label"]
+
         # Load samples based on split file
         if self.split_file is not None:
             if str(self.split_file).endswith(".txt"):
@@ -206,12 +206,11 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             def get_file_id(file_name, mod):
                 glob_as_regex = '^' + ''.join('(.*?)' if ch == '*' else re.escape(ch)
                                               for ch in image_grep[mod]) + '$'
-                stem = re.match(glob_as_regex, file_name).group(1)
+                stem = re.match(glob_as_regex, os.path.basename(file_name)).group(1)
                 if allow_substring_file_names:
                     # Remove file extensions
                     stem = os.path.splitext(stem)[0]
-                # Remote folder structure
-                return os.path.basename(stem)
+                return stem
 
             if allow_missing_modalities:
                 valid_files = list(set([get_file_id(file, mod)
@@ -251,9 +250,13 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                     sample[m] = m_path.loc[file].values
                 elif allow_substring_file_names:
                     # Substring match with image_grep
-                    m_files = glob.glob(os.path.join(m_path, file + image_grep[m]))
+                    m_files = sorted(glob.glob(os.path.join(m_path, file + image_grep[m])))
                     if m_files:
-                        sample[m] = m_files[0]
+                        sample[m] = m_files[-1]
+                        if len(m_files) > 1:
+                            warnings.warn(f"Found multiple matching files for sample {file} and grep {image_grep[m]}: "
+                                          f"{m_files}. Selecting last one. "
+                                          f"Consider changing data structure or parameters for unique selection.")
                 else:
                     # Exact match
                     file_path = os.path.join(m_path, file)
@@ -266,9 +269,9 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                     sample["mask"] = label_data_root.loc[file].values
                 elif allow_substring_file_names:
                     # Substring match with label_grep
-                    l_files = glob.glob(os.path.join(label_data_root, file + label_grep))
+                    l_files = sorted(glob.glob(os.path.join(label_data_root, file + label_grep)))
                     if l_files:
-                        sample["mask"] = l_files[0]
+                        sample["mask"] = l_files[-1]
                 else:
                     # Exact match
                     file_path = os.path.join(label_data_root, file)
@@ -330,6 +333,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         import rasterio
 
         warnings.filterwarnings("ignore", category=rasterio.errors.NotGeoreferencedWarning)
+        warnings.filterwarnings("ignore", message="Dataset has no geotransform")
 
     def __len__(self) -> int:
         return len(self.samples)
@@ -370,6 +374,9 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
             if modality in self.constant_scale:
                 data = data.astype(np.float32) * self.constant_scale[modality]
+
+            if data.dtype == np.float64:
+                data = data.astype(np.float32)
 
             output[modality] = data
 

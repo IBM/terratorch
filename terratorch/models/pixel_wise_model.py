@@ -78,7 +78,16 @@ class PixelWiseModel(Model, SegmentationModel):
             aux_heads = {}
         self.aux_heads = nn.ModuleDict(aux_heads)
 
-        self.neck = neck
+        if neck is not None:
+            self.neck = neck
+        elif hasattr(self.encoder, "prepare_features_for_image_model"):
+            # only for backwards compatibility with pre-neck times.
+            def model_defined_neck(x, **kwargs):
+                return self.encoder.prepare_features_for_image_model(x)  # Drop kwargs
+            self.neck = model_defined_neck
+        else:
+            self.neck = lambda x, image_size: x
+
         self.rescale = rescale
         self.patch_size = patch_size
         self.padding = padding
@@ -127,14 +136,7 @@ class PixelWiseModel(Model, SegmentationModel):
 
         features = self.encoder(x, **kwargs)
 
-        # only for backwards compatibility with pre-neck times.
-        if self.neck:
-            prepare = self.neck
-        else:
-            # for backwards compatibility, if this is defined in the encoder, use it
-            prepare = getattr(self.encoder, "prepare_features_for_image_model", lambda x: x)
-
-        features = prepare(features)
+        features = self.neck(features, image_size=input_size)
 
         decoder_output = self.decoder([f.clone() for f in features])
         mask = self.head(decoder_output)
