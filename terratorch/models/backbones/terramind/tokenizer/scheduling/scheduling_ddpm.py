@@ -119,13 +119,13 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
             self.alphas_cumprod = scaled_cosine_alphas(num_train_timesteps, noise_shift)
         else:
             if trained_betas is not None:
-                self.betas = torch.tensor(trained_betas, dtype=torch.float32)
+                self.betas = torch.tensor(trained_betas, dtype=torch.float)
             elif beta_schedule == "linear":
-                self.betas = torch.linspace(beta_start, beta_end, num_train_timesteps, dtype=torch.float32)
+                self.betas = torch.linspace(beta_start, beta_end, num_train_timesteps, dtype=torch.float)
             elif beta_schedule == "scaled_linear":
                 # this schedule is very specific to the latent diffusion model.
                 self.betas = (
-                    torch.linspace(beta_start**0.5, beta_end**0.5, num_train_timesteps, dtype=torch.float32) ** 2
+                    torch.linspace(beta_start**0.5, beta_end**0.5, num_train_timesteps, dtype=torch.float) ** 2
                 )
             elif beta_schedule == "squaredcos_cap_v2":
                 # Glide cosine schedule
@@ -276,7 +276,7 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
         dtype = sample.dtype
         batch_size, channels, height, width = sample.shape
 
-        if dtype not in (torch.float32, torch.float64):
+        if dtype not in (torch.float, torch.float64):
             sample = sample.float()  # upcast for quantile calculation, and clamp not implemented for cpu half
 
         # Flatten sample for doing quantile calculation along each image
