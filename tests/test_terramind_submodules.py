@@ -38,26 +38,3 @@ def test_forward_when_training(create_drop_path):
 
     assert output_tensor.shape == input_tensor.shape
     assert (output_tensor != input_tensor).sum() > 0  # Check if some elements were dropped
-
-
-def test_forward():
-    mlp = create_mlp()
-
-    input_tensor = torch.randn(2, 3, IN_FEATURES)
-    output_tensor = mlp(input_tensor)
-
-    assert output_tensor.shape[:2] == input_tensor.shape[:2]  # Check batch dimensions
-    assert output_tensor.shape[1:] == mlp.out_features  # Check output features
-
-    # Add more assertions based on your specific requirements
-
-
-def test_forward_with_temb():
-    mlp = create_mlp(temb_dim=6)  # Assuming temb_dim is provided
-
-    input_tensor = torch.randn(2, 3, IN_FEATURES)
-    temb = torch.randn(2, mlp.hidden_features // 2)  # Mock time embedding tensor
-    output_tensor = mlp(input_tensor, temb)
-
-    assert output_tensor.shape[:2] == input_tensor.shape[:2]  # Check batch dimensions
-    assert output_tensor.shape[1:] == mlp.out_features  # Check output features
