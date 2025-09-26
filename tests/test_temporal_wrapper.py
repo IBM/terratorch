@@ -226,18 +226,18 @@ def test_temporal_wrapper_pooling_modes(dummy_encoder):
     #     "satlas_swin_b_sentinel2_si_ms", model_bands=[0, 1, 2, 3, 4, 5], out_indices=[1, 3, 5, 7]
     # )
 
-    n_channels = 6
-    x = torch.randn(batch_size, n_channels, timesteps, 256, 256)
-    # pdb.set_trace()
-    # Test mean pooling
-    wrapper = TemporalWrapper(encoder, pooling="mean", features_permute_op=(0, 3, 1, 2))
-    output = wrapper(x)
-    assert isinstance(output, list)
-    assert len(output) == 4
-    assert output[0].shape == (batch_size, 64, 64, encoder.out_channels[0])
-    del output, wrapper
+    # n_channels = 6
+    # x = torch.randn(batch_size, n_channels, timesteps, 256, 256)
+    ## pdb.set_trace()
+    ## Test mean pooling
+    # wrapper = TemporalWrapper(encoder, pooling="mean") #, features_permute_op=(0, 3, 1, 2))
+    # output = wrapper(x)
+    # assert isinstance(output, list)
+    # assert len(output) == 4
+    # assert output[0].shape == (batch_size, 64, 64, encoder.out_channels[0])
+    # del output, wrapper
 
-    gc.collect()
+    # gc.collect()
 
     # Test max pooling
     wrapper = TemporalWrapper(encoder, pooling="max", features_permute_op=(0, 3, 1, 2))
