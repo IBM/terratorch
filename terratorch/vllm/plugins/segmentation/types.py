@@ -26,6 +26,13 @@ class PluginConfig(BaseModel):
                 
         return self
 
+class TiledInferenceParameters(BaseModel):
+    h_crop: int = 512
+    h_stride: int = None
+    w_crop: int = 512
+    w_stride: int = None
+    average_patches: bool = None
+
 class RequestData(BaseModel):
 
     data_format: Literal["b64_json", "path", "url"]
