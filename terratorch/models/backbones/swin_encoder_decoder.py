@@ -865,6 +865,7 @@ class MMSegSwinTransformer(nn.Module):
         norm_layer=nn.LayerNorm,
         with_cp=False,  # noqa: FBT002
         frozen_stages=-1,
+        **kwargs, 
     ):
         """MMSeg Swin Transformer backbone.
 
@@ -988,6 +989,7 @@ class MMSegSwinTransformer(nn.Module):
                 in_chans = downsample.out_channels
         self.stages = nn.Sequential(*stages)
         self.num_features = [int(embed_dim * 2**i) for i in range(self.num_layers)]
+        self.out_channels = self.num_features
         # Add a norm layer for each output
 
         self.head = ClassifierHead(
