@@ -55,7 +55,7 @@ dependencies = [
   "numba",
   "mlflow",
   "lightning",
-  "segmentation-models-pytorch<=0.4",
+  "segmentation-models-pytorch<=0.5.0",
   "jsonargparse",
   "torchgeo>=0.7.0",
   "einops",
