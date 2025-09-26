@@ -95,6 +95,7 @@ test = [
   "dask",
   "wandb",
   "pytest-sugar",
+  "vllm",
 ]
 
 mmseg = [
