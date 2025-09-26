@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/icon-192.png" />
+    <link rel="manifest" href="manifest_elephants.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TerraMind.tiny demo</title>
+    <script type="module" src="/main.js"></script>
+    <script type="module" src="/elephants.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+  </head>
+
+  <body class="app">
+    <header>
+      <cds-header class="compliment">
+        <cds-skip-to-content href="#main-content"></cds-skip-to-content>
+        <cds-header-name href="./" prefix="IBM">TerraMind.tiny</cds-header-name>
+        <div class="cds--header__global">
+          <cds-header-global-action aria-label="User Profile" class="user-avatar" panel-id="user-profile-panel">
+            <div class="action-icon" slot="icon"></div>
+          </cds-header-global-action>
+          <cds-header-panel id="user-profile-panel" aria-label="User profile Panel">
+            <div class="header-panel__content">
+              <h2 class="header-panel__title">User profile Panel</h2>
+
+              <cds-content-switcher value="system" class="theme-selector">
+                <cds-content-switcher-item icon value="light">
+                  <div class="theme-selector__icon theme-selector__icon--light"></div>
+                  <span slot="tooltip-content">Light theme</span>
+                </cds-content-switcher-item>
+                <cds-content-switcher-item icon value="system">
+                  <div class="theme-selector__icon theme-selector__icon--system"></div>
+                  <span slot="tooltip-content">System theme</span>
+                </cds-content-switcher-item>
+                <cds-content-switcher-item icon value="dark">
+                  <div class="theme-selector__icon theme-selector__icon--dark"></div>
+                  <span slot="tooltip-content">Dark theme</span>
+                </cds-content-switcher-item>
+              </cds-content-switcher>
+              <cds-checkbox
+                id="theme-header__compliment"
+                class="theme-header__compliment"
+                checked
+                name="theme-header__compliment"
+                >Global header reverse theme</cds-checkbox
+              >
+            </div>
+          </cds-header-panel>
+        </div>
+      </cds-header>
+    </header>
+    <main id="main-content" class="main">
+      <div class="page page-landing cds--css-grid cds--css-grid--full-width">
+        <div class="page-landing__banner cds--css-grid-column cds--col-span-100">
+          <h1 class="page-landing__heading">TerraMind.tiny elephant object detection</h1>
+        </div>
+        <div class="page-landing__r2 cds--css-grid-column cds--col-span-100">
+          <div class="cds--subgrid cds--subgrid--full-wide">
+            <div
+              class="page-landing__tab-content cds--css-grid-column cds--sm:col-span-4 cds--md:col-span-4 cds--lg:col-span-7"
+            >
+              <div class="controls">
+                <!--<input type="file" id="imageUpload" accept="image/*" name="Upload image">-->
+                <h5 id="loadUrlBtn" disabled="true">Downloading Model (90MB), please wait...</h5>
+              </div>
+              <!-- 9 sample tiles -->
+              <div class="sample-grid" id="sampleGrid"></div>
+            </div>
+            <div
+              class="cds--sm:col-span-4 cds--md:col-span-4 cds--lg:col-start-9 cds--lg:col-span-5 cds--css-grid-column"
+            >
+              <div class="container">
+                <img id="inputImage" />
+                <canvas id="overlayCanvas" width="512" height="512"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="page-landing__r3 cds--css-grid-column cds--col-span-100">
+          <cds-accordion alignment="end" size="md">
+            <cds-accordion-item title="Logs" open>
+              <cds-textarea id="log" enable-counter="" counter-mode="" value="" rows="10" cols="" readonly></cds-textarea>
+            </cds-accordion-item>
+          </cds-accordion>
+
+          <div id="progressBar"></div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
