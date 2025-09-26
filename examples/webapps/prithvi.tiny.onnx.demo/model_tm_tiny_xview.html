@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>model_tm_tiny_xview Inference</title>
+  <style>
+    video, canvas { border: 1px solid #ccc; margin: 4px; }
+    #log { white-space: pre; background: #eee; padding: 10px; height: 200px; overflow-y: scroll; }
+    #controls { display: flex; align-items: center; gap: 10px; }
+  </style>
+</head>
+<body>
+  <h1>model_tm_tiny_xview Inference</h1>
+  <div id="controls">
+    <label for="inputMode">Input Source:</label>
+    <select id="inputMode">
+      <option value="camera">Camera</option>
+      <option value="file">File</option>
+    </select>
+  </div>
+  <div id="cameraControls">
+    <video id="webcam" autoplay playsinline></video><br>
+    <button id="capture">Capture Frame</button>
+    <button id="swapCamera">Swap Camera</button>
+  </div>
+  <div id="fileControls" style="display:none;">
+    You can use this <a href="example_unlabeled.jpg" target="_top">sample image</a>
+    <input type="file" id="imageInput" accept="image/*"><br>
+    <button id="loadImage">Load Image</button>
+  </div>
+
+  <canvas id="preview" style="display:none;"></canvas>
+  <canvas id="display" width="640" height="480"></canvas><br>
+  <button id="infer">Run Inference</button>
+  <div id="log"></div>
+
+  <script>
+    const $log = document.getElementById("log");
+    function log(msg){
+      $log.textContent += ($log.textContent ? "\n" : "") + msg;
+      $log.scrollTop = $log.scrollHeight;
+    }
+
+    const inputModeSelect = document.getElementById("inputMode");
+    const cameraControls = document.getElementById("cameraControls");
+    const fileControls = document.getElementById("fileControls");
+    const webcam = document.getElementById("webcam");
+    const imageInput = document.getElementById("imageInput");
+    const previewCanvas = document.getElementById("preview");
+    const displayCanvas = document.getElementById("display");
+    const previewCtx = previewCanvas.getContext("2d");
+    const displayCtx = displayCanvas.getContext("2d");
+    
+    let worker = null;
+    let currentStream = null;
+    let videoDevices = [];
+    let currentDeviceIndex = 0;
+    
+    let tileCount = 0;
+    let detections = [];
+    let capturedImage = null;
+    
+    let currentMode = "camera";
+
+    // Reusable function to handle image loading from either video or file
+    function handleImageLoad(imageSource) {
+      previewCanvas.width = imageSource.width || imageSource.videoWidth;
+      previewCanvas.height = imageSource.height || imageSource.videoHeight;
+      displayCanvas.width = previewCanvas.width;
+      displayCanvas.height = previewCanvas.height;
+      
+      previewCtx.drawImage(imageSource, 0, 0, previewCanvas.width, previewCanvas.height);
+      capturedImage = previewCtx.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
+      displayCtx.putImageData(capturedImage, 0, 0);
+      log("Image loaded.");
+    }
+
+    async function initWebcam(deviceId = null) {
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+      }
+      try {
+        const constraints = {
+          video: {
+            width: { ideal: 1024 },
+            height: { ideal: 768 },
+            facingMode: "user"
+          }
+        };
+        if (deviceId) {
+          constraints.video.deviceId = { exact: deviceId };
+        }
+        
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        currentStream = stream;
+        webcam.srcObject = stream;
+        log("Webcam initialized.");
+
+        webcam.addEventListener('loadedmetadata', () => {
+          previewCanvas.width = webcam.videoWidth;
+          previewCanvas.height = webcam.videoHeight;
+          displayCanvas.width = webcam.videoWidth;
+          displayCanvas.height = webcam.videoHeight;
+          log(`Camera stream resolution: ${webcam.videoWidth}x${webcam.videoHeight}`);
+        });
+
+      } catch (e) {
+        log("ERROR: " + e);
+      }
+    }
+
+    async function getCameras() {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        videoDevices = devices.filter(device => device.kind === 'videoinput');
+        log(`Found ${videoDevices.length} video devices.`);
+        if (videoDevices.length > 0) {
+          await initWebcam(videoDevices[currentDeviceIndex].deviceId);
+        }
+      } catch (e) {
+        log("ERROR enumerating devices: " + e);
+      }
+    }
+
+    function initWorker() {
+      worker = new Worker(URL.createObjectURL(new Blob([`
+        importScripts("https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js");
+        ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/";
+        let session = null;
+        async function loadModel() {
+          postMessage({type: "log", data: "Loading model in worker: model_tm_tiny_xview.onnx"});
+          try {
+            const modelUrl = "https://terramind-tiny-onnx-mobile-benchmark.s3.eu-de.cloud-object-storage.appdomain.cloud/model_tm_tiny_xview.onnx";
+            session = await ort.InferenceSession.create(modelUrl);
+            postMessage({type: "log", data: "Model loaded."});
+          } catch (e) {
+            postMessage({type: "log", data: "ERROR loading model: " + e});
+          }
+        }
+        function preprocess(imageData) {
+          const { data, width, height } = imageData;
+          const floatData = new Float32Array(3 * width * height);
+          for (let i = 0; i < width * height; i++) {
+            const r = data[i * 4] / 255;
+            const g = data[i * 4 + 1] / 255;
+            const b = data[i * 4 + 2] / 255;
+            floatData[i] = r;
+            floatData[i + width * height] = g;
+            floatData[i + 2 * width * height] = b;
+          }
+          return new ort.Tensor("float32", floatData, [1, 3, height, width]);
+        }
+        async function runInference(data) {
+          if (!session) {
+            postMessage({type:"log", data:"ERROR: session not ready"});
+            return;
+          }
+          try {
+            const imageData = data.imageData;
+            const input = preprocess(imageData);
+            const feeds = {};
+            feeds[session.inputNames[0]] = input;
+            const results = await session.run(feeds);
+            const outputTensor = results[session.outputNames[0]];
+            const detections = parseOutputTensor(outputTensor);
+            
+            postMessage({
+                type:"result",
+                data: detections,
+                tileIndex: data.tileIndex,
+                tilePosition: data.tilePosition
+            });
+            
+          } catch (e) {
+            postMessage({type:"log", data:"ERROR during inference: " + e});
+          }
+        }
+        function parseOutputTensor(tensor) {
+            const data = tensor.data;
+            const detections = [];
+            const numDetections = data.length / 6;
+            for(let i = 0; i < numDetections; i++) {
+                const offset = i * 6;
+                const x1 = data[offset];
+                const y1 = data[offset + 1];
+                const x2 = data[offset + 2];
+                const y2 = data[offset + 3];
+                const score = data[offset + 4];
+                const class_id = data[offset + 5];
+                if (score > 0.5) {
+                    detections.push({
+                        box: [x1, y1, x2, y2],
+                        score: score,
+                        class_id: class_id
+                    });
+                }
+            }
+            return detections;
+        }
+        onmessage = async (event) => {
+          if (event.data.type === "init") {
+            await loadModel();
+          } else if (event.data.type === "infer") {
+            await runInference(event.data);
+          }
+        };
+      `], {type:"application/javascript"})));
+      worker.onmessage = (event) => {
+        if (event.data.type === "log") {
+          log(event.data.data);
+        } else if (event.data.type === "result") {
+          const tileIndex = event.data.tileIndex;
+          const tileDetections = event.data.data;
+          const { x, y } = event.data.tilePosition;
+          
+          const adjustedDetections = tileDetections.map(d => ({
+            ...d,
+            box: [d.box[0] + x, d.box[1] + y, d.box[2] + x, d.box[3] + y]
+          }));
+          
+          detections.push(...adjustedDetections);
+          
+          log(`Processed tile ${tileIndex + 1}/${tileCount}`);
+
+          if (detections.length > 0) {
+            log(`Found ${detections.length} total objects so far.`);
+          }
+
+          if (tileIndex === tileCount - 1) {
+            log("Inference completed for all tiles.");
+            drawBoxes(detections);
+          }
+        }
+      };
+      worker.postMessage({type:"init"});
+    }
+    
+    function drawBoxes(boxes) {
+      if (!capturedImage) return;
+      displayCtx.putImageData(capturedImage, 0, 0);
+      displayCtx.strokeStyle = '#00ff00';
+      displayCtx.lineWidth = 2;
+      displayCtx.font = '16px Arial';
+      displayCtx.fillStyle = '#00ff00';
+      boxes.forEach(box => {
+        const [x1, y1, x2, y2] = box.box;
+        const score = box.score;
+        const label = "Object";
+        displayCtx.beginPath();
+        displayCtx.rect(x1, y1, x2 - x1, y2 - y1);
+        displayCtx.stroke();
+        displayCtx.fillText(`${label} (${score.toFixed(2)})`, x1, y1 > 10 ? y1 - 5 : 10);
+      });
+      log(`Found ${boxes.length} final objects.`);
+    }
+
+    // Event listeners
+    inputModeSelect.addEventListener("change", () => {
+      currentMode = inputModeSelect.value;
+      if (currentMode === "camera") {
+        cameraControls.style.display = "block";
+        fileControls.style.display = "none";
+        getCameras();
+      } else {
+        cameraControls.style.display = "none";
+        fileControls.style.display = "block";
+        if (currentStream) {
+          currentStream.getTracks().forEach(track => track.stop());
+        }
+      }
+    });
+
+    document.getElementById("capture").addEventListener("click", () => {
+      if (currentMode === "camera") {
+        handleImageLoad(webcam);
+        log("Captured frame from camera.");
+      }
+    });
+
+    document.getElementById("loadImage").addEventListener("click", () => {
+      const file = imageInput.files[0];
+      if (!file) {
+        log("No image file selected.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+          handleImageLoad(img);
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.getElementById("infer").addEventListener("click", () => {
+      if (!capturedImage) {
+        log("No image captured.");
+        return;
+      }
+      log("Starting tiled inference...");
+      detections = [];
+      
+      const TILE_SIZE = 512;
+      tileCount = 0;
+      
+      const width = capturedImage.width;
+      const height = capturedImage.height;
+      
+      for (let y = 0; y < height; y += TILE_SIZE) {
+        for (let x = 0; x < width; x += TILE_SIZE) {
+          const tileWidth = Math.min(TILE_SIZE, width - x);
+          const tileHeight = Math.min(TILE_SIZE, height - y);
+          
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = TILE_SIZE;
+          tempCanvas.height = TILE_SIZE;
+          const tempCtx = tempCanvas.getContext('2d');
+          
+          tempCtx.drawImage(previewCanvas, x, y, tileWidth, tileHeight, 0, 0, TILE_SIZE, TILE_SIZE);
+          
+          const tileImageData = tempCtx.getImageData(0, 0, TILE_SIZE, TILE_SIZE);
+          
+          worker.postMessage({
+            type: "infer",
+            imageData: tileImageData,
+            tileIndex: tileCount++,
+            tilePosition: { x: x, y: y }
+          }, [tileImageData.data.buffer]);
+        }
+      }
+    });
+
+    document.getElementById("swapCamera").addEventListener("click", async () => {
+      if (videoDevices.length > 1) {
+        currentDeviceIndex = (currentDeviceIndex + 1) % videoDevices.length;
+        log("Swapping to " + videoDevices[currentDeviceIndex].label);
+        await initWebcam(videoDevices[currentDeviceIndex].deviceId);
+      } else {
+        log("Only one camera device found.");
+      }
+    });
+
+    log("Initializing...");
+    initWorker();
+    getCameras();
+  </script>
+</body>
+</html>
