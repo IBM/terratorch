@@ -252,7 +252,7 @@ class TerraMind(nn.Module):
             encoder_tokens_all.append(d['x'])
             emb_all.append(d['emb'])
             encoder_mask_all.append(d['input_mask'])
-            mod_mask_all.append(torch.full_like(d['input_mask'], self.modality_info[mod]['id'], dtype=torch.int16))
+            mod_mask_all.append(torch.full_like(d['input_mask'], self.modality_info[mod]['id'], dtype=torch.int))
 
         encoder_tokens_all = torch.cat(encoder_tokens_all, dim=1)
         emb_all = torch.cat(emb_all, dim=1)
@@ -308,7 +308,7 @@ class TerraMind(nn.Module):
                 decoder_mask_all.append(torch.logical_or(d['target_mask'][:, 1:], d['target_mask'][:, :-1]))
                 # Add attention mask ids
                 attention_mask_all.append(d['decoder_attention_mask'][:, :-1])
-                mod_mask_all.append(torch.full_like(d['ids'][:, :-1], self.modality_info[mod]['id'], dtype=torch.int16))
+                mod_mask_all.append(torch.full_like(d['ids'][:, :-1], self.modality_info[mod]['id'], dtype=torch.int))
             else:
                 # Important: For 2d / image modalities, the decoder input tokens are replaced by the mask token
                 decoder_tokens_all.append(torch.zeros_like(d['x']) + self.mask_token)  # Replace x by mask token
@@ -316,7 +316,7 @@ class TerraMind(nn.Module):
                 emb_all.append(d['emb'])
                 decoder_mask_all.append(d['target_mask'])
                 attention_mask_all.append(d['decoder_attention_mask'])
-                mod_mask_all.append(torch.full_like(d['ids'], self.modality_info[mod]['id'], dtype=torch.int16))
+                mod_mask_all.append(torch.full_like(d['ids'], self.modality_info[mod]['id'], dtype=torch.int))
 
         decoder_tokens_all = torch.cat(decoder_tokens_all, dim=1)
         emb_all = torch.cat(emb_all, dim=1)
@@ -374,7 +374,7 @@ class TerraMind(nn.Module):
             encoder_tokens = torch.cat([register_tokens, encoder_tokens], dim=1)
             encoder_emb = torch.cat([torch.zeros_like(register_tokens), encoder_emb], dim=1)
             encoder_mask = torch.cat([torch.zeros((B, register_tokens.shape[1]), dtype=torch.bool, device=encoder_mask.device), encoder_mask], dim=1)
-            mod_mask = torch.cat([torch.full((B, register_tokens.shape[1]), -1, dtype=torch.int16, device=mod_mask.device), mod_mask], dim=1)
+            mod_mask = torch.cat([torch.full((B, register_tokens.shape[1]), -1, dtype=torch.int, device=mod_mask.device), mod_mask], dim=1)
 
         encoder_tokens[encoder_mask] = 0.
         encoder_emb[encoder_mask] = 0.

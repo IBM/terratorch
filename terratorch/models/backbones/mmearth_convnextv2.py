@@ -5,7 +5,7 @@ from argparse import Namespace
 
 import torch
 import torch.nn as nn
-from timm.models.layers import trunc_normal_, DropPath
+from timm.layers import trunc_normal_, DropPath
 from torch import Tensor
 
 from .norm_layers import LayerNorm, GRN

@@ -93,7 +93,7 @@ class ObjectDetectionModelFactory(ModelFactory):
             necks = []
         neck_list, channel_list = build_neck_list(necks, out_channels)
 
-        neck_module = NeckSequential(neck_list)
+        neck_module = NeckSequential(*neck_list)
 
         combined_backbone = BackboneWrapper(backbone, neck_module, channel_list)
         # pdb.set_trace()

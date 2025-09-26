@@ -247,7 +247,7 @@ def _build_appropriate_model(
     auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
 ):
     if necks:
-        neck_module: nn.Module = NeckSequential(necks)
+        neck_module: nn.Module = NeckSequential(*necks)
     else:
         neck_module = None
     if task in PIXEL_WISE_TASKS:

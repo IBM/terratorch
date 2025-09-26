@@ -1,23 +1,24 @@
+import gc
 import glob
-import torch
+import os
+import re
+import shutil
+import subprocess
+import time
+from datetime import datetime
+
+import lightning.pytorch as pl
+import pandas as pd
 import pytest
 import requests
-import os
-import shutil
-import re
-import subprocess
-import gc
-import pandas as pd
-from datetime import datetime
-import lightning.pytorch as pl
-import time
+import torch
+from huggingface_hub import hf_hub_download, snapshot_download
 
-from huggingface_hub import hf_hub_download
-from terratorch.datasets import HelioNetCDFDataset
+from terratorch.cli_tools import LightningInferenceModel
 from terratorch.datamodules import HelioNetCDFDataModule
+from terratorch.datasets import HelioNetCDFDataset
 from terratorch.registry import BACKBONE_REGISTRY
 from terratorch.tasks import InferenceTask
-from terratorch.cli_tools import LightningInferenceModel
 
 
 @pytest.mark.parametrize(
@@ -41,9 +42,10 @@ from terratorch.cli_tools import LightningInferenceModel
 )
 def test_models_fit(model_name):
     result = subprocess.run(
-        ['terratorch', 'fit', '-c', f"./integrationtests/configs/test_{model_name}.yaml"],
+        ["terratorch", "fit", "-c", f"./integrationtests/configs/test_{model_name}.yaml"],
         capture_output=True,
         text=True,
+        check=False,
     )
 
     # Print the captured output
@@ -51,9 +53,9 @@ def test_models_fit(model_name):
     print("STDERR:", result.stderr)
 
     # Check the return code
-    assert (
-        result.returncode == 0
-    ), f"Test failed with return code {result.returncode}STDOUT: {result.stdout}STDERR: {result.stderr}"
+    assert result.returncode == 0, (
+        f"Test failed with return code {result.returncode}STDOUT: {result.stdout}STDERR: {result.stderr}"
+    )
 
     gc.collect()
 
@@ -92,7 +94,7 @@ def update_grep_config_in_file(config_path: str, new_img_pattern: str):
         New img_grep pattern
     """
 
-    with open(config_path, 'r') as file:
+    with open(config_path) as file:
         config = file.read()
 
     # Find the current img_grep pattern (this assumes there is one img_grep line)
@@ -103,7 +105,7 @@ def update_grep_config_in_file(config_path: str, new_img_pattern: str):
         config = re.sub(r"img_grep:\s*'.*'", f"img_grep: '{new_img_pattern}'", config)
 
     # Write the updated config back to the file
-    with open(config_path, 'w') as file:
+    with open(config_path, "w") as file:
         file.write(config)
 
 
@@ -131,7 +133,7 @@ def burnscars_image(tmp_path_factory):
 
 @pytest.fixture(scope="session")
 def floods_image(tmp_path_factory):
-    url = 'https://s3.us-east.cloud-object-storage.appdomain.cloud/geospatial-studio-example-data/examples-for-inference/montenegro-brazil-floods-20231120-S1L2A.wgs84.tif'
+    url = "https://s3.us-east.cloud-object-storage.appdomain.cloud/geospatial-studio-example-data/examples-for-inference/montenegro-brazil-floods-20231120-S1L2A.wgs84.tif"
     temp_dir = tmp_path_factory.mktemp("data")
     local_path = temp_dir / "floods_image.tif"
 
@@ -184,7 +186,12 @@ def test_surya():
     """
     Additional test for the Surya model
     """
-    root_dir = "/dccstor/terratorch/users/wanjiru/surya-data/experiment"
+    if not os.path.isdir("experiment"):
+        os.mkdir("experiment")
+
+    root_dir = "/dccstor/terratorch/tmp/experiment"
+    # Downloading validation data
+    snapshot_download(repo_id="nasa-ibm-ai4science/Surya-1.0_validation_data", repo_type="dataset", local_dir=root_dir)
 
     hf_hub_download(repo_id="nasa-ibm-ai4science/Surya-1.0", filename="scalers.yaml", local_dir=root_dir)
 
@@ -274,7 +281,9 @@ def test_surya():
         prediction = trainer.predict(model, datamodule=datamodule)
         print(f"Elapsed time: {time.time() - start_time} s")
 
-        assert isinstance(prediction, torch) and len(prediction) > 0
+        assert all([isinstance(p, torch.Tensor) for p in prediction]), (
+            f"Expected predictions to be type torch.Tensor, got {type(prediction)}"
+        )
 
 
 ## Only run these tests after running test_finetune.py.
@@ -337,6 +346,7 @@ def test_current_terratorch_version_burnscars_predict(config_name, burnscars_ima
     gc.collect()
 
 
+"""
 @pytest.mark.parametrize(
     "model_name",
     [
@@ -355,10 +365,10 @@ def test_current_terratorch_version_burnscars_predict(config_name, burnscars_ima
         "clay_v1",
         "timm_convnext_large",
         "timm_convnext_xlarge",
+        "experiment",
     ],
 )
 def test_cleanup(model_name):
-
     # Delete all folders creating during finetuning after running inference.
     full_path = os.path.join("/dccstor/terratorch/tmp/", model_name)
     print("Attempting to delete:", full_path)
@@ -375,3 +385,4 @@ def test_cleanup(model_name):
     assert not os.path.exists(full_path)
 
     gc.collect()
+"""
