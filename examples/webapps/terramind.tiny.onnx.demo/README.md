@@ -1,4 +1,4 @@
-# TM Tiny Web Demo
+# TerraMind.tiny Web Demo
 This is a PWA (Progressive Web App) demo to run a fine-tuned TerraMind.tiny model as ONNX withing a browser/mobile device. It uses the WASM (Web Assembly) ONNX execution engine.
 
 The model was fine-tuned using the The Aerial Elephant Dataset: https://zenodo.org/records/3234780
