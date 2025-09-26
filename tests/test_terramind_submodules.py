@@ -3,6 +3,7 @@ import torch
 from torch import nn
 
 from terratorch.models.backbones.terramind.tokenizer.models.uvit import DropPath, Mlp
+from terratorch.models.backbones.terramind.tokenizer.quantizers import VectorQuantizerLucid
 
 IN_FEATURES = 10
 
@@ -10,6 +11,11 @@ IN_FEATURES = 10
 def mock_drop_path(x, drop_prob, training):
     # Mock the drop_path function for testing purposes
     return x * (1 - drop_prob) if training else x
+
+
+@pytest.fixture
+def quantizer():
+    return quantize_lucid.QuantizeLucid(...)  # Initialize with appropriate arguments
 
 
 @pytest.fixture
@@ -38,3 +44,10 @@ def test_forward_when_training(create_drop_path):
 
     assert output_tensor.shape == input_tensor.shape
     assert (output_tensor != input_tensor).sum() > 0  # Check if some elements were dropped
+
+
+def test_quantize(quantizer):
+    input_data = torch.randn(2, 6, 224, 224)
+    output_data = quantizer.quantize(input_data)
+    assert isinstance(output_data, np.ndarray)
+    assert output_data.shape == input_data.shape
