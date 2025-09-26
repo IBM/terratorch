@@ -158,7 +158,7 @@ def init_empty_target_modality(modality_info, domain, batch_size, num_tokens, de
     elif modality_info[domain]['type'] in ['seq', 'seq_token', 'seq_emb']:
         # Initialize mod dict
         mod_dict = {
-            'tensor': torch.zeros((batch_size, num_tokens), dtype=torch.int32, device=device),
+            'tensor': torch.zeros((batch_size, num_tokens), dtype=torch.int, device=device),
             'input_mask': torch.ones((batch_size, num_tokens), dtype=torch.bool, device=device),
             'target_mask': torch.zeros((batch_size, num_tokens), dtype=torch.bool, device=device),
             'decoder_attention_mask': torch.zeros((batch_size, num_tokens), dtype=torch.bool, device=device),
@@ -181,7 +181,7 @@ def init_conditioned_target_modality(mod_dict, modality_info, domain, num_target
         # Extend the input tokens with target tokens
         mod_dict["tensor"] = torch.cat([
             mod_dict["tensor"],
-            torch.zeros((batch_size, num_target_tokens), dtype=torch.int32, device=device)
+            torch.zeros((batch_size, num_target_tokens), dtype=torch.int, device=device)
         ], dim=1)
         mod_dict["input_mask"] = torch.cat([
             mod_dict["input_mask"],
@@ -455,7 +455,7 @@ class GenerationSampler(nn.Module):
         if np.isclose(temperature, 0, atol=1e-10):
             samples = torch.argmax(logits, dim=-1)
             # Since argmax is used, all sampled_probs will be 1 as we're selecting the max probability
-            sampled_probs = torch.ones_like(samples, dtype=torch.float32)
+            sampled_probs = torch.ones_like(samples, dtype=torch.float)
         else:
             filtered_logits = self.top_k_top_p_filtering(logits, top_k, top_p)
             probs = F.softmax(filtered_logits / temperature, dim=-1)
@@ -525,7 +525,7 @@ class GenerationSampler(nn.Module):
             encoder_tokens = torch.cat([register_tokens, encoder_tokens], dim=1)
             encoder_emb = torch.cat([torch.zeros_like(register_tokens), encoder_emb], dim=1)
             encoder_mask = torch.cat([torch.zeros((B, register_tokens.shape[1]), dtype=torch.bool, device=encoder_mask.device), encoder_mask], dim=1)
-            mod_mask = torch.cat([torch.full((B, register_tokens.shape[1]), -1, dtype=torch.int16, device=mod_mask.device), mod_mask], dim=1)
+            mod_mask = torch.cat([torch.full((B, register_tokens.shape[1]), -1, dtype=torch.int, device=mod_mask.device), mod_mask], dim=1)
 
         encoder_tokens[encoder_mask] = 0.
         encoder_emb[encoder_mask] = 0.
@@ -547,7 +547,7 @@ class GenerationSampler(nn.Module):
         emb_all = d['emb']
         decoder_mask_all = d['target_mask']
         B = decoder_tokens_all.shape[0] # Get batch size
-        mod_mask_all = torch.full_like(d['ids'], self.model.modality_info[target_mod]['id'], dtype=torch.int16)
+        mod_mask_all = torch.full_like(d['ids'], self.model.modality_info[target_mod]['id'], dtype=torch.int)
         mod_pos_all = torch.arange(d['x'].shape[1], device=d['x'].device).unsqueeze(0)
         mod_pos_all = repeat(mod_pos_all, '1 n -> b n', b=B) # Added: Expansion for batching
         num_decoder_tokens = (~decoder_mask_all[0]).sum()  # Adapted for batching / Assumes num_decoder_tokens is the same across the batch
@@ -581,7 +581,7 @@ class GenerationSampler(nn.Module):
         emb_all = d['emb']
         decoder_mask_all = d['target_mask']
         B = decoder_tokens_all.shape[0] # Get batch size
-        mod_mask_all = torch.full_like(d['ids'], self.model.modality_info[target_mod]['id'], dtype=torch.int16)
+        mod_mask_all = torch.full_like(d['ids'], self.model.modality_info[target_mod]['id'], dtype=torch.int)
         mod_pos_all = torch.arange(d['x'].shape[1], device=d['x'].device).unsqueeze(0)
         mod_pos_all = repeat(mod_pos_all, '1 n -> b n', b=B) # Added: Expansion for batching
         # Only keep the first num_select tokens
@@ -616,7 +616,7 @@ class GenerationSampler(nn.Module):
         emb_all = d['emb']
         decoder_mask_all = d['target_mask']
         B = decoder_ids_all.shape[0] # Get batch size
-        mod_mask_all = torch.full_like(d['ids'], self.model.modality_info[target_mod]['id'], dtype=torch.int16)
+        mod_mask_all = torch.full_like(d['ids'], self.model.modality_info[target_mod]['id'], dtype=torch.int)
         mod_pos_all = torch.arange(d['x'].shape[1], device=d['x'].device).unsqueeze(0)
         mod_pos_all = repeat(mod_pos_all, '1 n -> b n', b=B) 
         num_decoder_tokens = (~decoder_mask_all[0]).sum() # Adapted for batching, but assumes num_decoder_tokens is the same across the batch

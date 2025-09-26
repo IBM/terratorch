@@ -7,6 +7,7 @@ from torch import nn
 
 from terratorch.models.utils import TemporalWrapper
 from terratorch.registry import BACKBONE_REGISTRY
+from terratorch.models import EncoderDecoderFactory
 
 
 # Define a dummy encoder for testing
@@ -260,5 +261,32 @@ def test_temporal_wrapper_pooling_modes(dummy_encoder):
     assert len(output) == 4
     assert output[0].shape == (batch_size, 64, 64, 128)
     del output, wrapper 
+
+    gc.collect()
+
+
+@pytest.mark.parametrize("pooling", ["mean", "concat"])
+def test_temporal_encoder_decoder_factory(pooling):
+
+    model = EncoderDecoderFactory().build_model(
+        task="classification",
+        backbone_use_temporal=True,
+        backbone_temporal_pooling=pooling,
+        backbone_temporal_n_timestamps=3,
+        backbone="terramind_v1_tiny",
+        backbone_modalities=["S2L2A"],
+        decoder="IdentityDecoder",
+        backbone_pretrained=False,
+        num_classes=2,
+        necks=[{"name": "AggregateTokens"}],
+    )
+
+    x = torch.randn(2, 12, 3, 224, 224)  # [B, C, T, H, W]
+    output = model(x).output
+
+    assert isinstance(output, torch.Tensor)
+    assert output.shape == (2, 2)
+
+    del model, output
 
     gc.collect()

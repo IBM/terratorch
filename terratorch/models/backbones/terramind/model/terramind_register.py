@@ -72,11 +72,11 @@ pretrained_weights = {
             "hf_hub_filename": "TerraMind_v01_base.pt",
         },
         "terramind_v1_tiny": {
-            "hf_hub_id": "FAST-EO/TerraMind-1.0-tiny",
+            "hf_hub_id": "ibm-esa-geospatial/TerraMind-1.0-tiny",
             "hf_hub_filename": "TerraMind_v1_tiny.pt",
         },
         "terramind_v1_small": {
-            "hf_hub_id": "FAST-EO/TerraMind-1.0-small",
+            "hf_hub_id": "ibm-esa-geospatial/TerraMind-1.0-small",
             "hf_hub_filename": "TerraMind_v1_small.pt",
         },
         "terramind_v1_base": {
