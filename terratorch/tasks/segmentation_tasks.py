@@ -30,6 +30,24 @@ def to_segmentation_prediction(y: ModelOutput) -> Tensor:
     y_hat = y.output
     return y_hat.argmax(dim=1)
 
+def init_loss(loss: str, ignore_index: int = None, class_weights: list = None) -> nn.Module:
+    if loss == "ce":
+        return nn.CrossEntropyLoss(ignore_index=ignore_index, weight=class_weights)
+    elif loss == "jaccard":
+        if ignore_index is not None:
+            raise RuntimeError(
+                f"Jaccard loss does not support ignore_index, but found non-None value of {ignore_index}."
+            )
+        return smp.losses.JaccardLoss(mode="multiclass")
+    elif loss == "focal":
+        return smp.losses.FocalLoss("multiclass", ignore_index=ignore_index, normalized=True)
+    elif loss == "dice":
+        return smp.losses.DiceLoss("multiclass", ignore_index=ignore_index)
+    else:
+        raise ValueError(
+            f"Loss type '{loss}' is not valid. Currently, supports 'ce', 'jaccard', 'dice' or 'focal' loss."
+        )
+
 
 class SemanticSegmentationTask(TerraTorchTask):
     """Semantic Segmentation Task that accepts models from a range of sources.
@@ -211,31 +229,23 @@ class SemanticSegmentationTask(TerraTorchTask):
         Raises:
             ValueError: If *loss* is invalid.
         """
-        loss: str = self.hparams["loss"]
+        loss = self.hparams["loss"]
         ignore_index = self.hparams["ignore_index"]
 
         class_weights = (
             torch.Tensor(self.hparams["class_weights"]) if self.hparams["class_weights"] is not None else None
         )
-        if loss == "ce":
-            ignore_value = -100 if ignore_index is None else ignore_index
-            self.criterion = nn.CrossEntropyLoss(ignore_index=ignore_value, weight=class_weights)
-        elif loss == "jaccard":
-            if ignore_index is not None:
-                exception_message = (
-                    f"Jaccard loss does not support ignore_index, but found non-None value of {ignore_index}."
-                )
-                raise RuntimeError(exception_message)
-            self.criterion = smp.losses.JaccardLoss(mode="multiclass")
-        elif loss == "focal":
-            self.criterion = smp.losses.FocalLoss("multiclass", ignore_index=ignore_index, normalized=True)
-        elif loss == "dice":
-            self.criterion = smp.losses.DiceLoss("multiclass", ignore_index=ignore_index)
+
+        if isinstance(loss, str):
+            # Single loss
+            self.criterion = init_loss(loss, ignore_index=ignore_index, class_weights=class_weights)
+        elif isinstance(loss, nn.Module):
+            self.criterion = loss
+        elif isinstance(loss, dict):
+            losses = {loss: init_loss(loss, ignore_index=ignore_index, class_weights=class_weights) for loss in loss}
+            self.criterion = nn.ModuleDict(losses)
         else:
-            exception_message = (
-                f"Loss type '{loss}' is not valid. Currently, supports 'ce', 'jaccard', 'dice' or 'focal' loss."
-            )
-            raise ValueError(exception_message)
+            raise ValueError(f"The loss type {loss} isn't supported.")
 
     def configure_metrics(self) -> None:
         """Initialize the performance metrics."""
