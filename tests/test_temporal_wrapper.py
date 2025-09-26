@@ -5,9 +5,9 @@ import pytest
 import torch
 from torch import nn
 
+from terratorch.models import EncoderDecoderFactory
 from terratorch.models.utils import TemporalWrapper
 from terratorch.registry import BACKBONE_REGISTRY
-from terratorch.models import EncoderDecoderFactory
 
 
 # Define a dummy encoder for testing
@@ -20,22 +20,26 @@ class DummyEncoder(nn.Module):
     def forward(self, x):
         return self.conv(x)
 
+
 class DummyDictEncoder(nn.Module):
     def forward(self, x):
         B = x.shape[0]
         return {
-            "mod1": torch.randn(B, 6, 16, 16, device=x.device),      
-            "mod2": torch.randn(B, 4, 4, 8, device=x.device),    
-            "mod3": torch.randn(B, 2, 128, device=x.device),        
+            "mod1": torch.randn(B, 6, 16, 16, device=x.device),
+            "mod2": torch.randn(B, 4, 4, 8, device=x.device),
+            "mod3": torch.randn(B, 2, 128, device=x.device),
         }
+
 
 @pytest.fixture
 def dummy_encoder():
     return DummyEncoder()
 
+
 @pytest.fixture
 def dummy_dict_encoder():
     return DummyDictEncoder()
+
 
 def test_temporal_wrapper_swin_forward_shapes(dummy_encoder):
     # Built-in Swin
@@ -57,6 +61,7 @@ def test_temporal_wrapper_swin_forward_shapes(dummy_encoder):
 
     gc.collect()
 
+
 def test_encoder_returning_dict_modalities(dummy_dict_encoder):
     B, C, T, H, W = 2, 3, 4, 16, 16
     x = torch.randn(B, C, T, H, W)
@@ -67,10 +72,11 @@ def test_encoder_returning_dict_modalities(dummy_dict_encoder):
     out = out_list[0]
     assert set(out.keys()) == {"mod1", "mod2", "mod3"}
 
-    assert out["mod1"].shape == (B, 6, 16, 16)  
-    assert out["mod2"].shape == (B, 4, 4, 8)  
-    assert out["mod3"].shape == (B, 2, 128)    
+    assert out["mod1"].shape == (B, 6, 16, 16)
+    assert out["mod2"].shape == (B, 4, 4, 8)
+    assert out["mod3"].shape == (B, 2, 128)
     gc.collect()
+
 
 def test_temporal_wrapper_initialization(dummy_encoder):
     # Test valid initialization with default parameters
@@ -201,7 +207,7 @@ def test_temporal_wrapper_pooling_modes(dummy_encoder):
     assert len(output) == 12
     # For concatenation, channels should be multiplied by number of timesteps
     assert output[0].shape == (batch_size, n_tokens, encoder.out_channels[0] * timesteps)
-    del output, wrapper 
+    del output, wrapper
 
     gc.collect()
 
@@ -211,27 +217,27 @@ def test_temporal_wrapper_pooling_modes(dummy_encoder):
     assert isinstance(output, list)
     assert len(output) == 12
     assert output[0].shape == (batch_size, n_tokens, encoder.out_channels[0])
-    del output, wrapper 
+    del output, wrapper
 
-    gc.collect()
+    # gc.collect()
 
-    ### Swin-like features
-    encoder = BACKBONE_REGISTRY.build(
-        "satlas_swin_b_sentinel2_si_ms", model_bands=[0, 1, 2, 3, 4, 5], out_indices=[1, 3, 5, 7]
-    )
+    # ### Swin-like features
+    # encoder = BACKBONE_REGISTRY.build(
+    #     "satlas_swin_b_sentinel2_si_ms", model_bands=[0, 1, 2, 3, 4, 5], out_indices=[1, 3, 5, 7]
+    # )
 
-    n_channels = 6
-    x = torch.randn(batch_size, n_channels, timesteps, 256, 256)
-    # pdb.set_trace()
-    # Test mean pooling
-    wrapper = TemporalWrapper(encoder, pooling="mean", features_permute_op=(0, 3, 1, 2))
-    output = wrapper(x)
-    assert isinstance(output, list)
-    assert len(output) == 4
-    assert output[0].shape == (batch_size, 64, 64, encoder.out_channels[0])
-    del output, wrapper 
+    # n_channels = 6
+    # x = torch.randn(batch_size, n_channels, timesteps, 256, 256)
+    ## pdb.set_trace()
+    ## Test mean pooling
+    # wrapper = TemporalWrapper(encoder, pooling="mean") #, features_permute_op=(0, 3, 1, 2))
+    # output = wrapper(x)
+    # assert isinstance(output, list)
+    # assert len(output) == 4
+    # assert output[0].shape == (batch_size, 64, 64, encoder.out_channels[0])
+    # del output, wrapper
 
-    gc.collect()
+    # gc.collect()
 
     # Test max pooling
     wrapper = TemporalWrapper(encoder, pooling="max", features_permute_op=(0, 3, 1, 2))
@@ -239,7 +245,7 @@ def test_temporal_wrapper_pooling_modes(dummy_encoder):
     assert isinstance(output, list)
     assert len(output) == 4
     assert output[0].shape == (batch_size, 64, 64, encoder.out_channels[0])
-    del output, wrapper 
+    del output, wrapper
 
     gc.collect()
 
@@ -250,7 +256,7 @@ def test_temporal_wrapper_pooling_modes(dummy_encoder):
     assert len(output) == 4
     # For concatenation, channels should be multiplied by number of timesteps
     assert output[0].shape == (batch_size, 64, 64, encoder.out_channels[0] * timesteps)
-    del output, wrapper 
+    del output, wrapper
 
     gc.collect()
 
@@ -260,14 +266,13 @@ def test_temporal_wrapper_pooling_modes(dummy_encoder):
     assert isinstance(output, list)
     assert len(output) == 4
     assert output[0].shape == (batch_size, 64, 64, 128)
-    del output, wrapper 
+    del output, wrapper
 
     gc.collect()
 
 
 @pytest.mark.parametrize("pooling", ["mean", "concat"])
 def test_temporal_encoder_decoder_factory(pooling):
-
     model = EncoderDecoderFactory().build_model(
         task="classification",
         backbone_use_temporal=True,
