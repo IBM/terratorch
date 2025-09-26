@@ -51,6 +51,8 @@ jobs:
           #python -m pip install --upgrade pip
           pip install pip==24.2
           pip --version
+          pip install pytest-cov
+          pip install coverage-badge
           pip install -e .[wxc,test]
       - name: Clean pip cache
         run: pip cache purge
@@ -61,5 +63,12 @@ jobs:
       - name: Test with pytest
         run: |
           pytest -s --cov=terratorch -v --cov-report term-missing tests
-
-
+          coverage-badge -o coverage_badge.svg
+      - name: Update coverage badge
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add coverage_badge.svg 
+          git commit -s -m "Updating coverage badge"
+          git pull origin HEAD:automatic/coverage 
+          git push origin HEAD:automatic/coverage 
