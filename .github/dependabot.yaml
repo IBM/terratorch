@@ -9,8 +9,8 @@ updates:
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
-      interval: "daily"
-    target-branch: "maintenance"
+      interval: "weekly"
+    target-branch: "main"
     groups:
       # torchvision pins torch, must update in unison
       torch:

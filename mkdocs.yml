@@ -91,6 +91,11 @@ nav:
       - Encoder-Decoder Factory: guide/encoder_decoder_factory.md
       - TerraMind: guide/terramind.md
       - Prithvi EO: guide/prithvi_eo.md
+      - Temporal Wrapper: guide/temporal_wrapper.md
+    - vLLM IOProcessor Plugins:
+      - Getting Started: guide/vllm_io_plugins
+      - Available Plugins:
+        - Segmentation: guide/segmentation_io_plugin.md
 # TODO Add guide for a general approach to a new use case
 #    - New Use Case: guide/new_use_case.md
 # TODO Add guide for fine-tuning
