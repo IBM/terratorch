@@ -17,7 +17,7 @@ from torchmetrics.classification import MulticlassAccuracy, MulticlassF1Score, M
 from terratorch.models.model import AuxiliaryHead, ModelOutput
 from terratorch.registry import MODEL_FACTORY_REGISTRY
 from terratorch.tasks.base_task import TerraTorchTask
-from terratorch.tasks.loss_handler import LossHandler
+from terratorch.tasks.loss_handler import LossHandler, CombinedLoss
 from terratorch.tasks.optimizer_factory import optimizer_factory
 from terratorch.tasks.tiled_inference import TiledInferenceParameters, tiled_inference
 
@@ -66,7 +66,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         model_args: dict,
         model_factory: str | None = None,
         model: torch.nn.Module | None = None,
-        loss: str = "ce",
+        loss: str | list[str] | dict[str, float] = "ce",
         aux_heads: list[AuxiliaryHead] | None = None,
         aux_loss: dict[str, float] | None = None,
         class_weights: list[float] | None = None,
@@ -240,10 +240,19 @@ class SemanticSegmentationTask(TerraTorchTask):
             # Single loss
             self.criterion = init_loss(loss, ignore_index=ignore_index, class_weights=class_weights)
         elif isinstance(loss, nn.Module):
+            # Custom loss
             self.criterion = loss
+        elif isinstance(loss, list):
+            # List of losses with equal weights
+            losses = {loss: init_loss(loss, ignore_index=ignore_index, class_weights=class_weights)
+                      for loss in loss}
+            self.criterion = CombinedLoss(losses=losses)
         elif isinstance(loss, dict):
-            losses = {loss: init_loss(loss, ignore_index=ignore_index, class_weights=class_weights) for loss in loss}
-            self.criterion = nn.ModuleDict(losses)
+            # Equal weighting of losses
+            loss, weight = list(loss.keys()), list(loss.values())
+            losses = {loss: init_loss(loss, ignore_index=ignore_index, class_weights=class_weights)
+                      for loss in loss}
+            self.criterion = CombinedLoss(losses=losses, weight=weight)
         else:
             raise ValueError(f"The loss type {loss} isn't supported.")
 
