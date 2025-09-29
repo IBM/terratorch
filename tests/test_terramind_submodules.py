@@ -1,53 +1,30 @@
 import pytest
 import torch
-from torch import nn
 
-from terratorch.models.backbones.terramind.tokenizer.models.uvit import DropPath, Mlp
-from terratorch.models.backbones.terramind.tokenizer.quantizers import VectorQuantizerLucid
-
-IN_FEATURES = 10
-
-
-def mock_drop_path(x, drop_prob, training):
-    # Mock the drop_path function for testing purposes
-    return x * (1 - drop_prob) if training else x
+from terratorch.models.backbones.terramind.model.encoder_embeddings import (
+    SequenceEmbEncoderEmbedding,  # Replace 'your_module' with the actual module path
+)
 
 
 @pytest.fixture
-def quantizer():
-    return quantize_lucid.QuantizeLucid(...)  # Initialize with appropriate arguments
+def sequence_emb_encoder():
+    return SequenceEmbEncoderEmbedding(max_length=10, dim_tokens=768)
 
 
-@pytest.fixture
-def create_drop_path(drop_prob=0.1, training=True):
-    if not training:
-        drop_prob = 0
+def test_sequence_emb_encoder_embedding_forward(sequence_emb_encoder):
+    # Prepare input data
+    orig_emb = torch.rand((2, 10, 4096))  # (B, L, E)
+    input_mask = torch.tensor([[1, 1, 1, 1, 1, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])  # (B, L)
 
-    def _create_drop_path(drop_prob=drop_prob, training=training):
-        return DropPath(drop_prob)
+    # Call the forward method
+    d = {"tensor": orig_emb, "input_mask": input_mask}
+    output = sequence_emb_encoder(d)
 
-    yield _create_drop_path
-
-    # Clean up after the test
-    mock_drop_path.call_args_list = []
-
-
-def create_mlp(in_features=IN_FEATURES, temb_dim=None, hidden_features=None, out_features=None, drop=0.0):
-    return Mlp(in_features, temb_dim, hidden_features, out_features, drop=0)
+    # Check the output shape and values
+    assert output["x"].shape == (2, 10, 768)
+    assert output["emb"].shape == (2, 10, 768)
 
 
-def test_forward_when_training(create_drop_path):
-    drop_path = create_drop_path()
-
-    input_tensor = torch.randn(2, 3)
-    output_tensor = drop_path(input_tensor)
-
-    assert output_tensor.shape == input_tensor.shape
-    assert (output_tensor != input_tensor).sum() > 0  # Check if some elements were dropped
-
-
-def test_quantize(quantizer):
-    input_data = torch.randn(2, 6, 224, 224)
-    output_data = quantizer.quantize(input_data)
-    assert isinstance(output_data, np.ndarray)
-    assert output_data.shape == input_data.shape
+def test_sequence_emb_encoder_embedding_no_weight_decay():
+    sequence_emb_encoder = SequenceEmbEncoderEmbedding(max_length=10, dim_tokens=768)
+    assert sequence_emb_encoder.no_weight_decay() == set()
