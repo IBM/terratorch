@@ -35,5 +35,14 @@ Just copy the contents of the /dist folder to a web server/servable COS bucket o
 
 Please also copy the ONNX model to the /dist folder before. You can get it from: https://terramind-demo-onnx-mobile.s3-web.eu-de.cloud-object-storage.appdomain.cloud/model_tm_tiny_aed_elephants.onnx
 
-In case you want to build the app, just execute: pnpm build
+## Developing
+
+This app is built on [Carbon Web Components](https://carbondesignsystem.com/developing/frameworks/web-components/) using [Vite](https://vite.dev/).
+
+1. Install all packages using `pnpm i`
+2. Run locally to test changes using `pnpm dev`
+3. Build changes into the `dist` folder using `pnpm build`
+4. From the `dist` folder, run `python3 -m http.server`
+
+*Note: Always make sure to clear cookies and cache before running this app. It can help to open in a private browser.*
 
