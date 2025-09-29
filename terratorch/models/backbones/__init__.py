@@ -11,6 +11,7 @@ import terratorch.models.backbones.torchgeo_resnet
 import terratorch.models.backbones.torchgeo_swin_satlas
 import terratorch.models.backbones.torchgeo_vit
 from terratorch.models.backbones.unet import UNet
+import terratorch.models.backbones.identity_backbone
 
 try:
     import terratorch.models.backbones.heliofm_register

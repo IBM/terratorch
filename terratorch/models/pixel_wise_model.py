@@ -33,6 +33,7 @@ class PixelWiseModel(Model, SegmentationModel):
         auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
         neck: nn.Module | None = None,
         rescale: bool = True,  # noqa: FBT002, FBT001
+        orig_input_size = None
     ) -> None:
         """Constructor
 
@@ -83,6 +84,7 @@ class PixelWiseModel(Model, SegmentationModel):
         self.rescale = rescale
         self.patch_size = patch_size
         self.padding = padding
+        self.orig_input_size = orig_input_size
 
     def freeze_encoder(self):
         if hasattr(self.encoder, "freeze"):
@@ -110,6 +112,8 @@ class PixelWiseModel(Model, SegmentationModel):
         """Sequentially pass `x` through model`s encoder, decoder and heads"""
 
         def _get_size(x):
+            if self.orig_input_size is not None:
+                return self.orig_input_size
             if isinstance(x, torch.Tensor):
                 return x.shape[-2:]
             elif isinstance(x, dict):

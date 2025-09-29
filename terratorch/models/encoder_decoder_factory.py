@@ -90,6 +90,7 @@ class EncoderDecoderFactory(ModelFactory):
         aux_decoders: list[AuxiliaryHead] | None = None,
         rescale: bool = True,  # noqa: FBT002, FBT001,
         peft_config: dict | None = None,
+        orig_input_size = None,
         **kwargs,
     ) -> Model:
         """Generic model factory that combines an encoder and decoder, together with a head, for a specific task.
@@ -203,6 +204,7 @@ class EncoderDecoderFactory(ModelFactory):
                 necks=neck_list,
                 decoder_includes_head=decoder_includes_head,
                 rescale=rescale,
+                orig_input_size = orig_input_size
             )
 
         to_be_aux_decoders: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] = []
@@ -245,6 +247,7 @@ def _build_appropriate_model(
     necks: list[Neck] | None = None,
     rescale: bool = True,  # noqa: FBT001, FBT002
     auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
+    orig_input_size = None
 ):
     if necks:
         neck_module: nn.Module = NeckSequential(*necks)
@@ -262,6 +265,7 @@ def _build_appropriate_model(
             neck=neck_module,
             rescale=rescale,
             auxiliary_heads=auxiliary_heads,
+            orig_input_size = orig_input_size
         )
     elif task in SCALAR_TASKS:
         return ScalarOutputModel(
