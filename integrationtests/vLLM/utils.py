@@ -23,7 +23,6 @@ class VLLMServer:
         env = os.environ.copy()
         if server_envs:
             env.update(server_envs)
-        print(server_envs)
         self.proc = subprocess.Popen(cmd,
                                     stdout=sys.stdout,
                                     stderr=sys.stderr,

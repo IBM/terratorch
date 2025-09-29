@@ -95,7 +95,7 @@ test = [
   "dask",
   "wandb",
   "pytest-sugar",
-  "vllm",
+  "vllm>=0.10.2",
   "pillow",
   "imagehash"
 ]

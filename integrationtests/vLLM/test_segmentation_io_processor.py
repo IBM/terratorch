@@ -12,16 +12,20 @@ import imagehash
 from .utils import VLLMServer
 from .config import models, inputs
 
-tests_per_model = [(model, input) for model, input in list(itertools.product(models.keys(), inputs.keys()))]
-
 # Each model has a different output depending also on the plugin
 models_output = {
     "prithvi_300m_sen1floods11": {
             "india_url_in_base64_out": "f7dc282de2c36942",
             "valencia_url_in_base64_out": "aa6d92ad25926a5e",
             "valencia_url_in_path_out": "aa6d92ad25926a5e",
-        }
+        },
+    "prithvi_300m_burnscars": {
+        "burnscars_url_in_base64_out": "c17c4f602ea7b616",
+        "burnscars_url_in_path_out": "c17c4f602ea7b616"
+    }
 }
+
+tests_per_model = [(model, input) for model in models_output.keys() for input in models_output[model].keys() ]
 
 @pytest.mark.parametrize(
     "model_name, input_name", tests_per_model
@@ -31,8 +35,7 @@ def test_serving_segmentation_plugin(model_name, input_name):
     input = inputs[input_name]
 
     image_url = input["image_url"]
-    plugin = input["plugin"]
-
+    plugin = "terratorch_segmentation"
     server_args = ["--runner",
                     "pooling",
                     "--task",
@@ -40,6 +43,10 @@ def test_serving_segmentation_plugin(model_name, input_name):
                     "--trust-remote-code",
                     "--skip-tokenizer-init",
                     "--enforce-eager",
+                    # This is just in case the test ends up with a GPU of less memory than an A100-80GB.
+                    # Just to avoid OOMing in the CI
+                    "--max-num-seqs",
+                    "8",
                     "--io-processor-plugin",
                     plugin,
                     "--model-impl",
