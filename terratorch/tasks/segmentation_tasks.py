@@ -258,7 +258,8 @@ class SemanticSegmentationTask(TerraTorchTask):
                       for loss in loss}
             self.criterion = CombinedLoss(losses=losses, weight=weight)
         else:
-            raise ValueError(f"The loss type {loss} isn't supported.")
+            raise ValueError(f"The loss type {loss} isn't supported. Provide loss as string, list, or "
+                             f"dict[name, weights].")
 
     def configure_metrics(self) -> None:
         """Initialize the performance metrics."""
