@@ -202,7 +202,7 @@ def test_terramind(model_name):
 def test_terramind_tim(model_name):
     # default should have 3 channels
     backbone = BACKBONE_REGISTRY.build(model_name, modalities=["S2L2A", "LULC"], tim_modalities=["coords", "DEM"])
-    output = backbone({"S2L2A": torch.ones((1, 12, 224, 224))}, LULC=torch.ones((1, 1, 224, 224)))
+    output = backbone({"S2L2A": torch.ones((1, 12, 224, 224))}, LULC=torch.ones((1, 1, 224, 224)), tim_top_k=0.1)
 
     gc.collect()
 
