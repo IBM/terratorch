@@ -17,6 +17,7 @@ from terratorch.tasks.base_task import TerraTorchTask
 from terratorch.tasks.loss_handler import LossHandler, CombinedLoss
 from terratorch.tasks.tiled_inference import tiled_inference
 from terratorch.tasks.losses import HausdorffERLoss
+from terratorch.tasks.metrics import BoundaryMeanIoU
 
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
 
@@ -290,6 +291,13 @@ class SemanticSegmentationTask(TerraTorchTask):
                     num_classes=num_classes,
                     ignore_index=ignore_index,
                     average="micro",
+                ),
+                "Boundary_mIoU": BoundaryMeanIoU(
+                    num_classes=num_classes,
+                    thickness=2,
+                    ignore_index=ignore_index,
+                    average="macro",
+                    include_background=False,
                 ),
                 "IoU": ClasswiseWrapper(
                     MulticlassJaccardIndex(num_classes=num_classes, ignore_index=ignore_index, average=None),
