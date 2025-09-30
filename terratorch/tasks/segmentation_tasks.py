@@ -1,14 +1,11 @@
+
 import logging
-import os
 import warnings
 from functools import partial
 from typing import Any
-
-import lightning
 import matplotlib.pyplot as plt
 import segmentation_models_pytorch as smp
 import torch
-from lightning.pytorch.callbacks import Callback
 from torch import Tensor, nn
 from torchgeo.datasets.utils import unbind_samples
 from torchmetrics import ClasswiseWrapper, MetricCollection
@@ -18,8 +15,8 @@ from terratorch.models.model import AuxiliaryHead, ModelOutput
 from terratorch.registry import MODEL_FACTORY_REGISTRY
 from terratorch.tasks.base_task import TerraTorchTask
 from terratorch.tasks.loss_handler import LossHandler, CombinedLoss
-from terratorch.tasks.optimizer_factory import optimizer_factory
-from terratorch.tasks.tiled_inference import TiledInferenceParameters, tiled_inference
+from terratorch.tasks.tiled_inference import tiled_inference
+from terratorch.tasks.losses import HausdorffERLoss
 
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
 
@@ -45,6 +42,8 @@ def init_loss(loss: str, ignore_index: int = None, class_weights: list = None) -
         return smp.losses.DiceLoss("multiclass", ignore_index=ignore_index)
     elif loss == "lovasz":
         return smp.losses.LovaszLoss(mode="multiclass", ignore_index=ignore_index)
+    elif loss == "hausdorff":
+        return HausdorffERLoss(ignore_index=ignore_index)
     else:
         raise ValueError(
             f"Loss type '{loss}' is not valid. Currently, supports 'ce', 'jaccard', 'dice', 'focal', or 'lovasz' loss."
