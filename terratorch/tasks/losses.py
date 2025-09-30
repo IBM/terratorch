@@ -81,7 +81,7 @@ class HausdorffERLoss(_HausdorffERLossBase):
         if self.neutral_class < 0 or self.neutral_class >= C:
             raise ValueError(f"`neutral_class` {self.neutral_class} out of range [0, {C-1}].")
 
-        # Optional softmax to probabilities (kept outside Kornia base for clarity).
+        # Optional softmax to probabilities
         probs = F.softmax(pred, dim=1) if self.from_logits else pred
 
         # Validate labels (allow ignore_index if provided)
