@@ -1,6 +1,7 @@
 import "@carbon/web-components/es/components/accordion/index.js";
 import "@carbon/web-components/es/components/textarea/index.js";
 import "@carbon/web-components/es/components/skeleton-placeholder/index.js";
+import "@carbon/web-components/es/components/progress-bar/index.js";
 
 const log = (msg) => {
   document.getElementById("log").value += msg + "\n";
@@ -152,13 +153,13 @@ async function init() {
   });
 
   const blob = await fetchWithProgress(modelUrl, (progress) => {
-    progressBar.style.width = (progress * 100).toFixed(1) + "%";
+    progressBar.value = (progress * 100).toFixed(1);
   });
 
   const arrayBuffer = await blob.arrayBuffer();
   session = await ort.InferenceSession.create(arrayBuffer);
-
   grid.innerHTML = ""; // clear in case of reload
+  progressBar.remove()
   sampleImages.forEach((url) => {
     const img = document.createElement("img");
     img.src = url;

@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/icon-192.png" />
-    <link rel="manifest" href="manifest_elephants.json">
-    <link rel="apple-touch-icon" href="icon-192.png">
-    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+    <link rel="manifest" href="manifest_elephants.json" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TerraMind.tiny demo</title>
     <script type="module" src="/main.js"></script>
@@ -64,6 +64,14 @@
             >
               <div class="controls">
                 <!--<input type="file" id="imageUpload" accept="image/*" name="Upload image">-->
+                <cds-progress-bar
+                  id="progressBar"
+                  max="100"
+                  size="big"
+                  status="active"
+                  type="default"
+                >
+                </cds-progress-bar>
                 <h5 id="loadUrlBtn" disabled="true">Downloading Model (90MB), please wait...</h5>
               </div>
               <!-- 9 sample tiles -->
@@ -82,11 +90,17 @@
         <div class="page-landing__r3 cds--css-grid-column cds--col-span-100">
           <cds-accordion alignment="end" size="md">
             <cds-accordion-item title="Logs" open>
-              <cds-textarea id="log" enable-counter="" counter-mode="" value="" rows="10" cols="" readonly></cds-textarea>
+              <cds-textarea
+                id="log"
+                enable-counter=""
+                counter-mode=""
+                value=""
+                rows="10"
+                cols=""
+                readonly
+              ></cds-textarea>
             </cds-accordion-item>
           </cds-accordion>
-
-          <div id="progressBar"></div>
         </div>
       </div>
     </main>
