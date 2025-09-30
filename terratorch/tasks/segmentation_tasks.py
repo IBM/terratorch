@@ -43,9 +43,11 @@ def init_loss(loss: str, ignore_index: int = None, class_weights: list = None) -
         return smp.losses.FocalLoss("multiclass", ignore_index=ignore_index, normalized=True)
     elif loss == "dice":
         return smp.losses.DiceLoss("multiclass", ignore_index=ignore_index)
+    elif loss == "lovasz":
+        return smp.losses.LovaszLoss(mode="multiclass", ignore_index=ignore_index)
     else:
         raise ValueError(
-            f"Loss type '{loss}' is not valid. Currently, supports 'ce', 'jaccard', 'dice' or 'focal' loss."
+            f"Loss type '{loss}' is not valid. Currently, supports 'ce', 'jaccard', 'dice', 'focal', or 'lovasz' loss."
         )
 
 

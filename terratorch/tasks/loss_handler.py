@@ -1,9 +1,8 @@
-from collections.abc import Callable
 
 import torch
 import torch.nn as nn
 from torch import Tensor
-
+from collections.abc import Callable
 from terratorch.models.model import ModelOutput
 
 
