@@ -14,9 +14,6 @@ cd terratorch
 
 uv pip install -e .[test]
 
-# TODO: Remove once the Prithvi Sen1Flods11 data modules support the latest albumentations
-uv pip install albumentations==1.4.6
-
 pytest -s -v integrationtests/vLLM/ 2>&1
 
 deactivate
