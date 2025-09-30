@@ -43,7 +43,7 @@ def init_loss(loss: str, ignore_index: int = None, class_weights: list = None) -
     elif loss == "lovasz":
         return smp.losses.LovaszLoss(mode="multiclass", ignore_index=ignore_index)
     elif loss == "hausdorff":
-        return HausdorffERLoss(ignore_index=ignore_index)
+        return HausdorffERLoss(ignore_index=ignore_index, from_logits=True)
     else:
         raise ValueError(
             f"Loss type '{loss}' is not valid. Currently, supports 'ce', 'jaccard', 'dice', 'focal', or 'lovasz' loss."
