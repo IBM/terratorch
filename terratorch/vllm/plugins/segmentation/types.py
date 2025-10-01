@@ -44,7 +44,7 @@ class RequestData(BaseModel):
     out_data_format: Literal["b64_json", "path"]
     """
     Data type for the output image.
-    Allowed values are: [`b64_json`, `url`]
+    Allowed values are: [`b64_json`, `path`]
     """
 
     data: Any
