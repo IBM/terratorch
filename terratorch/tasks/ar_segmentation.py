@@ -22,8 +22,9 @@ from terratorch.tasks.optimizer_factory import optimizer_factory
 from terratorch.tasks.tiled_inference import TiledInferenceParameters, tiled_inference
 
 
-class InferenceTask(TerraTorchTask):
-    """Pixelwise Inference task for the the heliophysics model Surya.
+class ArSegmentationTask(TerraTorchTask):
+    """Pixelwise Segmentation task for active segmentation using the
+    heliophysics model Surya.
 
     This class is analog in functionality to PixelwiseRegressionTask defined by torchgeo.
     However, it has some important differences:
@@ -60,11 +61,12 @@ class InferenceTask(TerraTorchTask):
         if model is None and model_factory is None:
             raise ValueError("A model_factory or a model (torch.nn.Module) must be provided.")
 
+        # Model can be or Surya or an U-Net
         if model_factory and model is None:
             self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
 
         super().__init__(
-            task="inference",
+            task="ar_segmentation",
         )
 
         if model:
