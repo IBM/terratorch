@@ -74,27 +74,26 @@ class BoundaryMeanIoU(Metric):
             if self.ignore_index is not None and c == self.ignore_index:
                 continue
 
-            # binary masks for class c (ignoring ignore_index pixels)
-            pred_c = (preds_idx == c) & (~ignore_mask)
-            tgt_c  = (target   == c) & (~ignore_mask)
+            # binary masks for class c
+            pred_c = (preds_idx == c).float().unsqueeze(1)  # (N,1,H,W)
+            target_c = (target == c).float().unsqueeze(1)
 
             # compute boundary bands via morphological gradient on binary maps
-            # dilation: max_pool; erosion: min_pool via 1 - max_pool(1 - x)
-            # convert to float for pooling
-            pred_f = pred_c.float().unsqueeze(1)  # (N,1,H,W)
-            tgt_f  = tgt_c.float().unsqueeze(1)
-
-            dil_pred = F.max_pool2d(pred_f, kernel_size=k, stride=1, padding=self.thickness)
-            ero_pred = 1.0 - F.max_pool2d(1.0 - pred_f, kernel_size=k, stride=1, padding=self.thickness)
+            dil_pred = F.max_pool2d(pred_c, kernel_size=k, stride=1, padding=self.thickness)
+            ero_pred = 1.0 - F.max_pool2d(1.0 - pred_c, kernel_size=k, stride=1, padding=self.thickness)
             bnd_pred = (dil_pred - ero_pred).clamp_min(0.0) > 0.5  # (N,1,H,W) -> bool
 
-            dil_tgt = F.max_pool2d(tgt_f, kernel_size=k, stride=1, padding=self.thickness)
-            ero_tgt = 1.0 - F.max_pool2d(1.0 - tgt_f, kernel_size=k, stride=1, padding=self.thickness)
-            bnd_tgt = (dil_tgt - ero_tgt).clamp_min(0.0) > 0.5
+            dil_target = F.max_pool2d(target_c, kernel_size=k, stride=1, padding=self.thickness)
+            ero_target = 1.0 - F.max_pool2d(1.0 - target_c, kernel_size=k, stride=1, padding=self.thickness)
+            bnd_target = (dil_target - ero_target).clamp_min(0.0) > 0.5
+
+            # Apply ignore mask
+            bnd_pred = bnd_pred & ~ignore_mask
+            bnd_target = bnd_target & ~ignore_mask
 
             # IoU on boundary bands
-            inter = (bnd_pred & bnd_tgt).sum(dtype=torch.float64)
-            union = (bnd_pred | bnd_tgt).sum(dtype=torch.float64)
+            inter = (bnd_pred & bnd_target).sum(dtype=torch.float64)
+            union = (bnd_pred | bnd_target).sum(dtype=torch.float64)
 
             # Accumulate
             self.intersections[c] += inter
