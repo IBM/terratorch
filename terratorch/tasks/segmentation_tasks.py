@@ -16,7 +16,7 @@ from terratorch.registry import MODEL_FACTORY_REGISTRY
 from terratorch.tasks.base_task import TerraTorchTask
 from terratorch.tasks.loss_handler import LossHandler, CombinedLoss
 from terratorch.tasks.tiled_inference import tiled_inference
-from terratorch.tasks.losses import HausdorffERLoss
+from terratorch.tasks.losses import HausdorffDTLoss
 from terratorch.tasks.metrics import BoundaryMeanIoU
 
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
@@ -44,7 +44,7 @@ def init_loss(loss: str, ignore_index: int = None, class_weights: list = None) -
     elif loss == "lovasz":
         return smp.losses.LovaszLoss(mode="multiclass", ignore_index=ignore_index)
     elif loss == "hausdorff":
-        return HausdorffERLoss(ignore_index=ignore_index, from_logits=True)
+        return HausdorffDTLoss(ignore_index=ignore_index, from_logits=True)
     else:
         raise ValueError(
             f"Loss type '{loss}' is not valid. Currently, supports 'ce', 'jaccard', 'dice', 'focal', or 'lovasz' loss."
