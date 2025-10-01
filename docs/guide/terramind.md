@@ -436,7 +436,7 @@ We refer to the [paper](https://arxiv.org/pdf/2504.11171) for details.
 
 !!! warning "Important"
     TiM only works with fully pre-trained raw inputs (all bands, no `bands` parameter).
-    The generator model is frozen and cannot adapt to unseen inputs such as subsets of pre-trained bands.
+    The generator model is frozen and cannot adapt to unseen inputs such as subsets of pre-trained bands or new modalities.
     If this is the case for you, you cannot use the TiM models.
 
 To use, suffix `_tim` to the model name and set `tim_modalities`.
