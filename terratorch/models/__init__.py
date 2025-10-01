@@ -35,6 +35,7 @@ __all__ = (
     "PrithviModelFactory",
     "SMPModelFactory",
     "SatMAEModelFactory",
+    "SuryaModelFactory",
     "TimmModelFactory",
     "WxCModelFactory",
 )
