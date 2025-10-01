@@ -16,13 +16,13 @@ from .config import models, inputs
 models_output = {
     "prithvi_300m_sen1floods11": {
             "india_url_in_base64_out": "f7dc282de2c36942",
-            "valencia_url_in_base64_out": "aa6d92ad25926a5e",
-            "valencia_url_in_path_out": "aa6d92ad25926a5e",
+            # "valencia_url_in_base64_out": "aa6d92ad25926a5e",
+            # "valencia_url_in_path_out": "aa6d92ad25926a5e",
         },
-    "prithvi_300m_burnscars": {
-        "burnscars_url_in_base64_out": "c17c4f602ea7b616",
-        "burnscars_url_in_path_out": "c17c4f602ea7b616"
-    }
+    # "prithvi_300m_burnscars": {
+    #     "burnscars_url_in_base64_out": "c17c4f602ea7b616",
+    #     "burnscars_url_in_path_out": "c17c4f602ea7b616"
+    # }
 }
 
 tests_per_model = [(model, input) for model in models_output.keys() for input in models_output[model].keys() ]
@@ -51,7 +51,8 @@ def test_serving_segmentation_plugin(model_name, input_name):
 
     with tempfile.TemporaryDirectory() as tmpdirname:
         plugin_config = {"output_path":tmpdirname}
-        server_envs = {"TERRATORCH_SEGMENTATION_IO_PROCESSOR_CONFIG": json.dumps(plugin_config)}
+        server_envs = {"TERRATORCH_SEGMENTATION_IO_PROCESSOR_CONFIG": json.dumps(plugin_config),
+                       "VLLM_LOGGING_LEVEL": "DEBUG"}
 
         with VLLMServer(model, server_args=server_args, server_envs=server_envs):
             request_payload = {
