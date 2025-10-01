@@ -36,22 +36,18 @@ def test_serving_segmentation_plugin(model_name, input_name):
 
     image_url = input["image_url"]
     plugin = "terratorch_segmentation"
-    server_args = ["--runner",
-                    "pooling",
-                    "--task",
-                    "embed",
-                    "--trust-remote-code",
-                    "--skip-tokenizer-init",
-                    "--enforce-eager",
-                    # This is just in case the test ends up with a GPU of less memory than an A100-80GB.
-                    # Just to avoid OOMing in the CI
-                    "--max-num-seqs",
-                    "8",
-                    "--io-processor-plugin",
-                    plugin,
-                    "--model-impl",
-                    "terratorch"
-                    ]
+    server_args = [
+        "--skip-tokenizer-init",
+        "--enforce-eager",
+        # This is just in case the test ends up with a GPU of less memory than an A100-80GB.
+        # Just to avoid OOMing in the CI
+        "--max-num-seqs",
+        "8",
+        "--io-processor-plugin",
+        plugin,
+        "--model-impl",
+        "terratorch"
+    ]
 
     with tempfile.TemporaryDirectory() as tmpdirname:
         plugin_config = {"output_path":tmpdirname}

@@ -53,6 +53,9 @@ class RequestData(BaseModel):
     """
 
     indices: Optional[list[int]] = None
+    """
+    Indices for bands to be processed in the input file
+    """
 
 
 MultiModalPromptType = Union[RequestData]
@@ -73,5 +76,5 @@ class RequestOutput(BaseModel):
 
     request_id: Optional[str] = None
     """
-    The vlLM request ID if applicable
+    The vLLM request ID if applicable
     """
