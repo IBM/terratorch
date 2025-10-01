@@ -40,11 +40,11 @@ class VLLMServer:
             except Exception:
                 if time.time() - start_time > timeout:
                     # If still running let's kill the process
-                    self._kill_proc()
+                    self.kill_proc()
                     raise TimeoutError("vLLM server did not start within timeout.")
             time.sleep(1)
 
-    def _kill_proc(self):
+    def kill_proc(self):
         if self.proc:
             self.proc.terminate()
             try:
@@ -54,8 +54,5 @@ class VLLMServer:
                 self.proc.kill()
                 print("vLLM server forcefully killed.")
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._kill_proc()
+    def __del__(self):
+        self.kill_proc()
