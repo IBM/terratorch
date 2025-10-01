@@ -16,7 +16,6 @@ from terratorch.registry import MODEL_FACTORY_REGISTRY
 from terratorch.tasks.base_task import TerraTorchTask
 from terratorch.tasks.loss_handler import LossHandler, CombinedLoss
 from terratorch.tasks.tiled_inference import tiled_inference
-from terratorch.tasks.losses import HausdorffDTLoss
 from terratorch.tasks.metrics import BoundaryMeanIoU
 
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
