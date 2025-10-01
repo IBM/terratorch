@@ -392,8 +392,8 @@ def build_terrammind_tim(
     model = TerraMindTiM(pretrained=pretrained, **kwargs)
 
     if bands is not None:
-        raise NotImplementedError("Bands cannot be adapted for TerraMind TiM models. "
-                                  "Only exact matches with pre-trained modalities are supported.")
+        raise NotImplementedError(f"Bands cannot be adapted for TerraMind TiM models and is expected to be None. "
+                                  f"Only exact matches with pre-trained modalities are supported, got {bands}.")
 
     if ckpt_path is not None:
         # Load model from checkpoint
