@@ -391,6 +391,10 @@ def build_terrammind_tim(
 
     model = TerraMindTiM(pretrained=pretrained, **kwargs)
 
+    if bands is not None:
+        raise NotImplementedError("Bands cannot be adapted for TerraMind TiM models. "
+                                  "Only exact matches with pre-trained modalities are supported.")
+
     if ckpt_path is not None:
         # Load model from checkpoint
         state_dict = torch.load(ckpt_path, map_location="cpu", weights_only=True)
@@ -401,17 +405,19 @@ def build_terrammind_tim(
             logger.warning(f"Missing keys in ckpt_path {ckpt_path}: {loaded_keys.missing_keys}")
 
     elif pretrained:
+        if any(isinstance(m, dict) for m in kwargs["modalities"]):
+            raise NotImplementedError(f"TerraMind TiM models do not support new modalities. "
+                                      f"Only pre-trained modalities are supported, got {kwargs['modalities']}")
+            # TODO: Adapt model code to only use pre-trained modalities for TiM generation
+
         # Load model from Hugging Face
         state_dict_file = hf_hub_download(repo_id=pretrained_weights[variant]["hf_hub_id"],
                                           filename=pretrained_weights[variant]["hf_hub_filename"])
         state_dict = torch.load(state_dict_file, map_location="cpu", weights_only=True)
         state_dict = checkpoint_filter_fn_tim(state_dict, model)
         model.load_state_dict(state_dict, strict=True)
-
-    if bands is not None:
-        raise NotImplementedError("Bands cannot be adapted because the MAE model for TiM is not trained.")
-        # TODO: Test if possible for TiM model, maybe with a subset of input modalities for TiM.
-        model = select_modality_patch_embed_weights(model, bands, pretrained_bands)
+    else:
+        warnings.warn("TerraMind TiM model not pre-trained. Generation of TiM modalities will not work correctly.")
 
     return model
 
