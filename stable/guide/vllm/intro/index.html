@@ -8,26 +8,28 @@
       
       
       
-        <link rel="canonical" href="https://ibm.github.io/terratorch/stable/">
+        <link rel="canonical" href="https://ibm.github.io/terratorch/stable/guide/vllm/intro/">
       
       
+        <link rel="prev" href="../../glossary/">
       
-        <link rel="next" href="guide/quick_start/">
+      
+        <link rel="next" href="../plugins/segmentation_io_plugin/">
       
       
-      <link rel="icon" href="assets/images/favicon.png">
+      <link rel="icon" href="../../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.21">
     
     
       
-        <title>TerraTorch</title>
+        <title>Introduction - TerraTorch</title>
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.2a3383ac.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.2a3383ac.min.css">
       
         
-        <link rel="stylesheet" href="assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -46,11 +48,11 @@
       
     
     
-      <link rel="stylesheet" href="assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="stylesheets/extra.css">
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
     
-    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -76,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#welcome-to-terratorch" class="md-skip">
+        <a href="#serving-terratorch-models-with-vllm" class="md-skip">
           Skip to content
         </a>
       
@@ -96,9 +98,9 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="." title="TerraTorch" class="md-header__button md-logo" aria-label="TerraTorch" data-md-component="logo">
+    <a href="../../.." title="TerraTorch" class="md-header__button md-logo" aria-label="TerraTorch" data-md-component="logo">
       
-  <img src="figs/logo_header.png" alt="logo">
+  <img src="../../../figs/logo_header.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -115,7 +117,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Welcome
+              Introduction
             
           </span>
         </div>
@@ -240,9 +242,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="." title="TerraTorch" class="md-nav__button md-logo" aria-label="TerraTorch" data-md-component="logo">
+    <a href="../../.." title="TerraTorch" class="md-nav__button md-logo" aria-label="TerraTorch" data-md-component="logo">
       
-  <img src="figs/logo_header.png" alt="logo">
+  <img src="../../../figs/logo_header.png" alt="logo">
 
     </a>
     TerraTorch
@@ -266,19 +268,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="." class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
         
   
   
@@ -289,7 +282,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -298,8 +290,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -328,11 +322,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
           <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
@@ -348,7 +342,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             User Guide
@@ -362,7 +356,7 @@
   
   
     <li class="md-nav__item">
-      <a href="guide/quick_start/" class="md-nav__link">
+      <a href="../../quick_start/" class="md-nav__link">
         
   
   
@@ -385,7 +379,7 @@
   
   
     <li class="md-nav__item">
-      <a href="guide/architecture/" class="md-nav__link">
+      <a href="../../architecture/" class="md-nav__link">
         
   
   
@@ -408,7 +402,7 @@
   
   
     <li class="md-nav__item">
-      <a href="guide/data/" class="md-nav__link">
+      <a href="../../data/" class="md-nav__link">
         
   
   
@@ -485,7 +479,7 @@
   
   
     <li class="md-nav__item">
-      <a href="guide/models/" class="md-nav__link">
+      <a href="../../models/" class="md-nav__link">
         
   
   
@@ -508,7 +502,7 @@
   
   
     <li class="md-nav__item">
-      <a href="guide/registry/" class="md-nav__link">
+      <a href="../../registry/" class="md-nav__link">
         
   
   
@@ -531,7 +525,7 @@
   
   
     <li class="md-nav__item">
-      <a href="guide/encoder_decoder_factory/" class="md-nav__link">
+      <a href="../../encoder_decoder_factory/" class="md-nav__link">
         
   
   
@@ -554,7 +548,7 @@
   
   
     <li class="md-nav__item">
-      <a href="guide/terramind/" class="md-nav__link">
+      <a href="../../terramind/" class="md-nav__link">
         
   
   
@@ -577,7 +571,7 @@
   
   
     <li class="md-nav__item">
-      <a href="guide/prithvi_eo/" class="md-nav__link">
+      <a href="../../prithvi_eo/" class="md-nav__link">
         
   
   
@@ -600,7 +594,7 @@
   
   
     <li class="md-nav__item">
-      <a href="guide/temporal_wrapper/" class="md-nav__link">
+      <a href="../../temporal_wrapper/" class="md-nav__link">
         
   
   
@@ -631,7 +625,7 @@
   
   
     <li class="md-nav__item">
-      <a href="guide/inference/" class="md-nav__link">
+      <a href="../../inference/" class="md-nav__link">
         
   
   
@@ -654,7 +648,7 @@
   
   
     <li class="md-nav__item">
-      <a href="guide/glossary/" class="md-nav__link">
+      <a href="../../glossary/" class="md-nav__link">
         
   
   
@@ -674,8 +668,10 @@
                 
   
   
+    
   
   
+  
     
     
       
@@ -693,11 +689,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" checked>
         
           
           <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="0">
@@ -713,7 +709,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2_7">
             <span class="md-nav__icon md-icon"></span>
             Serving models with vLLM
@@ -724,10 +720,19 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="guide/vllm/intro/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -738,6 +743,7 @@
   
 
       </a>
+      
     </li>
   
 
@@ -796,7 +802,7 @@
   
   
     <li class="md-nav__item">
-      <a href="guide/vllm/vllm_io_plugins" class="md-nav__link">
+      <a href="../vllm_io_plugins" class="md-nav__link">
         
   
   
@@ -863,7 +869,7 @@
   
   
     <li class="md-nav__item">
-      <a href="guide/vllm/plugins/segmentation_io_plugin/" class="md-nav__link">
+      <a href="../plugins/segmentation_io_plugin/" class="md-nav__link">
         
   
   
@@ -902,7 +908,7 @@
   
   
     <li class="md-nav__item">
-      <a href="guide/vllm/prepare_your_model/" class="md-nav__link">
+      <a href="../prepare_your_model/" class="md-nav__link">
         
   
   
@@ -925,7 +931,7 @@
   
   
     <li class="md-nav__item">
-      <a href="guide/vllm/serving_a_model/" class="md-nav__link">
+      <a href="../serving_a_model/" class="md-nav__link">
         
   
   
@@ -956,7 +962,7 @@
   
   
     <li class="md-nav__item">
-      <a href="guide/faqs/" class="md-nav__link">
+      <a href="../../faqs/" class="md-nav__link">
         
   
   
@@ -1043,7 +1049,7 @@
   
   
     <li class="md-nav__item">
-      <a href="tutorials/the_yaml_config/" class="md-nav__link">
+      <a href="../../../tutorials/the_yaml_config/" class="md-nav__link">
         
   
   
@@ -1066,7 +1072,7 @@
   
   
     <li class="md-nav__item">
-      <a href="tutorials/burn_scars_finetuning/" class="md-nav__link">
+      <a href="../../../tutorials/burn_scars_finetuning/" class="md-nav__link">
         
   
   
@@ -1089,7 +1095,7 @@
   
   
     <li class="md-nav__item">
-      <a href="tutorials/basic_inference_burn_scars/" class="md-nav__link">
+      <a href="../../../tutorials/basic_inference_burn_scars/" class="md-nav__link">
         
   
   
@@ -1112,7 +1118,7 @@
   
   
     <li class="md-nav__item">
-      <a href="tutorials/burn_scars_inference_simplified/" class="md-nav__link">
+      <a href="../../../tutorials/burn_scars_inference_simplified/" class="md-nav__link">
         
   
   
@@ -1135,7 +1141,7 @@
   
   
     <li class="md-nav__item">
-      <a href="tutorials/using_datamodule_multitemporalclassificationModule/" class="md-nav__link">
+      <a href="../../../tutorials/using_datamodule_multitemporalclassificationModule/" class="md-nav__link">
         
   
   
@@ -1158,7 +1164,7 @@
   
   
     <li class="md-nav__item">
-      <a href="tutorials/adding_custom_modules/" class="md-nav__link">
+      <a href="../../../tutorials/adding_custom_modules/" class="md-nav__link">
         
   
   
@@ -1243,7 +1249,7 @@
   
   
     <li class="md-nav__item">
-      <a href="package/tasks/" class="md-nav__link">
+      <a href="../../../package/tasks/" class="md-nav__link">
         
   
   
@@ -1318,7 +1324,7 @@
   
   
     <li class="md-nav__item">
-      <a href="package/model_factories/" class="md-nav__link">
+      <a href="../../../package/model_factories/" class="md-nav__link">
         
   
   
@@ -1341,7 +1347,7 @@
   
   
     <li class="md-nav__item">
-      <a href="package/backbones/" class="md-nav__link">
+      <a href="../../../package/backbones/" class="md-nav__link">
         
   
   
@@ -1364,7 +1370,7 @@
   
   
     <li class="md-nav__item">
-      <a href="package/decoders/" class="md-nav__link">
+      <a href="../../../package/decoders/" class="md-nav__link">
         
   
   
@@ -1387,7 +1393,7 @@
   
   
     <li class="md-nav__item">
-      <a href="package/necks/" class="md-nav__link">
+      <a href="../../../package/necks/" class="md-nav__link">
         
   
   
@@ -1410,7 +1416,7 @@
   
   
     <li class="md-nav__item">
-      <a href="package/heads/" class="md-nav__link">
+      <a href="../../../package/heads/" class="md-nav__link">
         
   
   
@@ -1487,7 +1493,7 @@
   
   
     <li class="md-nav__item">
-      <a href="package/generic_datamodules/" class="md-nav__link">
+      <a href="../../../package/generic_datamodules/" class="md-nav__link">
         
   
   
@@ -1510,7 +1516,7 @@
   
   
     <li class="md-nav__item">
-      <a href="package/datamodules/" class="md-nav__link">
+      <a href="../../../package/datamodules/" class="md-nav__link">
         
   
   
@@ -1589,7 +1595,7 @@
   
   
     <li class="md-nav__item">
-      <a href="package/generic_datasets/" class="md-nav__link">
+      <a href="../../../package/generic_datasets/" class="md-nav__link">
         
   
   
@@ -1612,7 +1618,7 @@
   
   
     <li class="md-nav__item">
-      <a href="package/datasets/" class="md-nav__link">
+      <a href="../../../package/datasets/" class="md-nav__link">
         
   
   
@@ -1635,7 +1641,7 @@
   
   
     <li class="md-nav__item">
-      <a href="package/transforms/" class="md-nav__link">
+      <a href="../../../package/transforms/" class="md-nav__link">
         
   
   
@@ -1714,7 +1720,7 @@
   
   
     <li class="md-nav__item">
-      <a href="package/meta_models/" class="md-nav__link">
+      <a href="../../../package/meta_models/" class="md-nav__link">
         
   
   
@@ -1737,7 +1743,7 @@
   
   
     <li class="md-nav__item">
-      <a href="package/extra_model_structures/" class="md-nav__link">
+      <a href="../../../package/extra_model_structures/" class="md-nav__link">
         
   
   
@@ -1760,7 +1766,7 @@
   
   
     <li class="md-nav__item">
-      <a href="package/loss/" class="md-nav__link">
+      <a href="../../../package/loss/" class="md-nav__link">
         
   
   
@@ -1853,7 +1859,7 @@
   
   
     <li class="md-nav__item">
-      <a href="about/contributing/" class="md-nav__link">
+      <a href="../../../about/contributing/" class="md-nav__link">
         
   
   
@@ -1876,7 +1882,7 @@
   
   
     <li class="md-nav__item">
-      <a href="about/changelog/" class="md-nav__link">
+      <a href="../../../about/changelog/" class="md-nav__link">
         
   
   
@@ -1899,7 +1905,7 @@
   
   
     <li class="md-nav__item">
-      <a href="about/license/" class="md-nav__link">
+      <a href="../../../about/license/" class="md-nav__link">
         
   
   
@@ -1922,7 +1928,7 @@
   
   
     <li class="md-nav__item">
-      <a href="about/citation/" class="md-nav__link">
+      <a href="../../../about/citation/" class="md-nav__link">
         
   
   
@@ -1945,7 +1951,7 @@
   
   
     <li class="md-nav__item">
-      <a href="about/related_packages/" class="md-nav__link">
+      <a href="../../../about/related_packages/" class="md-nav__link">
         
   
   
@@ -1984,7 +1990,7 @@
 
 
   
-    <a href="https://github.com/IBM/terratorch/edit/docs/docs/index.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/IBM/terratorch/edit/docs/docs/guide/vllm/intro.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -1993,59 +1999,16 @@
     
       
     
-    <a href="https://github.com/IBM/terratorch/raw/docs/docs/index.md" title="View source of this page" class="md-content__button md-icon">
+    <a href="https://github.com/IBM/terratorch/raw/docs/docs/guide/vllm/intro.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
     </a>
   
 
 
-<h1 id="welcome-to-terratorch">Welcome to TerraTorch<a class="headerlink" href="#welcome-to-terratorch" title="Permanent link">#</a></h1>
-<figure>
-    <img src="figs/logo.png#only-light" alt="TerraTorch"  width="400"/>
-    <img src="figs/logo_grey.png#only-dark" alt="TerraTorch"  width="400"/>
-    <h3>The Geospatial Foundation Models Toolkit</h3>
-</figure>
-<div class="grid cards">
-<ul>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15 4a8 8 0 0 1 8 8 8 8 0 0 1-8 8 8 8 0 0 1-8-8 8 8 0 0 1 8-8m0 2a6 6 0 0 0-6 6 6 6 0 0 0 6 6 6 6 0 0 0 6-6 6 6 0 0 0-6-6m-1 2h1.5v3.78l2.33 2.33-1.06 1.06L14 12.4zM2 18a1 1 0 0 1-1-1 1 1 0 0 1 1-1h3.83c.31.71.71 1.38 1.17 2zm1-5a1 1 0 0 1-1-1 1 1 0 0 1 1-1h2.05L5 12l.05 1zm1-5a1 1 0 0 1-1-1 1 1 0 0 1 1-1h3c-.46.62-.86 1.29-1.17 2z"/></svg></span> <strong>Fine-tuning made easy</strong></p>
-<hr />
-<p>Run <code>pip install terratorch</code> and get started in minutes. </p>
-<p><a href="guide/quick_start/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> Quick start</a></p>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 21.5c-1.35-.85-3.8-1.5-5.5-1.5-1.65 0-3.35.3-4.75 1.05-.1.05-.15.05-.25.05-.25 0-.5-.25-.5-.5V6c.6-.45 1.25-.75 2-1 1.11-.35 2.33-.5 3.5-.5 1.95 0 4.05.4 5.5 1.5 1.45-1.1 3.55-1.5 5.5-1.5 1.17 0 2.39.15 3.5.5.75.25 1.4.55 2 1v14.6c0 .25-.25.5-.5.5-.1 0-.15 0-.25-.05-1.4-.75-3.1-1.05-4.75-1.05-1.7 0-4.15.65-5.5 1.5m-1-14c-1.36-.6-3.16-1-4.5-1-1.2 0-2.4.15-3.5.5v11.5c1.1-.35 2.3-.5 3.5-.5 1.34 0 3.14.4 4.5 1zM13 19c1.36-.6 3.16-1 4.5-1 1.2 0 2.4.15 3.5.5V7c-1.1-.35-2.3-.5-3.5-.5-1.34 0-3.14.4-4.5 1zm1-2.65c.96-.35 2.12-.52 3.5-.52 1.04 0 1.88.08 2.5.24v-1.5a13.9 13.9 0 0 0-6 .19zm0-2.66c.96-.35 2.12-.53 3.5-.53 1.04 0 1.88.08 2.5.24v-1.5c-.87-.16-1.71-.23-2.5-.23-1.28 0-2.45.15-3.5.45zM14 11c.96-.33 2.12-.5 3.5-.5.91 0 1.76.09 2.5.28V9.23c-.87-.15-1.71-.23-2.5-.23-1.32 0-2.5.15-3.5.46z"/></svg></span> <strong>Overview</strong></p>
-<hr />
-<p>Get an overview of the functionality and architecture with in-depth explanations.</p>
-<p><a href="guide/architecture/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> User Guide</a></p>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M296.5 291.1C321 265.2 336 230.4 336 192c0-79.5-64.5-144-144-144S48 112.5 48 192c0 38.4 15 73.2 39.5 99.1 21.3 22.4 44.9 54 53.3 92.9h102.4c8.4-39 32-70.5 53.3-92.9m34.8 33C307.7 349 288 379.4 288 413.7V432c0 44.2-35.8 80-80 80h-32c-44.2 0-80-35.8-80-80v-18.3c0-34.3-19.7-64.7-43.3-89.6C20 289.7 0 243.2 0 192 0 86 86 0 192 0s192 86 192 192c0 51.2-20 97.7-52.7 132.1M144 184c0 13.3-10.7 24-24 24s-24-10.7-24-24c0-48.6 39.4-88 88-88 13.3 0 24 10.7 24 24s-10.7 24-24 24c-22.1 0-40 17.9-40 40"/></svg></span> <strong>The big picture</strong></p>
-<hr />
-<p>We outline the ideas and reasons why we build TerraTorch in the paper. </p>
-<p><a href="https://arxiv.org/abs/2503.20563"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> arXiv</a></p>
-</li>
-<li>
-<p><span class="twemoji lg middle"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2c-.2 0-.4.1-.6.2L3.5 6.6c-.3.2-.5.5-.5.9v9c0 .4.2.7.5.9l7.9 4.4c.2.1.4.2.6.2s.4-.1.6-.2l.9-.5c-.3-.6-.4-1.3-.5-2v-6.7l6-3.4V13c.7 0 1.4.1 2 .3V7.5c0-.4-.2-.7-.5-.9l-7.9-4.4c-.2-.1-.4-.2-.6-.2m0 2.2 6 3.3-2 1.1-5.9-3.4zM8.1 6.3 14 9.8l-2 1.1-6-3.4zM5 9.2l6 3.4v6.7l-6-3.4zm16.3 6.6-3.6 3.6-1.6-1.6L15 19l2.8 3 4.8-4.8z"/></svg></span> <strong>Open Source</strong></p>
-<hr />
-<p>TerraTorch is distributed under the terms of the Apache 2.0 license.</p>
-<p><a href="about/license/"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13.22 19.03a.75.75 0 0 1 0-1.06L18.19 13H3.75a.75.75 0 0 1 0-1.5h14.44l-4.97-4.97a.749.749 0 0 1 .326-1.275.75.75 0 0 1 .734.215l6.25 6.25a.75.75 0 0 1 0 1.06l-6.25 6.25a.75.75 0 0 1-1.06 0"/></svg></span> License</a></p>
-</li>
-</ul>
-</div>
-<p>The purpose of this package is to build a flexible fine-tuning framework for Geospatial Foundation Models (GFMs) based on TorchGeo and Lightning which can be employed at different abstraction levels. 
-It supports models from the <a href="https://huggingface.co/ibm-nasa-geospatial">Prithvi</a>, <a href="https://huggingface.co/ibm-esa-geospatial">TerraMind</a>, and <a href="https://huggingface.co/ibm-granite/granite-geospatial-land-surface-temperature">Granite</a> series as well as models from <a href="https://torchgeo.readthedocs.io/en/latest/api/models.html">TorchGeo</a> and <a href="https://huggingface.co/timm">timm</a>. </p>
-<p>This library provides:</p>
-<ul>
-<li>Ease-of-use and all the functionality from Lightning and TorchGeo.</li>
-<li>A modular model factory that combines any backbone with different decoders for full flexibility.</li>
-<li>Ready-to-use tasks for image segmentation, pixelwise regression, classification, and more.</li>
-<li>Multiple abstraction levels and inference pipelines to power enterprise applications.</li>
-</ul>
-<p>A good starting place is familiarization with <a href="https://lightning.ai/docs/pytorch/stable/">PyTorch Lightning</a>, which this project is built on. 
-<a href="https://torchgeo.readthedocs.io/en/stable/">TorchGeo</a> is also an important complementary reference with many available models and specific datasets.
-If you have any open questions, please check the <a href="guide/faqs/">FAQs</a> or open an issue in <a href="https://github.com/IBM/terratorch/issues">GitHub</a>.</p>
+<h1 id="serving-terratorch-models-with-vllm">Serving TerraTorch models with vLLM<a class="headerlink" href="#serving-terratorch-models-with-vllm" title="Permanent link">#</a></h1>
+<p>TerraTorch models can be served using the <a href="https://github.com/vllm-project/vllm">vLLM</a> serving engine. The are no special requirements for a model to be served via vLLM except for a properly structured configuration file. Thanks to a feature called IOProcessor plugins, vLLM is capable of processing and generating data in any modality (e.g., geoTiff). In TerraTorch, we define IOProcessor plugins for the most popular tasks (e.g., semantic segmentation).
+Please refer to the rest of this documentation for more information on the model configuration as well as a available IOProcessor plugins and how to use them.</p>
 
 
 
@@ -2066,7 +2029,7 @@ If you have any open questions, please check the <a href="guide/faqs/">FAQs</a> 
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="June 19, 2025 11:20:35 UTC">June 19, 2025</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 1, 2025 10:05:40 UTC">October 1, 2025</span>
   </span>
 
     
@@ -2103,15 +2066,31 @@ If you have any open questions, please check the <a href="guide/faqs/">FAQs</a> 
       
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
+          
+          <a href="../../glossary/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Glossary">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Glossary
+              </div>
+            </div>
+          </a>
+        
         
           
-          <a href="guide/quick_start/" class="md-footer__link md-footer__link--next" aria-label="Next: Get started">
+          <a href="../plugins/segmentation_io_plugin/" class="md-footer__link md-footer__link--next" aria-label="Next: Segmentation">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Get started
+                Segmentation
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -2153,12 +2132,12 @@ If you have any open questions, please check the <a href="guide/faqs/">FAQs</a> 
     
     
       
-      <script id="__config" type="application/json">{"base": ".", "features": ["content.code.copy", "content.code.select", "announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "navigation.footer", "navigation.indexes", "navigation.path", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.sections", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow", "toc.integrate"], "search": "assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"canonical_version": "stable", "default": "stable", "provider": "mike", "version_selector": true}}</script>
+      <script id="__config" type="application/json">{"base": "../../..", "features": ["content.code.copy", "content.code.select", "announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "navigation.footer", "navigation.indexes", "navigation.path", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.sections", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow", "toc.integrate"], "search": "../../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"canonical_version": "stable", "default": "stable", "provider": "mike", "version_selector": true}}</script>
     
     
-      <script src="assets/javascripts/bundle.f55a23d4.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.f55a23d4.min.js"></script>
       
-        <script src="js/logo.js"></script>
+        <script src="../../../js/logo.js"></script>
       
     
   </body>

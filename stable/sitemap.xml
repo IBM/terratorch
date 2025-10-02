@@ -69,10 +69,6 @@
          <lastmod>2025-10-02</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/stable/guide/segmentation_io_plugin/</loc>
-         <lastmod>2025-10-02</lastmod>
-    </url>
-    <url>
          <loc>https://ibm.github.io/terratorch/stable/guide/temporal_wrapper/</loc>
          <lastmod>2025-10-02</lastmod>
     </url>
@@ -81,7 +77,23 @@
          <lastmod>2025-10-02</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/stable/guide/vllm_io_plugins/</loc>
+         <loc>https://ibm.github.io/terratorch/stable/guide/vllm/intro/</loc>
+         <lastmod>2025-10-02</lastmod>
+    </url>
+    <url>
+         <loc>https://ibm.github.io/terratorch/stable/guide/vllm/prepare_your_model/</loc>
+         <lastmod>2025-10-02</lastmod>
+    </url>
+    <url>
+         <loc>https://ibm.github.io/terratorch/stable/guide/vllm/serving_a_model/</loc>
+         <lastmod>2025-10-02</lastmod>
+    </url>
+    <url>
+         <loc>https://ibm.github.io/terratorch/stable/guide/vllm/vllm_io_plugins/</loc>
+         <lastmod>2025-10-02</lastmod>
+    </url>
+    <url>
+         <loc>https://ibm.github.io/terratorch/stable/guide/vllm/plugins/segmentation_io_plugin/</loc>
          <lastmod>2025-10-02</lastmod>
     </url>
     <url>

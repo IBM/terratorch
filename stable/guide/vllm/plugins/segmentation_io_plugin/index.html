@@ -8,16 +8,16 @@
       
       
       
-        <link rel="canonical" href="https://ibm.github.io/terratorch/stable/guide/segmentation_io_plugin/">
+        <link rel="canonical" href="https://ibm.github.io/terratorch/stable/guide/vllm/plugins/segmentation_io_plugin/">
       
       
-        <link rel="prev" href="../temporal_wrapper/">
+        <link rel="prev" href="../../intro/">
       
       
-        <link rel="next" href="../inference/">
+        <link rel="next" href="../../prepare_your_model/">
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
+      <link rel="icon" href="../../../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.21">
     
     
@@ -26,10 +26,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.2a3383ac.min.css">
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.2a3383ac.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -48,11 +48,11 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../../../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="../../stylesheets/extra.css">
+      <link rel="stylesheet" href="../../../../stylesheets/extra.css">
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -98,9 +98,9 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="TerraTorch" class="md-header__button md-logo" aria-label="TerraTorch" data-md-component="logo">
+    <a href="../../../.." title="TerraTorch" class="md-header__button md-logo" aria-label="TerraTorch" data-md-component="logo">
       
-  <img src="../../figs/logo_header.png" alt="logo">
+  <img src="../../../../figs/logo_header.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -242,9 +242,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--integrated" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="TerraTorch" class="md-nav__button md-logo" aria-label="TerraTorch" data-md-component="logo">
+    <a href="../../../.." title="TerraTorch" class="md-nav__button md-logo" aria-label="TerraTorch" data-md-component="logo">
       
-  <img src="../../figs/logo_header.png" alt="logo">
+  <img src="../../../../figs/logo_header.png" alt="logo">
 
     </a>
     TerraTorch
@@ -271,7 +271,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href="../../../.." class="md-nav__link">
         
   
   
@@ -356,7 +356,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../quick_start/" class="md-nav__link">
+      <a href="../../../quick_start/" class="md-nav__link">
         
   
   
@@ -379,7 +379,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/" class="md-nav__link">
+      <a href="../../../architecture/" class="md-nav__link">
         
   
   
@@ -402,7 +402,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../data/" class="md-nav__link">
+      <a href="../../../data/" class="md-nav__link">
         
   
   
@@ -479,7 +479,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../models/" class="md-nav__link">
+      <a href="../../../models/" class="md-nav__link">
         
   
   
@@ -502,7 +502,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../registry/" class="md-nav__link">
+      <a href="../../../registry/" class="md-nav__link">
         
   
   
@@ -525,7 +525,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../encoder_decoder_factory/" class="md-nav__link">
+      <a href="../../../encoder_decoder_factory/" class="md-nav__link">
         
   
   
@@ -548,7 +548,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../terramind/" class="md-nav__link">
+      <a href="../../../terramind/" class="md-nav__link">
         
   
   
@@ -571,7 +571,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../prithvi_eo/" class="md-nav__link">
+      <a href="../../../prithvi_eo/" class="md-nav__link">
         
   
   
@@ -594,7 +594,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../temporal_wrapper/" class="md-nav__link">
+      <a href="../../../temporal_wrapper/" class="md-nav__link">
         
   
   
@@ -613,6 +613,127 @@
           </ul>
         </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../inference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Inference
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Glossary
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Serving models with vLLM
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2_7">
+            <span class="md-nav__icon md-icon"></span>
+            Serving models with vLLM
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../intro/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Introduction
+    
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -643,10 +764,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7_2" checked>
         
           
-          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_7_2" id="__nav_2_7_2_label" tabindex="0">
             
   
   
@@ -659,8 +780,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_2_5">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_7_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2_7_2">
             <span class="md-nav__icon md-icon"></span>
             vLLM IOProcessor Plugins
           </label>
@@ -673,7 +794,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../vllm_io_plugins" class="md-nav__link">
+      <a href="../../vllm_io_plugins" class="md-nav__link">
         
   
   
@@ -712,10 +833,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7_2_2" checked>
         
           
-          <label class="md-nav__link" for="__nav_2_5_2" id="__nav_2_5_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_7_2_2" id="__nav_2_7_2_2_label" tabindex="0">
             
   
   
@@ -728,8 +849,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_5_2_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_2_5_2">
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_2_7_2_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2_7_2_2">
             <span class="md-nav__icon md-icon"></span>
             Available Plugins
           </label>
@@ -792,14 +913,23 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#plugin-specification" class="md-nav__link">
+    <span class="md-ellipsis">
+      Plugin specification
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Plugin specification">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#plugin-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       Plugin configuration
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Plugin configuration">
-      <ul class="md-nav__list">
+</li>
         
           <li class="md-nav__item">
   <a href="#terratorch.vllm.plugins.segmentation.types.PluginConfig" class="md-nav__link">
@@ -810,20 +940,14 @@
   
 </li>
         
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
+          <li class="md-nav__item">
   <a href="#request-data-format" class="md-nav__link">
     <span class="md-ellipsis">
       Request Data Format
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Request Data Format">
-      <ul class="md-nav__list">
+</li>
         
           <li class="md-nav__item">
   <a href="#terratorch.vllm.plugins.segmentation.types.RequestData" class="md-nav__link">
@@ -834,20 +958,14 @@
   
 </li>
         
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
+          <li class="md-nav__item">
   <a href="#request-output-format" class="md-nav__link">
     <span class="md-ellipsis">
       Request Output Format
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Request Output Format">
-      <ul class="md-nav__list">
+</li>
         
           <li class="md-nav__item">
   <a href="#terratorch.vllm.plugins.segmentation.types.RequestOutput" class="md-nav__link">
@@ -895,12 +1013,12 @@
   
   
     <li class="md-nav__item">
-      <a href="../inference/" class="md-nav__link">
+      <a href="../../prepare_your_model/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Inference
+    Prepare your model for serving with vLLM
     
   </span>
   
@@ -918,17 +1036,25 @@
   
   
     <li class="md-nav__item">
-      <a href="../glossary/" class="md-nav__link">
+      <a href="../../serving_a_model/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Glossary
+    Initializing and serving a model with vLLM
     
   </span>
   
 
       </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -941,7 +1067,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../faqs/" class="md-nav__link">
+      <a href="../../../faqs/" class="md-nav__link">
         
   
   
@@ -1028,7 +1154,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tutorials/the_yaml_config/" class="md-nav__link">
+      <a href="../../../../tutorials/the_yaml_config/" class="md-nav__link">
         
   
   
@@ -1051,7 +1177,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tutorials/burn_scars_finetuning/" class="md-nav__link">
+      <a href="../../../../tutorials/burn_scars_finetuning/" class="md-nav__link">
         
   
   
@@ -1074,7 +1200,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tutorials/basic_inference_burn_scars/" class="md-nav__link">
+      <a href="../../../../tutorials/basic_inference_burn_scars/" class="md-nav__link">
         
   
   
@@ -1097,7 +1223,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tutorials/burn_scars_inference_simplified/" class="md-nav__link">
+      <a href="../../../../tutorials/burn_scars_inference_simplified/" class="md-nav__link">
         
   
   
@@ -1120,7 +1246,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tutorials/using_datamodule_multitemporalclassificationModule/" class="md-nav__link">
+      <a href="../../../../tutorials/using_datamodule_multitemporalclassificationModule/" class="md-nav__link">
         
   
   
@@ -1143,7 +1269,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../tutorials/adding_custom_modules/" class="md-nav__link">
+      <a href="../../../../tutorials/adding_custom_modules/" class="md-nav__link">
         
   
   
@@ -1228,7 +1354,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../package/tasks/" class="md-nav__link">
+      <a href="../../../../package/tasks/" class="md-nav__link">
         
   
   
@@ -1303,7 +1429,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../package/model_factories/" class="md-nav__link">
+      <a href="../../../../package/model_factories/" class="md-nav__link">
         
   
   
@@ -1326,7 +1452,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../package/backbones/" class="md-nav__link">
+      <a href="../../../../package/backbones/" class="md-nav__link">
         
   
   
@@ -1349,7 +1475,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../package/decoders/" class="md-nav__link">
+      <a href="../../../../package/decoders/" class="md-nav__link">
         
   
   
@@ -1372,7 +1498,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../package/necks/" class="md-nav__link">
+      <a href="../../../../package/necks/" class="md-nav__link">
         
   
   
@@ -1395,7 +1521,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../package/heads/" class="md-nav__link">
+      <a href="../../../../package/heads/" class="md-nav__link">
         
   
   
@@ -1472,7 +1598,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../package/generic_datamodules/" class="md-nav__link">
+      <a href="../../../../package/generic_datamodules/" class="md-nav__link">
         
   
   
@@ -1495,7 +1621,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../package/datamodules/" class="md-nav__link">
+      <a href="../../../../package/datamodules/" class="md-nav__link">
         
   
   
@@ -1574,7 +1700,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../package/generic_datasets/" class="md-nav__link">
+      <a href="../../../../package/generic_datasets/" class="md-nav__link">
         
   
   
@@ -1597,7 +1723,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../package/datasets/" class="md-nav__link">
+      <a href="../../../../package/datasets/" class="md-nav__link">
         
   
   
@@ -1620,7 +1746,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../package/transforms/" class="md-nav__link">
+      <a href="../../../../package/transforms/" class="md-nav__link">
         
   
   
@@ -1699,7 +1825,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../package/meta_models/" class="md-nav__link">
+      <a href="../../../../package/meta_models/" class="md-nav__link">
         
   
   
@@ -1722,7 +1848,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../package/extra_model_structures/" class="md-nav__link">
+      <a href="../../../../package/extra_model_structures/" class="md-nav__link">
         
   
   
@@ -1745,7 +1871,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../package/loss/" class="md-nav__link">
+      <a href="../../../../package/loss/" class="md-nav__link">
         
   
   
@@ -1838,7 +1964,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../about/contributing/" class="md-nav__link">
+      <a href="../../../../about/contributing/" class="md-nav__link">
         
   
   
@@ -1861,7 +1987,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../about/changelog/" class="md-nav__link">
+      <a href="../../../../about/changelog/" class="md-nav__link">
         
   
   
@@ -1884,7 +2010,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../about/license/" class="md-nav__link">
+      <a href="../../../../about/license/" class="md-nav__link">
         
   
   
@@ -1907,7 +2033,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../about/citation/" class="md-nav__link">
+      <a href="../../../../about/citation/" class="md-nav__link">
         
   
   
@@ -1930,7 +2056,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../about/related_packages/" class="md-nav__link">
+      <a href="../../../../about/related_packages/" class="md-nav__link">
         
   
   
@@ -1969,7 +2095,7 @@
 
 
   
-    <a href="https://github.com/IBM/terratorch/edit/docs/docs/guide/segmentation_io_plugin.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/IBM/terratorch/edit/docs/docs/guide/vllm/plugins/segmentation_io_plugin.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -1978,7 +2104,7 @@
     
       
     
-    <a href="https://github.com/IBM/terratorch/raw/docs/docs/guide/segmentation_io_plugin.md" title="View source of this page" class="md-content__button md-icon">
+    <a href="https://github.com/IBM/terratorch/raw/docs/docs/guide/vllm/plugins/segmentation_io_plugin.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
     </a>
@@ -1986,10 +2112,11 @@
 
 
 <h1 id="segmentation-ioprocessor-plugin">Segmentation IOProcessor Plugin<a class="headerlink" href="#segmentation-ioprocessor-plugin" title="Permanent link">#</a></h1>
-<p>This plugin targets segmentation tasks and allows for the input image to be split in to 512x512 tiles on an arbitrary number of bands.</p>
+<p>This plugin targets segmentation tasks and allows for the input image to be split in tiles of a size that depends on the model and on an arbitrary number of bands.</p>
 <p>During initialization, the plugin accesses the model's data module configuration from the vLLM configuration and instantiates a DataModule object dynamically.</p>
 <p>This plugin is installed as <code>terratorch_segmentation</code>.</p>
-<h2 id="plugin-configuration">Plugin configuration<a class="headerlink" href="#plugin-configuration" title="Permanent link">#</a></h2>
+<h2 id="plugin-specification">Plugin specification<a class="headerlink" href="#plugin-specification" title="Permanent link">#</a></h2>
+<h3 id="plugin-configuration">Plugin configuration<a class="headerlink" href="#plugin-configuration" title="Permanent link">#</a></h3>
 <p>This plugin allows for additional configuration data to be passed via the <code>TERRATORCH_SEGMENTATION_IO_PROCESSOR_CONFIG</code> environment variable. If set, the variable should contain the plugin configuration in json string format. </p>
 <p>The plugin configuration format is defined in the <code>PluginConfig</code> class.</p>
 
@@ -2100,7 +2227,7 @@ If omitted, the plugin will default to the current user home directory.</p>
 
     </div>
 
-</div><h2 id="request-data-format">Request Data Format<a class="headerlink" href="#request-data-format" title="Permanent link">#</a></h2>
+</div><h3 id="request-data-format">Request Data Format<a class="headerlink" href="#request-data-format" title="Permanent link">#</a></h3>
 <p>The input format for for the plugin is defined in the <code>RequestData</code> class.</p>
 
 
@@ -2129,14 +2256,7 @@ If omitted, the plugin will default to the current user home directory.</p>
 
               <details class="quote">
                 <summary>Source code in <code>terratorch/vllm/plugins/segmentation/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-29">29</a></span>
-<span class="normal"><a href="#__codelineno-0-30">30</a></span>
-<span class="normal"><a href="#__codelineno-0-31">31</a></span>
-<span class="normal"><a href="#__codelineno-0-32">32</a></span>
-<span class="normal"><a href="#__codelineno-0-33">33</a></span>
-<span class="normal"><a href="#__codelineno-0-34">34</a></span>
-<span class="normal"><a href="#__codelineno-0-35">35</a></span>
-<span class="normal"><a href="#__codelineno-0-36">36</a></span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-36">36</a></span>
 <span class="normal"><a href="#__codelineno-0-37">37</a></span>
 <span class="normal"><a href="#__codelineno-0-38">38</a></span>
 <span class="normal"><a href="#__codelineno-0-39">39</a></span>
@@ -2148,26 +2268,39 @@ If omitted, the plugin will default to the current user home directory.</p>
 <span class="normal"><a href="#__codelineno-0-45">45</a></span>
 <span class="normal"><a href="#__codelineno-0-46">46</a></span>
 <span class="normal"><a href="#__codelineno-0-47">47</a></span>
-<span class="normal"><a href="#__codelineno-0-48">48</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29"></a><span class="k">class</span> <span class="nc">RequestData</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30"></a>
-</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a>    <span class="n">data_format</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;b64_json&quot;</span><span class="p">,</span> <span class="s2">&quot;path&quot;</span><span class="p">,</span> <span class="s2">&quot;url&quot;</span><span class="p">]</span>
-</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a><span class="sd">    Data type for the input image.</span>
-</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a><span class="sd">    Allowed values are: [`b64_json`, `path`, `url`]</span>
-</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a>
-</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a>    <span class="n">out_data_format</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;b64_json&quot;</span><span class="p">,</span> <span class="s2">&quot;path&quot;</span><span class="p">]</span>
-</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="sd">    Data type for the output image.</span>
-</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="sd">    Allowed values are: [`b64_json`, `url`]</span>
-</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a>
-</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a>    <span class="n">data</span><span class="p">:</span> <span class="n">Any</span>
-</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="sd">    Input image data</span>
-</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47"></a>
-</span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48"></a>    <span class="n">indices</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="normal"><a href="#__codelineno-0-48">48</a></span>
+<span class="normal"><a href="#__codelineno-0-49">49</a></span>
+<span class="normal"><a href="#__codelineno-0-50">50</a></span>
+<span class="normal"><a href="#__codelineno-0-51">51</a></span>
+<span class="normal"><a href="#__codelineno-0-52">52</a></span>
+<span class="normal"><a href="#__codelineno-0-53">53</a></span>
+<span class="normal"><a href="#__codelineno-0-54">54</a></span>
+<span class="normal"><a href="#__codelineno-0-55">55</a></span>
+<span class="normal"><a href="#__codelineno-0-56">56</a></span>
+<span class="normal"><a href="#__codelineno-0-57">57</a></span>
+<span class="normal"><a href="#__codelineno-0-58">58</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a><span class="k">class</span> <span class="nc">RequestData</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a>
+</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38"></a>    <span class="n">data_format</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;b64_json&quot;</span><span class="p">,</span> <span class="s2">&quot;path&quot;</span><span class="p">,</span> <span class="s2">&quot;url&quot;</span><span class="p">]</span>
+</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="sd">    Data type for the input image.</span>
+</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="sd">    Allowed values are: [`b64_json`, `path`, `url`]</span>
+</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a>
+</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a>    <span class="n">out_data_format</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;b64_json&quot;</span><span class="p">,</span> <span class="s2">&quot;path&quot;</span><span class="p">]</span>
+</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a><span class="sd">    Data type for the output image.</span>
+</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47"></a><span class="sd">    Allowed values are: [`b64_json`, `path`]</span>
+</span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49"></a>
+</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a>    <span class="n">data</span><span class="p">:</span> <span class="n">Any</span>
+</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52"></a><span class="sd">    Input image data</span>
+</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a>
+</span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a>    <span class="n">indices</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57"></a><span class="sd">    Indices for bands to be processed in the input file</span>
+</span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58"></a><span class="sd">    &quot;&quot;&quot;</span>
 </span></code></pre></div></td></tr></table></div>
               </details>
 
@@ -2230,6 +2363,29 @@ Allowed values are: [<code>b64_json</code>, <code>path</code>, <code>url</code>]
 
 
 
+<h4 id="terratorch.vllm.plugins.segmentation.types.RequestData.indices" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">indices</span> <span class="o">=</span> <span class="kc">None</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#terratorch.vllm.plugins.segmentation.types.RequestData.indices" class="headerlink" title="Permanent link">#</a></h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Indices for bands to be processed in the input file</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
 <h4 id="terratorch.vllm.plugins.segmentation.types.RequestData.out_data_format" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <code class="highlight language-python"><span class="n">out_data_format</span></code>
 
@@ -2243,7 +2399,7 @@ Allowed values are: [<code>b64_json</code>, <code>path</code>, <code>url</code>]
     <div class="doc doc-contents ">
 
         <p>Data type for the output image.
-Allowed values are: [<code>b64_json</code>, <code>url</code>]</p>
+Allowed values are: [<code>b64_json</code>, <code>path</code>]</p>
 
     </div>
 
@@ -2259,7 +2415,7 @@ Allowed values are: [<code>b64_json</code>, <code>url</code>]</p>
     </div>
 
 </div><p>Depending on the values set in <code>data_format</code>, the plugin expects <code>data</code> to contain a string that complies to the format. Similarly, <code>out_data_format</code> controls the data format returned to the user.</p>
-<h2 id="request-output-format">Request Output Format<a class="headerlink" href="#request-output-format" title="Permanent link">#</a></h2>
+<h3 id="request-output-format">Request Output Format<a class="headerlink" href="#request-output-format" title="Permanent link">#</a></h3>
 <p>The output format for the plugin is defined in the <code>RequestOutput</code> class.</p>
 
 
@@ -2288,39 +2444,39 @@ Allowed values are: [<code>b64_json</code>, <code>url</code>]</p>
 
               <details class="quote">
                 <summary>Source code in <code>terratorch/vllm/plugins/segmentation/types.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-54">54</a></span>
-<span class="normal"><a href="#__codelineno-0-55">55</a></span>
-<span class="normal"><a href="#__codelineno-0-56">56</a></span>
-<span class="normal"><a href="#__codelineno-0-57">57</a></span>
-<span class="normal"><a href="#__codelineno-0-58">58</a></span>
-<span class="normal"><a href="#__codelineno-0-59">59</a></span>
-<span class="normal"><a href="#__codelineno-0-60">60</a></span>
-<span class="normal"><a href="#__codelineno-0-61">61</a></span>
-<span class="normal"><a href="#__codelineno-0-62">62</a></span>
-<span class="normal"><a href="#__codelineno-0-63">63</a></span>
-<span class="normal"><a href="#__codelineno-0-64">64</a></span>
+                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-64">64</a></span>
 <span class="normal"><a href="#__codelineno-0-65">65</a></span>
 <span class="normal"><a href="#__codelineno-0-66">66</a></span>
 <span class="normal"><a href="#__codelineno-0-67">67</a></span>
 <span class="normal"><a href="#__codelineno-0-68">68</a></span>
 <span class="normal"><a href="#__codelineno-0-69">69</a></span>
-<span class="normal"><a href="#__codelineno-0-70">70</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a><span class="k">class</span> <span class="nc">RequestOutput</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-</span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a>
-</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a>    <span class="n">data_format</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;b64_json&quot;</span><span class="p">,</span> <span class="s2">&quot;path&quot;</span><span class="p">]</span>
-</span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58"></a><span class="sd">    Data type for the output image.</span>
-</span><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59"></a><span class="sd">    Allowed values are: [`b64_json`, `path`]</span>
-</span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60"></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a>
-</span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62"></a>    <span class="n">data</span><span class="p">:</span> <span class="n">Any</span>
-</span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a><span class="sd">    Output image data</span>
-</span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66"></a>
-</span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a>    <span class="n">request_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="__span-0-69"><a id="__codelineno-0-69" name="__codelineno-0-69"></a><span class="sd">    The vlLM request ID if applicable</span>
+<span class="normal"><a href="#__codelineno-0-70">70</a></span>
+<span class="normal"><a href="#__codelineno-0-71">71</a></span>
+<span class="normal"><a href="#__codelineno-0-72">72</a></span>
+<span class="normal"><a href="#__codelineno-0-73">73</a></span>
+<span class="normal"><a href="#__codelineno-0-74">74</a></span>
+<span class="normal"><a href="#__codelineno-0-75">75</a></span>
+<span class="normal"><a href="#__codelineno-0-76">76</a></span>
+<span class="normal"><a href="#__codelineno-0-77">77</a></span>
+<span class="normal"><a href="#__codelineno-0-78">78</a></span>
+<span class="normal"><a href="#__codelineno-0-79">79</a></span>
+<span class="normal"><a href="#__codelineno-0-80">80</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a><span class="k">class</span> <span class="nc">RequestOutput</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+</span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a>
+</span><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66"></a>    <span class="n">data_format</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;b64_json&quot;</span><span class="p">,</span> <span class="s2">&quot;path&quot;</span><span class="p">]</span>
+</span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a><span class="sd">    Data type for the output image.</span>
+</span><span id="__span-0-69"><a id="__codelineno-0-69" name="__codelineno-0-69"></a><span class="sd">    Allowed values are: [`b64_json`, `path`]</span>
 </span><span id="__span-0-70"><a id="__codelineno-0-70" name="__codelineno-0-70"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71"></a>
+</span><span id="__span-0-72"><a id="__codelineno-0-72" name="__codelineno-0-72"></a>    <span class="n">data</span><span class="p">:</span> <span class="n">Any</span>
+</span><span id="__span-0-73"><a id="__codelineno-0-73" name="__codelineno-0-73"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="__span-0-74"><a id="__codelineno-0-74" name="__codelineno-0-74"></a><span class="sd">    Output image data</span>
+</span><span id="__span-0-75"><a id="__codelineno-0-75" name="__codelineno-0-75"></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="__span-0-76"><a id="__codelineno-0-76" name="__codelineno-0-76"></a>
+</span><span id="__span-0-77"><a id="__codelineno-0-77" name="__codelineno-0-77"></a>    <span class="n">request_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="__span-0-78"><a id="__codelineno-0-78" name="__codelineno-0-78"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="__span-0-79"><a id="__codelineno-0-79" name="__codelineno-0-79"></a><span class="sd">    The vLLM request ID if applicable</span>
+</span><span id="__span-0-80"><a id="__codelineno-0-80" name="__codelineno-0-80"></a><span class="sd">    &quot;&quot;&quot;</span>
 </span></code></pre></div></td></tr></table></div>
               </details>
 
@@ -2396,7 +2552,7 @@ Allowed values are: [<code>b64_json</code>, <code>path</code>]</p>
 
     <div class="doc doc-contents ">
 
-        <p>The vlLM request ID if applicable</p>
+        <p>The vLLM request ID if applicable</p>
 
     </div>
 
@@ -2432,7 +2588,7 @@ Allowed values are: [<code>b64_json</code>, <code>path</code>]</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="September 17, 2025 15:26:42 UTC">September 17, 2025</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 1, 2025 10:05:40 UTC">October 1, 2025</span>
   </span>
 
     
@@ -2470,7 +2626,7 @@ Allowed values are: [<code>b64_json</code>, <code>path</code>]</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../temporal_wrapper/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Temporal Wrapper">
+          <a href="../../intro/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Introduction">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2480,20 +2636,20 @@ Allowed values are: [<code>b64_json</code>, <code>path</code>]</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Temporal Wrapper
+                Introduction
               </div>
             </div>
           </a>
         
         
           
-          <a href="../inference/" class="md-footer__link md-footer__link--next" aria-label="Next: Inference">
+          <a href="../../prepare_your_model/" class="md-footer__link md-footer__link--next" aria-label="Next: Prepare your model for serving with vLLM">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Inference
+                Prepare your model for serving with vLLM
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -2535,12 +2691,12 @@ Allowed values are: [<code>b64_json</code>, <code>path</code>]</p>
     
     
       
-      <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.copy", "content.code.select", "announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "navigation.footer", "navigation.indexes", "navigation.path", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.sections", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow", "toc.integrate"], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"canonical_version": "stable", "default": "stable", "provider": "mike", "version_selector": true}}</script>
+      <script id="__config" type="application/json">{"base": "../../../..", "features": ["content.code.copy", "content.code.select", "announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "navigation.footer", "navigation.indexes", "navigation.path", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.progress", "navigation.sections", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow", "toc.integrate"], "search": "../../../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"canonical_version": "stable", "default": "stable", "provider": "mike", "version_selector": true}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.f55a23d4.min.js"></script>
+      <script src="../../../../assets/javascripts/bundle.f55a23d4.min.js"></script>
       
-        <script src="../../js/logo.js"></script>
+        <script src="../../../../js/logo.js"></script>
       
     
   </body>
