@@ -181,4 +181,3 @@ class TerraTorchTask(BaseTask):
 
             filename = os.path.join(self.path_to_record_metrics, "metrics.csv")
             metrics_record.to_csv(filename)
-

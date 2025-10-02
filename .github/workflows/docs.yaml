@@ -3,17 +3,17 @@ name: Uploading documentation
 on: 
   push:
     branches:
-      - update-docs
+      - docs
   pull_request:
     branches:
-      - update-docs
+      - docs
 jobs:
   deploy-docs:
     runs-on: ubuntu-latest
     permissions:
       pages: write
       id-token: write
-      contents: read
+      contents: write
     environment:
       name: github-pages
       url: ibm.github.io/terratorch/
@@ -22,16 +22,17 @@ jobs:
         run: |
           pip install mkdocs-material mike mkdocstrings[python] mkdocs-git-revision-date-localized-plugin timm
       - name: Clone repo
-        uses: actions/checkout@v4
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: true
       - name: deploy documentation
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           git fetch origin
-          git checkout update-docs
-          git pull origin update-docs
+          git checkout docs
+          git pull origin docs
           mike deploy --push --allow-empty stable
 
 

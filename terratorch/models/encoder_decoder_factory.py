@@ -12,7 +12,7 @@ from terratorch.models.model import (
     Model,
     ModelFactory,
 )
-from terratorch.models.necks import Neck, build_neck_list
+from terratorch.models.necks import Neck, build_neck_list, NeckSequential
 from terratorch.models.peft_utils import get_peft_backbone
 from terratorch.models.pixel_wise_model import PixelWiseModel
 from terratorch.models.scalar_output_model import ScalarOutputModel
@@ -247,7 +247,7 @@ def _build_appropriate_model(
     auxiliary_heads: list[AuxiliaryHeadWithDecoderWithoutInstantiatedHead] | None = None,
 ):
     if necks:
-        neck_module: nn.Module = nn.Sequential(*necks)
+        neck_module: nn.Module = NeckSequential(*necks)
     else:
         neck_module = None
     if task in PIXEL_WISE_TASKS:

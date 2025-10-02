@@ -42,10 +42,10 @@ class FiniteScalarQuantizer(nn.Module):
 
         levels = [int(level) for level in codebook_size.split('-')]
 
-        _levels = torch.tensor(levels, dtype=torch.int32)
+        _levels = torch.tensor(levels, dtype=torch.int)
         self.register_buffer("_levels", _levels, persistent=False)
         _basis = torch.cumprod(
-            torch.tensor([1] + levels[:-1]), dim=0, dtype=torch.int32
+            torch.tensor([1] + levels[:-1]), dim=0, dtype=torch.int
         )
         self.register_buffer("_basis", _basis, persistent=False)
 
@@ -58,7 +58,7 @@ class FiniteScalarQuantizer(nn.Module):
         d = self._levels - 1
         number = round_ste(F.sigmoid(latent) * d)
         code = number / d
-        indice = (number * self._basis).sum(dim=-1).to(torch.int32)
+        indice = (number * self._basis).sum(dim=-1).to(torch.int)
 
         return code, indice
 

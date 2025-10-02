@@ -7,7 +7,7 @@ from terratorch.models.model import (
     Model,
     ModelFactory,
 )
-from terratorch.models.necks import build_neck_list
+from terratorch.models.necks import build_neck_list, NeckSequential
 from terratorch.models.model import ModelOutput
 from terratorch.models.utils import extract_prefix_keys
 from terratorch.registry import MODEL_FACTORY_REGISTRY
@@ -93,7 +93,7 @@ class ObjectDetectionModelFactory(ModelFactory):
             necks = []
         neck_list, channel_list = build_neck_list(necks, out_channels)
 
-        neck_module = nn.Sequential(*neck_list)
+        neck_module = NeckSequential(*neck_list)
 
         combined_backbone = BackboneWrapper(backbone, neck_module, channel_list)
         # pdb.set_trace()
