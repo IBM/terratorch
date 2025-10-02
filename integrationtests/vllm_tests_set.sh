@@ -8,7 +8,7 @@ VENV_NAME=vllm_integration_tests_venv
 
 uv venv --clear --python 3.12 ${VENV_NAME}
 source ${VENV_NAME}/bin/activate
-cd terratorch
+cd ${WORKING_DIR}/terratorch
 
 uv pip install -e .[test]
 
