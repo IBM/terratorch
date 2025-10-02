@@ -1,10 +1,14 @@
+import gc
+import os
 
 import pytest
-import gc
 import torch
+
 from terratorch.cli_tools import build_lightning_cli
-from terratorch.tasks import ReconstructionTask
 from terratorch.registry import FULL_MODEL_REGISTRY
+from terratorch.tasks import ReconstructionTask
+
+IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "false") == "true"
 
 
 @pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100"])
@@ -16,7 +20,7 @@ def test_reconstruction_cli(model_name, case):
     gc.collect()
 
 
-@pytest.mark.parametrize("model_name", ['prithvi_eo_v1_100_mae'])
+@pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100_mae"])
 def test_prithvi_mae_reconstruction(model_name):
     model = FULL_MODEL_REGISTRY.build(
         model_name,
@@ -26,14 +30,15 @@ def test_prithvi_mae_reconstruction(model_name):
     input = torch.ones((1, 6, 224, 224))
     loss, reconstruction, mask = model(input)
 
-    assert 'loss' in loss
+    assert "loss" in loss
     assert reconstruction.shape == input.shape
     assert list(mask.shape) == [1, *reconstruction.shape[-2:]]
 
     gc.collect()
 
 
-@pytest.mark.parametrize("model_name", ['terramind_v01_base_generate'])
+@pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Skip this test in GitHub Actions since `xformers` don't run in CPU.")
+@pytest.mark.parametrize("model_name", ["terramind_v01_base_generate"])
 def test_terramind_v01_generation(model_name):
     try:
         import diffusers
@@ -44,11 +49,11 @@ def test_terramind_v01_generation(model_name):
     model = FULL_MODEL_REGISTRY.build(
         model_name,
         pretrained=False,
-        modalities=['S2L2A', 'LULC'],
-        output_modalities=['S1GRD', 'coords', 'captions'],
+        modalities=["S2L2A", "LULC"],
+        output_modalities=["S1GRD", "coords", "captions"],
         timesteps=1,
         standardize=True,
-        offset={'S2L2A': 1}
+        offset={"S2L2A": 1},
     )
 
     # Test kwargs inputs
@@ -57,8 +62,8 @@ def test_terramind_v01_generation(model_name):
     model = FULL_MODEL_REGISTRY.build(
         model_name,
         pretrained=False,
-        modalities=['S2L2A', 'coords', 'captions'],
-        output_modalities=['S1GRD', 'LULC', 'captions'],
+        modalities=["S2L2A", "coords", "captions"],
+        output_modalities=["S1GRD", "LULC", "captions"],
         timesteps=1,
     )
 
@@ -72,7 +77,8 @@ def test_terramind_v01_generation(model_name):
     gc.collect()
 
 
-@pytest.mark.parametrize("model_name", ['terramind_v1_base_generate'])
+@pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Skip this test in GitHub Actions since `xformers` don't run in CPU.")
+@pytest.mark.parametrize("model_name", ["terramind_v1_base_generate"])
 def test_terramind_generation(model_name):
     try:
         import diffusers
@@ -83,8 +89,8 @@ def test_terramind_generation(model_name):
     model = FULL_MODEL_REGISTRY.build(
         model_name,
         pretrained=False,
-        modalities=['S2L2A', 'coords'],
-        output_modalities=['S1GRD', 'LULC'],
+        modalities=["S2L2A", "coords"],
+        output_modalities=["S1GRD", "LULC"],
         timesteps=1,
     )
 

@@ -184,6 +184,7 @@ def test_prithvi_vit_adapter(backbone, input_224):
     assert output[3].shape == (1, embed_dim, 7, 7)
 
 
+@pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Skip this test in GitHub Actions since `xformers` don't run in CPU.")
 @pytest.mark.parametrize("model_name", ["terramind_v1_base"])
 def test_terramind(model_name):
     # default should have 3 channels
@@ -198,6 +199,7 @@ def test_terramind(model_name):
     gc.collect()
 
 
+@pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Skip this test in GitHub Actions since `xformers` don't run in CPU.")
 @pytest.mark.parametrize("model_name", ["terramind_v1_base_tim"])
 def test_terramind_tim(model_name):
     # default should have 3 channels
