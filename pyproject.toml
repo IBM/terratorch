@@ -7,7 +7,7 @@ include = ["terratorch*"]
 
 [project]
 name = "terratorch"
-version = "1.0.2"
+version = "v1.1"
 description = "TerraTorch - The geospatial foundation model fine-tuning toolkit"
 license = { "text" = "Apache License, Version 2.0" }
 readme = "README.md"
@@ -57,7 +57,6 @@ dependencies = [
   "lightning",
   "segmentation-models-pytorch<=0.4",
   "jsonargparse",
-  "pytest",
   "torchgeo>=0.7.0",
   "einops",
   "timm>=1.0.15",
@@ -65,12 +64,12 @@ dependencies = [
   "huggingface_hub",
   "tifffile",
   "python-box",
+  "tqdm", # progress bar for lazy OD tiled DS wrapper
   "wandb",
   "termcolor",
   "numba",
   "hdf5plugin",
   "h5netcdf",
-  "pytest-sugar",
 ]
 
 
@@ -96,6 +95,10 @@ test = [
   "tokenizers",
   "dask",
   "wandb",
+  "pytest-sugar",
+  "vllm>=0.10.2",
+  "pillow",
+  "imagehash"
 ]
 
 mmseg = [
