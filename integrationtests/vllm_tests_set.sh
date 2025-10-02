@@ -6,9 +6,12 @@ WORKING_DIR=${SCRIPT_DIR}/../../
 
 VENV_NAME=vllm_integration_tests_venv
 
+cd ${WORKING_DIR}
+
 uv venv --clear --python 3.12 ${VENV_NAME}
 source ${VENV_NAME}/bin/activate
-cd ${WORKING_DIR}/terratorch
+
+cd terratorch
 
 uv pip install --no-cache-dir -e .[test]
 
