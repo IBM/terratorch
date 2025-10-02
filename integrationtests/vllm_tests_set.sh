@@ -16,8 +16,12 @@ cd terratorch
 uv pip install --no-cache-dir -e .[test]
 
 pytest -s -v integrationtests/vLLM/ 2>&1
+pytest_ret=$?
 
 deactivate
 
 cd ${WORKING_DIR}
 rm -r ${VENV_NAME}
+
+# Return the ret code of the pytest run
+exit ${pytest_ret}
