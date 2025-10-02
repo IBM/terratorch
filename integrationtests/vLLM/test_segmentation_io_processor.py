@@ -28,7 +28,6 @@ tests_per_model = [(model, input) for model in models_output.keys() for input in
 
 @pytest.fixture(scope="session")
 def server():
-    # Holds the shared resource instance
     class Holder:
         instance = None
         tmpdir = None
@@ -38,7 +37,6 @@ def server():
             if self.instance:
                 self.instance.kill_proc()
                 self.tmpdir.cleanup()
-                del self.instance
 
         def init_server(self, model_name, **kwargs):
             self._delete_server()
@@ -46,7 +44,8 @@ def server():
             plugin_config = {"output_path": self.tmpdir.name}
             server_envs = {"TERRATORCH_SEGMENTATION_IO_PROCESSOR_CONFIG": json.dumps(plugin_config),
                             "VLLM_LOGGING_LEVEL": "DEBUG"}
-            self.instance = VLLMServer(model_name, server_envs=server_envs, **kwargs)
+            # 10 minutes timeout for vLLM to start
+            self.instance = VLLMServer(model_name, server_envs=server_envs, timeout=600, **kwargs)
             self.model_name = model_name
             return self
 
