@@ -10,7 +10,7 @@ uv venv --clear --python 3.12 ${VENV_NAME}
 source ${VENV_NAME}/bin/activate
 cd ${WORKING_DIR}/terratorch
 
-uv pip install -e .[test]
+uv pip install --no-cache-dir -e .[test]
 
 pytest -s -v integrationtests/vLLM/ 2>&1
 
