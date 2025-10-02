@@ -20,11 +20,20 @@
 [![tests](https://github.com/IBM/terratorch/actions/workflows/test.yaml/badge.svg)](https://github.com/ibm/terratorch/actions/workflows/test.yaml)
 [![MkDocs](https://img.shields.io/badge/MkDocs-526CFE?logo=materialformkdocs&logoColor=fff)](https://ibm.github.io/terratorch/)
 ![cov](https://github.com/IBM/terratorch/raw/main/assets/coverage-badge.svg)
+<!--
 [![PyPI Downloads](https://img.shields.io/pypi/dm/terratorch.svg?label=PyPI%20downloads)](https://pypi.org/project/terratorch/)
+-->
 
 ## Overview
 TerraTorch is a PyTorch domain library based on [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/) and the [TorchGeo](https://github.com/microsoft/torchgeo) domain library
 for geospatial data. 
+
+## Disclaimer
+TerraTorch provides tools for fine-tuning and using pretrained models.
+No models are hosted by TerraTorch. TerraTorch only provides the training and inference framework.  
+
+User responsibility: It is the sole responsibility of the user to verify that the license of any model they download, fine-tune, or deploy allows their intended use.
+The TerraTorch maintainers do not provide legal advice and are not liable for any misuse of third-party models.
 
 <hr>
 <a href="https://www.youtube.com/watch?v=CB3FKtmuPI8">
@@ -60,7 +69,7 @@ TerraTorch’s main purpose is to provide a flexible fine-tuning framework for G
 
 ## Install
 ### Pip
-In order to use th file `pyproject.toml` it is necessary to guarantee `pip>=21.8`. If necessary upgrade `pip` using `python -m pip install --upgrade pip`. 
+In order to use the file `pyproject.toml` it is necessary to guarantee `pip>=21.8`. If necessary upgrade `pip` using `python -m pip install --upgrade pip`. 
 
 For a stable point-release, use `pip install terratorch==<version>`.
 
@@ -93,7 +102,7 @@ Developers, check out the [architecture overview](https://ibm.github.io/terrator
 
 This project welcomes contributions and suggestions. Ways to contribute or get involved:
 
-- Join our [Slack](https://join.slack.com/t/terratorch/shared_invite/zt-34uzp28xx-xz1VHvu9vCN1ffx7fd~dGw)
+- Join our [Slack](https://join.slack.com/t/terratorch/shared_invite/zt-3c6s4j369-acqJQ38vyFB17kJhLVecJA)
 - Create an [Issue](https://github.com/IBM/terratorch/issues) (for bugs or feature requests)
 - Contribute via [PR](https://github.com/IBM/terratorch/pulls)
 - Join our [duoweekly](https://romeokienzler.medium.com/the-duoweekly-manifesto-eaa6c1f542c8) community calls taking place [Tuesdays 4:30 PM - 5 PM CEST](https://teams.microsoft.com/l/meetup-join/19%3ameeting_MWJhMThhMTMtMjc3MS00YjAyLWI3NTMtYTI0NDQ3NWY3ZGU2%40thread.v2/0?context=%7b%22Tid%22%3a%22fcf67057-50c9-4ad4-98f3-ffca64add9e9%22%2c%22Oid%22%3a%227f7ab87a-680c-4c93-acc5-fbd7ec80823a%22%7d) and [Thursdays 2:30 PM - 3 PM CEST](https://teams.microsoft.com/l/meetup-join/19%3ameeting_MWJhMThhMTMtMjc3MS00YjAyLWI3NTMtYTI0NDQ3NWY3ZGU2%40thread.v2/0?context=%7b%22Tid%22%3a%22fcf67057-50c9-4ad4-98f3-ffca64add9e9%22%2c%22Oid%22%3a%227f7ab87a-680c-4c93-acc5-fbd7ec80823a%22%7d).
@@ -106,6 +115,9 @@ git commit -s -m <message>
 ```
 It will sign the commit with your ID and the check will be met. 
 
+## Credits
+
+TerraTorch is supported by the EU’s Horizon Europe program under Grant Agreement number 101131841 and also received funding from the Swiss State Secretariat for Education, Research and Innovation (SERI) and the UK Research and Innovation (UKRI).
 
 
 ## License

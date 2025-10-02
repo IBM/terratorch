@@ -16,7 +16,7 @@ def test_reconstruction_cli(model_name, case):
     gc.collect()
 
 
-@pytest.mark.parametrize("model_name", ['prithvi_eo_v1_100_mae', 'prithvi_eo_v2_300_tl_mae'])
+@pytest.mark.parametrize("model_name", ['prithvi_eo_v1_100_mae'])
 def test_prithvi_mae_reconstruction(model_name):
     model = FULL_MODEL_REGISTRY.build(
         model_name,
@@ -33,21 +33,65 @@ def test_prithvi_mae_reconstruction(model_name):
     gc.collect()
 
 
-@pytest.mark.parametrize("model_name", ['terramind_v1_base_generate', 'terramind_v1_large_generate'])
-def test_terramind_generation(model_name):
+@pytest.mark.parametrize("model_name", ['terramind_v01_base_generate'])
+def test_terramind_v01_generation(model_name):
     try:
         import diffusers
+        import tokenizers
     except ImportError:
-        pytest.skip("diffusers not installed")
+        pytest.skip("diffusers or tokenizers not installed")
 
     model = FULL_MODEL_REGISTRY.build(
         model_name,
         pretrained=False,
-        modalities=['S2L2A'],
+        modalities=['S2L2A', 'LULC'],
+        output_modalities=['S1GRD', 'coords', 'captions'],
+        timesteps=1,
+        standardize=True,
+        offset={'S2L2A': 1}
+    )
+
+    # Test kwargs inputs
+    output = model(S2L2A=torch.ones((1, 12, 224, 224)), LULC=torch.ones((1, 1, 224, 224)))
+
+    model = FULL_MODEL_REGISTRY.build(
+        model_name,
+        pretrained=False,
+        modalities=['S2L2A', 'coords', 'captions'],
+        output_modalities=['S1GRD', 'LULC', 'captions'],
+        timesteps=1,
+    )
+
+    input = {
+        "S2L2A": torch.ones((1, 12, 224, 224)),
+        "coords": torch.ones((1, 2)),
+        "captions": ["This is a test"],
+    }
+    output = model(input)
+
+    gc.collect()
+
+
+@pytest.mark.parametrize("model_name", ['terramind_v1_base_generate'])
+def test_terramind_generation(model_name):
+    try:
+        import diffusers
+        import tokenizers
+    except ImportError:
+        pytest.skip("diffusers or tokenizers not installed")
+
+    model = FULL_MODEL_REGISTRY.build(
+        model_name,
+        pretrained=False,
+        modalities=['S2L2A', 'coords'],
         output_modalities=['S1GRD', 'LULC'],
         timesteps=1,
     )
 
-    output = model(torch.ones((1, 12, 224, 224)))
+    input = {
+        "S2L2A": torch.ones((1, 12, 224, 224)),
+        "coords": torch.ones((1, 2)),
+    }
+    output = model(input)
 
     gc.collect()

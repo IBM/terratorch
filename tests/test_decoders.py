@@ -1,24 +1,26 @@
+import gc
 import importlib
 import os
-import numpy as np
 
+import numpy as np
 import pytest
 import timm
 import torch
 
 import terratorch  # noqa: F401
-
 from terratorch.models.decoders.aspp_head import ASPPSegmentationHead
-from terratorch.models.decoders.unet_decoder import UNetDecoder
 from terratorch.models.decoders.linear_decoder import LinearDecoder
-import gc
+from terratorch.models.decoders.unet_decoder import UNetDecoder
+from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY, NECK_REGISTRY
 
 
 def test_aspphead():
     dilations = (1, 6, 12, 18)
     in_channels = 6
     channels = 10
-    decoder = ASPPSegmentationHead([16, 32, 64, 128], dilations=dilations, in_channels=in_channels, channels=channels, num_classes=2)
+    decoder = ASPPSegmentationHead(
+        [16, 32, 64, 128], dilations=dilations, in_channels=in_channels, channels=channels, num_classes=2
+    )
 
     image = [torch.from_numpy(np.random.rand(2, 6, 224, 224).astype("float32"))]
 
@@ -47,6 +49,7 @@ def test_unetdecoder():
     )  # it doubles the size of the first input as it assumes it is already downsampled from the original image
 
     gc.collect()
+
 
 @pytest.mark.parametrize("upsampling_size", [4, 8, 16])
 @pytest.mark.parametrize("num_classes", [2, 10])

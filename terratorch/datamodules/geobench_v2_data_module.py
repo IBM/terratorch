@@ -15,26 +15,32 @@
     arguments, and as numpy. We handle that conversion here. 
 """
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Union
 from functools import partial
-
-
-import pdb
 import numpy as np
 from torch import Tensor
 from torch.utils.data import default_collate
 import kornia.augmentation as K
 from kornia.augmentation._2d.geometric.base import GeometricAugmentationBase2D
-
-
-from geobench_v2.datamodules import GeoBenchClassificationDataModule, GeoBenchSegmentationDataModule, GeoBenchObjectDetectionDataModule
-
+from kornia.augmentation._2d.intensity.base import IntensityAugmentationBase2D
+import torch.nn as nn
 from terratorch.datasets.transforms import kornia_augmentations_to_callable_with_dict
 
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from torchgeo.datasets.utils import percentile_normalization, lazy_import
 from matplotlib import patches
+try:
+    from geobench_v2.datamodules import (
+        GeoBenchClassificationDataModule, 
+        GeoBenchSegmentationDataModule, 
+        GeoBenchObjectDetectionDataModule,
+        MultiTemporalSegmentationAugmentation,
+        MultiModalSegmentationAugmentation,
+        )
+except ImportError as e:
+    import logging
+    logging.getLogger("terratorch").debug("geobench_v2 not installed")
 
 
 class GeoBenchV2ClassificationDataModule(GeoBenchClassificationDataModule):
@@ -53,8 +59,8 @@ class GeoBenchV2ClassificationDataModule(GeoBenchClassificationDataModule):
         band_order: list | dict,
         batch_size: int | None = None,
         num_workers: int = 0,
-        train_augmentations: None | list[GeometricAugmentationBase2D, K.VideoSequential] | str = "default",
-        eval_augmentations: None | list[GeometricAugmentationBase2D, K.VideoSequential] | str = "default",
+        train_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential, IntensityAugmentationBase2D]] | str = "default",
+        eval_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential, IntensityAugmentationBase2D]] | str = "default",
         **kwargs: Any,
     ):
         """Constructor
@@ -63,14 +69,17 @@ class GeoBenchV2ClassificationDataModule(GeoBenchClassificationDataModule):
             cls (type[GeoBenchClassificationDataModule]): geobench_v2 Classification DataModule class to be instantiated
             batch_size (int | None, optional): batch_size. Defaults to None.
             num_workers (int, optional): num_workers. Defaults to 0.
-            transforms (None | list[GeometricAugmentationBase2D, K.VideoSequential], optional): List of Albumentations Transforms.
+            transforms (None | list[Union[GeometricAugmentationBase2D, K.VideoSequential]], optional): List of Albumentations Transforms.
                 Should enc with ToTensorV2. Defaults to None.
             **kwargs (Any): Arguments passed to instantiate `cls`.
         """
         if isinstance(train_augmentations, str):
-            assert train_augmentations in ["default", "multi_temporal_default"],"If train_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            msg = "If train_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            assert train_augmentations in ["default", "multi_temporal_default"], msg
+            
         if isinstance(eval_augmentations, str):
-            assert eval_augmentations in ["default", "multi_temporal_default"],"If eval_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            msg = "If eval_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            assert eval_augmentations in ["default", "multi_temporal_default"], msg
 
         kwargs["img_size"] = img_size
         kwargs["band_order"] = band_order
@@ -79,16 +88,14 @@ class GeoBenchV2ClassificationDataModule(GeoBenchClassificationDataModule):
             kwargs["batch_size"] = batch_size
 
         if not train_augmentations in [None, "default", "multi_temporal_default"]:
-            kwargs["train_augmentations"] =kornia_augmentations_to_callable_with_dict(train_augmentations)
-        else:
-            kwargs["train_augmentations"] = train_augmentations
+            train_augmentations = kornia_augmentations_to_callable_with_dict(train_augmentations)
+        kwargs["train_augmentations"] = train_augmentations
             
         if not eval_augmentations in [None, "default", "multi_temporal_default"]:
-            kwargs["eval_augmentations"] =kornia_augmentations_to_callable_with_dict(eval_augmentations)
-        else:
-            kwargs["eval_augmentations"] = eval_augmentations
+            eval_augmentations = kornia_augmentations_to_callable_with_dict(eval_augmentations)
+        kwargs["eval_augmentations"] = eval_augmentations
         
-        if isinstance(band_order, list): #REMOVE THIS FOR FINAL VERSION, IF LIST ASSUME IT CONTAIN BANDS DIRECTLY
+        if isinstance(band_order, list): 
             if len(band_order) > 0:
                 if isinstance(band_order[0], dict):
                     band_order_dict = {}
@@ -126,6 +133,10 @@ class GeoBenchV2ClassificationDataModule(GeoBenchClassificationDataModule):
     def _valid_attribute(self, *args: str):
         return self._proxy._valid_attribute(args)
 
+    def plot(self, args):
+        return self._proxy.visualize_batch(args)
+
+
 
 class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
     """Proxy object for using Object Detection DataModules defined by geobench_v2.
@@ -146,8 +157,8 @@ class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
         batch_size: int | None = None,
         eval_batch_size: int | None = None,
         num_workers: int = 0,
-        train_augmentations: None | list[GeometricAugmentationBase2D, K.VideoSequential] | str = "default",
-        eval_augmentations: None | list[GeometricAugmentationBase2D, K.VideoSequential] | str = "default",
+        train_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential, IntensityAugmentationBase2D]]| str = "default",
+        eval_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential, IntensityAugmentationBase2D]] | str = "default",
         plot_indexes: list = [0,1,2],
         collate_fn: Callable = None,
         **kwargs: Any,
@@ -158,15 +169,18 @@ class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
             cls (type[GeoBenchObjectDetectionDataModule]): geobench_v2 Object Detection DataModule class to be instantiated
             batch_size (int | None, optional): batch_size. Defaults to None.
             num_workers (int, optional): num_workers. Defaults to 0.
-            transforms (None | list[GeometricAugmentationBase2D, K.VideoSequential], optional): List of Albumentations Transforms.
+            transforms (None | list[Union[GeometricAugmentationBase2D, K.VideoSequential]], optional): List of Albumentations Transforms.
                 Should enc with ToTensorV2. Defaults to None.
             **kwargs (Any): Arguments passed to instantiate `cls`.
         """
         if isinstance(train_augmentations, str):
-            assert train_augmentations in ["default", "multi_temporal_default"],"If train_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            msg = "If train_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            assert train_augmentations in ["default", "multi_temporal_default"], msg
+            
         if isinstance(eval_augmentations, str):
-            assert eval_augmentations in ["default", "multi_temporal_default"],"If eval_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
-        
+            msg = "If eval_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            assert eval_augmentations in ["default", "multi_temporal_default"], msg
+
         kwargs['root'] = root
         kwargs["img_size"] = img_size
         kwargs["band_order"] = band_order
@@ -176,14 +190,12 @@ class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
         if eval_batch_size is not None:
             kwargs["eval_batch_size"] = batch_size
         if not train_augmentations in [None, "default", "multi_temporal_default"]:
-            kwargs["train_augmentations"] =kornia_augmentations_to_callable_with_dict(train_augmentations)
-        else:
-            kwargs["train_augmentations"] = train_augmentations
+            train_augmentations = kornia_augmentations_to_callable_with_dict(train_augmentations)
+        kwargs["train_augmentations"] = train_augmentations
             
         if not eval_augmentations in [None, "default", "multi_temporal_default"]:
-            kwargs["eval_augmentations"] =kornia_augmentations_to_callable_with_dict(eval_augmentations)
-        else:
-            kwargs["eval_augmentations"] = eval_augmentations
+            eval_augmentations = kornia_augmentations_to_callable_with_dict(eval_augmentations)
+        kwargs["eval_augmentations"] = eval_augmentations
         
         if len(band_order) > 0:
             if isinstance(band_order[0], dict):
@@ -430,8 +442,9 @@ class GeoBenchV2SegmentationDataModule(GeoBenchSegmentationDataModule):
         band_order: list,
         batch_size: int | None = None,
         num_workers: int = 0,
-        train_augmentations: None | list[GeometricAugmentationBase2D, K.VideoSequential] | str = "default",
-        eval_augmentations: None | list[GeometricAugmentationBase2D, K.VideoSequential] | str = "default",
+        train_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential, IntensityAugmentationBase2D]] | str = "default",
+        eval_augmentations: None | list[Union[GeometricAugmentationBase2D, K.VideoSequential, IntensityAugmentationBase2D]] | str = "default",
+        collate_fn: Callable = None,
         **kwargs: Any,
     ):
         """Constructor
@@ -440,14 +453,17 @@ class GeoBenchV2SegmentationDataModule(GeoBenchSegmentationDataModule):
             cls (type[GeoDataModule]): geobench_v2 Segmentation DataModule class to be instantiated
             batch_size (int | None, optional): batch_size. Defaults to None.
             num_workers (int, optional): num_workers. Defaults to 0.
-            transforms (None | list[GeometricAugmentationBase2D, K.VideoSequential], optional): List of Kornia Transforms.
+            transforms (None | list[Union[GeometricAugmentationBase2D, K.VideoSequential]], optional): List of Kornia Transforms.
                 Should enc with ToTensorV2. Defaults to None.
             **kwargs (Any): Arguments passed to instantiate `cls`.
         """
         if isinstance(train_augmentations, str):
-            assert train_augmentations in ["default", "multi_temporal_default"],"If train_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            msg = "If train_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            assert train_augmentations in ["default", "multi_temporal_default"], msg
+            
         if isinstance(eval_augmentations, str):
-            assert eval_augmentations in ["default", "multi_temporal_default"],"If eval_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            msg = "If eval_augmentations is a string, it must be 'default' or 'multi_temporal_default'"
+            assert eval_augmentations in ["default", "multi_temporal_default"], msg
             
         kwargs["img_size"] = img_size
         kwargs["band_order"] = band_order
@@ -455,18 +471,41 @@ class GeoBenchV2SegmentationDataModule(GeoBenchSegmentationDataModule):
         if batch_size is not None:
             kwargs["batch_size"] = batch_size
 
-        if not train_augmentations in [None, "default", "multi_temporal_default"]:
-            kwargs["train_augmentations"] = kornia_augmentations_to_callable_with_dict(train_augmentations)
+        if "rename_modalities" in kwargs:
+            if train_augmentations == "default":
+                train_augmentations = [ K.RandomHorizontalFlip(p=0.5), K.RandomVerticalFlip(p=0.5)]
+            elif train_augmentations == "multi_temporal_default":
+                train_augmentations = [K.VideoSequential(), K.RandomHorizontalFlip(p=0.5), K.RandomVerticalFlip(p=0.5)]
+            elif train_augmentations is None:
+                train_augmentations = [nn.Identity()]
+            train_augmentations = kornia_augmentations_to_callable_with_dict(train_augmentations)
+            train_augmentations = MultiModalSegmentationAugmentation(transforms=train_augmentations)
+
+            if eval_augmentations in ["default", None]:
+                eval_augmentations = [nn.Identity()]
+            elif eval_augmentations == "multi_temporal_default":
+                eval_augmentations = [K.VideoSequential(), nn.Identity()]
+            eval_augmentations = kornia_augmentations_to_callable_with_dict(eval_augmentations)
+            eval_augmentations = MultiModalSegmentationAugmentation(transforms=eval_augmentations)
         else:
-            kwargs["train_augmentations"] = train_augmentations
+            if not train_augmentations in [None, "default", "multi_temporal_default"]:
+                if isinstance(train_augmentations[0], K.VideoSequential):
+                    train_augmentations = kornia_augmentations_to_callable_with_dict(train_augmentations)
+                    train_augmentations = MultiTemporalSegmentationAugmentation(transforms=train_augmentations)
+                else:
+                    train_augmentations = kornia_augmentations_to_callable_with_dict(train_augmentations)
             
-        if not eval_augmentations in [None, "default", "multi_temporal_default"]:
-            kwargs["eval_augmentations"] = kornia_augmentations_to_callable_with_dict(eval_augmentations)
-        else:
-            kwargs["eval_augmentations"] = eval_augmentations
+            if not eval_augmentations in [None, "default", "multi_temporal_default"]:
+                if isinstance(eval_augmentations[0], K.VideoSequential):
+                    eval_augmentations = kornia_augmentations_to_callable_with_dict(eval_augmentations)
+                    eval_augmentations = MultiTemporalSegmentationAugmentation(transforms=eval_augmentations)
+                else:
+                    eval_augmentations = kornia_augmentations_to_callable_with_dict(eval_augmentations)
+
+        kwargs["train_augmentations"] = train_augmentations
+        kwargs["eval_augmentations"] = eval_augmentations
 
         if len(band_order) > 0:
-            print(f"\n\nband_order before: {band_order}")
             if isinstance(band_order[0], dict):
                 band_order_dict = {}
                 for modality in band_order:
@@ -481,6 +520,9 @@ class GeoBenchV2SegmentationDataModule(GeoBenchSegmentationDataModule):
             img_size = img_size,
             band_order = band_order
             )  # dummy arg
+
+
+        self.collate_fn = collate_fn
 
     @property
     def collate_fn(self):
@@ -516,6 +558,9 @@ class GeoBenchV2SegmentationDataModule(GeoBenchSegmentationDataModule):
 
     def _valid_attribute(self, *args: str):
         return self._proxy._valid_attribute(args)
+
+    def plot(self, args):
+        return self._proxy.visualize_batch(args)
 
 
 

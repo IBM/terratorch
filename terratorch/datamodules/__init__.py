@@ -45,13 +45,20 @@ from terratorch.datamodules.generic_multimodal_data_module import GenericMultiMo
 
 
 # miscellaneous datamodules
-from terratorch.datamodules.geobench_v2_data_module import GeoBenchV2SegmentationDataModule, GeoBenchV2ObjectDetectionDataModule, GeoBenchV2ClassificationDataModule
 from terratorch.datamodules.openearthmap import OpenEarthMapNonGeoDataModule
 from terratorch.datamodules.burn_intensity import BurnIntensityNonGeoDataModule
 from terratorch.datamodules.carbonflux import CarbonFluxNonGeoDataModule
 from terratorch.datamodules.landslide4sense import Landslide4SenseNonGeoDataModule
 from terratorch.datamodules.biomassters import BioMasstersNonGeoDataModule
 from terratorch.datamodules.forestnet import ForestNetNonGeoDataModule
+
+try:
+    from terratorch.datamodules.geobench_v2_data_module import GeoBenchV2SegmentationDataModule, GeoBenchV2ObjectDetectionDataModule, GeoBenchV2ClassificationDataModule
+    geobench_v2_present = True
+except ImportError as e:
+    import logging
+    logging.getLogger("terratorch").debug("geobench_v2 not installed")
+    geobench_v2_present = False
 
 # miscellaneous datamodules
 from terratorch.datamodules.openearthmap import OpenEarthMapNonGeoDataModule
@@ -61,6 +68,8 @@ from terratorch.datamodules.sen4map import Sen4MapLucasDataModule
 
 from terratorch.datamodules.m_VHR10 import mVHR10DataModule
 from terratorch.datamodules.substation import SubstationDataModule
+
+from terratorch.datamodules.helio import HelioNetCDFDataModule
 
 __all__ = (
     "GenericNonGeoSegmentationDataModule",
@@ -79,9 +88,6 @@ __all__ = (
     "MultiTemporalCropClassificationDataModule",
     "TorchGeoDataModule",
     "TorchNonGeoDataModule",
-    "GeoBenchV2SegmentationDataModule", 
-    "GeoBenchV2ObjectDetectionDataModule",
-    "GeoBenchV2ClassificationDataModule",
     "MEuroSATNonGeoDataModule",
     "MBigEarthNonGeoDataModule",
     "MBrickKilnNonGeoDataModule",
@@ -100,8 +106,18 @@ __all__ = (
     "Sen4AgriNetDataModule",
     "GenericMultiModalDataModule",
     "mVHR10DataModule",
-    "SubstationDataModule"
+    "SubstationDataModule",
+    "HelioNetCDFDataModule",
 )
 
 if wxc_present:
     __all__.__add__(("Merra2DownscaleNonGeoDataModule", ))
+
+
+
+if geobench_v2_present:
+    __all__.__add__((
+        "GeoBenchV2SegmentationDataModule", 
+        "GeoBenchV2ObjectDetectionDataModule",
+        "GeoBenchV2ClassificationDataModule",
+        ))

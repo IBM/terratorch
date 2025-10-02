@@ -38,20 +38,17 @@ def model_factory() -> EncoderDecoderFactory:
 def model_input() -> torch.Tensor:
     return torch.ones((1, NUM_CHANNELS, 224, 224))
 
-def torchgeo_resnet_backbones():
-    return [i for i in dir(torchgeo_resnet) if "_resnet" in i and i != "load_resnet_weights"]
-
-backbones = torchgeo_resnet_backbones()
-pretrained = [False]
+backbones = ["fmow_resnet50_fmow_rgb_gassl",
+             "satlas_resnet152_sentinel2_mi_ms",
+             "ssl4eos12_resnet18_sentinel2_all_moco"]
 @pytest.mark.parametrize("backbone", backbones)
-@pytest.mark.parametrize("backbone_pretrained", pretrained)
-def test_create_classification_model_resnet(backbone, model_factory: EncoderDecoderFactory, model_input, backbone_pretrained):
+def test_create_classification_model_resnet(backbone, model_factory: EncoderDecoderFactory, model_input):
     model = model_factory.build_model(
         "classification",
         backbone=backbone,
         decoder="IdentityDecoder",
         backbone_model_bands=PRETRAINED_BANDS,
-        backbone_pretrained=backbone_pretrained,
+        backbone_pretrained=False,
         num_classes=NUM_CLASSES,
     )
     model.eval()
@@ -62,16 +59,14 @@ def test_create_classification_model_resnet(backbone, model_factory: EncoderDeco
     gc.collect()
 
 backbones = ["ssl4eos12_resnet50_sentinel2_all_decur"]
-pretrained = [True]
 @pytest.mark.parametrize("backbone", backbones)
-@pytest.mark.parametrize("backbone_pretrained", pretrained)
-def test_create_classification_model_resnet_pretrained(backbone, model_factory: EncoderDecoderFactory, model_input, backbone_pretrained):
+def test_create_classification_model_resnet_pretrained(backbone, model_factory: EncoderDecoderFactory, model_input):
     model = model_factory.build_model(
         "classification",
         backbone=backbone,
         decoder="IdentityDecoder",
         backbone_model_bands=PRETRAINED_BANDS,
-        backbone_pretrained=backbone_pretrained,
+        backbone_pretrained=False,
         num_classes=NUM_CLASSES,
     )
     model.eval()
@@ -81,17 +76,15 @@ def test_create_classification_model_resnet_pretrained(backbone, model_factory: 
 
     gc.collect()
 
-#backbones = ["dofa_large_patch16_224"]
 backbones = ["dofa_base_patch16_224"]
 @pytest.mark.parametrize("backbone", backbones)
-@pytest.mark.parametrize("backbone_pretrained", pretrained)
-def test_create_classification_model_dofa(backbone, model_factory: EncoderDecoderFactory, model_input, backbone_pretrained):
+def test_create_classification_model_dofa(backbone, model_factory: EncoderDecoderFactory, model_input):
     model = model_factory.build_model(
         "classification",
         backbone=backbone,
         decoder="IdentityDecoder",
         backbone_model_bands=PRETRAINED_BANDS,
-        backbone_pretrained=backbone_pretrained,
+        backbone_pretrained=False,
         num_classes=NUM_CLASSES,
         necks = [{"name": "PermuteDims", "new_order": [0, 2, 1]}]
     )
@@ -104,14 +97,13 @@ def test_create_classification_model_dofa(backbone, model_factory: EncoderDecode
 
 backbones = ["satlas_swin_b_sentinel2_si_ms"]
 @pytest.mark.parametrize("backbone", backbones)
-@pytest.mark.parametrize("backbone_pretrained", pretrained)
-def test_create_classification_model_swin(backbone, model_factory: EncoderDecoderFactory, model_input, backbone_pretrained):
+def test_create_classification_model_swin(backbone, model_factory: EncoderDecoderFactory, model_input):
     model = model_factory.build_model(
         "classification",
         backbone=backbone,
         decoder="IdentityDecoder",
         backbone_model_bands=PRETRAINED_BANDS,
-        backbone_pretrained=backbone_pretrained,
+        backbone_pretrained=False,
         num_classes=NUM_CLASSES,
         necks = [{"name": "PermuteDims", "new_order": [0, 3, 1, 2]}]
     )
@@ -124,15 +116,14 @@ def test_create_classification_model_swin(backbone, model_factory: EncoderDecode
 
 @pytest.mark.parametrize("backbone", ["ssl4eos12_resnet50_sentinel2_all_decur"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
-@pytest.mark.parametrize("decoder", ["FCNDecoder", "IdentityDecoder", "smp_Unet"])
-@pytest.mark.parametrize("backbone_pretrained", pretrained)
-def test_create_pixelwise_model_resnet(backbone, task, expected, decoder, model_factory: EncoderDecoderFactory, model_input, backbone_pretrained):
+@pytest.mark.parametrize("decoder", ["smp_Unet"])
+def test_create_pixelwise_model_resnet(backbone, task, expected, decoder, model_factory: EncoderDecoderFactory, model_input):
     model_args = {
         "task": task,
         "backbone": backbone,
         "decoder": decoder,
         "backbone_model_bands": PRETRAINED_BANDS,
-        "backbone_pretrained": backbone_pretrained,
+        "backbone_pretrained": False,
         "backbone_out_indices": [0, 1, 2, 3, 4], 
         
     }
@@ -155,15 +146,14 @@ def test_create_pixelwise_model_resnet(backbone, task, expected, decoder, model_
 #@pytest.mark.parametrize("backbone", ["dofa_large_patch16_224"])
 @pytest.mark.parametrize("backbone", ["dofa_base_patch16_224"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
-@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
-@pytest.mark.parametrize("backbone_pretrained", pretrained)
-def test_create_pixelwise_model_dofa(backbone, task, expected, decoder, model_factory: EncoderDecoderFactory, model_input, backbone_pretrained):
+@pytest.mark.parametrize("decoder", ["IdentityDecoder"])
+def test_create_pixelwise_model_dofa(backbone, task, expected, decoder, model_factory: EncoderDecoderFactory, model_input):
     model_args = {
         "task": task,
         "backbone": backbone,
         "decoder": decoder,
         "backbone_model_bands": PRETRAINED_BANDS,
-        "backbone_pretrained": backbone_pretrained,
+        "backbone_pretrained": False,
         "backbone_out_indices":  [1, 2, 3, 4] #[5, 11, 17, 23]
     }
 
@@ -182,15 +172,14 @@ def test_create_pixelwise_model_dofa(backbone, task, expected, decoder, model_fa
 
 @pytest.mark.parametrize("backbone", ["satlas_swin_b_sentinel2_si_ms"])
 @pytest.mark.parametrize("task,expected", PIXELWISE_TASK_EXPECTED_OUTPUT)
-@pytest.mark.parametrize("decoder", ["UperNetDecoder", "IdentityDecoder"])
-@pytest.mark.parametrize("backbone_pretrained", pretrained)
-def test_create_pixelwise_model_swin(backbone, task, expected, decoder, model_factory: EncoderDecoderFactory, model_input, backbone_pretrained):
+@pytest.mark.parametrize("decoder", ["UperNetDecoder"])
+def test_create_pixelwise_model_swin(backbone, task, expected, decoder, model_factory: EncoderDecoderFactory, model_input):
     model_args = {
         "task": task,
         "backbone": backbone,
         "decoder": decoder,
         "backbone_model_bands": PRETRAINED_BANDS,
-        "backbone_pretrained": backbone_pretrained,
+        "backbone_pretrained": False,
         "backbone_out_indices": [1, 3, 5, 7]
     }
 

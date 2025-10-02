@@ -468,7 +468,7 @@ class ViTEncoder(nn.Module):
         """Get number of transformer layers."""
         return len(self.blocks)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, return_intermediates: bool = False) -> torch.Tensor | list[torch.Tensor]:
         """ViT encoder forward pass.
         
         Args:
@@ -478,6 +478,17 @@ class ViTEncoder(nn.Module):
         Returns:
             Output tensor of shape [B, dim_tokens, N_H, N_W].
         """
+        if x.shape[1] != self.in_channels:
+            # Apply one hot encoding for segmentation inputs
+            if len(x.shape) == 3:
+                x = F.one_hot(x.to(torch.long), num_classes=self.in_channels).permute(0, 3, 1, 2).to(torch.float32)
+            elif len(x.shape) == 4 and x.shape[1] == 1:
+                x = F.one_hot(x.to(torch.long).squeeze(1),
+                              num_classes=self.in_channels).permute(0, 3, 1, 2).to(torch.float32)
+            else:
+                raise ValueError(f'Expect input data with {self.in_channels} classes, found {x.shape}. '
+                                 f'Either with class indexes and shape [B, H, W] or one hot encoded [B, C, H, W].')
+
         # Create patches [B, C, H, W] -> [B, (H*W), C]
         if self.patch_proj:
             B, C, H, W = x.shape
@@ -495,16 +506,20 @@ class ViTEncoder(nn.Module):
             x = x + x_pos_emb
 
         # Transformer forward pass
-        x = self.blocks(x)
+        out = []
+        for block in self.blocks:
+            x = block(x)
+            out.append(x)
 
         if hasattr(self, 'post_mlp'):
             with autocast('cuda', enabled=False):
                 x = x.float() + self.post_mlp(self.norm_mlp(x.float()))
+            out[-1] = x
 
         # Reshape into 2D grid
-        x = rearrange(x, 'b (nh nw) d -> b d nh nw', nh=N_H, nw=N_W)
+        out = [rearrange(x, 'b (nh nw) d -> b d nh nw', nh=N_H, nw=N_W) for x in out]
 
-        return x
+        return out if return_intermediates else out[-1]
 
 
 class ViTDecoder(nn.Module):

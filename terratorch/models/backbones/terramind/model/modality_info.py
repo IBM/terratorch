@@ -301,10 +301,10 @@ MODALITY_INFO = {
     },
     'coords': {
         'vocab_size': 30_000,
-        'encoder_embedding': partial(SequenceEncoderEmbedding, vocab_size=30_000, max_length=256, padding_idx=0),
-        'decoder_embedding': partial(SequenceDecoderEmbedding, vocab_size=30_000, max_length=256, padding_idx=0),
+        'encoder_embedding': partial(SequenceEncoderEmbedding, vocab_size=30_000, max_length=4, padding_idx=0),
+        'decoder_embedding': partial(SequenceDecoderEmbedding, vocab_size=30_000, max_length=4, padding_idx=0),
         'min_tokens': 0,
-        'max_tokens': 256,
+        'max_tokens': 4,  # buffer for EOD token
         'type': 'seq',
         'id': generate_uint15_hash('coords'),
         'path': 'coords',

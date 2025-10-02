@@ -8,7 +8,7 @@ include = ["terratorch*"]
 [project]
 name = "terratorch"
 version = "1.0.2"
-description = "TerraTorch - The geospatial foundatoin model fine-tuning toolkit"
+description = "TerraTorch - The geospatial foundation model fine-tuning toolkit"
 license = { "text" = "Apache License, Version 2.0" }
 readme = "README.md"
 requires-python = ">=3.10"
@@ -40,10 +40,10 @@ classifiers = [
 ]
 
 dependencies = [
-  "torch",
+  "torch>2.0",
   "torchvision",
   "rioxarray",
-  "albumentations==1.4.6",
+  "albumentations==1.4.10",
   "albucore==0.0.16",
   "rasterio",
   "torchmetrics",
@@ -51,18 +51,26 @@ dependencies = [
   "lightly",
   "jsonargparse<=4.35.0",
   "h5py",
+  "hdf5plugin",
+  "numba",
   "mlflow",
   "lightning",
   "segmentation-models-pytorch<=0.4",
   "jsonargparse",
   "pytest",
-  "torchgeo",
+  "torchgeo>=0.7.0",
   "einops",
   "timm>=1.0.15",
   "pycocotools",
   "huggingface_hub",
-  "tifffile"
-
+  "tifffile",
+  "python-box",
+  "wandb",
+  "termcolor",
+  "numba",
+  "hdf5plugin",
+  "h5netcdf",
+  "pytest-sugar",
 ]
 
 
@@ -81,8 +89,10 @@ test = [
   "pytest-coverage",
   "coverage-badge",
   "peft>=0.15.0",
-  "diffusers>=0.30.0",
+  "diffusers<=0.34.0",
+  "tokenizers",
   "dask",
+  "wandb",
 ]
 
 mmseg = [
@@ -104,6 +114,10 @@ visualize = [
 
 peft = [
   "peft>=0.15.0"
+]
+
+geobenchv2 = [
+  "geobench_v2"
 ]
 
 [project.urls]
