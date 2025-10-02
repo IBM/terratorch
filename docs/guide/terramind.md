@@ -14,18 +14,31 @@ If you encounter any issues, please create an issue in our [GitHub repo](https:/
 TerraMind 1.0 Backbones (`BACKBONE_REGISTRY`)
 
 ```text
+terramind_v1_tiny
+terramind_v1_small
 terramind_v1_base
 terramind_v1_large
+terramind_v1_tiny_tim
+terramind_v1_small_tim
 terramind_v1_base_tim
 terramind_v1_large_tim
 ```
+The tiny or small versions are recommended for local development, edge deployment, fast inference, or very simple downstream tasks. 
+TerraMind base is best suited for evaluating or deploying most downstream tasks.
+If performance is very important and compute is available, TerraMind large is expected to perform best.
+Thinking-in-Modalities (TiM) models (see section below) can improve downstream task performance depending on the task and always needs to be validated.
+
 
 TerraMind 1.0 Generative Models (`FULL_MODEL_REGISTRY`)
 
 ```text
+terramind_v1_tiny_generate
+terramind_v1_small_generate
 terramind_v1_base_generate
 terramind_v1_large_generate
 ```
+
+Note that all generation models are using the same diffusion decoders. Therefore, TerraMind tiny and small are not much faster then the base or large versions, while the quality can be very different.
 
 TerraMind 1.0 Tokenizers (`FULL_MODEL_REGISTRY`)
 
@@ -436,7 +449,7 @@ We refer to the [paper](https://arxiv.org/pdf/2504.11171) for details.
 
 !!! warning "Important"
     TiM only works with fully pre-trained raw inputs (all bands, no `bands` parameter).
-    The generator model is frozen and cannot adapt to unseen inputs such as subsets of pre-trained bands.
+    The generator model is frozen and cannot adapt to unseen inputs such as subsets of pre-trained bands or new modalities.
     If this is the case for you, you cannot use the TiM models.
 
 To use, suffix `_tim` to the model name and set `tim_modalities`.
