@@ -120,7 +120,7 @@ class SemanticSegmentationTask(TerraTorchTask):
             output_on_inference (str | list[str]): A string or a list defining the kind of output to be saved to file during the inference, for example,
                 it can be "prediction", to save just the most probable class, or ["prediction", "probabilities"] to save both prediction and probabilities.
             output_most_probable (bool): A boolean to define if the prediction step will output just the most probable logit or all of them.
-                This argument has been deprecated and will be replaced with `output_on_inference`. 
+                This argument has been deprecated and will be replaced with `output_on_inference`.
             tiled_inference_on_testing (bool): A boolean to define if tiled inference will be used during the test step.
             tiled_inference_on_validation (bool): A boolean to define if tiled inference will be used during the val step.
             path_to_record_metrics (str): A path to save the file containing the metrics log. 
@@ -365,7 +365,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         y_hat_hard = to_segmentation_prediction(model_output)
         self.val_metrics.update(y_hat_hard, y)
 
-        if self._do_plot_samples(batch_idx) and (batch_idx%100 == 0):
+        if self._do_plot_samples(batch_idx):
             try:
                 datamodule = self.trainer.datamodule
                 batch["prediction"] = y_hat_hard
@@ -377,7 +377,7 @@ class SemanticSegmentationTask(TerraTorchTask):
                 for key in ["image", "mask", "prediction"]:
                     batch[key] = batch[key].cpu()
                 sample = unbind_samples(batch)[0]
-                fig = datamodule.val_dataset.plot(sample) if hasattr(datamodule.val_dataset) else datamodule.plot(sample, "val") 
+                fig = datamodule.val_dataset.plot(sample) if hasattr(datamodule.val_dataset, "plot") else datamodule.plot(sample, "val") 
                 if fig:
                     summary_writer = self.logger.experiment
                     if hasattr(summary_writer, "add_figure"):
