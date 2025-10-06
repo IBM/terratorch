@@ -96,6 +96,9 @@ test = [
   "dask",
   "wandb",
   "pytest-sugar",
+  "vllm>=0.10.2",
+  "pillow",
+  "imagehash"
 ]
 
 mmseg = [
