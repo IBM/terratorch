@@ -1,9 +1,14 @@
 import logging
+
 import huggingface_hub
-from torch import nn
 import torch
-from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
+from torch import nn
+
+from terratorch.models.backbones.Surya.downstream_examples.ar_segmentation.models import HelioSpectformer2D
+from terratorch.models.backbones.Surya.downstream_examples.ar_segmentation.models import UNet as SuryaUNet
 from terratorch.models.backbones.Surya.surya.models.helio_spectformer import HelioSpectFormer
+from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
+
 
 def load_weights(model: nn.Module, ckpt_data: dict, **kwargs) -> nn.Module:
     logging.getLogger("terratorch").info("Loading weights.")
@@ -19,60 +24,149 @@ def load_weights(model: nn.Module, ckpt_data: dict, **kwargs) -> nn.Module:
 
     return model
 
+
 @TERRATORCH_BACKBONE_REGISTRY.register
 def heliofm_backbone_surya(
-        img_size:int=4096,
-        patch_size:int=16,
-        in_chans:int=13,
-        embed_dim:int=1280,
-        time_embedding:dict={"type": "linear", "n_queries": None, "time_dim": 2},
-        depth:int=10,
-        n_spectral_blocks:int=2,
-        num_heads:int=8,
-        mlp_ratio:float=4.0,
-        drop_rate:float=0.0,
-        window_size:int=2,
-        dp_rank:int=8,
-        learned_flow:bool=False,
-        use_latitude_in_learned_flow:bool=False,
-        init_weights:bool=False,
-        checkpoint_layers:list=[],
-        rpe:bool=False,
-        ensemble:int=None,
-        finetune:bool=False,
-        ckpt_data:str=None,
-        pretrained:bool=False,
-        dtype="bfloat16"):
+    img_size: int = 4096,
+    patch_size: int = 16,
+    in_chans: int = 13,
+    embed_dim: int = 1280,
+    time_embedding: dict = {"type": "linear", "n_queries": None, "time_dim": 2},
+    depth: int = 10,
+    n_spectral_blocks: int = 2,
+    num_heads: int = 8,
+    mlp_ratio: float = 4.0,
+    drop_rate: float = 0.0,
+    window_size: int = 2,
+    dp_rank: int = 8,
+    learned_flow: bool = False,
+    use_latitude_in_learned_flow: bool = False,
+    init_weights: bool = False,
+    checkpoint_layers: list = [],
+    rpe: bool = False,
+    ensemble: int = None,
+    finetune: bool = False,
+    ckpt_data: str = None,
+    pretrained: bool = False,
+    dtype="bfloat16",
+):
+    remote_checkpoint_path = {"repo_id": "nasa-ibm-ai4science/Surya-1.0", "filename": "surya.366m.v1.pt"}
 
-        remote_checkpoint_path = {"repo_id": "nasa-ibm-ai4science/Surya-1.0",
-                                  "filename": "surya.366m.v1.pt"}
+    if not ckpt_data:
+        ckpt_data = remote_checkpoint_path
 
-        if not ckpt_data:
-                ckpt_data = remote_checkpoint_path
+    model = HelioSpectFormer(
+        img_size=img_size,
+        patch_size=patch_size,
+        in_chans=in_chans,
+        embed_dim=embed_dim,
+        time_embedding=time_embedding,
+        depth=depth,
+        n_spectral_blocks=n_spectral_blocks,
+        num_heads=num_heads,
+        mlp_ratio=mlp_ratio,
+        drop_rate=drop_rate,
+        window_size=window_size,
+        dp_rank=dp_rank,
+        learned_flow=learned_flow,
+        use_latitude_in_learned_flow=use_latitude_in_learned_flow,
+        init_weights=init_weights,
+        checkpoint_layers=checkpoint_layers,
+        rpe=rpe,
+        ensemble=ensemble,
+        finetune=finetune,
+        dtype=dtype,
+    )
+
+    if pretrained:
+        model = load_weights(model, ckpt_data)
+
+    return model
 
 
-        model = HelioSpectFormer(img_size=img_size,
-                                 patch_size=patch_size,
-                                 in_chans=in_chans,
-                                 embed_dim=embed_dim,
-                                 time_embedding=time_embedding,
-                                 depth=depth,
-                                 n_spectral_blocks=n_spectral_blocks,
-                                 num_heads=num_heads,
-                                 mlp_ratio=mlp_ratio,
-                                 drop_rate=drop_rate,
-                                 window_size=window_size,
-                                 dp_rank=dp_rank,
-                                 learned_flow=learned_flow,
-                                 use_latitude_in_learned_flow=use_latitude_in_learned_flow,
-                                 init_weights=init_weights,
-                                 checkpoint_layers=checkpoint_layers,
-                                 rpe=rpe,
-                                 ensemble=ensemble,
-                                 finetune=finetune,
-                                 dtype=dtype)
+@TERRATORCH_BACKBONE_REGISTRY.register
+def heliofm_backbone_surya_ar_segmentation(
+    model_type: str = "spectformer_lora",
+    img_size: int = 4096,
+    patch_size: int = 16,
+    in_chans: int = 13,
+    embed_dim: int = 1280,
+    time_embedding: dict = {"type": "linear", "n_queries": None, "time_dim": 1},
+    depth: int = 10,
+    n_spectral_blocks: int = 2,
+    num_heads: int = 16,
+    mlp_ratio: float = 4.0,
+    drop_rate: float = 0.0,
+    dtype: str = "bfloat16",
+    window_size: int = 2,
+    dp_rank: int = 4,
+    learned_flow: bool = False,
+    use_latitude_in_learned_flow: bool = False,
+    init_weights: bool = False,
+    checkpoint_layers: list = [],
+    rpe: bool = False,
+    finetune: bool = True,
+    unet_embed_dim: int | None = None,
+    unet_n_blocks: int | None = None,
+    ckpt_data: str = None,
+    pretrained: bool = False,
+    config: dict = {
+        "model": {
+            "global_average_pooling": True,
+            "global_max_pooling": False,
+            "attention_pooling": False,
+            "transformer_pooling": False,
+            "dropout": False,
+            "penultimate_linear_layer": False,
+            "ft_unembedding_type": "linear",
+            "ft_out_chans": 1,
+        }
+    },
+):
+    remote_checkpoint_path = {
+        "repo_id": "nasa-ibm-ai4science/ar_segmentation_surya",
+        "filename": "ar_segmentation_weights.pth",
+    }
 
-        if pretrained:
-                model = load_weights(model, ckpt_data)
+    if not ckpt_data:
+        ckpt_data = remote_checkpoint_path
 
-        return model 
+    if model_type == "spectformer_lora":
+        print("Initializing spectformer with LoRA.")
+        model = HelioSpectformer2D(
+            img_size=img_size,
+            patch_size=patch_size,
+            in_chans=in_chans,
+            embed_dim=embed_dim,
+            time_embedding=time_embedding,
+            depth=depth,
+            n_spectral_blocks=n_spectral_blocks,
+            num_heads=num_heads,
+            mlp_ratio=mlp_ratio,
+            drop_rate=drop_rate,
+            dtype=dtype,
+            window_size=window_size,
+            dp_rank=dp_rank,
+            learned_flow=learned_flow,
+            use_latitude_in_learned_flow=use_latitude_in_learned_flow,
+            init_weights=init_weights,
+            checkpoint_layers=checkpoint_layers,
+            rpe=rpe,
+            finetune=finetune,
+            config=config,
+        )
+    elif model_type == "unet":
+        print("Initializing UNet.")
+        model = SuryaUNet(
+            in_chans=in_chans,
+            embed_dim=unet_embed_dim,
+            out_chans=1,
+            n_blocks=unet_blocks,
+        )
+    else:
+        raise ValueError(f"Unknown model type {model_type}.")
+
+    if pretrained:
+        model = load_weights(model, ckpt_data)
+
+    return model
