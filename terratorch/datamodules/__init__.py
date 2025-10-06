@@ -116,8 +116,8 @@ if wxc_present:
 
 
 if geobench_v2_present:
-    __all__.__add__((
+    __all__.__add__(
         "GeoBenchV2SegmentationDataModule", 
         "GeoBenchV2ObjectDetectionDataModule",
         "GeoBenchV2ClassificationDataModule",
-        ))
+        )

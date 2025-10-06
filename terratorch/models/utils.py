@@ -1,7 +1,6 @@
 from torch import nn, Tensor
 import torch 
 from terratorch.registry import BACKBONE_REGISTRY
-from typing import Dict
 import pdb
 import warnings
 
@@ -194,77 +193,22 @@ class TemporalWrapper(nn.Module):
         Returns:
             List: A list of processed tensors/dicts, one per feature map.
         """
-        if isinstance(x, Dict):
-            first_key = [key for key in x.keys() if "image" in key][0]
-            x_dim = x[first_key].dim()
-        else:
-            x_dim = x.dim()
-        if x_dim != 5:
-            raise ValueError(f"Expected input shape [B, C, T, H, W], but got {x.shape}")
 
+        # Handle dict input (multimodal) or single tensor
+        is_dict = isinstance(x, dict)
+        sample = next(iter(x.values())) if is_dict else x
 
-        if isinstance(x, Dict):
-            check_diff = (x[first_key].shape[2] != 2)
-        else:
-            check_diff = (x.shape[2] != 2)
-        if (self.pooling_type == 'diff') & check_diff:
-            raise ValueError(f"Expected 2 timestamps for aggregation method 'diff'")
+        # Input must have 5 dims: [B, C, T, H, W]
+        if sample.dim() != 5:
+            raise ValueError(f"Expected input shape [B, C, T, H, W], got {tuple(sample.shape)}")
 
-
-        if isinstance(x, Dict):
-            batch_size, _, timesteps, _, _ = x[first_key].shape
-        else:
-            batch_size, _, timesteps, _, _ = x.shape
-
-        # Initialize lists to store feature maps at each timestamp
-        num_feature_maps = None  # Will determine dynamically
-        features_per_map = []  # Stores feature maps across timestamps
-
-        for t in range(timesteps):
-            if isinstance(x, Dict):
-                feat = self.encoder({key: val[:, :, t, :, :] for key, val in x.items()})
-            else:
-                feat = self.encoder(x[:, :, t, :, :])  # Extract features at timestamp t
-                
-            if not isinstance(feat, list):  # If the encoder outputs a single feature map, convert to list
-                if isinstance(feat, tuple):
-                    feat = list(feat)
-                else:
-                    feat = [feat]
-
-            if num_feature_maps is None:
-                num_feature_maps = len(feat)  # Determine how many feature maps the encoder produces
-
-            for i, feature_map in enumerate(feat):
-                if len(features_per_map) <= i:
-                    features_per_map.append([])  # Create list for each feature map
-
-                feature_map = feature_map[0] if isinstance(feature_map, tuple) else feature_map
-                if self.features_permute_op is not None:
-                    if len(self.features_permute_op) != len(feature_map.shape):
-                        ValueError(f"Expected features_permute_op to have same number of dimensions of features, but got {len(self.features_permute_op)} and {len(feature_map.shape)}")
-                    feature_map = torch.permute(feature_map, self.features_permute_op)
-
-
-                features_per_map[i].append(feature_map)  # Store feature map at time t
-
-
-        
-                    
-        # Stack features along the temporal dimension
-        for i in range(num_feature_maps):
-            try:
-                features_per_map[i] = torch.stack(features_per_map[i], dim=2)  # Shape: [B, C', T, H', W']
-            except RuntimeError as e:
-                raise
-
-        # Apply pooling or concatenation
-        if self.concat:
-            features_per_map_agg = [feat.reshape(batch_size, -1, feat.shape[-2], feat.shape[-1]) if len(feat.shape) == 5 else feat.reshape(batch_size, feat.shape[-3], -1) for feat in features_per_map]
-        elif self.pooling_type == "max":
-            features_per_map_agg = [torch.max(feat, dim=2)[0] for feat in features_per_map]  # Max pooling across T
-        elif self.pooling_type == "diff":
-            features_per_map_agg = [feat[:, :, 0, ...] - feat[:, :, 1, ...] for feat in features_per_map]
+        # Flatten temporal dimension into batch for encoder forward pass
+        if is_dict:
+            B, _, T, H, W = sample.shape
+            flat_input = {
+                k: v.permute(0, 2, 1, 3, 4).reshape(-1, v.shape[1], *v.shape[3:])
+                for k, v in x.items()
+            }
         else:
             B, C, T, H, W = sample.shape
             flat_input = x.permute(0, 2, 1, 3, 4).reshape(B * T, C, H, W)
