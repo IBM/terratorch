@@ -5,22 +5,12 @@ e.g. cropping out areas around model prediction to reduce artifacts
 It additionally rebatches after the fold operation to gain speed up.
 """
 
-<<<<<<< HEAD
-=======
 import torch
 import tqdm
->>>>>>> custom_schedule_and_geobenchv2
 import math
 import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
-<<<<<<< HEAD
-
-import torch
-import tqdm
-
-=======
->>>>>>> custom_schedule_and_geobenchv2
 from terratorch.models.utils import pad_images
 
 
@@ -43,19 +33,11 @@ class TiledInferenceParameters:
 
 
 def get_blend_mask(
-<<<<<<< HEAD
-    h_crop: int = 224,
-    h_stride: int = 200,
-    w_crop: int = 224,
-    w_stride: int = 200,
-    delta: int = 0,
-=======
         h_crop: int = 224,
         h_stride: int = 200,
         w_crop: int = 224,
         w_stride: int = 200,
         delta: int = 0,
->>>>>>> custom_schedule_and_geobenchv2
 ) -> torch.Tensor:
     overlap_w = min(w_crop // 2, w_crop - w_stride) - delta
     overlap_h = min(h_crop // 2, h_crop - h_stride) - delta
@@ -97,11 +79,7 @@ class InferenceInput:
 
 
 def get_input_chips(
-<<<<<<< HEAD
     input_batch, h_crop, h_stride, w_crop, w_stride, delta, blend_overlaps, padding
-=======
-        input_batch, h_crop, h_stride, w_crop, w_stride, delta, blend_overlaps, padding
->>>>>>> custom_schedule_and_geobenchv2
 ) -> list[InferenceInput]:
     """
     Create input chips of type InferenceInput for tiled inference. These contain:
@@ -121,11 +99,6 @@ def get_input_chips(
             add_dim = []
 
         input_batch = torch.nn.functional.pad(input_batch, (w_pad, w_pad, h_pad, h_pad, *add_dim), mode=padding)
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> custom_schedule_and_geobenchv2
         border_output_crop = (slice(delta, h_crop - delta), slice(delta, w_crop - delta))
     else:
         border_output_crop = None
@@ -148,21 +121,12 @@ def get_input_chips(
     # Deal with patches near the right border
     coordinates_and_inputs: list[InferenceInput] = []
     for i in range(0, h_img - h_crop - 1, h_stride):
-<<<<<<< HEAD
         patch = input_batch[..., i : i + h_crop, w_img - w_crop : w_img]
-=======
-        patch = input_batch[..., i: i + h_crop, w_img - w_crop: w_img]
->>>>>>> custom_schedule_and_geobenchv2
         coordinates_and_inputs += [
             InferenceInput(
                 b,
                 (slice(i + delta, i + h_crop - delta), slice(w_img - w_crop + delta, w_img - delta))
-<<<<<<< HEAD
-                if padding
-                else (slice(i, i + h_crop), slice(w_img - w_crop, w_img)),
-=======
                 if padding else (slice(i, i + h_crop), slice(w_img - w_crop, w_img)),
->>>>>>> custom_schedule_and_geobenchv2
                 patch[b],
                 border_blend_mask,
                 border_output_crop,
@@ -172,22 +136,12 @@ def get_input_chips(
 
     # Deal with patches near the bottom of the image
     for i in range(0, w_img - w_crop - 1, w_stride):
-<<<<<<< HEAD
-        patch = input_batch[..., h_img - h_crop : h_img, i : i + w_crop]
-        coordinates_and_inputs += [
-            InferenceInput(
-                b,
-                (slice(h_img - h_crop + delta, h_img - delta), slice(i + delta, i + w_crop - delta))
-                if padding
-                else (slice(h_img - h_crop, h_img), slice(i, i + w_crop)),
-=======
         patch = input_batch[..., h_img - h_crop: h_img, i: i + w_crop]
         coordinates_and_inputs += [
             InferenceInput(
                 b,
                 (slice(h_img - h_crop + delta, h_img - delta), slice(i + delta, i + w_crop - delta)) 
                 if padding else (slice(h_img - h_crop, h_img), slice(i, i + w_crop)),
->>>>>>> custom_schedule_and_geobenchv2
                 patch[b],
                 border_blend_mask,
                 border_output_crop,
@@ -196,22 +150,12 @@ def get_input_chips(
         ]
 
     # Deal with last patches at the right bottom of the image
-<<<<<<< HEAD
-    patch = input_batch[..., h_img - h_crop : h_img, w_img - w_crop : w_img]
-    coordinates_and_inputs += [
-        InferenceInput(
-            b,
-            (slice(h_img - h_crop + delta, h_img - delta), slice(w_img - w_crop + delta, w_img - delta))
-            if padding
-            else (slice(h_img - h_crop, h_img), slice(w_img - w_crop, w_img)),
-=======
     patch = input_batch[..., h_img - h_crop: h_img, w_img - w_crop: w_img]
     coordinates_and_inputs += [
         InferenceInput(
             b,
             (slice(h_img - h_crop + delta, h_img - delta), slice(w_img - w_crop + delta, w_img - delta)) 
             if padding else (slice(h_img - h_crop, h_img), slice(w_img - w_crop, w_img)),
->>>>>>> custom_schedule_and_geobenchv2
             patch[b],
             border_blend_mask,
             border_output_crop,
@@ -221,23 +165,14 @@ def get_input_chips(
 
     for row in range(0, h_img - h_crop - 1, h_stride):
         for col in range(0, w_img - w_crop - 1, w_stride):
-<<<<<<< HEAD
-            patch = input_batch[..., row : row + h_crop, col : col + w_crop]
-=======
             patch = input_batch[..., row: row + h_crop, col: col + w_crop]
->>>>>>> custom_schedule_and_geobenchv2
             if row == 0 or col == 0:
                 # Add patches along the left and top of the image
                 coordinates_and_inputs += [
                     InferenceInput(
                         b,
                         (slice(row + delta, row + h_crop - delta), slice(col + delta, col + w_crop - delta))
-<<<<<<< HEAD
-                        if padding
-                        else (slice(row, row + h_crop), slice(col, col + w_crop)),
-=======
                         if padding else (slice(row, row + h_crop), slice(col, col + w_crop)),
->>>>>>> custom_schedule_and_geobenchv2
                         patch[b],
                         border_blend_mask,
                         border_output_crop,

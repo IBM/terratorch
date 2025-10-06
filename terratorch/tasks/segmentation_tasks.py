@@ -365,7 +365,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         y_hat_hard = to_segmentation_prediction(model_output)
         self.val_metrics.update(y_hat_hard, y)
 
-        if self._do_plot_samples(batch_idx):
+        if self._do_plot_samples(batch_idx) and (batch_idx%100 == 0):
             try:
                 datamodule = self.trainer.datamodule
                 batch["prediction"] = y_hat_hard
@@ -377,7 +377,7 @@ class SemanticSegmentationTask(TerraTorchTask):
                 for key in ["image", "mask", "prediction"]:
                     batch[key] = batch[key].cpu()
                 sample = unbind_samples(batch)[0]
-                fig = datamodule.val_dataset.plot(sample)
+                fig = datamodule.val_dataset.plot(sample) if hasattr(datamodule.val_dataset) else datamodule.plot(sample, "val") 
                 if fig:
                     summary_writer = self.logger.experiment
                     if hasattr(summary_writer, "add_figure"):
@@ -386,6 +386,8 @@ class SemanticSegmentationTask(TerraTorchTask):
                         summary_writer.log_figure(
                             self.logger.run_id, fig, f"epoch_{self.current_epoch}_{batch_idx}.png"
                         )
+                    else:
+                        plt.savefig("/mnt/geobench/data/geobench_experiments/final_again/test_plots")
             except ValueError:
                 pass
             finally:

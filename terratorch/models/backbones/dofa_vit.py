@@ -1,17 +1,13 @@
 # reference torchgeo https://torchgeo.readthedocs.io/en/latest/_modules/torchgeo/models/dofa.html#DOFA
-<<<<<<< HEAD
-=======
 import torch
 import torch.nn.functional as F
 import torchgeo.models.dofa as dofa
->>>>>>> custom_schedule_and_geobenchv2
 import logging
 import math
 import pdb
 from collections.abc import Callable
 from functools import partial
 from typing import List
-<<<<<<< HEAD
 
 import huggingface_hub
 import torch
@@ -57,104 +53,6 @@ def resize(
     warning: bool = True,
 ) -> torch.Tensor:
     """Resize input tensor with alignment warning check.
-=======
-import huggingface_hub
-from torchvision.models._api import Weights, WeightsEnum
-from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
-import math
-import pdb
-
-waves_list= {
-  "COASTAL_AEROSOL": 0.44,
-  "BLUE": 0.49,
-  "GREEN": 0.56,
-  "RED": 0.665,
-  "RED_EDGE_1": 0.705,
-  "RED_EDGE_2": 0.74, 
-  "RED_EDGE_3": 0.783,
-  "NIR_BROAD": 0.832,
-  "NIR_NARROW": 0.864,
-  "WATER_VAPOR": 0.945,
-  "CIRRUS": 1.373,
-  "SWIR_1": 1.61,
-  "SWIR_2": 2.20,
-  "THEMRAL_INFRARED_1": 10.90,
-  "THEMRAL_INFRARED_12": 12.00, 
-  "VV": 5.405,
-  "VH": 5.405,
-  "ASC_VV": 5.405,
-  "ASC_VH": 5.405,
-  "DSC_VV": 5.405,
-  "DSC_VH": 5.405,
-  "VV-VH": 5.405
-}
-
-
-def resize(input: torch.Tensor,
-           size: tuple[int, int] | None = None,
-           scale_factor: float | None = None,
-           mode: str = 'nearest',
-           align_corners: bool | None = None,
-           warning: bool = True) -> torch.Tensor:
-    """Resize input tensor with alignment warning check.
-    
-    Args:
-        input: Input tensor of shape [B, C, H, W]
-        size: Target output size (H, W)
-        scale_factor: Multiplier for spatial size
-        mode: Interpolation mode ('bilinear', 'bicubic'.)
-        align_corners: If True, aligns corners for non-nearest modes
-        warning: If True, warns about potential alignment issues
-    
-    Returns:
-        Resized tensor of shape [B, C, H_new, W_new]
-    """
-    if warning:
-        if size is not None and align_corners:
-            input_h, input_w = tuple(int(x) for x in input.shape[2:])
-            output_h, output_w = tuple(int(x) for x in size)
-            if output_h > input_h or output_w > output_h:
-                if ((output_h > 1 and output_w > 1 and input_h > 1
-                     and input_w > 1) and (output_h - 1) % (input_h - 1)
-                        and (output_w - 1) % (input_w - 1)):
-                    warnings.warn(
-                        f'When align_corners={align_corners}, '
-                        'the output would more aligned if '
-                        f'input size {(input_h, input_w)} is `x+1` and '
-                        f'out size {(output_h, output_w)} is `nx+1`')
-    return F.interpolate(input, size, scale_factor, mode, align_corners)
-
-
-def resize_pos_embed(pos_embed, input_shpae, pos_shape, mode):
-    """Resize pos_embed weights.
-    Resize pos_embed using bicubic interpolate method.
-    Args:
-        pos_embed (torch.Tensor): Position embedding weights.
-        input_shpae (tuple): Tuple for (downsampled input image height,
-            downsampled input image width).
-        pos_shape (tuple): The resolution of downsampled origin training
-            image.
-        mode (str): Algorithm used for upsampling:
-            ``'bilinear'`` | ``'bicubic'`` . Default: ``'bilinear'``
-    Return:
-        torch.Tensor: The resized pos_embed of shape [B, L_new, C]
-    """
-    assert pos_embed.ndim == 3, 'shape of pos_embed must be [B, L, C]'
-    pos_h, pos_w = pos_shape
-    cls_token_weight = pos_embed[:, 0]
-    pos_embed_weight = pos_embed[:, (-1 * pos_h * pos_w):]
-    pos_embed_weight = pos_embed_weight.reshape(
-        1, pos_h, pos_w, pos_embed.shape[2]).permute(0, 3, 1, 2)
-    pos_embed_weight = resize(
-        pos_embed_weight, size=input_shpae, align_corners=False, mode=mode)
-    cls_token_weight = cls_token_weight.unsqueeze(1)
-    pos_embed_weight = torch.flatten(pos_embed_weight, 2).transpose(1, 2)
-    pos_embed = torch.cat((cls_token_weight, pos_embed_weight), dim=1)
-    return pos_embed
-
-
-class DOFAEncoderWrapper(nn.Module):
->>>>>>> custom_schedule_and_geobenchv2
 
     Args:
         input: Input tensor of shape [B, C, H, W]
