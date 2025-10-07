@@ -8,8 +8,6 @@ from terratorch.cli_tools import build_lightning_cli
 from terratorch.registry import FULL_MODEL_REGISTRY
 from terratorch.tasks import ReconstructionTask
 
-IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "false") == "true"
-
 
 @pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100"])
 @pytest.mark.parametrize("case", ["fit", "test", "validate"])
@@ -37,7 +35,6 @@ def test_prithvi_mae_reconstruction(model_name):
     gc.collect()
 
 
-@pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Skip this test in GitHub Actions since `xformers` don't run in CPU.")
 @pytest.mark.parametrize("model_name", ["terramind_v01_base_generate"])
 def test_terramind_v01_generation(model_name):
     try:
@@ -77,7 +74,6 @@ def test_terramind_v01_generation(model_name):
     gc.collect()
 
 
-@pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Skip this test in GitHub Actions since `xformers` don't run in CPU.")
 @pytest.mark.parametrize("model_name", ["terramind_v1_base_generate"])
 def test_terramind_generation(model_name):
     try:
