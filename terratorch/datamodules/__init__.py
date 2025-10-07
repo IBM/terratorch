@@ -69,7 +69,10 @@ from terratorch.datamodules.sen4map import Sen4MapLucasDataModule
 from terratorch.datamodules.m_VHR10 import mVHR10DataModule
 from terratorch.datamodules.substation import SubstationDataModule
 
-from terratorch.datamodules.helio import HelioNetCDFDataModule
+try:
+    from terratorch.datamodules.helio import HelioNetCDFDataModule
+except ImportError:
+    pass
 
 __all__ = (
     "GenericNonGeoSegmentationDataModule",
