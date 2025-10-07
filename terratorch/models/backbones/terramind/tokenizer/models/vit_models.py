@@ -30,8 +30,11 @@ from einops import rearrange
 
 # xFormers imports
 try:
-    from xformers.ops import memory_efficient_attention, unbind
-    XFORMERS_AVAILABLE = True
+    if torch.cuda.is_available(): # Only use xformers if GPUs are available
+        from xformers.ops import memory_efficient_attention, unbind
+        XFORMERS_AVAILABLE = True
+    else:
+        XFORMERS_AVAILABLE = False
 except ImportError:
     logging.getLogger('terramind').debug("xFormers not available")
     XFORMERS_AVAILABLE = False
