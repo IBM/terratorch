@@ -16,6 +16,7 @@ from torchmetrics.wrappers import ClasswiseWrapper
 
 from terratorch.models.model import ModelOutput
 from terratorch.tasks import ClassificationTask
+from terratorch.tasks.loss_handler import LossHandler, CombinedLoss
 
 
 # from geobench

@@ -13,7 +13,7 @@ from torchmetrics.classification import MulticlassAccuracy, MulticlassF1Score, M
 
 from terratorch.models.model import AuxiliaryHead, Model, ModelOutput
 from terratorch.registry.registry import MODEL_FACTORY_REGISTRY
-from terratorch.tasks.loss_handler import LossHandler
+from terratorch.tasks.loss_handler import LossHandler, CombinedLoss
 from terratorch.tasks.optimizer_factory import optimizer_factory
 from terratorch.tasks.base_task import TerraTorchTask
 
