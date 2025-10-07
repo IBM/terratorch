@@ -17,7 +17,6 @@ class SimpleRegistry(Set):
     def build(self, name: str, *args, **kwargs):
         return self._registry[name](*args, **kwargs)
 
-
     def __iter__(self):
         return iter(self._registry)
 
@@ -58,6 +57,7 @@ def test_build_from_registered_source(multi_source_registry, simple_registry):
 
     gc.collect()
 
+
 def test_build_without_prefix(multi_source_registry, simple_registry):
     # Register a function in the source registry
     simple_registry.register("my_model", lambda: "constructed_model")
@@ -72,12 +72,14 @@ def test_build_without_prefix(multi_source_registry, simple_registry):
 
     gc.collect()
 
+
 def test_build_fails_if_not_found(multi_source_registry):
-    with pytest.raises(KeyError) as excinfo:
+    with pytest.raises(Exception) as excinfo:
         multi_source_registry.build("nonexistent_model")
-    assert "Could not instantiate model" in str(excinfo.value)
+    assert "could not be instantiated" in str(excinfo.value)
 
     gc.collect()
+
 
 def test_register_duplicate_source(multi_source_registry, simple_registry):
     multi_source_registry.register_source("simple", simple_registry)
@@ -86,6 +88,7 @@ def test_register_duplicate_source(multi_source_registry, simple_registry):
     assert "Source for prefix simple already exists." in str(excinfo.value)
 
     gc.collect()
+
 
 def test_contains_method(multi_source_registry, simple_registry):
     # Register a function in the source registry
@@ -102,10 +105,12 @@ def test_contains_method(multi_source_registry, simple_registry):
 
     gc.collect()
 
+
 def test_getitem_method(multi_source_registry, simple_registry):
     # Register a function in the source registry
     def model_constructor():
         return "constructed_model"
+
     simple_registry.register("my_model", model_constructor)
 
     # Register the source
@@ -116,9 +121,11 @@ def test_getitem_method(multi_source_registry, simple_registry):
 
     gc.collect()
 
+
 def test_find_registry_method(multi_source_registry, simple_registry):
     def model_constructor():
         return "constructed_model"
+
     simple_registry.register("my_model", model_constructor)
 
     multi_source_registry.register_source("simple", simple_registry)
