@@ -4,7 +4,7 @@ import torch
 from segmentation_models_pytorch.base import SegmentationModel
 from torch import nn
 import torchvision.transforms as transforms
-from terratorch.models.heads import ClassificationHead
+from terratorch.models.heads import ClassificationHead, RegressionHead
 from terratorch.models.model import AuxiliaryHeadWithDecoderWithoutInstantiatedHead, Model, ModelOutput
 from terratorch.models.utils import pad_images
 import pdb
@@ -36,7 +36,7 @@ class ScalarOutputModel(Model, SegmentationModel):
         """Constructor
 
         Args:
-            task (str): Task to be performed. Must be "classification".
+            task (str): Task to be performed. Must be "classification" or "scalar_regression".
             encoder (nn.Module): Encoder to be used
             decoder (nn.Module): Decoder to be used
             head_kwargs (dict): Arguments to be passed at instantiation of the head.
@@ -124,5 +124,8 @@ class ScalarOutputModel(Model, SegmentationModel):
                 msg = "num_classes must be defined for classification task"
                 raise Exception(msg)
             return ClassificationHead(input_embed_dim, **head_kwargs)
-        msg = "Task must be classification."
-        raise Exception(msg)
+        elif task == "scalar_regression":
+            return RegressionHead(input_embed_dim, **head_kwargs) #TODO: Inspect Regression Head for patch-wise regr
+            
+        # msg = "Task must be classification."
+        # raise Exception(msg)
