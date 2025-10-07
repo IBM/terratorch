@@ -7,6 +7,8 @@ from reprlib import recursive_repr as _recursive_repr
 
 from huggingface_hub import ModelCard
 
+from terratorch.utils import InvalidModelError
+
 logger = logging.getLogger(__name__)
 
 
@@ -85,11 +87,11 @@ class MultiSourceRegistry(Mapping[str, T], typing.Generic[T]):
 
         # if no prefix, try to build in order
         for source in self._sources.values():
-            with suppress(KeyError):
+            with suppress(InvalidModelError):
                 return source.build(name, *constructor_args, **constructor_kwargs)
 
-        msg = f"Could not instantiate model {name} not from any source."
-        raise KeyError(msg)
+        msg = f"The model {name} could not be instantiated from any source."
+        raise Exception(msg)
 
     def register_source(self, prefix: str, registry: T) -> None:
         """Register a source in the registry"""
@@ -168,7 +170,10 @@ class Registry(Set):
         """Build and return the component.
         Use prefixes ending with _ to forward to a specific source
         """
-        return self._registry[name](*constructor_args, **constructor_kwargs)
+        try:
+            return self._registry[name](*constructor_args, **constructor_kwargs)
+        except KeyError:
+            raise InvalidModelError(None, model_name=name)
 
     def __iter__(self):
         return iter(self._registry)
