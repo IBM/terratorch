@@ -62,6 +62,8 @@ jobs:
         run: pip cache purge
       - name: Test with pytest
         run: |
+          # Temporary workaround to allow the installation of `geobench_v2`
+          pip install git+https://github.com/The-AI-Alliance/GEO-Bench-2.git@main
           pytest -s --cov=terratorch -v --cov-report term-missing tests
 
 
