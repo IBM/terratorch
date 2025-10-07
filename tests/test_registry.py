@@ -1,7 +1,7 @@
-
 import pytest
 
 from terratorch.registry import Registry
+from terratorch.utils import InvalidModelError
 
 
 class DummyModel:
@@ -22,6 +22,7 @@ def test_register_function(registry):
         return "dummy"
 
     assert "dummy_function" in registry
+
 
 def test_register_class(registry):
     """Test if a class can be registered and instantiated."""
@@ -51,7 +52,7 @@ def test_build_model(registry):
 
 def test_build_nonexistent_model(registry):
     """Test that an error is raised when trying to build an unregistered model."""
-    with pytest.raises(KeyError, match="build_nonexistent_model"):
+    with pytest.raises(InvalidModelError, match="build_nonexistent_model"):
         registry.build("build_nonexistent_model")
 
 

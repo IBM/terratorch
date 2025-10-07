@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ONNX TerraMind Tiny V1 — xView Object Detection</title>
+  <style>
+    body { font-family: sans-serif; background: #f0f0f0; text-align: center; margin:0; padding:20px; }
+    #status { font-weight: bold; margin-bottom: 10px; }
+    video, canvas { border:1px solid #888; margin:5px; }
+    #controls { margin:10px; }
+    #histogram { width:80%; height:200px; margin:20px auto; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+</head>
+<body>
+  <h1>ONNX TerraMind Tiny V1 — xView Detection</h1>
+  <div id="status">Initializing...</div>
+  <video id="video" width="512" height="512" autoplay playsinline muted></video>
+  <canvas id="overlay" width="512" height="512"></canvas>
+  <div id="controls">
+    <button id="detectBtn">Run Detection</button>
+  </div>
+  <canvas id="histogram"></canvas>
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+  <script>
+    const LABEL_MAP = {
+      0: "Fixed-wing Aircraft", 1: "Small Aircraft", 2: "Cargo Plane", 3: "Helicopter",
+      4: "Passenger Vehicle", 5: "Small Car", 6: "Bus", 7: "Pickup Truck", 8: "Utility Truck",
+      9: "Truck", 10: "Cargo Truck", 11: "Truck w/Box", 12: "Truck Tractor", 13: "Trailer",
+      14: "Truck w/Flatbed", 15: "Truck w/Liquid", 16: "Crane Truck", 17: "Railway Vehicle",
+      18: "Passenger Car", 19: "Cargo Car", 20: "Flat Car", 21: "Tank car", 22: "Locomotive",
+      23: "Maritime Vessel", 24: "Motorboat", 25: "Sailboat", 26: "Tugboat", 27: "Barge",
+      28: "Fishing Vessel", 29: "Ferry", 30: "Yacht", 31: "Container Ship", 32: "Oil Tanker",
+      33: "Engineering Vehicle", 34: "Tower crane", 35: "Container Crane", 36: "Reach Stacker",
+      37: "Straddle Carrier", 38: "Mobile Crane", 39: "Dump Truck", 40: "Haul Truck",
+      41: "Scraper/Tractor", 42: "Front loader/Bulldozer", 43: "Excavator", 44: "Cement Mixer",
+      45: "Ground Grader", 46: "Hut/Tent", 47: "Shed", 48: "Building", 49: "Aircraft Hangar",
+      50: "Damaged Building", 51: "Facility", 52: "Construction Site", 53: "Vehicle Lot",
+      54: "Helipad", 55: "Storage Tank", 56: "Shipping container lot", 57: "Shipping Container",
+      58: "Pylon", 59: "Tower"
+    };
+
+    const video = document.getElementById('video');
+    const overlay = document.getElementById('overlay');
+    const ctx = overlay.getContext('2d');
+    const status = document.getElementById('status');
+    const detectBtn = document.getElementById('detectBtn');
+    const histCanvas = document.getElementById('histogram');
+    let session;
+
+    async function init() {
+      status.textContent = 'Loading model...';
+      session = await ort.InferenceSession.create('model_tm_base_xview.onnx', {
+        executionProviders: ['wasm']
+      });
+      status.textContent = 'Model loaded';
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 512, height: 512, facingMode: 'environment' }
+      });
+      video.srcObject = stream;
+      await video.play();
+      status.textContent = 'Camera ready';
+    }
+
+    function preprocess() {
+      const tmp = document.createElement('canvas');
+      tmp.width = 512; tmp.height = 512;
+      const tctx = tmp.getContext('2d');
+      tctx.drawImage(video, 0, 0, 512, 512);
+      const data = tctx.getImageData(0,0,512,512).data;
+      const arr = new Float32Array(1 * 3 * 512 * 512);
+      for (let i=0, j=0; i<data.length; i+=4, j++) {
+        arr[j] = data[i] / 255;                // R
+        arr[j + 512*512] = data[i + 1] / 255; // G
+        arr[j + 2*512*512] = data[i + 2] / 255; // B
+      }
+      return new ort.Tensor('float32', arr, [1,3,512,512]);
+    }
+
+    function drawBoxes(boxes, labels, scores) {
+      ctx.clearRect(0,0,512,512);
+      ctx.drawImage(video, 0, 0, 512, 512);
+      ctx.strokeStyle = 'red';
+      ctx.lineWidth = 2;
+      ctx.font = '16px sans-serif';
+      labels.forEach((lbl, i) => {
+        const [x1,y1,x2,y2] = boxes[i];
+        ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+        ctx.fillText(`${LABEL_MAP[lbl] || lbl} (${(scores[i]*100).toFixed(0)}%)`, x1, y1-5);
+      });
+    }
+
+    function drawHistogram(labels) {
+      const counts = {};
+      labels.forEach(l => counts[l] = (counts[l]||0) + 1);
+      const lbls = Object.keys(counts).map(l => LABEL_MAP[l] || l);
+      const vals = Object.values(counts);
+      new Chart(histCanvas, {
+        type: 'bar',
+        data: {
+          labels: lbls,
+          datasets: [{ label: 'Counts', data: vals, backgroundColor: 'rgba(75,192,192,0.5)' }]
+        },
+        options: { indexAxis: 'y', scales: { x: { beginAtZero:true } } }
+      });
+    }
+
+    detectBtn.onclick = async () => {
+      status.textContent = 'Running detection...';
+      const input = preprocess();
+      const output = await session.run({ input });
+      const boxes = output['output']?.data || [];
+      const scores = output['3185']?.data || [];
+      const labels = output['3186']?.data || [];
+      const n = labels.length;
+      if (n === 0) {
+        status.textContent = 'No detections';
+        ctx.clearRect(0,0,512,512);
+        ctx.drawImage(video,0,0,512,512);
+        histCanvas.getContext('2d').clearRect(0,0,histCanvas.width,histCanvas.height);
+        return;
+      }
+      status.textContent = `Detections: ${n}`;
+      const boxArray = [];
+      for (let i=0; i<n; i++) {
+        boxArray.push([boxes[4*i], boxes[4*i+1], boxes[4*i+2], boxes[4*i+3]]);
+      }
+      drawBoxes(boxArray, labels, scores);
+      drawHistogram(Array.from(labels));
+    };
+
+    init();
+  </script>
+</body>
+</html>

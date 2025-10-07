@@ -16,8 +16,6 @@ from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY
 
 NUM_CHANNELS = 6
 NUM_FRAMES = 4
-REPO_ID = "nasa-ibm-ai4science/Surya-1.0_validation_data"
-INDEX_FILE = "index_2011_test.csv"
 
 IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "false") == "true"
 

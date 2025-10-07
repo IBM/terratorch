@@ -1,0 +1,264 @@
+@use "@carbon/styles/scss/reset";
+@use "@carbon/styles/scss/theme" as *;
+@use "@carbon/styles/scss/themes";
+@use "@carbon/styles/scss/spacing" as *; /* near top of file */
+@use "@carbon/styles/scss/type" as *; /* place at top of file */
+@use "@carbon/styles/scss/grid";
+@use "@carbon/styles/scss/breakpoint" as *;
+
+:root {
+  @include theme(themes.$g10);
+
+  @media (prefers-color-scheme: dark) {
+    @include theme(themes.$g100);
+  }
+}
+
+.g10 {
+  @include theme(themes.$g10);
+}
+
+.g100 {
+  @include theme(themes.$g100);
+}
+
+:root .compliment {
+  @include theme(themes.$g100);
+
+  @media (prefers-color-scheme: dark) {
+    @include theme(themes.$g10);
+  }
+}
+
+.g10 .compliment {
+  @include theme(themes.$g100);
+}
+
+.g100 .compliment {
+  @include theme(themes.$g10);
+}
+
+.app {
+  display: grid;
+  grid-template-rows: $spacing-09 1fr;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.main {
+  height: 100%;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+.action-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  background-color: $text-primary;
+}
+
+.notification .action-icon {
+  mask: url("/notification.svg") no-repeat center;
+}
+
+.user-avatar .action-icon {
+  mask: url("/user--avatar.svg") no-repeat center;
+}
+
+.app-switcher .action-icon {
+  mask: url("/switcher.svg") no-repeat center;
+}
+
+.header-panel__content {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-05;
+  padding: $spacing-05;
+}
+
+.header-panel__title {
+  @include type-style("productive-heading-02");
+}
+
+.theme-selector__icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  background-color: $text-primary;
+}
+
+cds-content-switcher-item[selected] .theme-selector__icon {
+  /* switch icon color when selected */
+  background-color: $background;
+}
+
+.theme-selector__icon--light {
+  mask: url("/sun.svg") no-repeat center;
+}
+
+.theme-selector__icon--system {
+  mask: url("/brightness-contrast.svg") no-repeat center;
+}
+
+.theme-selector__icon--dark {
+  mask: url("/moon.svg") no-repeat center;
+}
+
+.page {
+  padding: 0;
+
+  > * {
+    padding-inline: $spacing-06;
+    margin: 0;
+  }
+}
+
+.page-landing__banner {
+  padding-block: $spacing-05 $spacing-07;
+  background: $layer-01;
+  box-shadow: $spacing-06 0 0 $layer-01, -1 * $spacing-06 0 0 $layer-01;
+}
+
+.page-landing__heading {
+  @include type-style("productive-heading-05");
+
+  margin: 0;
+}
+
+.page-landing__illo {
+  max-width: 100%;
+  float: inline-end;
+  height: auto;
+}
+
+@include breakpoint-down(md) {
+  .page-landing__illo {
+    max-width: 528px;
+    width: 100%;
+    height: 100%;
+    float: inline-start;
+  }
+}
+
+.page-landing__tabs {
+  margin: (-1 * $spacing-08) 0 $spacing-08;
+}
+
+.page-landing__tab-content {
+  padding-block: $spacing-06;
+}
+
+.page-landing__subheading {
+  @include type-style("productive-heading-03");
+
+  font-weight: 600;
+}
+
+.page-landing__p {
+  @include type-style("productive-heading-03");
+  margin-top: $spacing-06;
+  margin-bottom: $spacing-08;
+}
+
+.page-landing__r3 {
+  padding-block: $spacing-09;
+  background: $layer-01;
+}
+
+.sample-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 10px;
+  width: 100%;
+  max-width: 512px;
+  margin-bottom: 20px;
+
+  @media screen and (max-width: 450px) {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+}
+
+.sample-grid img {
+  width: 100%;
+  aspect-ratio: 1/1;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.sample-grid img:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.container {
+  position: relative;
+  min-height: 600px;
+  padding-top: 5%;
+}
+
+#inputImage {
+  position: absolute;
+}
+
+#overlayCanvas {
+  position: absolute;
+}
+
+#loadUrlBtn {
+  padding-bottom: $spacing-05;
+}
+
+/* Layout for results row */
+.results-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 25px;
+  max-width: 1024px;
+  justify-content: center;
+  /* center the row horizontally */
+  align-items: center;
+  height: 100%;
+  /* vertically align items */
+  flex-direction: row;
+
+  @media screen and (max-width: 730px) {
+    flex-wrap: wrap;
+  }
+}
+
+.results-row div {
+  width: 100%;
+}
+
+.results-row img,
+.results-row canvas {
+  width: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* Overlay container style */
+.overlay-container {
+  position: relative;
+  height: auto;
+  border-radius: 8px;
+  overflow: hidden;
+  padding-bottom: 100%;
+}
+
+.overlay-container img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  object-fit: cover;
+}
+
+.overlay-container canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+}
