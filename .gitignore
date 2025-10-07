@@ -27,3 +27,9 @@ examples/**/*tif*
 annotations.json
 **/*.tif
 replicate
+examples/notebooks/tile_cache_train/*.json
+examples/notebooks/tile_cache_train/*.png
+examples/notebooks/tile_cache_val/*.json
+examples/notebooks/tile_cache_val/*.png
+examples/webapps/*/node_modules
+

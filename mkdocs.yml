@@ -100,6 +100,14 @@ nav:
 # TODO Add docs for iterate
 #    - Iterate: guide/iterate.md
     - Glossary: guide/glossary.md
+    - Serving models with vLLM:
+      - Introduction: guide/vllm/intro.md
+      - vLLM IOProcessor Plugins:
+        - Getting Started: guide/vllm/vllm_io_plugins
+        - Available Plugins:
+          - Segmentation: guide/vllm/plugins/segmentation_io_plugin.md
+      - Prepare your model for serving with vLLM: guide/vllm/prepare_your_model.md
+      - Initializing and serving a model with vLLM: guide/vllm/serving_a_model.md
     - FAQs: guide/faqs.md
 
   - Tutorials:

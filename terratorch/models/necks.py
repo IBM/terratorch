@@ -32,13 +32,9 @@ class Neck(ABC, nn.Module):
     def forward(self, channel_list: list[torch.Tensor], **kwargs) -> list[torch.Tensor]: ...
 
 
-class NeckSequential(nn.Module):
-    def __init__(self, necks: list[Neck]):
-        super().__init__()
-        self.layers = nn.ModuleList(necks)
-
+class NeckSequential(nn.Sequential):
     def forward(self, x, **kwargs):
-        for layer in self.layers:
+        for layer in self:
             try:
                 x = layer(x, **kwargs)
             except TypeError:
