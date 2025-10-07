@@ -29,7 +29,7 @@ class UNetDecoder(nn.Module):
             encoder_channels=[embed_dim[0], *embed_dim],
             decoder_channels=channels,
             n_blocks=len(channels),
-            use_batchnorm=use_batchnorm,
+            use_norm=use_batchnorm,
             center=False,
             attention_type=attention_type,
         )
