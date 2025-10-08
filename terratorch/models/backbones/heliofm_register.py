@@ -2,22 +2,22 @@ import logging
 
 import huggingface_hub
 import torch
-from torch import nn
-
-from terratorch.models.backbones.Surya.downstream_examples.ar_segmentation.models import (
+from surya.downstream_examples.ar_segmentation.models import (
     HelioSpectformer2D as HelioSpectformer2D_ar,
 )
-from terratorch.models.backbones.Surya.downstream_examples.ar_segmentation.models import UNet as SuryaUNet
-from terratorch.models.backbones.Surya.downstream_examples.euv_spectra_prediction.models import (
+from surya.downstream_examples.ar_segmentation.models import UNet as SuryaUNet
+from surya.downstream_examples.euv_spectra_prediction.models import (
     HelioSpectformer2D as HelioSpectformer2D_euv,
 )
-from terratorch.models.backbones.Surya.downstream_examples.solar_flare_forecasting.models import (
+from surya.downstream_examples.solar_flare_forecasting.models import (
     HelioSpectformer2D as HelioSpectformer2D_flare,
 )
-from terratorch.models.backbones.Surya.downstream_examples.solar_wind_forecasting.models import (
+from surya.downstream_examples.solar_wind_forecasting.models import (
     HelioSpectformer2D as HelioSpectformer2D_wind,
 )
-from terratorch.models.backbones.Surya.surya.models.helio_spectformer import HelioSpectFormer
+from surya.models.helio_spectformer import HelioSpectFormer
+from torch import nn
+
 from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
 
 

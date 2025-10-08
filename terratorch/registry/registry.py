@@ -87,7 +87,6 @@ class MultiSourceRegistry(Mapping[str, T], typing.Generic[T]):
 
         # if no prefix, try to build in order
         for source in self._sources.values():
-            return source.build(name, *constructor_args, **constructor_kwargs)
             with suppress(InvalidModelError):
                 return source.build(name, *constructor_args, **constructor_kwargs)
 
