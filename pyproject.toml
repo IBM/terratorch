@@ -70,6 +70,7 @@ dependencies = [
   "numba",
   "hdf5plugin",
   "h5netcdf",
+  "transformers",
 ]
 
 
@@ -96,6 +97,9 @@ test = [
   "dask",
   "wandb",
   "pytest-sugar",
+  "vllm>=0.10.2",
+  "pillow",
+  "imagehash"
 ]
 
 mmseg = [
