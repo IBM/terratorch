@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import base64
 import datetime
+from io import BytesIO
 import os
 import tempfile
 import urllib.request
 from collections.abc import Sequence
-from typing import Any, Optional, Union
+from typing import Any, Optional, Tuple, Union
 
 import numpy as np
 import rasterio
@@ -26,8 +27,10 @@ from vllm.outputs import PoolingRequestOutput
 from vllm.plugins.io_processors.interface import (IOProcessor,
                                                   IOProcessorInput,
                                                   IOProcessorOutput)
+import time
 import os
 from .types import RequestData, RequestOutput, PluginConfig, TiledInferenceParameters
+from .utils import download_file_async, read_file_async
 
 logger = logging.getLogger(__name__)
 
@@ -175,9 +178,45 @@ class SegmentationIOProcessor(IOProcessor):
                     coords = None
 
         return img, meta, coords
+    
+    async def read_geotiff_async(self,
+            file_path: str,
+            path_type: str, ) -> Tuple[np.ndarray, dict, Tuple[float, float]]:
+        """Read all bands from *file_path* and return image + meta info.
+
+        Args:
+            file_path: path to image file.
+
+        Returns:
+            np.ndarray with shape (bands, height, width)
+            meta info dict
+        """
+        if all([x is None for x in [file_path, path_type]]):
+            raise Exception("All input fields to read_geotiff are None")
+        
+        data: BytesIO
+        if file_path is not None and path_type == "url":
+            data = await download_file_async(file_path)
+        elif file_path is not None and path_type == "path":
+            data = await read_file_async(file_path)
+        elif file_path is not None and path_type == "b64_json":
+            image_data = base64.b64decode(file_path)
+            data = BytesIO(image_data)
+        else:
+            raise Exception("Wrong combination of parameters to read_geotiff")
+
+        with rasterio.open(data) as src:
+            img = src.read()
+            meta = src.meta
+            try:
+                coords = src.lnglat()
+            except:
+                # Cannot read coords
+                coords = None
+        return img, meta, coords
 
 
-    def load_image(self, 
+    async def load_image(self, 
         data: Union[list[str]],
         path_type: str,
         mean: Optional[list[float]] = None,
@@ -204,7 +243,7 @@ class SegmentationIOProcessor(IOProcessor):
         location_coords = []
 
         for file in data:
-            img, meta, coords = self.read_geotiff(file_path=file, path_type=path_type)
+            img, meta, coords = await self.read_geotiff_async(file_path=file, path_type=path_type)
             # Rescaling (don't normalize on nodata)
             img = np.moveaxis(img, 0, -1)  # channels last for rescaling
             if indices is not None:
@@ -269,17 +308,27 @@ class SegmentationIOProcessor(IOProcessor):
         request_id: Optional[str] = None,
         **kwargs,
     ) -> Union[PromptType, Sequence[PromptType]]:
+            pass
 
+    async def pre_process_async(
+        self,
+        prompt: IOProcessorInput,
+        request_id: Optional[str] = None,
+        **kwargs,
+    ) -> Union[PromptType, Sequence[PromptType]]:
+
+        start = time.time()
         image_data = dict(prompt)
 
         indices = (DEFAULT_INPUT_INDICES if not image_data["indices"]
                    else image_data["indices"])
 
-        input_data, temporal_coords, location_coords, meta_data = self.load_image(
+        input_data, temporal_coords, location_coords, meta_data = await self.load_image(
             data=[image_data["data"]],
             indices=indices,
             path_type=image_data["data_format"],
         )
+        image_loaded = time.time()
 
         if input_data.mean() > 1:
             input_data = input_data / 10000  # Convert to range 0-1
@@ -361,6 +410,9 @@ class SegmentationIOProcessor(IOProcessor):
 
             prompts.append(prompt)
 
+        pre_proc = time.time()
+
+        print(f"req_id: {request_id}, started: {start}, loading took: {image_loaded - start}, processing_took: {pre_proc - image_loaded}")
         return prompts
 
     def post_process(
