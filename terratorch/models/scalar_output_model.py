@@ -125,7 +125,7 @@ class ScalarOutputModel(Model, SegmentationModel):
                 raise Exception(msg)
             return ClassificationHead(input_embed_dim, **head_kwargs)
         elif task == "scalar_regression":
-            return RegressionHead(input_embed_dim, **head_kwargs) #TODO: Inspect Regression Head for patch-wise regr
+            return RegressionHead(input_embed_dim, mode="patchwise", **head_kwargs) 
             
         # msg = "Task must be classification."
         # raise Exception(msg)
