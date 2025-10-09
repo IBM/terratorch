@@ -123,6 +123,10 @@ peft = [
   "peft>=0.15.0"
 ]
 
+geobenchv2 = [
+  "geobench_v2"
+]
+
 [project.urls]
 Documentation = "https://ibm.github.io/terratorch/"
 Issues = "https://github.com/IBM/terratorch/issues"
