@@ -26,7 +26,7 @@ class RegressionHead(nn.Module):
     def __init__(
         self,
         in_channels: int,
-        out_channels: int = 1, # could be also called num_variables (?)
+        num_outputs: int = 1, # could be also called num_variables or out_channels.
         mode: str = "pixelwise",
         final_act: nn.Module | str | None = None,
         learned_upscale_layers: int = 0,
@@ -38,7 +38,7 @@ class RegressionHead(nn.Module):
 
         Args:
             in_channels (int): Number of input channels
-            out_channels (int): Number of predicted regression variables. Defaults to single regression. 
+            num_outputs (int): Number of predicted regression variables. Defaults to single regression. 
             mode (str): Defines the mode of the regression. Can be pixelwise (default) or patchwise (i.e. scalar 
                 values are predicted for whole input patch).
             final_act (nn.Module | None, optional): Final activation to be applied. Defaults to None.
@@ -95,7 +95,7 @@ class RegressionHead(nn.Module):
         if self.mode == "patchwise":
             pre_layers.append(nn.AdaptiveAvgPool2d((1,1)))
             
-        final_layer = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1)
+        final_layer = nn.Conv2d(in_channels=in_channels, out_channels=num_outputs, kernel_size=1)
         self.head = nn.Sequential(*[*pre_layers, dropout, final_layer])
 
     def forward(self, x):

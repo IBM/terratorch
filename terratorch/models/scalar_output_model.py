@@ -109,7 +109,7 @@ class ScalarOutputModel(Model, SegmentationModel):
         features = self.neck(features, image_size=input_size)
 
         decoder_output = self.decoder([f.clone() for f in features])
-        mask = self.head(decoder_output)
+        mask = self.head(decoder_output)  # in case of regression mask --> label
 
         aux_outputs = {}
         for name, decoder in self.aux_heads.items():
@@ -127,5 +127,3 @@ class ScalarOutputModel(Model, SegmentationModel):
         elif task == "scalar_regression":
             return RegressionHead(input_embed_dim, mode="patchwise", **head_kwargs) 
             
-        # msg = "Task must be classification."
-        # raise Exception(msg)

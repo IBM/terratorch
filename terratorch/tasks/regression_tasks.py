@@ -12,7 +12,7 @@ import torch.nn.functional as F
 from lightning.pytorch.callbacks import Callback
 from torch import Tensor, nn
 from torchgeo.datasets.utils import unbind_samples
-from torchmetrics import MeanAbsoluteError, MeanSquaredError, MetricCollection, R2Score
+from torchmetrics import MeanAbsoluteError, MeanSquaredError, MetricCollection, R2Score, ClasswiseWrapper
 from torchmetrics.metric import Metric
 from torchmetrics.wrappers.abstract import WrapperMetric
 
@@ -42,6 +42,31 @@ class RootLossWrapper(nn.Module):
         if self.reduction == "mean":
             return loss.mean()
 
+        msg = "Only 'mean' and None reduction supported"
+        raise Exception(msg)
+    
+class WeightedLossWrapper(nn.Module):
+    def __init__(self, loss_function: nn.Module, weights: torch.Tensor, reduction: None | str = "mean") -> None:
+        super().__init__()
+        self.loss_function = loss_function
+        self.weights = weights
+        self.reduction = reduction
+    
+    def forward(self, output: Tensor, target: Tensor,) -> Tensor:
+        loss = self.loss_function(output, target)
+        if self.weights.ndim == 1:
+            weights = self.weights.view(1, -1, *([1] * (loss.ndim - 2)))
+        else:
+            weights = self.weights
+            
+        weighted_loss = weights.to(loss.device) * loss
+        
+        if self.reduction is None:
+            return weighted_loss
+        
+        if self.reduction == "mean":
+            return weighted_loss.mean()
+        
         msg = "Only 'mean' and None reduction supported"
         raise Exception(msg)
 
@@ -446,12 +471,8 @@ class ScalarRegressionTask(TerraTorchTask):
         freeze_backbone: bool = False,  # noqa: FBT001, FBT002
         freeze_decoder: bool = False,  # noqa: FBT001, FBT002
         freeze_head: bool = False,  # noqa: FBT001, FBT002
-        #plot_on_val: bool | int = 10,
-        #tiled_inference_parameters: dict | None = None, --> this task outputs scalars so tiled_inference not needed
         test_dataloaders_names: list[str] | None = None,
         lr_overrides: dict[str, float] | None = None,
-        #tiled_inference_on_testing: bool = False,
-        #tiled_inference_on_validation: bool = False,
         path_to_record_metrics: str = None,
     ) -> None:
         """Constructor
@@ -495,6 +516,7 @@ class ScalarRegressionTask(TerraTorchTask):
         """
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
+        self.num_outputs = num_outputs
 
         if model is not None and model_factory is not None:
             logger.warning("A model_factory and a model was provided. The model_factory is ignored.")
@@ -527,12 +549,18 @@ class ScalarRegressionTask(TerraTorchTask):
             ValueError: If *loss* is invalid.
         """
         loss: str = self.hparams["loss"].lower()
+        
+        class_weights = (
+            torch.Tensor(self.hparams["class_weights"]) if self.hparams["class_weights"] is not None else None
+        ) #TODO: apply the weighted class wrapper
+        
         if loss == "mse":
             self.criterion: nn.Module = IgnoreIndexLossWrapper(
                 nn.MSELoss(reduction="none"), self.hparams["ignore_index"]
             )
         elif loss == "mae":
             self.criterion = IgnoreIndexLossWrapper(nn.L1Loss(reduction="none"), self.hparams["ignore_index"])
+            
         elif loss == "rmse":
             # IMPORTANT! Root is done only after ignore index! Otherwise the mean taken is incorrect
             self.criterion = RootLossWrapper(
@@ -541,7 +569,7 @@ class ScalarRegressionTask(TerraTorchTask):
         elif loss == "huber":
             self.criterion = IgnoreIndexLossWrapper(nn.HuberLoss(reduction="none"), self.hparams["ignore_index"])
         else:
-            exception_message = f"Loss type '{loss}' is not valid. Currently, supports 'mse', 'rmse' or 'mae' loss."
+            exception_message = f"Loss type '{loss}' is not valid. Currently, supports 'mse', 'rmse', 'mae', and 'huber' loss."
             raise ValueError(exception_message)
 
     def configure_metrics(self) -> None:
@@ -549,10 +577,10 @@ class ScalarRegressionTask(TerraTorchTask):
 
         def instantiate_metrics():
             return {
-                "RMSE": MeanSquaredError(squared=False),
-                "MSE": MeanSquaredError(squared=True),
-                "MAE": MeanAbsoluteError(),
-                "R2_Score": R2Score(),
+                "RMSE": ClasswiseWrapper(MeanSquaredError(num_outputs=self.num_outputs, squared=False)),
+                "MSE": ClasswiseWrapper(MeanSquaredError(num_outputs=self.num_outputs, squared=True)),
+                "MAE": ClasswiseWrapper(MeanAbsoluteError(num_outputs=self.num_outputs)),
+                "R2_Score": ClasswiseWrapper(R2Score(num_outputs=self.num_outputs)),
             }
 
         def wrap_metrics_with_ignore_index(metrics):
