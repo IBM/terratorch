@@ -6,9 +6,8 @@ RUN echo "Preparing environment for Python $version"
 COPY pyproject.toml .
 COPY terratorch terratorch
 COPY tests tests
-
-RUN uv pip install --system git+https://github.com/The-AI-Alliance/GEO-Bench-2.git@main
-RUN uv pip install --system -e .[wxc,test]
+COPY run_install.sh .
+RUN bash run_install.sh 
 
 RUN pytest -s --cov=terratorch -v --cov-report term-missing tests
 
