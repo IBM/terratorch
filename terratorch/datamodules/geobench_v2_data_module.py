@@ -133,8 +133,9 @@ class GeoBenchV2ClassificationDataModule(GeoBenchClassificationDataModule):
     def _valid_attribute(self, *args: str):
         return self._proxy._valid_attribute(args)
 
-    def plot(self, args):
-        return self._proxy.visualize_batch(args)
+    def plot(self, batch, split: str = "val"):
+        return self._proxy.visualize_batch(batch = batch, split = split)
+
 
 
 
@@ -559,8 +560,8 @@ class GeoBenchV2SegmentationDataModule(GeoBenchSegmentationDataModule):
     def _valid_attribute(self, *args: str):
         return self._proxy._valid_attribute(args)
 
-    def plot(self, args):
-        return self._proxy.visualize_batch(args)
+    def plot(self, batch, split: str = "val"):
+        return self._proxy.visualize_batch(batch = batch, split = split)
 
 
 

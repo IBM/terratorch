@@ -206,7 +206,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
                 contained in the parameter name)and the value should be the new lr. Defaults to None.
             tiled_inference_on_testing (bool): A boolean to define if tiled inference will be used during the test step. 
             tiled_inference_on_validation (bool): A boolean to define if tiled inference will be used during the val step. 
-            path_to_record_metrics (str): A path to save the file containing the metrics log. 
+            path_to_record_metrics (str): A path to save the file containing the metrics log.
         """
 
         self.tiled_inference_parameters = tiled_inference_parameters
@@ -345,7 +345,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
                 for key in ["image", "mask", "prediction"]:
                     batch[key] = batch[key].cpu()
                 sample = unbind_samples(batch)[0]
-                fig = False #datamodule.val_dataset.plot(sample)
+                fig = datamodule.val_dataset.plot(sample)
                 if fig:
                     summary_writer = self.logger.experiment
                     if hasattr(summary_writer, "add_figure"):

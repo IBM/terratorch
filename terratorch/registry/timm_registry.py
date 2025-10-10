@@ -5,7 +5,7 @@ import torch
 from torch import nn
 
 from terratorch.registry import BACKBONE_REGISTRY
-from terratorch.utils import remove_unexpected_prefix
+from terratorch.utils import InvalidModelError, remove_unexpected_prefix
 
 
 class TimmBackboneWrapper(nn.Module):
@@ -18,9 +18,11 @@ class TimmBackboneWrapper(nn.Module):
         self.forward = timm_module.forward
         if hasattr(timm_module, "freeze"):
             self.freeze = timm_module.freeze
+
     @property
     def out_channels(self):
         return self._out_channels
+
 
 class TimmRegistry(Set):
     """Registry wrapper for timm"""
@@ -44,7 +46,7 @@ class TimmRegistry(Set):
         except RuntimeError as e:
             if "Unknown model" in str(e):
                 msg = f"Unknown model {name}"
-                raise KeyError(msg) from e
+                raise InvalidModelError(msg, model_name=name) from e
             raise e
 
     def __iter__(self):
@@ -64,7 +66,6 @@ class TimmRegistry(Set):
 
     def __str__(self):
         return f"timm registry with {len(self)} registered backbones"
-
 
 
 TIMM_BACKBONE_REGISTRY = TimmRegistry()

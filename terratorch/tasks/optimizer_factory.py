@@ -78,7 +78,6 @@ def optimizer_factory(
             nested_scheduler = nested_scheduler(optimizer, **value)
             schedule_sequence.append(nested_scheduler)
         scheduler_hparams_no_interval["schedulers"] = schedule_sequence
-        
     scheduler = getattr(torch.optim.lr_scheduler, scheduler)
     scheduler = scheduler(optimizer, **scheduler_hparams_no_interval)
     return {
