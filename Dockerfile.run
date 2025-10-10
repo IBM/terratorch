@@ -1,0 +1,13 @@
+ARG version
+FROM terratorch_python_$version:latest
+
+RUN echo "Preparing environment for Python $version"
+
+COPY pyproject.toml .
+COPY terratorch terratorch
+COPY tests tests
+COPY run_install.sh .
+RUN bash run_install.sh 
+
+RUN pytest -s --cov=terratorch -v --cov-report term-missing tests
+
