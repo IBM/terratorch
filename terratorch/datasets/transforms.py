@@ -7,7 +7,8 @@ from einops import rearrange
 import albumentations as A
 import kornia.augmentation as K
 from kornia.augmentation._2d.geometric.base import GeometricAugmentationBase2D
-from torch import nnfrom typing import Union, Dict
+from torch import nn
+from typing import Union, Dict
 
 N_DIMS_FOR_TEMPORAL = 4
 N_DIMS_FLATTENED_TEMPORAL = 3
