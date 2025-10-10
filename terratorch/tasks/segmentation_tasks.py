@@ -293,7 +293,15 @@ class SemanticSegmentationTask(TerraTorchTask):
             )
         else:
             self.test_metrics = nn.ModuleList([metrics.clone(prefix="test/")])
-
+    
+    def reformat_y(self, y):
+        
+        if len(y.shape) == 4:
+            if y.shape[1] == 1:
+                y = y.squeeze(1)
+        
+        return y
+    
     def training_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
         """Compute the train loss and additional metrics.
 
@@ -304,7 +312,8 @@ class SemanticSegmentationTask(TerraTorchTask):
         """
         # Testing because of failures.
         x = batch["image"]
-        y = self.squeeze_ground_truth(batch["mask"])
+        y = batch["mask"]
+        y = self.reformat_y(y)
         other_keys = batch.keys() - {"image", "mask", "filename"}
 
         rest = {k: batch[k] for k in other_keys}
@@ -325,9 +334,10 @@ class SemanticSegmentationTask(TerraTorchTask):
             dataloader_idx: Index of the current dataloader.
         """
         x = batch["image"]
-        y = self.squeeze_ground_truth(batch["mask"])
+        y = batch["mask"]
+        y = self.reformat_y(y)
         other_keys = batch.keys() - {"image", "mask", "filename"}
-
+        
         rest = {k: batch[k] for k in other_keys}
 
         model_output = self.handle_full_or_tiled_inference(x, self.tiled_inference_on_testing, **rest)
@@ -354,7 +364,8 @@ class SemanticSegmentationTask(TerraTorchTask):
             dataloader_idx: Index of the current dataloader.
         """
         x = batch["image"]
-        y = self.squeeze_ground_truth(batch["mask"])
+        y = batch["mask"]
+        y = self.reformat_y(y)
 
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
