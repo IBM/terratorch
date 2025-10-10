@@ -27,7 +27,8 @@ from vllm.outputs import PoolingRequestOutput
 from vllm.plugins.io_processors.interface import (IOProcessor,
                                                   IOProcessorInput,
                                                   IOProcessorOutput)
-import time
+
+from datetime import datetime
 import os
 from .types import RequestData, RequestOutput, PluginConfig, TiledInferenceParameters
 from .utils import download_file_async, read_file_async
@@ -80,6 +81,7 @@ class SegmentationIOProcessor(IOProcessor):
         self.tiled_inference_parameters = self._init_tiled_inference_parameters_info() 
         self.batch_size = 1
         self.requests_cache: dict[str, dict[str, Any]] = {}
+        self.data_cache = {}
 
     def _init_tiled_inference_parameters_info(self) -> TiledInferenceParameters:
         if "tiled_inference_paramters" in self.model_config["model"]["init_args"]:
@@ -317,18 +319,22 @@ class SegmentationIOProcessor(IOProcessor):
         **kwargs,
     ) -> Union[PromptType, Sequence[PromptType]]:
 
-        start = time.time()
+        start = datetime.now()
         image_data = dict(prompt)
 
         indices = (DEFAULT_INPUT_INDICES if not image_data["indices"]
                    else image_data["indices"])
 
-        input_data, temporal_coords, location_coords, meta_data = await self.load_image(
-            data=[image_data["data"]],
-            indices=indices,
-            path_type=image_data["data_format"],
-        )
-        image_loaded = time.time()
+        if image_data["data"] in self.data_cache:
+            input_data, temporal_coords, location_coords, meta_data = self.data_cache[image_data["data"]]
+        else:
+            input_data, temporal_coords, location_coords, meta_data = await self.load_image(
+                data=[image_data["data"]],
+                indices=indices,
+                path_type=image_data["data_format"],
+            )
+            self.data_cache[image_data["data"]] = (input_data, temporal_coords, location_coords, meta_data)
+        image_loaded = datetime.now()
 
         if input_data.mean() > 1:
             input_data = input_data / 10000  # Convert to range 0-1
@@ -410,9 +416,9 @@ class SegmentationIOProcessor(IOProcessor):
 
             prompts.append(prompt)
 
-        pre_proc = time.time()
+        pre_proc = datetime.now()
 
-        print(f"req_id: {request_id}, started: {start}, loading took: {image_loaded - start}, processing_took: {pre_proc - image_loaded}")
+        print(f"req_id: {request_id}, started: {start}, loading done: {image_loaded}, processing done: {pre_proc}")
         return prompts
 
     def post_process(
