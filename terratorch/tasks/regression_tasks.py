@@ -49,7 +49,7 @@ class WeightedLossWrapper(nn.Module):
     def __init__(self, loss_function: nn.Module, weights: torch.Tensor, reduction: None | str = "mean") -> None:
         super().__init__()
         self.loss_function = loss_function
-        self.weights = weights
+        self.register_buffer("weights", weights)
         self.reduction = reduction
     
     def forward(self, output: Tensor, target: Tensor,) -> Tensor:
@@ -59,13 +59,13 @@ class WeightedLossWrapper(nn.Module):
         else:
             weights = self.weights
             
-        weighted_loss = weights.to(loss.device) * loss
+        weighted_loss = weights * loss
         
         if self.reduction is None:
             return weighted_loss
         
         if self.reduction == "mean":
-            return weighted_loss.mean()
+            return weighted_loss.sum() / weights.sum() #normalized mean
         
         msg = "Only 'mean' and None reduction supported"
         raise Exception(msg)
@@ -552,25 +552,35 @@ class ScalarRegressionTask(TerraTorchTask):
         
         class_weights = (
             torch.Tensor(self.hparams["class_weights"]) if self.hparams["class_weights"] is not None else None
-        ) #TODO: apply the weighted class wrapper
+        ) 
         
+        # Base criterions:
         if loss == "mse":
-            self.criterion: nn.Module = IgnoreIndexLossWrapper(
-                nn.MSELoss(reduction="none"), self.hparams["ignore_index"]
-            )
+            base_criterion = nn.MSELoss(reduction="none")
+            
         elif loss == "mae":
-            self.criterion = IgnoreIndexLossWrapper(nn.L1Loss(reduction="none"), self.hparams["ignore_index"])
+            base_criterion = nn.L1Loss(reduction="none")
             
         elif loss == "rmse":
-            # IMPORTANT! Root is done only after ignore index! Otherwise the mean taken is incorrect
-            self.criterion = RootLossWrapper(
-                IgnoreIndexLossWrapper(nn.MSELoss(reduction="none"), self.hparams["ignore_index"]), reduction=None
-            )
+            base_criterion = nn.MSELoss(reduction="none")
+            
         elif loss == "huber":
-            self.criterion = IgnoreIndexLossWrapper(nn.HuberLoss(reduction="none"), self.hparams["ignore_index"])
+            base_criterion = nn.HuberLoss(reduction="none")
+            
         else:
             exception_message = f"Loss type '{loss}' is not valid. Currently, supports 'mse', 'rmse', 'mae', and 'huber' loss."
             raise ValueError(exception_message)
+        
+        if class_weights is not None: # if class_weights were passed TODO: what if there are more classes but no class_weights?
+            base_criterion = WeightedLossWrapper(base_criterion, class_weights, reduction=None)
+        
+        base_criterion = IgnoreIndexLossWrapper(base_criterion, self.hparams["ignore_index"]) # reduction = mean TODO: check 
+        
+        if loss == "rmse":
+            # Root after IgnoreIndex
+            base_criterion = RootLossWrapper(base_criterion, reduction=None)
+            
+        self.criterion = base_criterion
 
     def configure_metrics(self) -> None:
         """Initialize the performance metrics."""
@@ -616,7 +626,7 @@ class ScalarRegressionTask(TerraTorchTask):
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
-        loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
+        loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss) # here it will pass the weighted loss averaged across variables
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat = model_output.output
         self.train_metrics.update(y_hat, y)
