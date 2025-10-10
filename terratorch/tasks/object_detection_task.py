@@ -64,6 +64,8 @@ class ObjectDetectionTask(BaseTask):
         boxes_field: str = 'boxes',
         labels_field: str = 'labels',
         masks_field: str = 'masks',
+        
+        ignore_index: int = -1
 
     ) -> None:
        
@@ -86,6 +88,7 @@ class ObjectDetectionTask(BaseTask):
             boxes_field (str): The field containing the bbox information in the sample. Deafult is boxes
             labels_field (str): The field containing the labels information in the sample. Deafult is labels
             masks_field (str): The field containing the masks information in the sample. Deafult is masks
+            ignore_index (int): Index to be ignored when calculating the loss and metrics.
 
         Returns:
             None
@@ -111,6 +114,8 @@ class ObjectDetectionTask(BaseTask):
         self.boxes_field = boxes_field
         self.labels_field = labels_field
         self.masks_field = masks_field
+        
+        self.ignore_index = ignore_index
 
     def configure_models(self) -> None:
         """
@@ -187,10 +192,28 @@ class ObjectDetectionTask(BaseTask):
 
             y = [
                 {'boxes': batch[self.boxes_field][i], 'labels': batch[self.labels_field][i]}
-                for i in range(batch_size)
+                for i in range(batch_size) 
             ]
 
         return y
+
+    def apply_ignore_index(self, batch, ignore_index):
+        
+        # import pdb
+        # pdb.set_trace()
+        
+        if ignore_index != -1:
+            
+            for i in range(len(batch[self.labels_field])):
+                
+                labels_unfiltered = batch[self.labels_field][i]
+                batch[self.labels_field][i] = torch.cat([x[None] for x in batch[self.labels_field][i] if x != ignore_index])
+                batch[self.boxes_field][i] = torch.cat([x[None] for x, l in zip(batch[self.boxes_field][i],labels_unfiltered)  if l != ignore_index])
+                if self.masks_field in batch.keys():
+                    batch[self.masks_field][i] = torch.cat([x[None] for x, l in zip(batch[self.masks_field][i],labels_unfiltered)  if l != ignore_index])
+        
+        return batch
+
 
     def apply_nms_sample(self, y_hat, iou_threshold=0.5, score_threshold=0.5):
         """
@@ -257,6 +280,7 @@ class ObjectDetectionTask(BaseTask):
 
         x = batch['image']
         batch_size = get_batch_size(x)
+        batch = self.apply_ignore_index(batch, self.ignore_index)
         y = self.reformat_batch(batch, batch_size)
         loss_dict = self(x, y)
         if isinstance(loss_dict, dict) is False:
@@ -280,6 +304,7 @@ class ObjectDetectionTask(BaseTask):
         
         x = batch['image']
         batch_size = get_batch_size(x)
+        batch = self.apply_ignore_index(batch, self.ignore_index)
         y = self.reformat_batch(batch, batch_size)
         y_hat = self(x)
         if isinstance(y_hat, dict) is False:
@@ -369,6 +394,7 @@ class ObjectDetectionTask(BaseTask):
 
         x = batch['image']
         batch_size = get_batch_size(x)
+        batch = self.apply_ignore_index(batch, self.ignore_index)
         y = self.reformat_batch(batch, batch_size)
         y_hat = self(x)
         if isinstance(y_hat, dict) is False:
