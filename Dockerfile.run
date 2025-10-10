@@ -1,0 +1,14 @@
+ARG version
+FROM terratorch_python_$version:latest
+
+RUN echo "Preparing environment for Python $version"
+
+COPY pyproject.toml .
+COPY terratorch terratorch
+COPY tests tests
+
+RUN uv pip install --system git+https://github.com/The-AI-Alliance/GEO-Bench-2.git@main
+RUN uv pip install --system -e .[wxc,test]
+
+RUN pytest -s --cov=terratorch -v --cov-report term-missing tests
+
