@@ -4,7 +4,7 @@ import torch
 from segmentation_models_pytorch.base import SegmentationModel
 from torch import nn
 import torchvision.transforms as transforms
-from terratorch.models.heads import ClassificationHead, RegressionHead
+from terratorch.models.heads import ScalarHead 
 from terratorch.models.model import AuxiliaryHeadWithDecoderWithoutInstantiatedHead, Model, ModelOutput
 from terratorch.models.utils import pad_images
 import pdb
@@ -120,9 +120,11 @@ class ScalarOutputModel(Model, SegmentationModel):
 
     def _get_head(self, task: str, input_embed_dim: int, head_kwargs: dict):
         if task == "classification" or task == "scalar_regression":
-            if "num_classes" not in head_kwargs:
-                msg = "num_classes must be defined for classification task"
+            if "num_outputs" not in head_kwargs:
+                msg = "num_outputs must be defined for classification and scalar_regression task"
                 raise Exception(msg)
-            return ClassificationHead(input_embed_dim, **head_kwargs)
+            return ScalarHead(input_embed_dim, **head_kwargs)
+        msg = "Task must be classification or scalar regression."
+        raise Exception(msg)
        
             

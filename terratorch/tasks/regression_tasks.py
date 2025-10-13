@@ -62,10 +62,10 @@ class WeightedLossWrapper(nn.Module):
         weighted_loss = weights * loss
         
         if self.reduction is None:
-            return weighted_loss # [B, num_vars, H, W]
+            return weighted_loss # [B, num_vars, H, W] or [B, num_vars]
         
-        if self.reduction == "mean": # x patch reduction
-            return weighted_loss.mean(dim=0, keep_dim=True) # x batch mean
+        if self.reduction == "mean": # per batch reduction
+            return weighted_loss.sum() / weights.sum()  # weighted scalar mean for backprop
         
         msg = "Only 'mean' and None reduction supported"
         raise Exception(msg)
@@ -651,13 +651,13 @@ class ScalarRegressionTask(TerraTorchTask):
         rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
         
-        # loss = {"loss": [1, num_outputs]}
+        # loss = {"loss": [num_outputs]}
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss) 
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat = model_output.output
         self.train_metrics.update(y_hat, y)
 
-        return loss["loss"] # tensor of [1, num_outputs] [[x,y,z]] #?
+        return loss["loss"] # tensor of shape [num_outputs]
 
     def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         """Compute the validation loss and additional metrics.

@@ -64,8 +64,8 @@ class RegressionHead(nn.Module):
             self.final_act = target_class()
         pre_layers = []
         
-        # Learned upscaling (only relevant for pixelwise)
-        if self.mode == "pixelwise" and learned_upscale_layers != 0:
+        
+        if learned_upscale_layers != 0:
             learned_upscale = nn.Sequential(
                 *[PixelShuffleUpscale(in_channels) for _ in range(self.learned_upscale_layers)]
             )
