@@ -38,8 +38,6 @@ class RegressionHead(nn.Module):
         Args:
             in_channels (int): Number of input channels
             num_outputs (int): Number of predicted regression variables. Defaults to single regression. 
-            mode (str): Defines the mode of the regression. Can be pixelwise (default) or patchwise (i.e. scalar 
-                values are predicted for whole input patch).
             final_act (nn.Module | None, optional): Final activation to be applied. Defaults to None.
             learned_upscale_layers (int, optional): Number of Pixelshuffle layers to create. Each upscales 2x.
                 Defaults to 0.
@@ -51,10 +49,6 @@ class RegressionHead(nn.Module):
         """
         super().__init__()
         
-        if mode not in ["pixelwise", "patchwise"]:
-            msg = f"Mode must be 'pixelwise' or 'patchwise', got '{mode}' instead."
-            raise ValueError(msg)
-        self.mode = mode
         self.learned_upscale_layers = learned_upscale_layers
         self.final_act = final_act if final_act else nn.Identity()
         
