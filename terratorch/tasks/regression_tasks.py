@@ -18,7 +18,7 @@ from torchmetrics.wrappers.abstract import WrapperMetric
 
 from terratorch.models.model import AuxiliaryHead, Model, ModelOutput
 from terratorch.registry.registry import MODEL_FACTORY_REGISTRY
-from terratorch.tasks.loss_handler import LossHandler
+from terratorch.tasks.loss_handler import LossHandler, CombinedLoss
 from terratorch.tasks.optimizer_factory import optimizer_factory
 from terratorch.tasks.tiled_inference import TiledInferenceParameters, tiled_inference
 from terratorch.tasks.base_task import TerraTorchTask
@@ -150,6 +150,20 @@ class IgnoreIndexMetricWrapper(WrapperMetric):
         self.metric.reset()
 
 
+def init_loss(loss: str, ignore_index: int = None):
+    if loss == "mse":
+        return IgnoreIndexLossWrapper(nn.MSELoss(reduction="none"), ignore_index)
+    elif loss == "mae":
+        return  IgnoreIndexLossWrapper(nn.L1Loss(reduction="none"), ignore_index)
+    elif loss == "rmse":
+        # IMPORTANT! Root is done only after ignore index! Otherwise, the mean taken is incorrect
+        return  RootLossWrapper(IgnoreIndexLossWrapper(nn.MSELoss(reduction="none"), ignore_index), reduction=None)
+    elif loss == "huber":
+        return  IgnoreIndexLossWrapper(nn.HuberLoss(reduction="none"), ignore_index)
+    else:
+        raise ValueError(f"Loss type '{loss}' is not valid. Currently, supports 'mse', 'rmse', 'mae', or 'huber' loss.")
+
+
 class PixelwiseRegressionTask(TerraTorchTask):
     """Pixelwise Regression Task that accepts models from a range of sources.
 
@@ -271,23 +285,30 @@ class PixelwiseRegressionTask(TerraTorchTask):
         Raises:
             ValueError: If *loss* is invalid.
         """
-        loss: str = self.hparams["loss"].lower()
-        if loss == "mse":
-            self.criterion: nn.Module = IgnoreIndexLossWrapper(
-                nn.MSELoss(reduction="none"), self.hparams["ignore_index"]
-            )
-        elif loss == "mae":
-            self.criterion = IgnoreIndexLossWrapper(nn.L1Loss(reduction="none"), self.hparams["ignore_index"])
-        elif loss == "rmse":
-            # IMPORTANT! Root is done only after ignore index! Otherwise the mean taken is incorrect
-            self.criterion = RootLossWrapper(
-                IgnoreIndexLossWrapper(nn.MSELoss(reduction="none"), self.hparams["ignore_index"]), reduction=None
-            )
-        elif loss == "huber":
-            self.criterion = IgnoreIndexLossWrapper(nn.HuberLoss(reduction="none"), self.hparams["ignore_index"])
+        loss = self.hparams["loss"]
+        ignore_index = self.hparams["ignore_index"]
+
+        if isinstance(loss, str):
+            # Single loss
+            self.criterion = init_loss(loss, ignore_index=ignore_index)
+        elif isinstance(loss, nn.Module):
+            # Custom loss
+            self.criterion = loss
+        elif isinstance(loss, list):
+            # List of losses with equal weights
+            losses = {loss: init_loss(loss, ignore_index=ignore_index)
+                      for loss in loss}
+            self.criterion = CombinedLoss(losses=losses)
+        elif isinstance(loss, dict):
+            # Equal weighting of losses
+            loss, weight = list(loss.keys()), list(loss.values())
+            losses = {loss: init_loss(loss, ignore_index=ignore_index)
+                      for loss in loss}
+            self.criterion = CombinedLoss(losses=losses, weight=weight)
         else:
-            exception_message = f"Loss type '{loss}' is not valid. Currently, supports 'mse', 'rmse' or 'mae' loss."
-            raise ValueError(exception_message)
+            raise ValueError(f"The loss type {loss} isn't supported. Provide loss as string, list, or "
+                             f"dict[name, weights].")
+
 
     def configure_metrics(self) -> None:
         """Initialize the performance metrics."""
