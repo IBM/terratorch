@@ -18,6 +18,7 @@ from einops import rearrange
 import logging
 from terratorch.vllm.plugins import generate_datamodule
 import uuid
+import warnings
 from vllm.config import VllmConfig
 from vllm.entrypoints.openai.protocol import (IOProcessorRequest,
                                               IOProcessorResponse)
