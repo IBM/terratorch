@@ -119,11 +119,10 @@ class ScalarOutputModel(Model, SegmentationModel):
         return ModelOutput(output=mask, auxiliary_heads=aux_outputs)
 
     def _get_head(self, task: str, input_embed_dim: int, head_kwargs: dict):
-        if task == "classification":
+        if task == "classification" or task == "scalar_regression":
             if "num_classes" not in head_kwargs:
                 msg = "num_classes must be defined for classification task"
                 raise Exception(msg)
             return ClassificationHead(input_embed_dim, **head_kwargs)
-        elif task == "scalar_regression":
-            return RegressionHead(input_embed_dim, mode="patchwise", **head_kwargs) 
+       
             
