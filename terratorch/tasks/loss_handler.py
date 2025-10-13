@@ -1,7 +1,8 @@
-from collections.abc import Callable
 
+import torch
+import torch.nn as nn
 from torch import Tensor
-
+from collections.abc import Callable
 from terratorch.models.model import ModelOutput
 
 
@@ -42,15 +43,15 @@ class LossHandler:
         """
         
         loss = self._compute_loss(model_output.output, ground_truth, criterion)
+        if isinstance(loss, Tensor):
+            loss = {"loss": loss}
         if not model_output.auxiliary_heads:
-            return {"loss": loss}
+            return loss
 
         if aux_loss_weights is None:
             msg = "Auxiliary heads given with no aux_loss_weights"
             raise Exception(msg)
-        all_losses = {}
-        all_losses["decode_head"] = loss
-        total_loss = loss.clone()
+        total_loss = loss["loss"].clone()
         # incorporate aux heads
         model_output_names = set(model_output.auxiliary_heads.keys())
         aux_loss_names = set(aux_loss_weights.keys())
@@ -63,11 +64,15 @@ class LossHandler:
         for loss_name, loss_weight in aux_loss_weights.items():
             output = model_output.auxiliary_heads[loss_name]
             loss_value: Tensor = self._compute_loss(output, ground_truth, criterion)
-            all_losses[loss_name] = loss_value
-            total_loss = total_loss + loss_value * loss_weight
+            loss[loss_name] = loss_value
+            if isinstance(loss_value, dict):
+                # Combined loss
+                total_loss += loss_value["loss"] * loss_weight
+            else:
+                total_loss += loss_value * loss_weight
 
-        all_losses["loss"] = total_loss
-        return all_losses
+        loss["loss"] = total_loss
+        return loss
 
     def _compute_loss(self, y_hat: Tensor, ground_truth: Tensor, criterion: Callable):
         loss: Tensor = criterion(y_hat, ground_truth)
@@ -97,3 +102,22 @@ class LossHandler:
                 sync_dist=True,
                 batch_size=batch_size,
             )
+
+
+class CombinedLoss(nn.modules.loss._WeightedLoss):
+    def __init__(self, losses: dict[str, nn.Module], weight: list[float] | None = None):
+        super().__init__()
+        self.losses = nn.ModuleDict(losses)
+        self.weight = torch.Tensor(weight)
+
+    def forward(self, y_hat: Tensor, ground_truth: Tensor) -> dict:
+        loss = {name: criterion(y_hat, ground_truth) for name, criterion in self.losses.items()}
+
+        if self.weight is not None:
+            # Apply provided loss weights
+            loss["loss"] = (torch.stack(list(loss.values())) * self.weight).sum()
+        else:
+            # Sum up all losses without weighting
+            loss["loss"] = torch.stack(list(loss.values())).sum()
+
+        return loss
