@@ -602,6 +602,8 @@ class GenericNonGeoPixelwiseCustomDataModule(NonGeoDataModule):
     [GenericNonGeoPixelwiseDataset_Custom][terratorch.datasets.GenericNonGeoPixelwiseDataset_Custom]
     """
 
+    json_file: Path | None
+
     def __init__(
         self,
         batch_size: int,
@@ -638,6 +640,7 @@ class GenericNonGeoPixelwiseCustomDataModule(NonGeoDataModule):
         drop_last: bool = True,
         pin_memory: bool = False,
         check_stackability: bool = True,
+        json_file: Path | None = None,
         **kwargs: Any,
     ) -> None:
         """Constructor
@@ -747,6 +750,7 @@ class GenericNonGeoPixelwiseCustomDataModule(NonGeoDataModule):
         self.test_transform = wrap_in_compose_is_list(test_transform)
 
         self.check_stackability = check_stackability
+        self.json_file = json_file
 
     def setup(self, stage: str) -> None:
         if stage in ["fit"]:
@@ -767,6 +771,7 @@ class GenericNonGeoPixelwiseCustomDataModule(NonGeoDataModule):
                 no_label_replace=self.no_label_replace,
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
+                json_file=self.json_file,
             )
         if stage in ["fit", "validate"]:
             self.val_dataset = self.dataset_class(
@@ -786,6 +791,7 @@ class GenericNonGeoPixelwiseCustomDataModule(NonGeoDataModule):
                 no_label_replace=self.no_label_replace,
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
+                json_file=self.json_file,
             )
         if stage in ["test"]:
             self.test_dataset = self.dataset_class(
@@ -805,6 +811,7 @@ class GenericNonGeoPixelwiseCustomDataModule(NonGeoDataModule):
                 no_label_replace=self.no_label_replace,
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
+                json_file=self.json_file,
             )
 
         if stage in ["predict"] and self.predict_root:
@@ -821,6 +828,7 @@ class GenericNonGeoPixelwiseCustomDataModule(NonGeoDataModule):
                 no_label_replace=self.no_label_replace,
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
+                json_file=self.json_file,
             )
 
     def _dataloader_factory(self, split: str) -> DataLoader[dict[str, Tensor]]:

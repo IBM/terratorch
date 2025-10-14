@@ -517,7 +517,7 @@ class GenericNonGeoPixelwiseRegressionDataset(GenericPixelWiseDataset):
         return fig
 
 class GenericNonGeoPixelwiseDataset_Custom(GenericPixelWiseDataset):
-    """GenericNonGeoPixelwiseRegressionDataset"""
+    """GenericNonGeoPixelwiseRegressionDataset with JSON file support"""
 
     def __init__(
         self,
@@ -537,6 +537,7 @@ class GenericNonGeoPixelwiseDataset_Custom(GenericPixelWiseDataset):
         no_label_replace: int | None = None,
         expand_temporal_dimension: bool = False,
         reduce_zero_label: bool = False,
+        json_file: Path | None = None,
     ) -> None:
         """Constructor
 
@@ -572,6 +573,8 @@ class GenericNonGeoPixelwiseDataset_Custom(GenericPixelWiseDataset):
                 Defaults to False.
             reduce_zero_label (bool): Subtract 1 from all labels. Useful when labels start from 1 instead of the
                 expected 0. Defaults to False.
+            json_file (Path | None): Path to JSON file defining sample names and band file paths.
+                If provided, overrides directory-based file discovery.
         """
         super().__init__(
             data_root,
@@ -591,41 +594,73 @@ class GenericNonGeoPixelwiseDataset_Custom(GenericPixelWiseDataset):
             expand_temporal_dimension=expand_temporal_dimension,
             reduce_zero_label=reduce_zero_label,
         )
+
+        # Load JSON file if provided
+        self.json_file = json_file
+        self.band_mapping = None
+        if json_file is not None:
+            import json
+            with open(json_file, 'r') as f:
+                self.band_mapping = json.load(f)
+            # Override image_files with sample names from JSON
+            self.image_files = sorted(list(self.band_mapping.keys()))
+            # For JSON-based loading, we don't use mask files
+            self.segmentation_mask_files = self.image_files
+
     def _load_file(self, path, nan_replace: int | float | None = None) -> xr.DataArray:
         # Target order of Sentinel-2 bands expected by the model
         BAND_ORDER = ["B01","B02","B03","B04","B05","B06","B07","B08","B8A","B09","B11","B12"]
 
-        # Collect candidate files for 10m, 20m, 60m (e.g., Txx_yyy_B02_10m.jp2)
-        patterns = [
-            os.path.join(path, "*_B??_10m.jp2"),
-            os.path.join(path, "*_B??_20m.jp2"),
-            os.path.join(path, "*_B??_60m.jp2"),
-            os.path.join(path, "*_B8A_10m.jp2"),
-            os.path.join(path, "*_B8A_20m.jp2"),
-            os.path.join(path, "*_B8A_60m.jp2"),
-        ]
-        all_paths: list[str] = []
-        for pat in patterns:
-            all_paths.extend(glob.glob(pat))
+        # If using JSON mapping, path is the sample name
+        if self.band_mapping is not None:
+            sample_name = path
+            if sample_name not in self.band_mapping:
+                raise KeyError(f"Sample '{sample_name}' not found in JSON mapping")
 
-        # Parse band and resolution from filename
-        def parse(p: str) -> tuple[str, int] | None:
-            m = re.search(r"_B(\d{2}|8A)_(10|20|60)m\.jp2$", os.path.basename(p))
-            if not m:
-                return None
-            band = f"B{m.group(1)}"
-            res = int(m.group(2))
-            return band, res
+            # Build candidates dict from JSON mapping
+            candidates: dict[str, dict[int, str]] = {}
+            for band, file_path in self.band_mapping[sample_name].items():
+                # Extract resolution from filename
+                m = re.search(r"_(10|20|60)m\.jp2$", file_path)
+                if m:
+                    res = int(m.group(1))
+                    candidates.setdefault(band, {})[res] = file_path
+                else:
+                    # Default to 10m if resolution not in filename
+                    candidates.setdefault(band, {})[10] = file_path
+        else:
+            # Original directory-based logic
+            # Collect candidate files for 10m, 20m, 60m (e.g., Txx_yyy_B02_10m.jp2)
+            patterns = [
+                os.path.join(path, "*_B??_10m.jp2"),
+                os.path.join(path, "*_B??_20m.jp2"),
+                os.path.join(path, "*_B??_60m.jp2"),
+                os.path.join(path, "*_B8A_10m.jp2"),
+                os.path.join(path, "*_B8A_20m.jp2"),
+                os.path.join(path, "*_B8A_60m.jp2"),
+            ]
+            all_paths: list[str] = []
+            for pat in patterns:
+                all_paths.extend(glob.glob(pat))
 
-        # Keep best available resolution per band: prefer 10m > 20m > 60m
-        # Candidates: {"B02": {"10": "xyz.jp2"}, {"B09": {"60": "xyz.jp2"}, ...}
-        candidates: dict[str, dict[int, str]] = {}
-        for p in all_paths:
-            parsed = parse(p)
-            if not parsed:
-                continue
-            band, res = parsed
-            candidates.setdefault(band, {})[res] = p
+            # Parse band and resolution from filename
+            def parse(p: str) -> tuple[str, int] | None:
+                m = re.search(r"_B(\d{2}|8A)_(10|20|60)m\.jp2$", os.path.basename(p))
+                if not m:
+                    return None
+                band = f"B{m.group(1)}"
+                res = int(m.group(2))
+                return band, res
+
+            # Keep best available resolution per band: prefer 10m > 20m > 60m
+            # Candidates: {"B02": {"10": "xyz.jp2"}, {"B09": {"60": "xyz.jp2"}, ...}
+            candidates: dict[str, dict[int, str]] = {}
+            for p in all_paths:
+                parsed = parse(p)
+                if not parsed:
+                    continue
+                band, res = parsed
+                candidates.setdefault(band, {})[res] = p
 
         # Choose a 10m reference grid if available (prefer true 10m bands)
         ref_path: str | None = None
