@@ -96,7 +96,7 @@ test = [
   "h5netcdf",
 ]
 
-sunya = [
+surya = [
   "numba",
   "hdf5plugin",
   "h5netcdf"
