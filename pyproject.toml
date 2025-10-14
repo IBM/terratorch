@@ -62,6 +62,8 @@ dependencies = [
   "tifffile",
   "python-box",
   "tqdm",
+  "wandb",
+  "tensorboard",
 ]
 
 
