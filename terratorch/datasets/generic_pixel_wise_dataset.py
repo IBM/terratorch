@@ -4,6 +4,8 @@
 """Module containing generic dataset classes"""
 
 import glob
+import json
+import logging
 import os
 import re
 from abc import ABC
@@ -575,6 +577,25 @@ class GenericNonGeoPixelwiseDataset_Custom(GenericPixelWiseDataset):
                 expected 0. Defaults to False.
             json_file (Path | None): Path to JSON file defining sample names and band file paths.
                 If provided, overrides directory-based file discovery.
+                Expected JSON format:
+                {
+                    "sample_name_1": {
+                        "B01": "path/to/sample1_B01_60m.jp2",
+                        "B02": "path/to/sample1_B02_10m.jp2",
+                        ...
+                        "B12": "path/to/sample1_B12_20m.jp2"
+                    },
+                    "sample_name_2": {
+                        "B01": "path/to/sample2_B01_60m.jp2",
+                        ...
+                    }
+                }
+                Notes:
+                - Sample names are used as identifiers and will be included in output filenames
+                - Band names must match Sentinel-2 bands: B01-B12 (B8A instead of B08A)
+                - File paths can be relative (to working directory) or absolute
+                - Resolution suffix (10m/20m/60m) is automatically extracted from filenames
+                - Missing or invalid file paths will cause that sample to be skipped with a warning
         """
         super().__init__(
             data_root,
@@ -599,10 +620,36 @@ class GenericNonGeoPixelwiseDataset_Custom(GenericPixelWiseDataset):
         self.json_file = json_file
         self.band_mapping = None
         if json_file is not None:
-            import json
+            logger = logging.getLogger("terratorch")
+
             with open(json_file, 'r') as f:
-                self.band_mapping = json.load(f)
-            # Override image_files with sample names from JSON
+                raw_mapping = json.load(f)
+
+            # Validate file paths and filter out samples with missing files
+            self.band_mapping = {}
+            skipped_samples = []
+
+            for sample_name, band_dict in raw_mapping.items():
+                missing_files = []
+                for band, file_path in band_dict.items():
+                    if not os.path.exists(file_path):
+                        missing_files.append(f"{band}: {file_path}")
+
+                if missing_files:
+                    skipped_samples.append(sample_name)
+                    logger.warning(
+                        f"Skipping sample '{sample_name}' - missing {len(missing_files)} file(s):\n  " +
+                        "\n  ".join(missing_files[:3]) +  # Show first 3 missing files
+                        (f"\n  ... and {len(missing_files) - 3} more" if len(missing_files) > 3 else "")
+                    )
+                else:
+                    # All files exist, include this sample
+                    self.band_mapping[sample_name] = band_dict
+
+            if skipped_samples:
+                logger.info(f"Skipped {len(skipped_samples)} sample(s) due to missing files. Valid samples: {len(self.band_mapping)}")
+
+            # Override image_files with validated sample names from JSON
             self.image_files = sorted(list(self.band_mapping.keys()))
             # For JSON-based loading, we don't use mask files
             self.segmentation_mask_files = self.image_files
@@ -613,6 +660,8 @@ class GenericNonGeoPixelwiseDataset_Custom(GenericPixelWiseDataset):
 
         # If using JSON mapping, path is the sample name
         if self.band_mapping is not None:
+            logger = logging.getLogger("terratorch")
+
             sample_name = path
             if sample_name not in self.band_mapping:
                 raise KeyError(f"Sample '{sample_name}' not found in JSON mapping")
@@ -620,6 +669,11 @@ class GenericNonGeoPixelwiseDataset_Custom(GenericPixelWiseDataset):
             # Build candidates dict from JSON mapping
             candidates: dict[str, dict[int, str]] = {}
             for band, file_path in self.band_mapping[sample_name].items():
+                # Verify file still exists (in case it was deleted after validation)
+                if not os.path.exists(file_path):
+                    logger.warning(f"File missing for sample '{sample_name}', band {band}: {file_path}")
+                    continue
+
                 # Extract resolution from filename
                 m = re.search(r"_(10|20|60)m\.jp2$", file_path)
                 if m:
