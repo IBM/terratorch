@@ -9,6 +9,6 @@ async def download_file_async(url: str) -> BytesIO:
             return BytesIO(await response.read())
                 
 async def read_file_async(path: str) -> BytesIO:
-    async with await open_file(path, mode='b') as f:
+    async with await open_file(path, "rb") as f:
         contents = await f.read()
         return BytesIO(contents)

@@ -81,7 +81,11 @@ class SegmentationIOProcessor(IOProcessor):
         self.tiled_inference_parameters = self._init_tiled_inference_parameters_info() 
         self.batch_size = 1
         self.requests_cache: dict[str, dict[str, Any]] = {}
-        self.data_cache = {}
+        if self.plugin_config.use_data_cache:
+            print("@@@@@@@@@@@@@@@@@@@@@@@USING DATA CACHE")
+            self.data_cache = {}
+        else:
+            print("@@@@@@@@@@@@@@@@@@@@@@@ NOT USING DATA CACHE")
 
     def _init_tiled_inference_parameters_info(self) -> TiledInferenceParameters:
         if "tiled_inference_paramters" in self.model_config["model"]["init_args"]:
@@ -325,7 +329,7 @@ class SegmentationIOProcessor(IOProcessor):
         indices = (DEFAULT_INPUT_INDICES if not image_data["indices"]
                    else image_data["indices"])
 
-        if image_data["data"] in self.data_cache:
+        if self.plugin_config.use_data_cache and image_data["data"] in self.data_cache:
             input_data, temporal_coords, location_coords, meta_data = self.data_cache[image_data["data"]]
         else:
             input_data, temporal_coords, location_coords, meta_data = await self.load_image(
@@ -333,7 +337,8 @@ class SegmentationIOProcessor(IOProcessor):
                 indices=indices,
                 path_type=image_data["data_format"],
             )
-            self.data_cache[image_data["data"]] = (input_data, temporal_coords, location_coords, meta_data)
+            if self.plugin_config.use_data_cache:
+                self.data_cache[image_data["data"]] = (input_data, temporal_coords, location_coords, meta_data)
         image_loaded = datetime.now()
 
         if input_data.mean() > 1:
@@ -418,7 +423,6 @@ class SegmentationIOProcessor(IOProcessor):
 
         pre_proc = datetime.now()
 
-        print(f"req_id: {request_id}, started: {start}, loading done: {image_loaded}, processing done: {pre_proc}")
         return prompts
 
     def post_process(
