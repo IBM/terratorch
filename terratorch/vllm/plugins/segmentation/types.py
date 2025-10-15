@@ -27,6 +27,7 @@ class PluginConfig(BaseModel):
         return self
 
 class TiledInferenceParameters(BaseModel):
+    # Used in vLLM plugin
     h_crop: int = 512
     h_stride: int = None
     w_crop: int = 512
