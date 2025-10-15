@@ -540,6 +540,8 @@ class GenericNonGeoPixelwiseDataset_Custom(GenericPixelWiseDataset):
         expand_temporal_dimension: bool = False,
         reduce_zero_label: bool = False,
         json_file: Path | None = None,
+        output_dir: Path | None = None,
+        layers: list[int] | None = None,
     ) -> None:
         """Constructor
 
@@ -596,6 +598,10 @@ class GenericNonGeoPixelwiseDataset_Custom(GenericPixelWiseDataset):
                 - File paths can be relative (to working directory) or absolute
                 - Resolution suffix (10m/20m/60m) is automatically extracted from filenames
                 - Missing or invalid file paths will cause that sample to be skipped with a warning
+            output_dir (Path | None): Directory where embeddings are saved. If provided along with layers,
+                already-processed scenes will be filtered out from the dataset. Defaults to None.
+            layers (list[int] | None): List of layer indices for which embeddings are generated.
+                Used with output_dir to determine which scenes are already processed. Defaults to None.
         """
         super().__init__(
             data_root,
@@ -653,6 +659,50 @@ class GenericNonGeoPixelwiseDataset_Custom(GenericPixelWiseDataset):
             self.image_files = sorted(list(self.band_mapping.keys()))
             # For JSON-based loading, we don't use mask files
             self.segmentation_mask_files = self.image_files
+
+        # Filter out already-processed scenes if output_dir and layers are provided
+        if output_dir is not None and layers is not None:
+            output_path = Path(output_dir)
+
+            unprocessed_scenes = []
+            skipped_count = 0
+
+            # Check if we have negative layer indices (can't resolve without model)
+            # In this case, check if ANY layer_* folder contains the scene
+            has_negative_indices = any(l < 0 for l in layers)
+
+            for scene_name in self.image_files:
+                # Extract scene name (handle both file paths and JSON keys)
+                stem = Path(scene_name).stem if not self.band_mapping else scene_name
+                scene_key = stem.split("__")[0] if "__" in stem else stem
+
+                # Check if scene is already processed
+                if has_negative_indices:
+                    # For negative indices, check if ANY layer_* folder contains this scene
+                    # This works because negative indices get resolved at runtime
+                    if output_path.exists():
+                        layer_dirs = list(output_path.glob("layer_*"))
+                        is_processed = any(
+                            (layer_dir / scene_key).exists() and (layer_dir / scene_key).is_dir()
+                            for layer_dir in layer_dirs
+                        )
+                    else:
+                        is_processed = False
+                else:
+                    # For positive indices, check specific layer folders
+                    is_processed = all(
+                        (output_path / f"layer_{layer}" / scene_key).exists() and
+                        (output_path / f"layer_{layer}" / scene_key).is_dir()
+                        for layer in layers
+                    )
+
+                if not is_processed:
+                    unprocessed_scenes.append(scene_name)
+                else:
+                    skipped_count += 1
+
+            self.image_files = unprocessed_scenes
+            self.segmentation_mask_files = unprocessed_scenes
 
     def _load_file(self, path, nan_replace: int | float | None = None) -> xr.DataArray:
         # Target order of Sentinel-2 bands expected by the model

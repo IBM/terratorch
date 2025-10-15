@@ -111,6 +111,12 @@ class EmbeddingGenerationTask(BaseTask):
 
         raise TypeError("`file_ids` must be a tensor/ndarray or a (nested) list/tuple")
 
+    def extract_scene_name(self, filename: str) -> str:
+        """Extract scene name from filename."""
+        stem = Path(filename).stem
+        scene_name = stem.split("__")[0] if "__" in stem else stem
+        return scene_name
+
     def configure_callbacks(self):
         return []
     
@@ -202,7 +208,7 @@ class EmbeddingGenerationTask(BaseTask):
                 raise KeyError(f"Key '{embed_file_key}' not found in input dictionary.")
             if 'metadata' in batch:
                 metadata = self.pull_metadata(batch['metadata'])
-            else:   
+            else:
                 metadata = self.pull_metadata(batch)
 
         self.check_file_ids(file_ids, x)
@@ -287,7 +293,7 @@ class EmbeddingGenerationTask(BaseTask):
             file_ids: list[str],
             metadata: dict,
             dir_path: Path,
-    ) -> None:  
+    ) -> None:
         """Write a batch (and optional timesteps) to GeoTIFF/GeoParquet.
 
         Files are grouped into per-scene subfolders under `dir_path`.
@@ -307,8 +313,7 @@ class EmbeddingGenerationTask(BaseTask):
                     metadata_sample = {k: v[b][t] for k, v in metadata.items()}
                     embedding_sample = self.pool_embedding(embedding[b, t, ...], self.embedding_pooling, self.has_cls)
                     # Determine per-scene subfolder from filename
-                    stem = Path(filename).stem
-                    scene_name = stem.split("__")[0] if "__" in stem else stem
+                    scene_name = self.extract_scene_name(filename)
                     out_dir = dir_path / scene_name
                     out_dir.mkdir(parents=True, exist_ok=True)
                     if self.output_format == "tiff":
@@ -320,40 +325,7 @@ class EmbeddingGenerationTask(BaseTask):
                 metadata_sample = {k: v[b] for k, v in metadata.items()}
                 embedding_sample = self.pool_embedding(embedding[b, ...], self.embedding_pooling, self.has_cls)
                 # Determine per-scene subfolder from filename
-                stem = Path(filename).stem
-                scene_name = stem.split("__")[0] if "__" in stem else stem
-                out_dir = dir_path / scene_name
-                out_dir.mkdir(parents=True, exist_ok=True)
-                if self.output_format == "tiff":
-                    self.write_tiff(embedding_sample, filename, metadata_sample, out_dir)
-                elif self.output_format == "parquet":
-                    self.write_parquet(embedding_sample, filename, metadata_sample, out_dir)
-
-        B = len(file_ids)
-        T = len(file_ids[0]) if isinstance(file_ids[0], (list, tuple, np.ndarray)) else None
-    
-        for b in range(B):
-            if T is not None:
-                for t in range(T):
-                    filename = file_ids[b][t]
-                    metadata_sample = {k: v[b][t] for k, v in metadata.items()}
-                    embedding_sample = self.pool_embedding(embedding[b, t, ...], self.embedding_pooling, self.has_cls)
-                    # Determine per-scene subfolder from filename
-                    stem = Path(filename).stem
-                    scene_name = stem.split("__")[0] if "__" in stem else stem
-                    out_dir = dir_path / scene_name
-                    out_dir.mkdir(parents=True, exist_ok=True)
-                    if self.output_format == "tiff":
-                        self.write_tiff(embedding_sample, filename, metadata_sample, out_dir)
-                    elif self.output_format == "parquet":
-                        self.write_parquet(embedding_sample, filename, metadata_sample, out_dir)
-            else:
-                filename = file_ids[b]
-                metadata_sample = {k: v[b] for k, v in metadata.items()}
-                embedding_sample = self.pool_embedding(embedding[b, ...], self.embedding_pooling, self.has_cls)
-                # Determine per-scene subfolder from filename
-                stem = Path(filename).stem
-                scene_name = stem.split("__")[0] if "__" in stem else stem
+                scene_name = self.extract_scene_name(filename)
                 out_dir = dir_path / scene_name
                 out_dir.mkdir(parents=True, exist_ok=True)
                 if self.output_format == "tiff":

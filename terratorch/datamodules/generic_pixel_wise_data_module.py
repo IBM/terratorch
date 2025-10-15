@@ -641,6 +641,8 @@ class GenericNonGeoPixelwiseCustomDataModule(NonGeoDataModule):
         pin_memory: bool = False,
         check_stackability: bool = True,
         json_file: Path | None = None,
+        output_dir: Path | None = None,
+        layers: list[int] | None = None,
         **kwargs: Any,
     ) -> None:
         """Constructor
@@ -751,6 +753,8 @@ class GenericNonGeoPixelwiseCustomDataModule(NonGeoDataModule):
 
         self.check_stackability = check_stackability
         self.json_file = json_file
+        self.output_dir = output_dir
+        self.layers = layers
 
     def setup(self, stage: str) -> None:
         if stage in ["fit"]:
@@ -772,6 +776,8 @@ class GenericNonGeoPixelwiseCustomDataModule(NonGeoDataModule):
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
                 json_file=self.json_file,
+                output_dir=self.output_dir,
+                layers=self.layers,
             )
         if stage in ["fit", "validate"]:
             self.val_dataset = self.dataset_class(
@@ -792,6 +798,8 @@ class GenericNonGeoPixelwiseCustomDataModule(NonGeoDataModule):
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
                 json_file=self.json_file,
+                output_dir=self.output_dir,
+                layers=self.layers,
             )
         if stage in ["test"]:
             self.test_dataset = self.dataset_class(
@@ -812,6 +820,8 @@ class GenericNonGeoPixelwiseCustomDataModule(NonGeoDataModule):
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
                 json_file=self.json_file,
+                output_dir=self.output_dir,
+                layers=self.layers,
             )
 
         if stage in ["predict"] and self.predict_root:
@@ -829,6 +839,8 @@ class GenericNonGeoPixelwiseCustomDataModule(NonGeoDataModule):
                 expand_temporal_dimension=self.expand_temporal_dimension,
                 reduce_zero_label=self.reduce_zero_label,
                 json_file=self.json_file,
+                output_dir=self.output_dir,
+                layers=self.layers,
             )
 
     def _dataloader_factory(self, split: str) -> DataLoader[dict[str, Tensor]]:
