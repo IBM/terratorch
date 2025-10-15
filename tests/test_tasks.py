@@ -1,4 +1,6 @@
 # Copyright contributors to the Terratorch project
+import sys
+import types
 
 import pytest
 import torch
