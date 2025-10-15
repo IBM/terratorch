@@ -51,9 +51,6 @@ dependencies = [
   "lightly",
   "jsonargparse<=4.35.0",
   "h5py",
-  "hdf5plugin",
-  "numba",
-  "mlflow",
   "lightning",
   "segmentation-models-pytorch<=0.4",
   "jsonargparse",
@@ -64,13 +61,9 @@ dependencies = [
   "huggingface_hub",
   "tifffile",
   "python-box",
-  "tqdm", # progress bar for lazy OD tiled DS wrapper
+  "tqdm",
   "wandb",
-  "termcolor",
-  "numba",
-  "hdf5plugin",
-  "h5netcdf",
-  "transformers",
+  "tensorboard",
 ]
 
 
@@ -99,7 +92,16 @@ test = [
   "pytest-sugar",
   "vllm>=0.10.2",
   "pillow",
-  "imagehash"
+  "imagehash",
+  "numba",
+  "hdf5plugin",
+  "h5netcdf",
+]
+
+surya = [
+  "numba",
+  "hdf5plugin",
+  "h5netcdf"
 ]
 
 mmseg = [
@@ -124,7 +126,8 @@ peft = [
 ]
 
 geobenchv2 = [
-  "geobench_v2"
+  "geobench_v2",
+  "mlflow",
 ]
 
 [project.urls]
