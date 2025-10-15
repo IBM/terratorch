@@ -704,6 +704,15 @@ class GenericNonGeoPixelwiseDataset_Custom(GenericPixelWiseDataset):
             self.image_files = unprocessed_scenes
             self.segmentation_mask_files = unprocessed_scenes
 
+            # Validate that dataset is not empty after filtering
+            if len(self.image_files) == 0:
+                logger = logging.getLogger("terratorch")
+                logger.warning(
+                    f"All {skipped_count} scene(s) have already been processed and filtered out. "
+                    f"Dataset is empty. To reprocess scenes, remove output_dir and layers parameters "
+                    f"or delete the output directory: {output_dir}"
+                )
+
     def _load_file(self, path, nan_replace: int | float | None = None) -> xr.DataArray:
         # Target order of Sentinel-2 bands expected by the model
         BAND_ORDER = ["B01","B02","B03","B04","B05","B06","B07","B08","B8A","B09","B11","B12"]
