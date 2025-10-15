@@ -64,11 +64,25 @@ class WeightedLossWrapper(nn.Module):
         if self.reduction is None:
             return weighted_loss # [B, num_vars, H, W] or [B, num_vars]
         
-        if self.reduction == "mean": # per batch reduction
+        if self.reduction == "mean": 
             return weighted_loss.sum() / weights.sum()  # weighted scalar mean for backprop
         
         msg = "Only 'mean' and None reduction supported"
         raise Exception(msg)
+    
+    def per_class_loss(self, output: Tensor, target: Target) -> dics[str, Tensor]:
+        loss = self.loss_function(output, target)
+        if self.weights.ndim == 1:
+            weights = self.weights.view(1, -1, *([1] * (loss.ndim - 2))) # [1, num_vars, 1, 1]
+        else:
+            weights = self.weights
+            
+        weighted_loss = weights * loss
+        if loss.ndim == 2:  # [B, C]
+            mean_per_class = weighted_loss.mean(dim=0)
+        else:  # [B, C, H, W]
+            mean_per_class = weighted_loss.mean(dim=[0] + list(range(2, loss.ndim)))
+        return {f"class_{i}": mean_per_class[i] for i in range(mean_per_class.shape[0])}
 
 
 class IgnoreIndexLossWrapper(nn.Module):
@@ -463,7 +477,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
 
 
 class ScalarRegressionTask(TerraTorchTask):
-    """Patch Regression Task that accepts models from a range of sources.
+    """Scalar Regression Task that accepts models from a range of sources.
 
     This class is analog in functionality to RegressionTask defined by torchgeo.
     However, it has some important differences:
@@ -484,7 +498,7 @@ class ScalarRegressionTask(TerraTorchTask):
         class_weights: list[float] | None = None,
         ignore_index: int | None = None,
         lr: float = 0.001,
-        num_outputs: int = 1, #out_channels/num_variables
+        num_classes: int = 1, #out_channels/num_variables
         # the following are optional so CLI doesnt need to pass them
         optimizer: str | None = None,
         optimizer_hparams: dict | None = None,
@@ -516,7 +530,7 @@ class ScalarRegressionTask(TerraTorchTask):
                 Defaults to None.
             ignore_index (int | None, optional): Label to ignore in the loss computation. Defaults to None.
             lr (float, optional): Learning rate to be used. Defaults to 0.001.
-            num_outputs (int): Number of predicted regression variables. Defaults to single regression. 
+            num_classes (int): Number of predicted regression variables. Defaults to single regression. 
             optimizer (str | None, optional): Name of optimizer class from torch.optim to be used.
                 If None, will use Adam. Defaults to None. Overriden by config / cli specification through LightningCLI.
             optimizer_hparams (dict | None): Parameters to be passed for instantiation of the optimizer.
@@ -539,7 +553,7 @@ class ScalarRegressionTask(TerraTorchTask):
         """
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
-        self.num_outputs = num_outputs
+        self.num_classes = num_classes
 
         if model is not None and model_factory is not None:
             logger.warning("A model_factory and a model was provided. The model_factory is ignored.")
@@ -595,7 +609,7 @@ class ScalarRegressionTask(TerraTorchTask):
             raise ValueError(exception_message)
         
         if class_weights is not None: 
-            base_criterion = WeightedLossWrapper(base_criterion, class_weights, reduction="mean") # [1, num_outputs]
+            base_criterion = WeightedLossWrapper(base_criterion, class_weights, reduction="mean") # [1, num_classes]
          
         base_criterion = IgnoreIndexLossWrapper(base_criterion, self.hparams["ignore_index"], reduction=None) 
         
@@ -610,12 +624,17 @@ class ScalarRegressionTask(TerraTorchTask):
         """Initialize the performance metrics."""
 
         def instantiate_metrics():
-            return {
-                "RMSE": ClasswiseWrapper(MeanSquaredError(num_outputs=self.num_outputs, squared=False)),
-                "MSE": ClasswiseWrapper(MeanSquaredError(num_outputs=self.num_outputs, squared=True)),
-                "MAE": ClasswiseWrapper(MeanAbsoluteError(num_outputs=self.num_outputs)),
-                "R2_Score": ClasswiseWrapper(R2Score(num_outputs=self.num_outputs)),
+            metrics = {
+                "RMSE": MeanSquaredError(num_outputs=self.num_classes, squared=False),
+                "MSE": MeanSquaredError(num_outputs=self.num_classes, squared=True),
+                "MAE": MeanAbsoluteError(num_outputs=self.num_classes),
+                "R2_Score": R2Score(multioutput='raw_values'),
             }
+            
+            if self.num_classes > 1:
+                return {name: ClasswiseWrapper(metric) for name, metric in metrics.items()}
+
+            return metrics
 
         def wrap_metrics_with_ignore_index(metrics):
             return {
@@ -651,13 +670,13 @@ class ScalarRegressionTask(TerraTorchTask):
         rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
         
-        # loss = {"loss": [num_outputs]}
+        # loss = {"loss": tensor as weighted mean of the outputs}
         loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss) 
         self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
         y_hat = model_output.output
         self.train_metrics.update(y_hat, y)
 
-        return loss["loss"] # tensor of shape [num_outputs]
+        return loss["loss"] # scalar
 
     def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         """Compute the validation loss and additional metrics.

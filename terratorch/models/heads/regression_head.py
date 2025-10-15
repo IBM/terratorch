@@ -26,7 +26,7 @@ class RegressionHead(nn.Module):
     def __init__(
         self,
         in_channels: int,
-        num_outputs: int = 1,
+        num_classes: int = 1,
         final_act: nn.Module | str | None = None,
         learned_upscale_layers: int = 0,
         channel_list: list[int] | None = None,
@@ -37,7 +37,7 @@ class RegressionHead(nn.Module):
 
         Args:
             in_channels (int): Number of input channels
-            num_outputs (int): Number of predicted regression variables. Defaults to single regression. 
+            num_classes (int): Number of predicted regression variables. Defaults to single regression. 
             final_act (nn.Module | None, optional): Final activation to be applied. Defaults to None.
             learned_upscale_layers (int, optional): Number of Pixelshuffle layers to create. Each upscales 2x.
                 Defaults to 0.
@@ -86,7 +86,7 @@ class RegressionHead(nn.Module):
         dropout = nn.Dropout2d(dropout)
         
        
-        final_layer = nn.Conv2d(in_channels=in_channels, out_channels=num_outputs, kernel_size=1)
+        final_layer = nn.Conv2d(in_channels=in_channels, out_channels=num_classes, kernel_size=1)
         self.head = nn.Sequential(*[*pre_layers, dropout, final_layer])
 
     def forward(self, x):

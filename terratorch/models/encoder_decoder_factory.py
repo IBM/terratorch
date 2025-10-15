@@ -111,7 +111,7 @@ class EncoderDecoderFactory(ModelFactory):
             backbone_kwargs (dict, optional) : Arguments to be passed to instantiate the backbone.
             decoder_kwargs (dict, optional) : Arguments to be passed to instantiate the decoder.
             head_kwargs (dict, optional) : Arguments to be passed to the head network. 
-            num_classes (int, optional): Number of classes. None for regression tasks.
+            num_classes (int, optional): Number of classes or regression variables. 
             necks (list[dict]): nn.Modules to be called in succession on encoder features
                 before passing them to the decoder. Should be registered in the NECKS_REGISTRY registry.
                 Expects each one to have a key "name" and subsequent keys for arguments, if any.
