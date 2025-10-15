@@ -27,6 +27,7 @@ on:
       - '**/*.txt'
       - '**/*.ipynb'
       - 'integrationtests/**/*'
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -39,31 +40,61 @@ jobs:
     steps:
       - name: Clone repo
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # Needed for comparing with main
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
-      - name: updating submodules
-        run : | 
+
+      - name: Updating submodules
+        run: |
           git submodule init
           git submodule update
+
       - name: Install dependencies
         run: |
-          #python -m pip install --upgrade pip
           pip install pip==24.2
-          # Temporary workaround to allow the installation of `geobench_v2`
           pip install git+https://github.com/The-AI-Alliance/GEO-Bench-2.git@main
-          pip --version
           pip install -e .[wxc,test]
+          pip install pytest-cov
+
       - name: Clean pip cache
         run: pip cache purge
+
       - name: List pip dependencies
         run: pip list
+
       - name: Cleaning cache
         run: pip cache purge
-      - name: Test with pytest
-        run: |
-          pytest -s --cov=terratorch -v --cov-report term-missing tests
 
+      - name: Run tests and collect coverage
+        run: |
+          pytest -s --cov=terratorch -v --cov-report xml:coverage_pr.xml --cov-report term-missing tests
+
+      # Compare coverage only on pull requests
+      - name: Compare coverage with main
+        if: github.event_name == 'pull_request'
+        run: |
+          # Generate coverage for main branch
+          git fetch origin main
+          git checkout origin/main
+          pytest --cov=terratorch -v --cov-report xml:coverage_main.xml --cov-report term-missing tests || true
+
+          # Return to PR branch
+          git checkout -
+
+          # Extract coverage values
+          PR_COV=$(grep 'line-rate' coverage_pr.xml | sed 's/.*line-rate="\(.*\)".*/\1/')
+          MAIN_COV=$(grep 'line-rate' coverage_main.xml | sed 's/.*line-rate="\(.*\)".*/\1/')
+
+          echo "PR coverage:   ${PR_COV}"
+          echo "Main coverage: ${MAIN_COV}"
+
+          awk "BEGIN {exit !(${PR_COV} + 1e-6 >= ${MAIN_COV})}" || {
+            echo "Coverage decreased (PR: ${PR_COV}, Main: ${MAIN_COV})"
+            exit 1
+          }
 
