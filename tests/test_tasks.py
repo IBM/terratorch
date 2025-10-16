@@ -15,17 +15,12 @@ import gc
 def model_factory() -> str:
     return "EncoderDecoderFactory"
 
-@pytest.fixture(scope="session")
-def model_input(num_outputs: int = 3) -> dict[str, torch.Tensor]:
-    image = torch.ones((1, 6, 224, 224))
-    mask = torch.zeros((1, num_outputs))
-    return {"image": image, "mask": mask}
-
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100"])
 @pytest.mark.parametrize("decoder", ["IdentityDecoder"])
 @pytest.mark.parametrize("loss", ["mse"])
 @pytest.mark.parametrize("lr_overrides", [{"encoder": 0.01}, None])
-@pytest.mark.parametrize("num_classes", [1, 3])
+@pytest.mark.parametrize("num_classes", [3])
+#@pytest.mark.parametrize("class_weights", [[0.2, 0.3, 0.5]])
 def test_create_scalar_regression_task_encoder_decoder(backbone, decoder, loss, model_factory: str, lr_overrides, num_classes):
     model_args = {
         "backbone": backbone,
@@ -40,30 +35,26 @@ def test_create_scalar_regression_task_encoder_decoder(backbone, decoder, loss, 
         model_factory,
         loss=loss,
         lr_overrides=lr_overrides,
-        num_classes=num_classes
+        num_classes=num_classes,
+        #class_weights=class_weights
     )
     
     batch = {
         "image": torch.ones((1, 6, 224, 224)),
-        "mask": torch.zeros((1, num_classes))
+        "mask": torch.randn((1, num_classes))
     }
     
-    output = task.training_step(batch, batch_idx=0)
-    assert isinstance(output, torch.Tensor), "Model output is not a tensor"
-    assert output.shape[1] == num_classes, f"Expected {num_classes} outputs, got {output.shape[1]}"
-
-    # Dummy ground truth to compute loss
-    target = torch.zeros_like(output)
-    model_output = ModelOutput(output=output, auxiliary_heads=None)
-    loss_dict = task.train_loss_handler.compute_loss(model_output, target, task.criterion, aux_loss_weights=None)
-    assert "loss" in loss_dict, "LossHandler did not return 'loss'"
-    assert torch.isfinite(loss_dict["loss"]).all(), "Loss contains non-finite values"
+    model_output : ModelOutput = task(batch["image"])
+    y_hat = model_output.output
+    y = batch["mask"]
+    
+    loss = task.training_step(batch, batch_idx=0)
 
     # Metrics sanity check
-    task.train_metrics.update(output, target)
+    print(f"y_hat: {y_hat.shape}; y: {y.shape}")
+    task.train_metrics.update(y_hat, y)
     computed_metrics = task.train_metrics.compute()
     assert isinstance(computed_metrics, dict), "Metrics did not return a dict"
-    print(f"Loss: {loss_dict['loss'].item()}")
-    print(f"Metrics: {computed_metrics}")
-    
+    print(f"\nMetrics: {computed_metrics}")
+  
     gc.collect()

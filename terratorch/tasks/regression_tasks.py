@@ -70,19 +70,19 @@ class WeightedLossWrapper(nn.Module):
         msg = "Only 'mean' and None reduction supported"
         raise Exception(msg)
     
-    def per_class_loss(self, output: Tensor, target: Target) -> dics[str, Tensor]:
-        loss = self.loss_function(output, target)
-        if self.weights.ndim == 1:
-            weights = self.weights.view(1, -1, *([1] * (loss.ndim - 2))) # [1, num_vars, 1, 1]
-        else:
-            weights = self.weights
+    # def per_class_loss(self, output: Tensor, target: Tensor) -> dict[str, Tensor]:
+    #     loss = self.loss_function(output, target)
+    #     if self.weights.ndim == 1:
+    #         weights = self.weights.view(1, -1, *([1] * (loss.ndim - 2))) # [1, num_vars, 1, 1]
+    #     else:
+    #         weights = self.weights
             
-        weighted_loss = weights * loss
-        if loss.ndim == 2:  # [B, C]
-            mean_per_class = weighted_loss.mean(dim=0)
-        else:  # [B, C, H, W]
-            mean_per_class = weighted_loss.mean(dim=[0] + list(range(2, loss.ndim)))
-        return {f"class_{i}": mean_per_class[i] for i in range(mean_per_class.shape[0])}
+    #     weighted_loss = weights * loss
+    #     if loss.ndim == 2:  # [B, C]
+    #         mean_per_class = weighted_loss.mean(dim=0)
+    #     else:  # [B, C, H, W]
+    #         mean_per_class = weighted_loss.mean(dim=[0] + list(range(2, loss.ndim)))
+    #     return {f"class_{i}": mean_per_class[i] for i in range(mean_per_class.shape[0])}
 
 
 class IgnoreIndexLossWrapper(nn.Module):
@@ -162,8 +162,7 @@ class IgnoreIndexMetricWrapper(WrapperMetric):
 
     def reset(self) -> None:
         self.metric.reset()
-
-
+    
 def init_loss(loss: str, ignore_index: int = None):
     if loss == "mse":
         return IgnoreIndexLossWrapper(nn.MSELoss(reduction="none"), ignore_index)
@@ -177,6 +176,10 @@ def init_loss(loss: str, ignore_index: int = None):
     else:
         raise ValueError(f"Loss type '{loss}' is not valid. Currently, supports 'mse', 'rmse', 'mae', or 'huber' loss.")
 
+def check_weights_classes(class_weights: Tensor, num_classes: int):
+    if len(class_weights) != num_classes:
+        exception_message = f"Number of weights must correspond to number of variables. Got {len(class_weights)} weights for {num_classes} variables."
+        raise ValueError(exception_message)
 
 class PixelwiseRegressionTask(TerraTorchTask):
     """Pixelwise Regression Task that accepts models from a range of sources.
@@ -554,6 +557,9 @@ class ScalarRegressionTask(TerraTorchTask):
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
         self.num_classes = num_classes
+        self.class_weights = (
+            torch.Tensor(class_weights) if class_weights is not None else None
+        ) 
 
         if model is not None and model_factory is not None:
             logger.warning("A model_factory and a model was provided. The model_factory is ignored.")
@@ -587,10 +593,6 @@ class ScalarRegressionTask(TerraTorchTask):
         """
         loss: str = self.hparams["loss"].lower()
         
-        class_weights = (
-            torch.Tensor(self.hparams["class_weights"]) if self.hparams["class_weights"] is not None else None
-        ) 
-        
         # Base criterions:
         if loss == "mse":
             base_criterion = nn.MSELoss(reduction="none")
@@ -608,16 +610,17 @@ class ScalarRegressionTask(TerraTorchTask):
             exception_message = f"Loss type '{loss}' is not valid. Currently, supports 'mse', 'rmse', 'mae', and 'huber' loss."
             raise ValueError(exception_message)
         
-        if class_weights is not None: 
-            base_criterion = WeightedLossWrapper(base_criterion, class_weights, reduction="mean") # [1, num_classes]
+        if self.class_weights is not None:
+            check_weights_classes(self.class_weights, self.num_classes)
+            base_criterion = WeightedLossWrapper(base_criterion, self.class_weights, reduction="mean")
          
-        base_criterion = IgnoreIndexLossWrapper(base_criterion, self.hparams["ignore_index"], reduction=None) 
+        base_criterion = IgnoreIndexLossWrapper(base_criterion, self.hparams["ignore_index"]) 
         
         if loss == "rmse":
             # Root after IgnoreIndex
             base_criterion = RootLossWrapper(base_criterion, reduction=None)
         
-        # either weighted losses for each class, not weighted losses for each class (if weights not given), or a scalar value
+        # either weighted mean of the losses or a simple mean
         self.criterion = base_criterion
 
     def configure_metrics(self) -> None:
@@ -628,11 +631,21 @@ class ScalarRegressionTask(TerraTorchTask):
                 "RMSE": MeanSquaredError(num_outputs=self.num_classes, squared=False),
                 "MSE": MeanSquaredError(num_outputs=self.num_classes, squared=True),
                 "MAE": MeanAbsoluteError(num_outputs=self.num_classes),
-                "R2_Score": R2Score(multioutput='raw_values'),
+                "R2_Score": R2Score(),
             }
             
-            if self.num_classes > 1:
-                return {name: ClasswiseWrapper(metric) for name, metric in metrics.items()}
+            # if self.num_classes > 1:
+            #     # if self.class_weights is not None:
+            #     #     check_weights_classes(self.class_weights, self.num_classes)
+            #     #     weighted_metrics = {
+            #     #         name: WeightedMetricWrapper(metric, self.class_weights) for name, metric in metrics.items() if name != "R2_Score"
+            #     #         }
+            #     #     weighted_metrics["R2_Score"] = metrics["R2_Score"]
+            #     #     metrics = weighted_metrics
+                    
+            #     per_class_metrics = {name: ClasswiseWrapper(metric, prefix="_") for name, metric in metrics.items() if name != "R2_Score"}
+            #     per_class_metrics["R2_Score"] = metrics["R2_Score"]
+            #     return per_class_metrics
 
             return metrics
 
