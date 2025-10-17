@@ -155,7 +155,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
         model_args: dict,
         model_factory: str | None = None,
         model: torch.nn.Module | None = None,
-        loss: str = "mse",
+        loss: str | list[str] | dict[str, float] = "mse",
         aux_heads: list[AuxiliaryHead] | None = None,
         aux_loss: dict[str, float] | None = None,
         class_weights: list[float] | None = None,
@@ -185,8 +185,9 @@ class PixelwiseRegressionTask(TerraTorchTask):
             model_factory (str, optional): Name of ModelFactory class to be used to instantiate the model.
                 Is ignored when model is provided.
             model (torch.nn.Module, optional): Custom model.
-            loss (str, optional): Loss to be used. Currently, supports 'mse', 'rmse', 'mae' or 'huber' loss.
-                Defaults to "mse".
+            loss (str | list[str] | dict[str, float], optional): Loss to be used. Single loss as string.
+                Multiple losses can be provided as list of strings or as dict with float values defining loss weights.
+                Currently, supports 'mse', 'rmse', 'mae' or 'huber' loss. Defaults to "mse".
             aux_loss (dict[str, float] | None, optional): Auxiliary loss weights.
                 Should be a dictionary where the key is the name given to the loss
                 and the value is the weight to be applied to that loss.
