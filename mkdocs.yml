@@ -92,10 +92,6 @@ nav:
       - TerraMind: guide/terramind.md
       - Prithvi EO: guide/prithvi_eo.md
       - Temporal Wrapper: guide/temporal_wrapper.md
-    - vLLM IOProcessor Plugins:
-      - Getting Started: guide/vllm_io_plugins
-      - Available Plugins:
-        - Segmentation: guide/segmentation_io_plugin.md
 # TODO Add guide for a general approach to a new use case
 #    - New Use Case: guide/new_use_case.md
 # TODO Add guide for fine-tuning
@@ -104,6 +100,14 @@ nav:
 # TODO Add docs for iterate
 #    - Iterate: guide/iterate.md
     - Glossary: guide/glossary.md
+    - Serving models with vLLM:
+      - Introduction: guide/vllm/intro.md
+      - vLLM IOProcessor Plugins:
+        - Getting Started: guide/vllm/vllm_io_plugins
+        - Available Plugins:
+          - Segmentation: guide/vllm/plugins/segmentation_io_plugin.md
+      - Prepare your model for serving with vLLM: guide/vllm/prepare_your_model.md
+      - Initializing and serving a model with vLLM: guide/vllm/serving_a_model.md
     - FAQs: guide/faqs.md
 
   - Tutorials:
