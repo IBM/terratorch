@@ -90,8 +90,8 @@ class SegmentationIOProcessor(IOProcessor):
                     raise ValueError(f"Expect 'crop' (or 'h_crop' and 'w_crop') in tiled_inference_parameters "
                                     f"but got {tiled_inf_param_dict}")
             if ("stride" in tiled_inf_param_dict or
-                "w_stride" not in tiled_inf_param_dict or
-                "h_stride" not in tiled_inf_param_dict):
+                "w_stride" in tiled_inf_param_dict or
+                "h_stride" in tiled_inf_param_dict):
                 warnings.warn("The 'stride' parameters for tiled inference are ignored in vLLM.")
         else:
             tiled_inf_param_dict = {}
