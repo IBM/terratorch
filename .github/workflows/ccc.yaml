@@ -1,0 +1,16 @@
+name: Hello World Self-Hosted
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  hello:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Say Hello
+        run: echo "Hello World from self-hosted runner!"
