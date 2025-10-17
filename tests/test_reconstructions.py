@@ -1,5 +1,6 @@
 import gc
 import os
+import shutil
 
 import pytest
 import torch
@@ -16,6 +17,9 @@ def test_reconstruction_cli(model_name, case):
     _ = build_lightning_cli(command_list)
 
     gc.collect()
+
+    if os.path.isdir(os.path.join("tests", "all_ecos_random")):
+        shutil.rmtree(os.path.join("tests", "all_ecos_random"))
 
 
 @pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100_mae"])
