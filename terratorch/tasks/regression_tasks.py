@@ -69,20 +69,6 @@ class WeightedLossWrapper(nn.Module):
         
         msg = "Only 'mean' and None reduction supported"
         raise Exception(msg)
-    
-    # def per_class_loss(self, output: Tensor, target: Tensor) -> dict[str, Tensor]:
-    #     loss = self.loss_function(output, target)
-    #     if self.weights.ndim == 1:
-    #         weights = self.weights.view(1, -1, *([1] * (loss.ndim - 2))) # [1, num_vars, 1, 1]
-    #     else:
-    #         weights = self.weights
-            
-    #     weighted_loss = weights * loss
-    #     if loss.ndim == 2:  # [B, C]
-    #         mean_per_class = weighted_loss.mean(dim=0)
-    #     else:  # [B, C, H, W]
-    #         mean_per_class = weighted_loss.mean(dim=[0] + list(range(2, loss.ndim)))
-    #     return {f"class_{i}": mean_per_class[i] for i in range(mean_per_class.shape[0])}
 
 
 class IgnoreIndexLossWrapper(nn.Module):
@@ -119,7 +105,7 @@ class IgnoreIndexLossWrapper(nn.Module):
         raise Exception(msg)
 
 
-class IgnoreIndexMetricWrapper(WrapperMetric):
+class IgnoreIndexMetricWrapper(WrapperMetric): # to be fixed for multiple variable outputs 
     """Wrapper over other metric that will ignore certain values.
 
     This class implements ignore_index by removing values where the target matches the ignored value.
@@ -130,21 +116,26 @@ class IgnoreIndexMetricWrapper(WrapperMetric):
     The wrapper needs to change the inputs on the forward directly, so that it affects the update of the wrapped metric
     """
 
-    def __init__(self, wrapped_metric: Metric, ignore_index: int) -> None:
+    def __init__(self, wrapped_metric: Metric, ignore_index: int, num_outputs: int = 1) -> None:
         super().__init__()
         self.metric = wrapped_metric
         self.ignore_index = ignore_index
+        self.num_outputs = num_outputs # now only for scalar regression - needs to be rethinked for pixel-wise
 
     def update(self, preds: Tensor, target: Tensor) -> None:
-        if self.ignore_index is not None:
-            items_to_take = target != self.ignore_index
-            items_to_take[torch.isnan(target)] = False  # Filter NaN values as well
-            target = target[items_to_take]
-            preds = preds[items_to_take]
-        else:
-            preds = preds.flatten()
-            target = target.flatten()
-        return self.metric.update(preds, target)
+        if self.num_outputs == 1:
+            if self.ignore_index is not None:
+                items_to_take = target != self.ignore_index
+                items_to_take[torch.isnan(target)] = False  # Filter NaN values as well
+                target = target[items_to_take]
+                preds = preds[items_to_take]
+            else:
+                preds = preds.flatten()
+                target = target.flatten()
+            return self.metric.update(preds, target)
+        
+        elif self.num_outputs > 1:
+            return self.metric.update(preds, target)
 
     def forward(self, preds: Tensor, target: Tensor, *args, **kwargs) -> Any:
         if self.ignore_index is not None:
@@ -162,6 +153,20 @@ class IgnoreIndexMetricWrapper(WrapperMetric):
 
     def reset(self) -> None:
         self.metric.reset()
+
+class WeightedMetricWrapper(WrapperMetric):
+    def __init__(self, wrapped_metric: Metric, weights: list[float]) -> None:
+        super().__init__()
+        self.wrapped_metric = wrapped_metric
+        self.weights = torch.Tensor(weights)
+    
+    def update(self, preds: Tensor, target: Tensor) -> None:
+        check_weights_classes(self.weights, preds.numel())
+        return self.wrapped_metric.update(preds, target)
+    
+    def compute(self) -> Tensor:
+        values = self.wrapped_metric.compute()
+        return values * self.weights        
     
 def init_loss(loss: str, ignore_index: int = None):
     if loss == "mse":
@@ -634,24 +639,24 @@ class ScalarRegressionTask(TerraTorchTask):
                 "R2_Score": R2Score(),
             }
             
-            # if self.num_classes > 1:
-            #     # if self.class_weights is not None:
-            #     #     check_weights_classes(self.class_weights, self.num_classes)
-            #     #     weighted_metrics = {
-            #     #         name: WeightedMetricWrapper(metric, self.class_weights) for name, metric in metrics.items() if name != "R2_Score"
-            #     #         }
-            #     #     weighted_metrics["R2_Score"] = metrics["R2_Score"]
-            #     #     metrics = weighted_metrics
+            if self.num_classes > 1:
+                if self.class_weights is not None:
+                    check_weights_classes(self.class_weights, self.num_classes)
+                    weighted_metrics = {
+                        name: WeightedMetricWrapper(metric, self.class_weights) for name, metric in metrics.items() if name != "R2_Score"
+                        }
+                    weighted_metrics["R2_Score"] = metrics["R2_Score"]
+                    metrics = weighted_metrics
                     
-            #     per_class_metrics = {name: ClasswiseWrapper(metric, prefix="_") for name, metric in metrics.items() if name != "R2_Score"}
-            #     per_class_metrics["R2_Score"] = metrics["R2_Score"]
-            #     return per_class_metrics
+                per_class_metrics = {name: ClasswiseWrapper(metric, prefix="_") for name, metric in metrics.items() if name != "R2_Score"}
+                per_class_metrics["R2_Score"] = metrics["R2_Score"]
+                return per_class_metrics
 
             return metrics
 
         def wrap_metrics_with_ignore_index(metrics):
             return {
-                name: IgnoreIndexMetricWrapper(metric, ignore_index=self.hparams["ignore_index"])
+                name: IgnoreIndexMetricWrapper(metric, ignore_index=self.hparams["ignore_index"], num_outputs=self.num_classes)
                 for name, metric in metrics.items()
             }
 
