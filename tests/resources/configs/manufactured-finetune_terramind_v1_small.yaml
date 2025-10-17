@@ -61,18 +61,11 @@ data:
       - 2
       - 1
       - 0
-    train_data_root:
-      S2L2A: tests/resources/inputs
-    train_label_data_root: tests/resources/inputs
-    val_data_root:
-      S2L2A: tests/resources/inputs
-    val_label_data_root: tests/resources/inputs
-    test_data_root:
-      S2L2A: tests/resources/inputs
-    test_label_data_root: tests/resources/inputs
+    data_root: tests/resources/inputs
+    label_data_root: tests/resources/inputs
     img_grep:
       S2L2A: "*input.tif"
-    label_grep: "*label.tif"
+    label_grep: "*label_seg.tif"
     means:
       S2L2A:
       - 547.36707
@@ -110,7 +103,7 @@ model:
         - name: LearnedInterpolateToPyramidal  # Upscale outputs to UNet input size
       decoder: UNetDecoder
       decoder_channels: [ 256, 128, 64, 32 ]
-      num_classes: 23
+      num_classes: 2
     loss:
       - ce
       - lovasz
