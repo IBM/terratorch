@@ -169,9 +169,8 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         self,
         batch_size: int,
         modalities: list[str],
-        train_data_root: dict[str, Path],
-        val_data_root: dict[str, Path],
-        test_data_root: dict[str, Path],
+        train_data_root: dict[str, Path] | str,
+        val_data_root: dict[str, Path] | str,
         means: dict[str, list],
         stds: dict[str, list],
         task: str | None = None,
@@ -181,6 +180,7 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         train_label_data_root: Path | str | None = None,
         val_label_data_root: Path | str | None = None,
         test_label_data_root: Path | str | None = None,
+        test_data_root: dict[str, Path]  | str | None = None,
         predict_data_root: dict[str, Path] | str | None = None,
         train_split: Path | str | None = None,
         val_split: Path | str | None = None,
@@ -220,20 +220,20 @@ class GenericMultiModalDataModule(NonGeoDataModule):
         Args:
             batch_size (int): Number of samples in per batch.
             modalities (list[str]): List of modalities.
-            train_data_root (dict[Path]): Dictionary of paths to training data root directory or csv/parquet files with 
-                image-level data, with modalities as keys.
-            val_data_root (dict[Path]): Dictionary of paths to validation data root directory or csv/parquet files with 
-                image-level data, with modalities as keys.
-            test_data_root (dict[Path]): Dictionary of paths to test data root directory or csv/parquet files with 
-                image-level data, with modalities as keys.
+            train_data_root (dict[Path] | str): Dictionary of paths to training data root directory or csv/parquet files
+                with image-level data, with modalities as keys. Can be string if paths are shared.
+            val_data_root (dict[Path] | str): Dictionary of paths to validation data root directory or csv/parquet files
+                with image-level data, with modalities as keys. Can be string if paths are shared.
             means (dict[list]): Dictionary of mean values as lists with modalities as keys.
             stds (dict[list]): Dictionary of std values as lists with modalities as keys.
             task (str, optional): Selected task form segmentation, regression (pixel-wise), classification,
                 multilabel_classification, scalar_regression, scalar (custom image-level task), or None (no targets).
                 Defaults to None.
             num_classes (int, optional): Number of classes in classification or segmentation tasks.
-            predict_data_root (dict[Path], optional): Dictionary of paths to data root directory or csv/parquet files
-                with image-level data, with modalities as keys.
+            test_data_root (dict[Path] | str | None): Dictionary of paths to test data root directory or csv/parquet
+                files with image-level data, with modalities as keys. Can be string if paths are shared.
+            predict_data_root (dict[Path], str, optional): Dictionary of paths to data root directory or csv/parquet
+                files with image-level data, with modalities as keys.
             image_grep (dict[str], optional): Dictionary with regular expression appended to data_root to find input
                 images, with modalities as keys. Defaults to "*". Ignored when allow_substring_file_names is False.
             label_grep (str, optional): Regular expression appended to label_data_root to find labels or mask files.
@@ -389,11 +389,15 @@ class GenericMultiModalDataModule(NonGeoDataModule):
                                 ("predict", predict_data_root)]:
             if data_root is None:
                 filtered = None
-            else:
+            elif isinstance(data_root, str):
+                filtered = {m: data_root for m in modalities}
+            elif isinstance(data_root, dict):
                 filtered = {m: data_root[m] for m in modalities if m in data_root} # Filter out modalities not used
                 if not allow_missing_modalities:
                     if not set(filtered.keys()) == set(modalities):
                         raise ValueError(f"Paths in {name}_data_root do not match modalities {modalities}: {data_root}")
+            else:
+                raise ValueError(f"{name}_data_root is required to be either None, dict, or a str.")
             if name == "train":
                 self.train_root = filtered
             elif name == "val":
