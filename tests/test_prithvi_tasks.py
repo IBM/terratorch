@@ -4,7 +4,7 @@ import pytest
 import torch
 
 from terratorch.models.backbones.prithvi_vit import PRETRAINED_BANDS
-from terratorch.tasks import ClassificationTask, PixelwiseRegressionTask, SemanticSegmentationTask, ReconstructionTask
+from terratorch.tasks import ClassificationTask, PixelwiseRegressionTask, SemanticSegmentationTask, ReconstructionTask, ScalarRegressionTask
 
 import gc
 
@@ -167,6 +167,9 @@ def test_create_classification_task_encoder_decoder(backbone, decoder, loss, mod
     )
 
     gc.collect()
+
+
+
 
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v2_300"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder"])

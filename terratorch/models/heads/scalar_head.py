@@ -3,8 +3,8 @@
 from torch import Tensor, nn
 
 
-class ClassificationHead(nn.Module):
-    """Classification head"""
+class ScalarHead(nn.Module):
+    """Classification and Scalar Regression head"""
 
     # how to allow cls token?
     def __init__(
