@@ -81,7 +81,7 @@ jobs:
           # Generate coverage for main branch
           git fetch origin main
           git checkout origin/main
-          pytest --cov=terratorch -v --cov-report xml:coverage_main.xml --cov-report term-missing tests || true
+          pytest --cov=terratorch -v --cov-report xml:coverage_main.xml --cov-report term-missing tests
 
           # Return to PR branch
           git checkout -
