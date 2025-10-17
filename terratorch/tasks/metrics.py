@@ -22,9 +22,9 @@ class BoundaryMeanIoU(Metric):
         ignore_index: int | None = None,
         average: str = "macro",            # "macro" or "micro"
         include_background: bool = True,
-        dist_reduce_fx: str = "sum",
+        **kwargs
     ):
-        super().__init__(dist_sync_on_step=False)
+        super().__init__(**kwargs)
 
         if average not in {"macro", "micro"}:
             raise ValueError("average must be 'macro' or 'micro'")
@@ -36,10 +36,8 @@ class BoundaryMeanIoU(Metric):
         self.include_background = include_background
 
         # accumulators across batches
-        self.add_state("intersections", default=torch.zeros(num_classes, dtype=torch.float64),
-                       dist_reduce_fx=dist_reduce_fx)
-        self.add_state("unions",        default=torch.zeros(num_classes, dtype=torch.float64),
-                       dist_reduce_fx=dist_reduce_fx)
+        self.add_state("intersections", default=torch.zeros(num_classes), dist_reduce_fx="sum")
+        self.add_state("unions", default=torch.zeros(num_classes), dist_reduce_fx="sum")
 
     @torch.no_grad()
     def update(self, preds: Tensor, target: Tensor) -> None:
@@ -58,8 +56,6 @@ class BoundaryMeanIoU(Metric):
         if target.dim() != 3:
             raise ValueError("target must be (N,H,W)")
 
-        N, H, W = target.shape
-        device = preds_idx.device
         k = 2 * self.thickness + 1
 
         # mask out ignore_index everywhere
