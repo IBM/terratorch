@@ -279,7 +279,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                         sample["mask"] = file_path
                 if "mask" not in sample:
                     # Only add sample if mask is present
-                    break
+                    continue
 
             if len(sample) == num_modalities or allow_missing_modalities:
                 self.samples.append(sample)
