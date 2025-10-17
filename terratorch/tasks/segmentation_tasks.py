@@ -140,9 +140,7 @@ class SemanticSegmentationTask(TerraTorchTask):
                 This argument has been deprecated and will be replaced with `output_on_inference`.
             tiled_inference_on_testing (bool): A boolean to define if tiled inference will be used during the test step.
             tiled_inference_on_validation (bool): A boolean to define if tiled inference will be used during the val step.
-            tiled_inference_on_testing (bool): A boolean to define if tiled inference will be used when full inference
-                fails during the test step.
-            path_to_record_metrics (str): A path to save the file containing the metrics log.
+            path_to_record_metrics (str): A path to save the file containing the metrics log. 
         """
 
         self.tiled_inference_parameters = tiled_inference_parameters
@@ -386,7 +384,6 @@ class SemanticSegmentationTask(TerraTorchTask):
 
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
-        # model_output: ModelOutput = self(x, **rest)
         model_output = self.handle_full_or_tiled_inference(x, self.tiled_inference_on_validation, **rest)
 
         loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
@@ -406,7 +403,7 @@ class SemanticSegmentationTask(TerraTorchTask):
                 for key in ["image", "mask", "prediction"]:
                     batch[key] = batch[key].cpu()
                 sample = unbind_samples(batch)[0]
-                fig = datamodule.val_dataset.plot(sample)
+                fig = datamodule.val_dataset.plot(sample) if hasattr(datamodule.val_dataset, "plot") else datamodule.plot(sample, "val") 
                 if fig:
                     summary_writer = self.logger.experiment
                     if hasattr(summary_writer, "add_figure"):
@@ -415,6 +412,8 @@ class SemanticSegmentationTask(TerraTorchTask):
                         summary_writer.log_figure(
                             self.logger.run_id, fig, f"epoch_{self.current_epoch}_{batch_idx}.png"
                         )
+                    else:
+                        plt.savefig("/mnt/geobench/data/geobench_experiments/final_again/test_plots")
             except ValueError:
                 pass
             finally:
