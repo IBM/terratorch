@@ -44,7 +44,7 @@ def test_finetune_multiple_backbones(model_name, case):
 
 
 @pytest.mark.parametrize(
-    "model_name", ["prithvi_eo_v1_100", "prithvi_swin_L"]
+    "model_name", ["terramind_v1_small", "prithvi_eo_v1_100", "prithvi_swin_L"]
 )
 def test_finetune_multiple_backbones_with_prediction(model_name):
     command_list = ["fit", "-c", f"tests/resources/configs/manufactured-finetune_{model_name}.yaml"]

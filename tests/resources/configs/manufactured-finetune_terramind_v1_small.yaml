@@ -28,7 +28,8 @@ trainer:
 data:
   class_path: terratorch.datamodules.GenericMultiModalDataModule
   init_args:
-    task: 'regression'
+    task: 'segmentation'
+    num_classes: 2
     batch_size: 2
     num_workers: 4
     train_transform:
@@ -68,7 +69,7 @@ data:
     val_label_data_root: tests/resources/inputs
     test_data_root:
       S2L2A: tests/resources/inputs
-    test_label_data_root: tests/resources/inputs 
+    test_label_data_root: tests/resources/inputs
     img_grep:
       S2L2A: "*input.tif"
     label_grep: "*label.tif"
@@ -92,11 +93,11 @@ data:
     no_data_replace: 0
 
 model:
-  class_path: terratorch.tasks.PixelwiseRegressionTask
+  class_path: terratorch.tasks.SemanticSegmentationTask
   init_args:
     model_factory: EncoderDecoderFactory
     model_args:
-      backbone: terramind_v1_base
+      backbone: terramind_v1_small
       backbone_pretrained: false
       backbone_modalities:
         - S2L2A
@@ -104,24 +105,19 @@ model:
         S2L2A: [BLUE, GREEN, RED, NIR_NARROW, SWIR_1, SWIR_2]
       necks:
         - name: ReshapeTokensToImage  # 1D Tokens to 2D grid
-          remove_cls_token: False  # No CLS token in TerraMind
         - name: SelectIndices  # Select layers used in the UNet decoder
           indices: [ 2, 5, 8, 11 ]
         - name: LearnedInterpolateToPyramidal  # Upscale outputs to UNet input size
       decoder: UNetDecoder
-      decoder_channels: [ 512, 256, 128, 64 ]
+      decoder_channels: [ 256, 128, 64, 32 ]
+      num_classes: 23
     loss:
-      rmse: 0.5
-      mse: 0.5
-#    ignore_index: -1
+      - ce
+      - lovasz
+    ignore_index: -1
     freeze_backbone: true
     freeze_decoder: false
-    tiled_inference_parameters:
-      h_crop: 56
-      h_stride: 48
-      w_crop: 56
-      w_stride: 48
-      average_patches: true
+
 optimizer:
   class_path: torch.optim.AdamW
   init_args:
