@@ -33,7 +33,7 @@ jobs:
     timeout-minutes: 40
     strategy:
       matrix:
-        python-version: ["3.12"]
+        python-version: ["3.12.12"]
     env:
       R_TESTS_VERBOSE: 2
     steps:
