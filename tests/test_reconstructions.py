@@ -13,6 +13,9 @@ from terratorch.tasks import ReconstructionTask
 @pytest.mark.parametrize("model_name", ["prithvi_eo_v1_100"])
 @pytest.mark.parametrize("case", ["fit", "test", "validate"])
 def test_reconstruction_cli(model_name, case):
+    if os.path.isdir(os.path.join("tests", "all_ecos_random")):
+        shutil.rmtree(os.path.join("tests", "all_ecos_random"))
+
     command_list = [case, "-c", f"tests/resources/configs/manufactured-reconstruction_{model_name}.yaml"]
     _ = build_lightning_cli(command_list)
 
