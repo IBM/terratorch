@@ -57,7 +57,6 @@ jobs:
       - name: Install dependencies
         run: |
           pip install pip==24.2
-          pip install git+https://github.com/The-AI-Alliance/GEO-Bench-2.git@main
           pip --version
           pip install -e .[wxc,test]
           pip install pytest-cov
