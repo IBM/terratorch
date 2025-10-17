@@ -52,8 +52,6 @@ jobs:
         run: |
           #python -m pip install --upgrade pip
           pip install pip==24.2
-          # Temporary workaround to allow the installation of `geobench_v2`
-          pip install git+https://github.com/The-AI-Alliance/GEO-Bench-2.git@main
           pip --version
           pip install -e .[wxc,test]
       - name: Clean pip cache
