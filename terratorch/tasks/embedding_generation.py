@@ -1,5 +1,7 @@
 from pathlib import Path
 import warnings
+import concurrent.futures
+from functools import partial
 
 import geopandas as gpd
 import numpy as np
@@ -9,10 +11,35 @@ from rasterio.errors import NotGeoreferencedWarning
 from torchgeo.trainers import BaseTask
 from terratorch.models.utils import TemporalWrapper
 from terratorch.registry import BACKBONE_REGISTRY
-from terratorch.tasks.tiled_inference import tiled_embeddings, TileEmbedding 
+from terratorch.tasks.tiled_inference import tiled_embeddings, TileEmbedding
 
 warnings.filterwarnings("ignore", category=NotGeoreferencedWarning)
 warnings.simplefilter("once", UserWarning)
+
+
+# Module-level functions for ProcessPoolExecutor (must be picklable)
+def _write_tiff_worker(arr: np.ndarray, out_path: Path, metadata: dict) -> None:
+    """Worker function to write a single TIFF file (for parallel writing)."""
+    with rasterio.open(
+        out_path,
+        "w",
+        driver="GTiff",
+        height=arr.shape[1],
+        width=arr.shape[2],
+        count=arr.shape[0],
+        dtype=arr.dtype
+    ) as dst:
+        dst.write(arr)
+        dst.update_tags(**{k: str(v) for k, v in metadata.items()})
+
+
+def _write_parquet_worker(arr: np.ndarray, out_path: Path, metadata: dict) -> None:
+    """Worker function to write a single Parquet file (for parallel writing)."""
+    row = {"embedding": arr.tolist()}
+    # Metadata should already be in Python native types (not tensors)
+    row.update(metadata)
+    df = gpd.GeoDataFrame([row])
+    df.to_parquet(out_path, index=False)
 
 class EmbeddingGenerationTask(BaseTask):
     """
@@ -217,6 +244,74 @@ class EmbeddingGenerationTask(BaseTask):
         for embedding, layer in zip(embeddings, layers):
             self.save_embeddings(embedding, file_ids, metadata, layer)
 
+    def _prepare_tile_write_args(
+        self,
+        tile_embed: TileEmbedding,
+        file_ids: list[str],
+        metadata: dict,
+        layer: int,
+    ) -> tuple[np.ndarray, Path, dict]:
+        """Prepare arguments for writing a single tile embedding (returns data for ProcessPoolExecutor)."""
+        base = Path(file_ids[tile_embed.tile_idx]).stem if file_ids is not None else f"sample{tile_embed.tile_idx}"
+        ys, xs = tile_embed.coords
+        y0, y1 = ys.start, ys.stop
+        x0, x1 = xs.start, xs.stop
+        fname = f"{base}__{y0}-{y1}_{x0}-{x1}"
+
+        # Extract scene name and create output directory
+        scene_name = self.extract_scene_name(fname)
+        path = self.output_path / f"layer_{layer}"
+        out_dir = path / scene_name
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        # Extract scalar metadata values (metadata has batch dimension from dataloader)
+        # All tiles from same scene share the same metadata
+        # Convert tensors to Python native types for pickling
+        metadata_sample = {}
+        for k, v in metadata.items():
+            if hasattr(v, '__getitem__'):
+                val = v[tile_embed.tile_idx]
+                # Convert tensor to Python type
+                if hasattr(val, 'item'):
+                    metadata_sample[k] = val.item()
+                elif hasattr(val, 'tolist'):
+                    metadata_sample[k] = val.tolist()
+                else:
+                    metadata_sample[k] = val
+            else:
+                metadata_sample[k] = v
+
+        # Prepare the embedding
+        embedding_sample = self.pool_embedding(tile_embed.embedding, self.embedding_pooling, self.has_cls)
+        arr = self._prepare_array_for_write(embedding_sample)
+
+        # Determine output path
+        filename = Path(fname).stem
+        if self.output_format == "tiff":
+            out_path = out_dir / f"{Path(filename)}_embedding.tif"
+        else:  # parquet
+            out_path = out_dir / f"{Path(filename)}_embedding.parquet"
+
+        return arr, out_path, metadata_sample
+
+    def _prepare_array_for_write(self, embedding: torch.Tensor) -> np.ndarray:
+        """Prepare embedding array for writing (handles reshaping for TIFF format)."""
+        arr = embedding.detach().cpu().numpy()
+
+        if arr.ndim == 1:
+            arr = arr.reshape(-1, 1, 1)
+        elif arr.ndim == 2:
+            n_tokens, dim = arr.shape
+            if self.has_cls is True or (self.has_cls is None and n_tokens % 2 == 1):
+                arr = arr[1:, :]
+                n_tokens -= 1
+            s = int(np.sqrt(n_tokens))
+            if s * s != n_tokens:
+                raise ValueError(f"Cannot reshape {n_tokens} tokens into {s}x{s} grid.")
+            arr = arr.reshape(s, s, dim).transpose(2, 0, 1)
+
+        return arr
+
     def save_embeddings(
         self,
         embedding: torch.Tensor | dict[str, torch.Tensor],
@@ -224,17 +319,36 @@ class EmbeddingGenerationTask(BaseTask):
         metadata: dict,
         layer: int,
     ) -> None:
-        """Save embeddings for a given layer (per sample, optional per timestep and per modality)."""
+        """Save embeddings for a given layer (per sample, optional per timestep and per modality).
+
+        OPTIMIZATION: For tiled inference, parallelizes writing of all tiles using ProcessPoolExecutor
+        to bypass Python's GIL and achieve true parallel file writes.
+        """
         if isinstance(embedding, list) and isinstance(embedding[0], TileEmbedding):
-            for tile_embed in embedding:
-                base = Path(file_ids[tile_embed.tile_idx]).stem if file_ids is not None else f"sample{tile_embed.tile_idx}"
-                ys, xs = tile_embed.coords
-                y0, y1 = ys.start, ys.stop
-                x0, x1 = xs.start, xs.stop
-                fname = f"{base}__{y0}-{y1}_{x0}-{x1}"
-                path = self.output_path / f"layer_{layer}"
-                embedding = tile_embed.embedding.unsqueeze(0)
-                self.write_batch(embedding, [fname], metadata, path)
+            # Use ProcessPoolExecutor to write all tiles in parallel
+            # ProcessPoolExecutor bypasses the GIL, enabling true parallel writes
+            # Prepare all write arguments first (in main process)
+            write_args = [
+                self._prepare_tile_write_args(tile_embed, file_ids, metadata, layer)
+                for tile_embed in embedding
+            ]
+
+            # Select appropriate worker function based on output format
+            worker_fn = _write_tiff_worker if self.output_format == "tiff" else _write_parquet_worker
+
+            # Write all tiles in parallel using separate processes
+            with concurrent.futures.ProcessPoolExecutor(max_workers=16) as executor:
+                futures = [
+                    executor.submit(worker_fn, arr, out_path, meta)
+                    for arr, out_path, meta in write_args
+                ]
+                # Wait for all writes to complete and handle any exceptions
+                for future in concurrent.futures.as_completed(futures):
+                    try:
+                        future.result()
+                    except Exception as e:
+                        import logging
+                        logging.error(f"Failed to write tile embedding: {e}")
         elif isinstance(embedding, dict):
             for modality, t in embedding.items():
                 path = self.output_path / f"layer_{layer}" / modality
@@ -287,6 +401,40 @@ class EmbeddingGenerationTask(BaseTask):
         
         return metadata
       
+    def _prepare_file_write_args(
+        self,
+        embedding_sample: torch.Tensor,
+        filename: str,
+        metadata_sample: dict,
+        dir_path: Path,
+    ) -> tuple[np.ndarray, Path, dict]:
+        """Prepare arguments for writing a single embedding file (returns data for ProcessPoolExecutor)."""
+        scene_name = self.extract_scene_name(filename)
+        out_dir = dir_path / scene_name
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        # Prepare array
+        arr = self._prepare_array_for_write(embedding_sample)
+
+        # Convert metadata tensors to Python types for pickling
+        metadata_clean = {}
+        for k, v in metadata_sample.items():
+            if hasattr(v, 'item'):
+                metadata_clean[k] = v.item()
+            elif hasattr(v, 'tolist'):
+                metadata_clean[k] = v.tolist()
+            else:
+                metadata_clean[k] = v
+
+        # Determine output path
+        filename_stem = Path(filename).stem
+        if self.output_format == "tiff":
+            out_path = out_dir / f"{Path(filename_stem)}_embedding.tif"
+        else:  # parquet
+            out_path = out_dir / f"{Path(filename_stem)}_embedding.parquet"
+
+        return arr, out_path, metadata_clean
+
     def write_batch(
             self,
             embedding: torch.Tensor,
@@ -300,11 +448,18 @@ class EmbeddingGenerationTask(BaseTask):
         The scene name is derived from the filename stem; for tiled outputs
         produced by this task (filenames like 'scene__y0-y1_x0-x1'), the
         scene name is the part before the first double underscore.
+
+       Uses parallel file writing with ProcessPoolExecutor to
+        bypass the GIL and achieve true parallel writes, significantly reducing
+        I/O time when writing many tiles (e.g., 3249 tiles).
         """
         dir_path.mkdir(parents=True, exist_ok=True)
 
         B = len(file_ids)
         T = len(file_ids[0]) if isinstance(file_ids[0], (list, tuple, np.ndarray)) else None
+
+        # Prepare all write arguments (in main process before spawning workers)
+        write_args = []
 
         for b in range(B):
             if T is not None:
@@ -312,26 +467,30 @@ class EmbeddingGenerationTask(BaseTask):
                     filename = file_ids[b][t]
                     metadata_sample = {k: v[b][t] for k, v in metadata.items()}
                     embedding_sample = self.pool_embedding(embedding[b, t, ...], self.embedding_pooling, self.has_cls)
-                    # Determine per-scene subfolder from filename
-                    scene_name = self.extract_scene_name(filename)
-                    out_dir = dir_path / scene_name
-                    out_dir.mkdir(parents=True, exist_ok=True)
-                    if self.output_format == "tiff":
-                        self.write_tiff(embedding_sample, filename, metadata_sample, out_dir)
-                    elif self.output_format == "parquet":
-                        self.write_parquet(embedding_sample, filename, metadata_sample, out_dir)
+                    write_args.append(self._prepare_file_write_args(embedding_sample, filename, metadata_sample, dir_path))
             else:
                 filename = file_ids[b]
                 metadata_sample = {k: v[b] for k, v in metadata.items()}
                 embedding_sample = self.pool_embedding(embedding[b, ...], self.embedding_pooling, self.has_cls)
-                # Determine per-scene subfolder from filename
-                scene_name = self.extract_scene_name(filename)
-                out_dir = dir_path / scene_name
-                out_dir.mkdir(parents=True, exist_ok=True)
-                if self.output_format == "tiff":
-                    self.write_tiff(embedding_sample, filename, metadata_sample, out_dir)
-                elif self.output_format == "parquet":
-                    self.write_parquet(embedding_sample, filename, metadata_sample, out_dir)
+                write_args.append(self._prepare_file_write_args(embedding_sample, filename, metadata_sample, dir_path))
+
+        # Select appropriate worker function based on output format
+        worker_fn = _write_tiff_worker if self.output_format == "tiff" else _write_parquet_worker
+
+        # PARALLEL FILE WRITING: Use ProcessPoolExecutor with 16 workers
+        with concurrent.futures.ProcessPoolExecutor(max_workers=16) as executor:
+            futures = [
+                executor.submit(worker_fn, arr, out_path, meta)
+                for arr, out_path, meta in write_args
+            ]
+            # Wait for all writes to complete and handle any exceptions
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    future.result()
+                except Exception as e:
+                    # Log error but continue writing other files
+                    import logging
+                    logging.error(f"Failed to write embedding file: {e}")
     
     def pool_embedding(
         self,
