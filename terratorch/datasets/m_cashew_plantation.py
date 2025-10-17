@@ -154,6 +154,7 @@ class MBeninSmallHolderCashewsNonGeo(NonGeoDataset):
 
         image = sample["image"]
         mask = sample["mask"].numpy()
+        if (len(mask.shape) == 3) & (mask.shape[0] == 1): mask = mask[0] 
 
         if torch.is_tensor(image):
             image = image.permute(1, 2, 0).numpy()  # (H, W, C)

@@ -7,6 +7,7 @@ from einops import rearrange
 import albumentations as A
 import kornia.augmentation as K
 from kornia.augmentation._2d.geometric.base import GeometricAugmentationBase2D
+from torch import nn
 from typing import Union, Dict
 
 N_DIMS_FOR_TEMPORAL = 4
@@ -336,3 +337,17 @@ class MultimodalTransforms:
                 data[key] = self.transforms[key](image=value)['image']  # Only works with image modalities
 
         return data
+
+    
+class AddConstantToLabels(nn.Module):
+    def __init__(self, label_key = 'label', constant=1):
+        super().__init__()
+        self.label_key = label_key
+        self.constant = constant
+
+    def forward(self, sample):
+        # Assumes sample is a dict with a 'label' key
+        # and that sample['label'] is a torch.Tensor
+        sample = sample.copy()  # To avoid modifying the original sample
+        sample[self.label_key] = sample[self.label_key] + self.constant 
+        return sample

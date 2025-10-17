@@ -21,7 +21,7 @@ import numpy as np
 from functools import partial
 import torch
 import pdb
-from .utils import _get_backbone
+from .utils import _get_backbone, TerratorchGeneralizedRCNNTransform
 
 SUPPORTED_TASKS = ['object_detection']
 
@@ -119,6 +119,7 @@ class ObjectDetectionModelFactory(ModelFactory):
                 image_std = np.repeat(1, in_channels),
                 **framework_kwargs
             )
+            
         elif framework == 'fcos':
 
             sizes = ((8,), (16,), (32,), (64,), (128,), (256,))
@@ -203,13 +204,18 @@ class ObjectDetectionModelFactory(ModelFactory):
 
         else:
             raise ValueError(f"Framework type '{framework}' is not valid.")
-
         # some decoders already include a head
         # for these, we pass the num_classes to them
         # others dont include a head
         # for those, we dont pass num_classes
         # model.transform = IdentityTransform()
-        
+        model.transform = TerratorchGeneralizedRCNNTransform(model.transform.min_size, 
+                                                             model.transform.max_size, 
+                                                             model.transform.image_mean, 
+                                                             model.transform.image_std,  
+                                                             model.transform.size_divisible, 
+                                                             model.transform.fixed_size,_skip_resize=model.transform._skip_resize)
+
         return ObjectDetectionModel(model, framework)
 
 

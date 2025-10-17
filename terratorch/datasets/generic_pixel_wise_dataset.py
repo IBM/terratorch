@@ -22,7 +22,8 @@ from torch import Tensor
 from torchgeo.datasets import NonGeoDataset
 
 from terratorch.datasets.utils import HLSBands, default_transform, filter_valid_files, generate_bands_intervals
-
+import pdb
+import torch
 
 class GenericPixelWiseDataset(NonGeoDataset, ABC):
     """
@@ -164,7 +165,6 @@ class GenericPixelWiseDataset(NonGeoDataset, ABC):
         if self.expand_temporal_dimension:
             image = rearrange(image, "(channels time) h w -> channels time h w", channels=len(self.output_bands))
         image = np.moveaxis(image, 0, -1)
-
         if self.filter_indices:
             image = image[..., self.filter_indices]
         output = {
@@ -249,6 +249,7 @@ class GenericNonGeoSegmentationDataset(GenericPixelWiseDataset):
             reduce_zero_label (bool): Subtract 1 from all labels. Useful when labels start from 1 instead of the
                 expected 0. Defaults to False.
         """
+
         super().__init__(
             data_root,
             label_data_root=label_data_root,
@@ -289,11 +290,15 @@ class GenericNonGeoSegmentationDataset(GenericPixelWiseDataset):
 
         .. versionadded:: 0.2
         """
+
         image = sample["image"]
         if len(image.shape) == 5:
-            return
+            return 
+        if len(image.shape) == 4:
+            image = torch.squeeze(image[:, -1, :, :], 1)
         if isinstance(image, Tensor):
             image = image.numpy()
+
         image = image.take(self.rgb_indices, axis=0)
         image = np.transpose(image, (1, 2, 0))
         image = (image - image.min(axis=(0, 1))) * (1 / image.max(axis=(0, 1)))
