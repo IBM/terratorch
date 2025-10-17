@@ -108,7 +108,10 @@ class CombinedLoss(nn.modules.loss._WeightedLoss):
     def __init__(self, losses: dict[str, nn.Module], weight: list[float] | None = None):
         super().__init__()
         self.losses = nn.ModuleDict(losses)
-        self.weight = torch.Tensor(weight)
+        if weight is not None:
+            self.weight = torch.Tensor(weight)
+        else:
+            self.weight = None
 
     def forward(self, y_hat: Tensor, ground_truth: Tensor) -> dict:
         loss = {name: criterion(y_hat, ground_truth) for name, criterion in self.losses.items()}
