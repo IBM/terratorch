@@ -42,23 +42,18 @@ jobs:
         with:
           fetch-depth: 0  # Needed for comparing with main
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
 
       - name: Updating submodules
         run: |
           git submodule init
           git submodule update
 
-      - name: Install dependencies
+      - name: Upgrade pip and install deps
         run: |
-          pip install pip==24.2
-          pip --version
-          pip install -e .[wxc,test]
-          pip install pytest-cov
+          python3.12 -m pip install --upgrade pip==24.2
+          python3.12 -m pip install -e .[wxc,test]
+          python3.12 -m pip install pytest-cov
+
 
       - name: Clean pip cache
         run: pip cache purge
