@@ -64,6 +64,7 @@ dependencies = [
   "tqdm",
   "wandb",
   "tensorboard",
+  "geobench_v2@git+https://github.com/The-AI-Alliance/GEO-Bench-2.git@main"
 ]
 
 
