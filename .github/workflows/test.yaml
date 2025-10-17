@@ -110,6 +110,7 @@ jobs:
           echo "PR coverage:   ${PR_COV}"
           echo "Main coverage: ${MAIN_COV}"
 
+          # Use a small epsilon (1e-6) to account for floating-point comparison precision issues
           awk "BEGIN {exit !(${PR_COV} + 1e-6 >= ${MAIN_COV})}" || {
             echo "Coverage decreased (PR: ${PR_COV}, Main: ${MAIN_COV})"
             exit 1
