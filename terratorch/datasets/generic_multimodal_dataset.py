@@ -5,6 +5,7 @@
 
 import glob
 import logging
+import random
 import warnings
 import os
 import re
@@ -191,12 +192,16 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
         # Load samples based on split file
         if self.split_file is not None:
-            if str(self.split_file).endswith(".txt"):
+            if not os.path.isfile(self.split_file):
+                raise FileNotFoundError(f"Split file {self.split_file} does not exist.")
+            elif str(self.split_file).endswith(".txt"):
                 with open(self.split_file) as f:
                     split = f.readlines()
                 valid_files = [rf"{substring.strip()}" for substring in split]
             else:
                 valid_files = list(load_table_data(self.split_file).index)
+            if len(valid_files) == 0:
+                raise ValueError(f"No sample candidates (file prefixes) found in split file {self.split_file}.")
 
         else:
             image_files = {}
@@ -222,9 +227,17 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
 
         self.samples = []
         num_modalities = len(self.modalities) + int(label_data_root is not None)
+        if len(valid_files) == 0:
+            # Provide additional information if no candidates are found
+            image_files = {m: f[:3] for m, f in image_files.items()}
+            raise ValueError(f"No sample candidates (file prefixes) found for multimodal dataset. "
+                             f"Please review files and parameters.\n"
+                             f"data_root: {data_root}\n"
+                             f"image_grep: {image_grep}\n"
+                             f"allow_missing_modalities: {allow_missing_modalities}\n"
+                             f"File examples in data_root: {image_files}\n")
 
         # Check for parquet and csv files with modality data and read the file
-
         for m, m_path in data_root.items():
             if os.path.isfile(m_path):
                 data_root[m] = load_table_data(m_path)
@@ -241,6 +254,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                                   f"The keys {valid_files[:3] + ['...']} are not in the index.")
 
         # Iterate over all files in split
+        failed_candidates = []
         for file in valid_files:
             sample = {}
             # Iterate over all modalities
@@ -279,10 +293,23 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
                         sample["mask"] = file_path
                 if "mask" not in sample:
                     # Only add sample if mask is present
+                    failed_candidates.append(sample)
                     continue
 
             if len(sample) == num_modalities or allow_missing_modalities:
                 self.samples.append(sample)
+            else:
+                failed_candidates.append(sample)
+
+        if len(self.samples) == 0:
+            # Provide additional information if no multi-modal samples are found
+            idx = random.sample(range(len(valid_files)), min(5, len(valid_files)))
+            raise ValueError(f"No samples found for multimodal dataset. Please review files, path, and grep params.\n"
+                             f"data_root: {data_root}\n"
+                             f"image_grep: {image_grep}\n"
+                             f"allow_missing_modalities: {allow_missing_modalities}\n"
+                             f"Candidate prefixes: {', '.join([valid_files[i] for i in idx])}\n"
+                             f"Sample candidate paths: {', '.join([failed_candidates[i] for i in idx])}")
 
         self.rgb_modality = rgb_modality or self.modalities[0]
         self.rgb_indices = rgb_indices or [0, 1, 2]
