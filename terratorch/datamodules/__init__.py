@@ -62,9 +62,6 @@ try:
 except ImportError:
     logging.getLogger("terratorch").debug("geobench_v2 not installed")
     geobench_v2_present = False
-except NameError:
-    logging.getLogger("terratorch").debug("geobench_v2 not installed")
-    geobench_v2_present = False
 
 # miscellaneous datamodules
 
