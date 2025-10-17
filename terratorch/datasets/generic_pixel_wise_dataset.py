@@ -3,6 +3,7 @@
 
 """Module containing generic dataset classes"""
 
+import concurrent.futures
 import glob
 import json
 import logging
@@ -800,16 +801,16 @@ class GenericNonGeoPixelwiseDataset_Custom(GenericPixelWiseDataset):
                 resampling=Resampling.bilinear,
             )
 
-        das: list[xr.DataArray] = []
         template = ref_da
         if template is None:
             raise RuntimeError("Reference grid not initialized; cannot build band stack")
 
-        # Build stack in strict BAND_ORDER; fill missing with zeros
-        for b in BAND_ORDER:
-            if b in candidates:
+        # Parallel band loading and resampling
+        def load_and_resample_band(band: str) -> xr.DataArray:
+            """Load and resample a single band (for parallel execution)."""
+            if band in candidates:
                 # Prefer 10m, else 20m, else 60m
-                path_b = candidates[b].get(10) or candidates[b].get(20) or candidates[b].get(60)
+                path_b = candidates[band].get(10) or candidates[band].get(20) or candidates[band].get(60)
                 da = rioxarray.open_rasterio(path_b, masked=True)
                 # If resolution differs, upsample to match 10m reference
                 try:
@@ -824,8 +825,21 @@ class GenericNonGeoPixelwiseDataset_Custom(GenericPixelWiseDataset):
             else:
                 # Missing band on disk; use zeros
                 da = xr.zeros_like(template, dtype="float32")
+            return da
 
-            das.append(da)
+        # Load all bands in parallel using ThreadPoolExecutor
+        das: list[xr.DataArray] = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+            # Submit all tasks and maintain order
+            futures = {band: executor.submit(load_and_resample_band, band) for band in BAND_ORDER}
+
+            # Collect results in correct order
+            for band in BAND_ORDER:
+                try:
+                    das.append(futures[band].result())
+                except Exception as e:
+                    logger.error(f"Failed to load band {band}: {e}")
+                    das.append(xr.zeros_like(template, dtype="float32"))
 
         cube = xr.concat(das, dim="band")
         data = cube.astype("float32")
