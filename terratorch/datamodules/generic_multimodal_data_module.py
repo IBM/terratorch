@@ -422,8 +422,8 @@ class GenericMultiModalDataModule(NonGeoDataModule):
 
         self.dataset_bands = dataset_bands
         self.output_bands = output_bands
-        self.predict_dataset_bands = predict_dataset_bands
-        self.predict_output_bands = predict_output_bands
+        self.predict_dataset_bands = predict_dataset_bands or dataset_bands
+        self.predict_output_bands = predict_output_bands or output_bands
 
         self.rgb_modality = rgb_modality or modalities[0]
         self.rgb_indices = rgb_indices
