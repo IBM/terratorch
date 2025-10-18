@@ -94,5 +94,4 @@ In case you want to use TerraTorch on your specific data, we invite you to devel
 The [transforms module](../package/transforms.md) provides a set of specialized image transformations designed to manipulate spatial, temporal, and multimodal data efficiently. 
 These transformations allow for greater flexibility when working with multi-temporal, multi-channel, and multi-modal datasets, ensuring that data can be formatted appropriately for different model architectures.
 
-
-
+For min/max style preprocessing (e.g., TerraFM’s `mean ± 2σ` scaling), use the `MinMaxNormalizeFromStats` transform (`terratorch.datasets.transforms.MinMaxNormalizeFromStats`). See `examples/confs/terrafm_finetune.yaml` for a full TerraFM configuration that uses this transform into the generic datamodule.
