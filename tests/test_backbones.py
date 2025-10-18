@@ -45,6 +45,11 @@ def input_386():
     return torch.ones((1, NUM_CHANNELS, 386, 386))
 
 
+@pytest.fixture
+def input_terrafm_s2():
+    return torch.ones((1, 12, 224, 224))
+
+
 def torchgeo_vit_backbones():
     return [i for i in dir(torchgeo_vit) if "_vit_small" in i]
 
@@ -231,3 +236,38 @@ def test_heliofm(model_name):
         x_hat = backbone(data)
 
     assert x_hat.shape == (B, C, H, W)
+
+
+@pytest.mark.parametrize("model_name", ["terrafm_base", "terrafm_large"])
+def test_terrafm_backbones_forward(model_name, input_terrafm_s2):
+    backbone = BACKBONE_REGISTRY.build(model_name, pretrained=False)
+    features = backbone(input_terrafm_s2)
+
+    assert len(features) == len(backbone.out_indices)
+    for feature in features:
+        assert feature.shape[1] == backbone.embed_dim
+        expected_hw = input_terrafm_s2.shape[-1] // backbone.model.patch_embed.patch_size
+        assert feature.shape[-2] == expected_hw
+        assert feature.shape[-1] == expected_hw
+
+
+@pytest.mark.parametrize("out_indices", [(0,), (2, 4, 6)])
+def test_terrafm_out_indices(out_indices, input_terrafm_s2):
+    backbone = BACKBONE_REGISTRY.build("terrafm_base", pretrained=False, out_indices=out_indices)
+
+    assert backbone.out_indices == out_indices
+    features = backbone(input_terrafm_s2)
+    assert len(features) == len(out_indices)
+
+
+def test_terrafm_l1c_patch_embed(input_terrafm_s2):
+    backbone = BACKBONE_REGISTRY.build("terrafm_base", pretrained=False, is_l2a=False)
+
+    assert backbone.default_is_l2a is False
+    assert backbone.model.use_l2a_patch_embed is False
+
+    features = backbone(input_terrafm_s2)
+    assert len(features) == len(backbone.out_indices)
+
+    features_override = backbone(input_terrafm_s2, is_l2a=True)
+    assert len(features_override) == len(backbone.out_indices)

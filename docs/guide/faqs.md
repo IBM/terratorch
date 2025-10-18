@@ -35,7 +35,7 @@ If you don't find your question in the FAQs or the user guide, feel free to open
 
 
 ??? faq "What foundation models are supported?"
-    TerraTorch provides access to multiple pre-trained geospatial foundation models including Prithvi, TerraMind, SatMAE, ScaleMAE, Clay, and models from TorchGeo like DOFA and SSL4EO.
+    TerraTorch provides access to multiple pre-trained geospatial foundation models including Prithvi, TerraFM, TerraMind, SatMAE, ScaleMAE, Clay, and models from TorchGeo like DOFA and SSL4EO.
     It also supports standard computer vision models from the timm library.
     You can list or filter all available models with:
     ```python
