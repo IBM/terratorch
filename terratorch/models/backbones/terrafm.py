@@ -487,15 +487,22 @@ def terrafm_large_model(patch_size: int = 16, **kwargs: Any) -> TerraFM:
 class TerraFMBackbone(nn.Module):
     """Wrapper that exposes TerraFM features the way TerraTorch backbones expect."""
 
-    def __init__(self, model: TerraFM, out_indices: Sequence[int], default_is_l2a: bool = True) -> None:
+    def __init__(self, model: TerraFM, out_indices: Sequence[int] | None = None, default_is_l2a: bool = True) -> None:
         super().__init__()
         self.model = model
-        self.out_indices = tuple(out_indices)
+        self.out_indices = out_indices
+        if self.out_indices is not None:
+            self.out_indices = tuple(self.out_indices)
         self.default_is_l2a = default_is_l2a
-        self.out_channels = [self.model.embed_dim for _ in self.out_indices]
+        if self.out_indices is None:
+            self.out_channels = self.model.embed_dim
+        else:
+            self.out_channels = [self.model.embed_dim for _ in self.out_indices]
 
     def forward(self, x: Tensor, *, is_l2a: bool | None = None) -> list[Tensor]:
         use_l2a = self.default_is_l2a if is_l2a is None else is_l2a
+        if self.out_indices is None or len(self.out_indices) == 0:
+            return self.model(x, is_l2a=use_l2a)
         return self.model.extract_feature(x, out_indices=self.out_indices, is_l2a=use_l2a)
 
     @property
@@ -517,6 +524,7 @@ def _load_checkpoint(model: nn.Module, ckpt_path: str | Path) -> None:
         checkpoint = {k.replace("module.", ""): v for k, v in checkpoint.items()}
 
     missing, unexpected = model.load_state_dict(checkpoint, strict=False)
+    print(f"Loaded TerraFM checkpoint from {ckpt_path}")
     if missing:
         warnings.warn(f"Missing keys when loading TerraFM checkpoint {ckpt_path}: {sorted(missing)}", stacklevel=2)
     if unexpected:
@@ -532,7 +540,6 @@ def _build_terrafm_backbone(
     is_l2a: bool = True,
     **kwargs: Any,
 ) -> TerraFMBackbone:
-    out_indices = tuple(out_indices) if out_indices is not None else (3, 5, 7, 11)
     builder_kwargs = dict(kwargs)
     use_l2a = builder_kwargs.pop("use_l2a_patch_embed", is_l2a)
     model = builder(use_l2a_patch_embed=use_l2a, **builder_kwargs)
