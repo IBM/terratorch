@@ -11,22 +11,37 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11","3.12","3.13"]
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
     - uses: actions/checkout@v5
+
+    - name: Check for invalid ImportError catching
+      run: |
+        echo "Checking for ImportError catches outside __init__.py..."
+        invalid_files=$(grep -rl --include="*.py" "except ImportError" . | grep -v "__init__.py" || true)
+        if [ -n "$invalid_files" ]; then
+          echo "Found ImportError catches in the following non-__init__.py files:"
+          echo "$invalid_files"
+          exit 1
+        else
+          echo "No invalid ImportError handling found."
+        fi
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install pylint
+
     - name: Analysing the code with pylint
       run: |
-        pylint $(git ls-files '*.py')  --output=lintpy.txt || true
-        pylint $(git ls-files '*.ipynb')  --output=lintipynb.txt || true
-        echo "Linting for Python files."
+        pylint $(git ls-files '*.py') --output=lintpy.txt || true
+        pylint $(git ls-files '*.ipynb') --output=lintipynb.txt || true
+        echo "Linting for Python files:"
         cat lintpy.txt
-        echo "Linting for Jupyter files."
+        echo "Linting for Jupyter files:"
         cat lintipynb.txt
