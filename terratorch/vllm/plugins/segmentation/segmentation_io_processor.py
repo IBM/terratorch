@@ -20,6 +20,7 @@ from einops import rearrange
 import logging
 from terratorch.vllm.plugins import generate_datamodule
 import uuid
+import warnings
 from vllm.config import VllmConfig
 from vllm.entrypoints.openai.protocol import (IOProcessorRequest,
                                               IOProcessorResponse)
@@ -84,10 +85,21 @@ class SegmentationIOProcessor(IOProcessor):
         self.requests_cache: dict[str, dict[str, Any]] = {}
 
     def _init_tiled_inference_parameters_info(self) -> TiledInferenceParameters:
-        if "tiled_inference_paramters" in self.model_config["model"]["init_args"]:
-            tiled_inf_param_dict = self.model_config["model"]["init_args"]["tiled_inference_paramters"]
+        if "tiled_inference_parameters" in self.model_config["model"]["init_args"]:
+            tiled_inf_param_dict = self.model_config["model"]["init_args"]["tiled_inference_parameters"]
         else:
             tiled_inf_param_dict = {}
+        if "h_crop" not in tiled_inf_param_dict or "w_crop" not in tiled_inf_param_dict:
+            if "crop" in tiled_inf_param_dict:
+                tiled_inf_param_dict["h_crop"] = tiled_inf_param_dict["crop"]
+                tiled_inf_param_dict["w_crop"] = tiled_inf_param_dict["crop"]
+            else:
+                raise ValueError(f"Expect 'crop' (or 'h_crop' and 'w_crop') in tiled_inference_parameters "
+                                 f"but got {tiled_inf_param_dict}")
+        if ("stride" in tiled_inf_param_dict or
+                "w_stride" not in tiled_inf_param_dict or
+                "h_stride" not in tiled_inf_param_dict):
+            warnings.warn("The 'stride' parameters for tiled inference are ignored in vLLM.")
         
         return TiledInferenceParameters(**tiled_inf_param_dict)
 
