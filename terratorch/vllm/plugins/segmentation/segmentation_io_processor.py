@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import datetime
 from io import BytesIO
@@ -81,11 +82,6 @@ class SegmentationIOProcessor(IOProcessor):
         self.tiled_inference_parameters = self._init_tiled_inference_parameters_info() 
         self.batch_size = 1
         self.requests_cache: dict[str, dict[str, Any]] = {}
-        if self.plugin_config.use_data_cache:
-            print("@@@@@@@@@@@@@@@@@@@@@@@USING DATA CACHE")
-            self.data_cache = {}
-        else:
-            print("@@@@@@@@@@@@@@@@@@@@@@@ NOT USING DATA CACHE")
 
     def _init_tiled_inference_parameters_info(self) -> TiledInferenceParameters:
         if "tiled_inference_paramters" in self.model_config["model"]["init_args"]:
@@ -314,7 +310,11 @@ class SegmentationIOProcessor(IOProcessor):
         request_id: Optional[str] = None,
         **kwargs,
     ) -> Union[PromptType, Sequence[PromptType]]:
-            pass
+        # Just run the async function froma. synchronous context.
+        # Since we are already in the vLLM server event loop we use that one.
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self.pre_process_async(prompt, request_id, **kwargs))
+
 
     async def pre_process_async(
         self,
@@ -323,23 +323,17 @@ class SegmentationIOProcessor(IOProcessor):
         **kwargs,
     ) -> Union[PromptType, Sequence[PromptType]]:
 
-        start = datetime.now()
+        preprocess_start = datetime.now()
         image_data = dict(prompt)
 
         indices = (DEFAULT_INPUT_INDICES if not image_data["indices"]
                    else image_data["indices"])
 
-        if self.plugin_config.use_data_cache and image_data["data"] in self.data_cache:
-            input_data, temporal_coords, location_coords, meta_data = self.data_cache[image_data["data"]]
-        else:
-            input_data, temporal_coords, location_coords, meta_data = await self.load_image(
-                data=[image_data["data"]],
-                indices=indices,
-                path_type=image_data["data_format"],
-            )
-            if self.plugin_config.use_data_cache:
-                self.data_cache[image_data["data"]] = (input_data, temporal_coords, location_coords, meta_data)
-        image_loaded = datetime.now()
+        input_data, temporal_coords, location_coords, meta_data = await self.load_image(
+            data=[image_data["data"]],
+            indices=indices,
+            path_type=image_data["data_format"],
+        )
 
         if input_data.mean() > 1:
             input_data = input_data / 10000  # Convert to range 0-1
@@ -420,8 +414,6 @@ class SegmentationIOProcessor(IOProcessor):
                 prompt["multi_modal_data"]["location_coords"] = location_coords
 
             prompts.append(prompt)
-
-        pre_proc = datetime.now()
 
         return prompts
 

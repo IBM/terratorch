@@ -14,8 +14,6 @@ class PluginConfig(BaseModel):
     If omitted, the plugin will default to the current user home directory.
     """
 
-    use_data_cache: bool = False
-
     @model_validator(mode="after")
     def validate_values(self) -> Self:
         if not self.output_path:
