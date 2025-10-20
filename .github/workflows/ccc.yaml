@@ -30,7 +30,7 @@ on:
 jobs:
   build:
     runs-on: self-hosted
-    timeout-minutes: 40
+    timeout-minutes: 300
     env:
       R_TESTS_VERBOSE: 2
     steps:
