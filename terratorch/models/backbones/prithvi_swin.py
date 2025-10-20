@@ -1,7 +1,6 @@
 # Copyright contributors to the Terratorch project
 
-"""This module handles registering prithvi_swin models into timm.
-"""
+"""This module handles registering prithvi_swin models into timm."""
 
 import logging
 import warnings
@@ -12,10 +11,10 @@ from timm.models import SwinTransformer
 from timm.models._builder import build_model_with_cfg
 from timm.models._registry import generate_default_cfgs, register_model
 
-from terratorch.datasets.utils import HLSBands
+from terratorch.datasets.utils import HLSBands, generate_bands_intervals
 from terratorch.models.backbones.select_patch_embed_weights import select_patch_embed_weights
 from terratorch.models.backbones.swin_encoder_decoder import MMSegSwinTransformer
-from terratorch.datasets.utils import generate_bands_intervals
+from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +34,7 @@ default_cfgs = generate_default_cfgs(
         "prithvi_swin_L": {},
     }
 )
+
 
 def convert_weights_swin2mmseg(ckpt):
     # from https://github.com/open-mmlab/mmsegmentation/blob/main/tools/model_converters/swin2mmseg.py
@@ -97,21 +97,23 @@ def weights_are_swin_implementation(state_dict: dict[str, torch.Tensor]):
             return True
     return False
 
-# Identifying when a prefix is being used in the checkpoints
-# it will identify it. 
-def identify_prefix(state_dict, model):
 
+# Identifying when a prefix is being used in the checkpoints
+# it will identify it.
+def identify_prefix(state_dict, model):
     state_dict_ = model.state_dict()
 
     prefix = list(state_dict.keys())[0].replace(list(state_dict_.keys())[0], "")
 
-    return prefix 
+    return prefix
+
 
 # Replacing "_" with "." when necessary.
 def adapt_prefix(key):
     if key.startswith("stages_"):
         key = key.replace("stages_", "stages.")
-    return key 
+    return key
+
 
 def checkpoint_filter_fn(state_dict: dict[str, torch.Tensor], model: torch.nn.Module, pretrained_bands, model_bands):
     """convert patch embedding weight from manual patchify + linear proj to conv"""
@@ -150,21 +152,20 @@ def checkpoint_filter_fn(state_dict: dict[str, torch.Tensor], model: torch.nn.Mo
 
     relative_position_bias_table_keys = [k for k in state_dict.keys() if "relative_position_bias_table" in k]
     # Sometimes the checkpoints can contain an unexpected prefix that must be
-    # removed. 
+    # removed.
     prefix = identify_prefix(state_dict, model)
 
     for table_key in relative_position_bias_table_keys:
-
         # The checkpoints can sometimes contain unexpected prefixes.
         # TODO Guarantee that it will not happen in the future.
         if prefix:
             table_key_ = table_key.replace(prefix, "")
         else:
-            table_key_  = table_key
+            table_key_ = table_key
 
         # In an unexpected behavior, the prefix can sometimes contain
-        # "_" or ".". We are enforcing ".". 
-        # TODO Standardize it. 
+        # "_" or ".". We are enforcing ".".
+        # TODO Standardize it.
         table_key_ = adapt_prefix(table_key_)
 
         table_pretrained = state_dict[table_key]
@@ -224,7 +225,7 @@ def _create_swin_mmseg_transformer(
         return checkpoint_filter_fn(state_dict, model, pretrained_bands, model_bands)
 
     # TODO Totally remove the usage of timm for Swin in the future.
-    # When the pretrained configuration is not available in HF, we shift to 
+    # When the pretrained configuration is not available in HF, we shift to
     # pretrained=False
     try:
         model: MMSegSwinTransformer = build_model_with_cfg(
@@ -252,10 +253,7 @@ def _create_swin_mmseg_transformer(
     model.model_bands = model_bands
 
     def prepare_features_for_image_model(x):
-        return [
-            layer_output.permute(0, 3, 1, 2).contiguous()
-            for layer_output in x
-        ]
+        return [layer_output.permute(0, 3, 1, 2).contiguous() for layer_output in x]
 
     # add permuting here
     model.prepare_features_for_image_model = prepare_features_for_image_model

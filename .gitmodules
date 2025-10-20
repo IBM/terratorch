@@ -1,3 +1,4 @@
 [submodule "terratorch/models/backbones/Surya"]
 	path = terratorch/models/backbones/Surya
-	url = https://github.com/NASA-IMPACT/Surya.git
+	url = https://github.com/Joao-L-S-Almeida/terratorch-Surya.git
+	branch = v1.0.0
