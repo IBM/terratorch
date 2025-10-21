@@ -53,7 +53,6 @@ dependencies = [
   "h5py",
   "lightning",
   "segmentation-models-pytorch<=0.4",
-  "jsonargparse",
   "torchgeo>=0.7.0",
   "einops",
   "timm>=1.0.15",
