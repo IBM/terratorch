@@ -10,7 +10,7 @@ class ScalarHead(nn.Module):
     def __init__(
         self,
         in_dim: int,
-        num_classes: int,
+        num_outputs: int,
         dim_list: list[int] | None = None,
         dropout: float = 0,
         linear_after_pool: bool = False,
@@ -19,14 +19,14 @@ class ScalarHead(nn.Module):
 
         Args:
             in_dim (int): Input dimensionality
-            num_classes (int): Number of output classes
+            num_outputs (int): Number of output classes for classification or predicted variables for regression. 
             dim_list (list[int] | None, optional):  List with number of dimensions for each Linear
                 layer to be created. Defaults to None.
             dropout (float, optional): Dropout value to apply. Defaults to 0.
             linear_after_pool (bool, optional): Apply pooling first, then apply the linear layer. Defaults to False
         """
         super().__init__()
-        self.num_classes = num_classes
+        self.num_outputs = num_outputs
         self.linear_after_pool = linear_after_pool
         if dim_list is None:
             pre_head = nn.Identity()
@@ -42,7 +42,7 @@ class ScalarHead(nn.Module):
         self.head = nn.Sequential(
             pre_head,
             dropout,
-            nn.Linear(in_features=in_dim, out_features=num_classes),
+            nn.Linear(in_features=in_dim, out_features=num_outputs),
         )
 
     def forward(self, x: Tensor):

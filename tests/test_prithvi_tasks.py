@@ -168,9 +168,6 @@ def test_create_classification_task_encoder_decoder(backbone, decoder, loss, mod
 
     gc.collect()
 
-
-
-
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v2_300"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder"])
 @pytest.mark.parametrize("loss", ["ce", "bce", "jaccard", "focal"])

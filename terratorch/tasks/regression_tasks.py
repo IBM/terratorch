@@ -48,17 +48,16 @@ class RootLossWrapper(nn.Module):
 class WeightedLossWrapper(nn.Module):
     def __init__(self, loss_function: nn.Module, weights: torch.Tensor, reduction: None | str = "mean") -> None:
         super().__init__()
+        if weights.ndim != 1:
+            raise ValueError("Expected 1D class weights of shape [num_outputs]")
         self.loss_function = loss_function
         self.register_buffer("weights", weights)
         self.reduction = reduction
     
     def forward(self, output: Tensor, target: Tensor,) -> Tensor:
         loss = self.loss_function(output, target)
-        if self.weights.ndim == 1:
-            weights = self.weights.view(1, -1, *([1] * (loss.ndim - 2))) # [1, num_vars, 1, 1]
-        else:
-            weights = self.weights
-            
+        weights = self.weights.view(1, -1, * ([1] * (loss.ndim - 2))) # [1, num_vars, 1, 1]
+                
         weighted_loss = weights * loss
         
         if self.reduction is None:
@@ -135,6 +134,8 @@ class IgnoreIndexMetricWrapper(WrapperMetric): # to be fixed for multiple variab
             return self.metric.update(preds, target)
         
         elif self.num_outputs > 1:
+            if self.ignore_index is not None:
+                return NotImplementedError
             return self.metric.update(preds, target)
 
     def forward(self, preds: Tensor, target: Tensor, *args, **kwargs) -> Any:
@@ -161,12 +162,13 @@ class WeightedMetricWrapper(WrapperMetric):
         self.weights = torch.Tensor(weights)
     
     def update(self, preds: Tensor, target: Tensor) -> None:
-        check_weights_classes(self.weights, preds.numel())
+        check_weights_classes(self.weights, preds.shape[1])
         return self.wrapped_metric.update(preds, target)
     
     def compute(self) -> Tensor:
         values = self.wrapped_metric.compute()
-        return values * self.weights        
+        weighted_values =  values * self.weights   
+        return weighted_values.sum() / self.weights.sum()     
     
 def init_loss(loss: str, ignore_index: int = None):
     if loss == "mse":
@@ -181,9 +183,9 @@ def init_loss(loss: str, ignore_index: int = None):
     else:
         raise ValueError(f"Loss type '{loss}' is not valid. Currently, supports 'mse', 'rmse', 'mae', or 'huber' loss.")
 
-def check_weights_classes(class_weights: Tensor, num_classes: int):
-    if len(class_weights) != num_classes:
-        exception_message = f"Number of weights must correspond to number of variables. Got {len(class_weights)} weights for {num_classes} variables."
+def check_weights_classes(class_weights: Tensor, num_outputs: int):
+    if len(class_weights) != num_outputs:
+        exception_message = f"Number of weights must correspond to number of variables. Got {len(class_weights)} weights for {num_outputs} variables."
         raise ValueError(exception_message)
 
 class PixelwiseRegressionTask(TerraTorchTask):
@@ -506,7 +508,7 @@ class ScalarRegressionTask(TerraTorchTask):
         class_weights: list[float] | None = None,
         ignore_index: int | None = None,
         lr: float = 0.001,
-        num_classes: int = 1, #out_channels/num_variables
+        num_outputs: int = 1, #out_channels/num_outputs
         # the following are optional so CLI doesnt need to pass them
         optimizer: str | None = None,
         optimizer_hparams: dict | None = None,
@@ -538,7 +540,7 @@ class ScalarRegressionTask(TerraTorchTask):
                 Defaults to None.
             ignore_index (int | None, optional): Label to ignore in the loss computation. Defaults to None.
             lr (float, optional): Learning rate to be used. Defaults to 0.001.
-            num_classes (int): Number of predicted regression variables. Defaults to single regression. 
+            num_outputs (int): Number of predicted regression variables. Defaults to single regression. 
             optimizer (str | None, optional): Name of optimizer class from torch.optim to be used.
                 If None, will use Adam. Defaults to None. Overriden by config / cli specification through LightningCLI.
             optimizer_hparams (dict | None): Parameters to be passed for instantiation of the optimizer.
@@ -561,7 +563,7 @@ class ScalarRegressionTask(TerraTorchTask):
         """
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
-        self.num_classes = num_classes
+        self.num_outputs = num_outputs
         self.class_weights = (
             torch.Tensor(class_weights) if class_weights is not None else None
         ) 
@@ -616,7 +618,7 @@ class ScalarRegressionTask(TerraTorchTask):
             raise ValueError(exception_message)
         
         if self.class_weights is not None:
-            check_weights_classes(self.class_weights, self.num_classes)
+            check_weights_classes(self.class_weights, self.num_outputs)
             base_criterion = WeightedLossWrapper(base_criterion, self.class_weights, reduction="mean")
          
         base_criterion = IgnoreIndexLossWrapper(base_criterion, self.hparams["ignore_index"]) 
@@ -633,30 +635,27 @@ class ScalarRegressionTask(TerraTorchTask):
 
         def instantiate_metrics():
             metrics = {
-                "RMSE": MeanSquaredError(num_outputs=self.num_classes, squared=False),
-                "MSE": MeanSquaredError(num_outputs=self.num_classes, squared=True),
-                "MAE": MeanAbsoluteError(num_outputs=self.num_classes),
-                "R2_Score": R2Score(),
+                "RMSE": MeanSquaredError(num_outputs=self.num_outputs, squared=False),
+                "MSE": MeanSquaredError(num_outputs=self.num_outputs, squared=True),
+                "MAE": MeanAbsoluteError(num_outputs=self.num_outputs),
+                "R2_Score": R2Score(multioutput="raw_values"),
             }
             
-            if self.num_classes > 1:
+            if self.num_outputs > 1:
+                per_class_metrics = {name: ClasswiseWrapper(metric, prefix="_") for name, metric in metrics.items()}
+                
                 if self.class_weights is not None:
-                    check_weights_classes(self.class_weights, self.num_classes)
-                    weighted_metrics = {
-                        name: WeightedMetricWrapper(metric, self.class_weights) for name, metric in metrics.items() if name != "R2_Score"
-                        }
-                    weighted_metrics["R2_Score"] = metrics["R2_Score"]
-                    metrics = weighted_metrics
-                    
-                per_class_metrics = {name: ClasswiseWrapper(metric, prefix="_") for name, metric in metrics.items() if name != "R2_Score"}
-                per_class_metrics["R2_Score"] = metrics["R2_Score"]
+                    check_weights_classes(self.class_weights, self.num_outputs)
+                    for name, metric in metrics.items():
+                        per_class_metrics[f"{name}_weighted"] =  WeightedMetricWrapper(metric, self.class_weights)
+                                            
                 return per_class_metrics
 
             return metrics
 
         def wrap_metrics_with_ignore_index(metrics):
             return {
-                name: IgnoreIndexMetricWrapper(metric, ignore_index=self.hparams["ignore_index"], num_outputs=self.num_classes)
+                name: IgnoreIndexMetricWrapper(metric, ignore_index=self.hparams["ignore_index"], num_outputs=self.num_outputs)
                 for name, metric in metrics.items()
             }
 
@@ -770,7 +769,7 @@ class ScalarRegressionTask(TerraTorchTask):
         self.record_metrics(dataloader_idx, y_hat, y)
 
     def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
-        """Compute the predicted class probabilities.
+        """Compute the predicted variables probabilities.
 
         Args:
             batch: The output of your DataLoader.
@@ -784,12 +783,5 @@ class ScalarRegressionTask(TerraTorchTask):
         file_names = batch["filename"] if "filename" in batch else None
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
-
-        def model_forward(x, **kwargs):
-            return self(x, **kwargs).output
-
-        if self.tiled_inference_parameters:
-            y_hat: Tensor = tiled_inference(model_forward, x, **self.tiled_inference_parameters, **rest)
-        else:
-            y_hat: Tensor = self(x, **rest).output
+        y_hat: Tensor = self(x, **rest).output
         return y_hat, file_names

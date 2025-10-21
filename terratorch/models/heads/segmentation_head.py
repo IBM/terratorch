@@ -7,19 +7,19 @@ class SegmentationHead(nn.Module):
     """Segmentation head"""
 
     def __init__(
-        self, in_channels: int, num_classes: int, channel_list: list[int] | None = None, dropout: float = 0
+        self, in_channels: int, num_outputs: int, channel_list: list[int] | None = None, dropout: float = 0
     ) -> None:
         """Constructor
 
         Args:
             in_channels (int): Number of input channels
-            num_classes (int): Number of output classes
+            num_outputs (int): Number of output classes
             channel_list (list[int] | None, optional):  List with number of channels for each Conv
                 layer to be created. Defaults to None.
             dropout (float, optional): Dropout value to apply. Defaults to 0.
         """
         super().__init__()
-        self.num_classes = num_classes
+        self.num_outputs = num_outputs
         if channel_list is None:
             pre_head = nn.Identity()
         else:
@@ -40,7 +40,7 @@ class SegmentationHead(nn.Module):
             dropout,
             nn.Conv2d(
                 in_channels=in_channels,
-                out_channels=num_classes,
+                out_channels=num_outputs,
                 kernel_size=1,
             ),
         )
