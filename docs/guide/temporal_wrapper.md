@@ -7,8 +7,9 @@ class TemporalWrapper(nn.Module):
     def __init__(
         self,
         backbone: nn.Module,
-        pooling: Literal["keep", "concat", "mean", "max", "diff"] = "mean",
+        pooling: Literal["keep", "concat", "mean", "max", "diff", "diff_subsets"] = "mean",
         n_timestamps: Optional[int] = None,
+        diff_subsets_lengths: list[int] = [1, 1],
     )
 
     def forward(self, 
@@ -25,9 +26,18 @@ Select the temporal aggregation with the `pooling` parameter:
 - `"mean"`: Average features across timesteps.  
 - `"max"`: Element-wise maximum across timesteps. 
 - `"diff"`: Compute the difference between the first two timesteps (`t0 − t1`), requires `T > 1`.
+- `"diff_subsets"`: Compute the difference between the mean of two temporal subsets (e.g., pre- and post-event). Controlled by `diff_subsets_lengths`, which defines how many timesteps belong to each subset.  
 
 !!! warning
-    TerraTorch necks and decoders expect 4D inputs. Use a temporal aggregation that returns 4D (`mean`, `max`, `diff` or `concat`) for TerraTorch fine-tunings.
+    TerraTorch necks and decoders expect 4D inputs. Use a temporal aggregation that returns 4D (`mean`, `max`, `diff`, `diff_subsets` or `concat`) for TerraTorch fine-tunings.
+
+### Additional parameters
+
+- `diff_subsets_lengths` (list[int]):  
+  Defines the temporal lengths of the two subsets used when `pooling='diff_subsets'`.  
+  The wrapper first computes the mean across each subset and then returns their difference.  
+  The lengths should sum to the total number of timesteps in the input.  
+  Example: `[2, 3]` averages the first 2 and last 3 timesteps before differencing.
 
 ### Inputs
 TemporalWrapper expects 5D input data; depending on the wrapped backbone, provide either: 

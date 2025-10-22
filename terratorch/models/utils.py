@@ -61,6 +61,7 @@ def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
     concat = backbone_kwargs.pop('temporal_concat', None)
     n_timestamps = backbone_kwargs.pop('temporal_n_timestamps', None)
     features_permute_op = backbone_kwargs.pop('temporal_features_permute_op', None)
+    diff_subsets_lengths = backbone_kwargs.pop('temporal_diff_subsets_lengths', [1,1])
 
     if isinstance(backbone, nn.Module):
         model = backbone
@@ -70,14 +71,14 @@ def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
     # Apply TemporalWrapper inside _get_backbone
     if use_temporal:
         model = TemporalWrapper(model, pooling=pooling, concat=concat, n_timestamps=n_timestamps,
-                                features_permute_op=features_permute_op)
+                                features_permute_op=features_permute_op, diff_subsets_lengths=diff_subsets_lengths)
 
     return model
 
 
 class TemporalWrapper(nn.Module):
     def __init__(self, encoder: nn.Module, pooling: str = 'mean', concat: bool = None, n_timestamps: int | None = None,
-                 features_permute_op: list[int] = None):
+                 features_permute_op: list[int] = None, diff_subsets_lengths = [1,1]):
         """
         Wrapper for applying a temporal encoder across multiple time steps.
 
@@ -89,6 +90,11 @@ class TemporalWrapper(nn.Module):
             features_permute_op (list): Permutation operation to perform on the features before aggregation.
                 This is in case the features to do not match either 'BCHW' or 'BLC' formats. It is reversed once
                 aggregation has happened.
+            diff_subsets_lengths (list[int]): 
+                Defines the temporal lengths of the two subsets used when pooling='diff_subsets'. 
+                The wrapper first computes the mean across each subset and then returns their difference. 
+                The lengths should sum to the total number of timesteps in the input. 
+                Example: [2, 3] averages the first 2 and last 3 timesteps before differencing.
         """
         super().__init__()
 
@@ -101,13 +107,21 @@ class TemporalWrapper(nn.Module):
                 )
 
         # Check supported pooling modes
-        supported_poolings = ["mean", "max", "diff", "keep", "concat"]
+        supported_poolings = ["mean", "max", "diff", "keep", "concat", "diff_subsets"]
         if pooling not in supported_poolings:
             raise ValueError(f"Unsupported pooling '{pooling}', choose from {supported_poolings}.")
         
         self.encoder = encoder
         self.pooling = pooling
         self.features_permute_op = features_permute_op
+        self.subsets_lengths = diff_subsets_lengths
+
+        if pooling == "diff_subsets":
+            if len(self.subsets_lengths) != 2:
+                raise ValueError(
+                    f"diff_subsets pooling requires exactly two subset lengths (pre and post), "
+                    f"but got {len(self.subsets_lengths)}: {self.subsets_lengths}"
+                )
 
         # Precompute reverse permutation for restoring original dims after processing
         if features_permute_op is not None:
@@ -148,6 +162,12 @@ class TemporalWrapper(nn.Module):
             return self.subtract_along_dim1(stacked) # difference between first two timesteps
         elif pooling == "mean":
             return torch.mean(stacked, dim=1) # mean over time
+        elif pooling == "diff_subsets":
+            # Split stacked tensor along time according to subset lengths
+            subset_splits = torch.split(stacked, self.subsets_lengths, dim=1)
+            pre_mean = torch.mean(subset_splits[0], dim=1)
+            post_mean = torch.mean(subset_splits[1], dim=1)
+            return pre_mean - post_mean
         else: 
             return stacked # "keep" → return [B, T, ...] sequence
         
