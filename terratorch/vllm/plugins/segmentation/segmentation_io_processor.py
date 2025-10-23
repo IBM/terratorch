@@ -446,9 +446,21 @@ class SegmentationIOProcessor(IOProcessor):
             del(self.requests_cache[request_id])
 
         for output in model_output:
-            y_hat = output.outputs.data.argmax(dim=1)
+            output_data = output.outputs.data
+            if output_data.ndim == 3:
+                argmax_dim = 0
+                extend_dims = True
+            elif output_data.ndim == 4:
+                argmax_dim = 1
+                extend_dims = False
+            else:
+                raise ValueError("The post-process function of the Terratorch Segmentation plugin "
+                                 f"got a tensor with {output_data.ndim} dimensions while it expects a 3 or 4 dimensional tensor.")
+            y_hat = output_data.argmax(dim=argmax_dim).unsqueeze(0)
+            if extend_dims:
+                y_hat = y_hat.unsqueeze(0)
             pred = torch.nn.functional.interpolate(
-                y_hat.unsqueeze(1).float(),
+                y_hat.float(),
                 size=self.tiled_inference_parameters.h_crop,
                 mode="nearest",
             )

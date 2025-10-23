@@ -1,13 +1,13 @@
+import base64
+import imagehash
 import json
 import os
-import uuid
+from PIL import Image
 import pytest
 import requests
-import tempfile 
-import base64
+import tempfile
+import uuid
 
-from PIL import Image
-import imagehash
 from .utils import VLLMServer
 from .config import models, inputs
 
@@ -78,7 +78,7 @@ def test_serving_segmentation_plugin(get_server, model_name, input_name):
         "--io-processor-plugin",
         plugin,
         "--model-impl",
-        "terratorch"
+        "terratorch",
     ]
 
     server = get_server(model, server_args=server_args)
