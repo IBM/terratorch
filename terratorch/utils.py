@@ -8,6 +8,15 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 
+# Special Exception to handle cases in which the model is missing from the
+# registries
+class InvalidModelError(Exception):
+    def __init__(self, message, model_name=None):
+        if not message:
+            message = f"InvalidModelError: The model {model_name} isn't in the register"
+        super().__init__(message)
+
+
 def compute_statistics(dataloader: DataLoader) -> dict[str, list[float]]:
     n_bands = dataloader.dataset[0]["image"].shape[0]
     n_data = torch.zeros([n_bands], dtype=torch.int64)

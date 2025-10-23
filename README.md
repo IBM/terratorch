@@ -21,7 +21,7 @@
 [![MkDocs](https://img.shields.io/badge/MkDocs-526CFE?logo=materialformkdocs&logoColor=fff)](https://ibm.github.io/terratorch/)
 ![cov](https://github.com/IBM/terratorch/raw/main/assets/coverage-badge.svg)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/terratorch.svg?label=PyPI%20downloads)](https://pypi.org/project/terratorch/)
-
+[![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/terratorch.svg?label=Conda%20downloads)](https://anaconda.org/conda-forge/terratorch)
 ## Overview
 TerraTorch is a PyTorch domain library based on [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/) and the [TorchGeo](https://github.com/microsoft/torchgeo) domain library
 for geospatial data. 
@@ -65,19 +65,29 @@ TerraTorch’s main purpose is to provide a flexible fine-tuning framework for G
     - All GEO-Bench datasets and datamodules
     - All [TorchGeo](https://github.com/microsoft/torchgeo) datasets and datamodules 
 
-## Install
+## Installation
+
 ### Pip
 In order to use the file `pyproject.toml` it is necessary to guarantee `pip>=21.8`. If necessary upgrade `pip` using `python -m pip install --upgrade pip`. 
 
 For a stable point-release, use `pip install terratorch==<version>`.
 
 [comment]: <If you prefer to get the most recent version of the main branch, install the library with `pip install git+https://github.com/IBM/terratorch.git`.>
-To get the most recent version of the main branch, install the library with `pip install git+https://github.com/IBM/terratorch.git`.
+To get the most recent version of the branch `main`, install the library with `pip install git+https://github.com/IBM/terratorch.git`.
 
-[comment]: <Another alternative is to install using [pipx](https://github.com/pypa/pipx) via `pipx install terratorch`, which creates an isolated environment and allows the user to run the application as a common CLI tool, with no need of installing dependencies or activating environments.>
+### Conda
+TerraTorch is also available on `conda-forge`, to install from there do `conda install -c conda-forge terratorch`. 
 
-TerraTorch requires gdal to be installed, which can be quite a complex process. If you don't have GDAL set up on your system, we recommend using a conda environment and installing it with `conda install -c conda-forge gdal`.
+### Pipx
+Alternatively, it is possible to install using [pipx](https://github.com/pypa/pipx) via `pipx install terratorch`, which creates an isolated environment and allows the user to run the application as a common CLI tool, with no need of installing dependencies or activating environments.
 
+### Gdal
+TerraTorch requires gdal to be installed, which can be quite a complex process.
+If you don't have GDAL set up on your system, we recommend using a conda
+environment and installing it with `conda install -c conda-forge gdal`. If you
+are installing from `conda-forge` it probably won't be a problem. 
+
+### Install as a developer
 To install as a developer (e.g. to extend the library):
 ```
 git clone https://github.com/IBM/terratorch.git
