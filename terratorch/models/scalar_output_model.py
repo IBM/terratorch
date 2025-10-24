@@ -120,11 +120,11 @@ class ScalarOutputModel(Model, SegmentationModel):
 
     def _get_head(self, task: str, input_embed_dim: int, head_kwargs: dict):
         if task == "classification" or task == "scalar_regression":
-            if "num_outputs" not in head_kwargs:
-                msg = "num_outputs must be defined for classification and scalar_regression task"
+            if "num_outputs" not in head_kwargs and "num_classes" not in head_kwargs:
+                msg = f"Either `num_outputs` or `num_classes` must be defined for task `{task}`."
                 raise Exception(msg)
             return ScalarHead(input_embed_dim, **head_kwargs)
-        msg = "Task must be classification or scalar regression."
+        msg = "Task must be `classification` or `scalar_regression`."
         raise Exception(msg)
        
             

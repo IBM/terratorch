@@ -20,8 +20,9 @@ def model_factory() -> str:
 @pytest.mark.parametrize("decoder", ["IdentityDecoder"])
 @pytest.mark.parametrize("loss", ["mse"])
 @pytest.mark.parametrize("lr_overrides", [{"encoder": 0.01}, None])
-@pytest.mark.parametrize("num_outputs", [3])
-@pytest.mark.parametrize("class_weights", [[0.2, 0.3, 0.5]])
+@pytest.mark.parametrize(("num_outputs", "class_weights"), [(1, None),
+                                                            (3, None), 
+                                                            (3, [0.2, 0.3, 0.5])])
 def test_create_scalar_regression_task_encoder_decoder(backbone, decoder, loss, model_factory: str, lr_overrides, num_outputs, class_weights):
     model_args = {
         "backbone": backbone,
@@ -52,8 +53,9 @@ def test_create_scalar_regression_task_encoder_decoder(backbone, decoder, loss, 
     assert y_hat.shape[1] == num_outputs, f"Expected {num_outputs} predicted variables, got {y_hat.shape[1]}"
     assert y_hat.shape == y.shape, "Model output shape and mask shape don't match."
     
-    
     loss = task.training_step(batch, batch_idx=0)
+    assert loss.ndim == 0, "Expected loss to be a scalar for backprop."
+    assert isinstance(loss, torch.Tensor), "Loss is not a Tensor"
     
     # Metrics sanity check
     task.train_metrics.update(y_hat, y)
