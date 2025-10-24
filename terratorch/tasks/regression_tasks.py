@@ -56,7 +56,7 @@ class WeightedLossWrapper(nn.Module):
     
     def forward(self, output: Tensor, target: Tensor,) -> Tensor:
         loss = self.loss_function(output, target)
-        weights = self.weights.view(1, -1, * ([1] * (loss.ndim - 2))) # [1, num_vars, 1, 1]
+        weights = self.weights.view(1, -1, * ([1] * (loss.ndim - 2))) # [1, num_vars, 1, 1] for pixel-wise (TODO: Pixel-wise multivariate)
                 
         weighted_loss = weights * loss
         
@@ -135,7 +135,7 @@ class IgnoreIndexMetricWrapper(WrapperMetric): # to be fixed for multiple variab
         
         elif self.num_outputs > 1:
             if self.ignore_index is not None:
-                return NotImplementedError
+                return NotImplementedError #TODO: expand to multivariate case both for pixel and scalar regression
             return self.metric.update(preds, target)
 
     def forward(self, preds: Tensor, target: Tensor, *args, **kwargs) -> Any:
@@ -168,7 +168,7 @@ class WeightedMetricWrapper(WrapperMetric):
     def compute(self) -> Tensor:
         values = self.wrapped_metric.compute()
         weighted_values =  values * self.weights   
-        return weighted_values.sum() / self.weights.sum()     
+        return weighted_values.sum() / self.weights.sum()    
     
 def init_loss(loss: str, ignore_index: int = None):
     if loss == "mse":
@@ -210,6 +210,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
         class_weights: list[float] | None = None,
         ignore_index: int | None = None,
         lr: float = 0.001,
+        # TODO: customize for multivariate regression as well
         # the following are optional so CLI doesnt need to pass them
         optimizer: str | None = None,
         optimizer_hparams: dict | None = None,
@@ -563,6 +564,8 @@ class ScalarRegressionTask(TerraTorchTask):
         """
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
+        if num_outputs < 1:
+            raise ValueError("num_outputs can't be less than 1.") 
         self.num_outputs = num_outputs
         self.class_weights = (
             torch.Tensor(class_weights) if class_weights is not None else None
