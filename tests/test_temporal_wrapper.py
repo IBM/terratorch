@@ -46,6 +46,65 @@ def dummy_dict_encoder():
     return DummyDictEncoder()
 
 
+def test_subset_lengths_aggregation_diff(dummy_encoder):
+    B, C, T, H, W = 2, 3, 3, 16, 16
+    x = torch.randn(B, C, T, H, W)
+    wrapper = TemporalWrapper(dummy_encoder, pooling="diff", subset_lengths=[1, 2])
+    out = wrapper(x)[0]
+
+    # Should be a single timestep output (after subset aggregation then diff)
+    assert out.shape == (B, dummy_encoder.out_channels, H, W)
+
+def test_invalid_subset_lengths_for_diff(dummy_encoder):
+    B, C, T, H, W = 1, 3, 3, 8, 8
+    x = torch.randn(B, C, T, H, W)
+
+    with pytest.raises(ValueError, match="exactly two subsets"):
+        TemporalWrapper(dummy_encoder, pooling="diff", subset_lengths=[1, 1, 1])(x)
+
+def test_subset_lengths_sum_mismatch(dummy_encoder):
+    B, C, T, H, W = 1, 3, 4, 8, 8
+    x = torch.randn(B, C, T, H, W)
+
+    wrapper = TemporalWrapper(dummy_encoder, pooling="mean", subset_lengths=[1, 1])
+    with pytest.raises(ValueError, match="must equal timesteps"):
+        wrapper(x)
+
+def test_temporal_wrapper_swin_forward_shapes(dummy_encoder):
+    # Built-in Swin
+    NUM_CHANNELS = 6
+    encoder = BACKBONE_REGISTRY.build("prithvi_swin_B", out_indices=[0, 1, 2, 3])
+
+    wrapper = TemporalWrapper(encoder)
+    batch_size = 2
+
+    # Test case 2: Valid input shape
+    x = torch.randn(batch_size, NUM_CHANNELS, 4, 224, 224)  # [B, C, T, H, W]
+    output = wrapper(x)
+    assert [o.shape for o in output] == [
+        torch.Size([2, 56, 56, 128]),
+        torch.Size([2, 28, 28, 256]),
+        torch.Size([2, 14, 14, 512]),
+        torch.Size([2, 7, 7, 1024]),
+    ]
+
+    gc.collect()
+
+def test_encoder_returning_dict_modalities(dummy_dict_encoder):
+    B, C, T, H, W = 2, 3, 4, 16, 16
+    x = torch.randn(B, C, T, H, W)
+    wrapper = TemporalWrapper(dummy_dict_encoder, pooling="mean")
+
+    out_list = wrapper(x)
+    assert isinstance(out_list, list) and len(out_list) == 1
+    out = out_list[0]
+    assert set(out.keys()) == {"mod1", "mod2", "mod3"}
+
+    assert out["mod1"].shape == (B, 6, 16, 16)
+    assert out["mod2"].shape == (B, 4, 4, 8)
+    assert out["mod3"].shape == (B, 2, 128)
+    gc.collect()
+
 def test_temporal_wrapper_initialization(dummy_encoder):
     """
     Verify correct initialization behavior:
@@ -69,7 +128,7 @@ def test_permute_and_reverse_operations(dummy_encoder):
     """Check that applying and reversing a permutation recovers the original tensor."""
     x = torch.randn(2, 3, 4, 32, 32)
     wrapper = TemporalWrapper(dummy_encoder, pooling="mean", features_permute_op=[0, 2, 1, 3])
-    
+
     flat = x.permute(0, 2, 1, 3, 4).reshape(2 * 4, 3, 32, 32)
     permuted = wrapper.permute_op(flat, wrapper.features_permute_op)
     recovered = wrapper.permute_op(permuted, wrapper.reverse_permute_op)
@@ -140,7 +199,7 @@ def test_encoder_returning_dict_modalities(dummy_dict_encoder):
 
     Checks:
       - Per-modality shape, pooling, and postprocess logic
-      - All modalities preserved 
+      - All modalities preserved
     """
     B, C, T, H, W = 2, 3, 4, 16, 16
     x = torch.randn(B, C, T, H, W)
@@ -172,11 +231,11 @@ def test_temporal_wrapper_pooling_modes():
 
 
     # CNN-like backbone (ResNet18)
-    #  
+    #
     encoder = BACKBONE_REGISTRY.build("timm_resnet18")
 
-    # Sample (B,C,T,H,W) input 
-    x = torch.randn(batch_size, 3, timesteps, 224, 224) 
+    # Sample (B,C,T,H,W) input
+    x = torch.randn(batch_size, 3, timesteps, 224, 224)
 
     for pooling in ["mean", "max", "concat", "diff"]:
         wrapper = TemporalWrapper(encoder, pooling=pooling)
@@ -295,4 +354,24 @@ def test_temporal_encoder_decoder_factory(pooling):
     assert output.shape == (batch_size, 2), f"Unexpected output shape {output.shape}"
 
     del model, output
+    gc.collect()
+
+def test_temporal_wrapper_subset_diff_full():
+    model = EncoderDecoderFactory().build_model(
+        task="classification",
+        backbone_use_temporal=True,
+        backbone_temporal_pooling="diff",
+        backbone_temporal_subset_lengths=[1, 2],
+        backbone="terramind_v1_tiny",
+        backbone_modalities=["S2L2A"],
+        decoder="IdentityDecoder",
+        num_classes=2,
+        necks=[{"name": "AggregateTokens"}],
+    )
+
+    x = torch.randn(2, 12, 3, 224, 224)
+    out = model(x).output
+
+    assert out.shape == (2, 2)
+
     gc.collect()
