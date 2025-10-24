@@ -1,5 +1,6 @@
 # Copyright contributors to the Terratorch project
 
+import numpy as np
 import torch
 import torch.nn.functional as F
 from albumentations import BasicTransform, Compose, ImageOnlyTransform
@@ -281,6 +282,92 @@ class SelectBands(ImageOnlyTransform):
 
     def get_transform_init_args_names(self):
         return "band_indices"
+
+
+class MinMaxNormalize(ImageOnlyTransform):
+    """Normalize data using min/max bounds derived from mean and std (from dataset)."""
+
+    def __init__(
+        self,
+        means: list[float],
+        stds: list[float],
+        scale: float = 2.0,
+        channel_axis: int | None = -1,
+    ) -> None:
+        """Args:
+            means: Per-channel means.
+            stds: Per-channel standard deviations.
+            scale: Scaling factor used when computing min/max (`mean ± scale * std`). Defaults to 2.0.
+            channel_axis: Channel dimension index (defaults to -1 for channel-last). Set to ``None`` to auto-detect.
+        """
+        super().__init__(always_apply=True, p=1.0)
+        if len(means) != len(stds):
+            msg = "Means and stds must have identical lengths."
+            raise ValueError(msg)
+        self._means = np.asarray(means, dtype=np.float32)
+        self._stds = np.asarray(stds, dtype=np.float32)
+        if np.any(self._stds <= 0):
+            msg = "Standard deviations must be strictly positive."
+            raise ValueError(msg)
+        self.scale = float(scale)
+        self.channel_axis = channel_axis
+        self._min = self._means - self.scale * self._stds
+        self._div = np.maximum(2.0 * self.scale * self._stds, np.finfo(np.float32).eps)
+        self._num_channels = self._means.shape[0]
+
+    def apply(self, img, **params):
+        if isinstance(img, torch.Tensor):
+            return self._apply_torch(img)
+        array = np.asarray(img)
+        return self._apply_numpy(array)
+
+    def _apply_numpy(self, array: np.ndarray) -> np.ndarray:
+        channel_axis = self._resolve_axis(array.shape)
+        reshape_shape = [1] * array.ndim
+        reshape_shape[channel_axis] = self._num_channels
+        min_value = self._min.reshape(reshape_shape)
+        div_value = self._div.reshape(reshape_shape)
+        return (array - min_value) / div_value
+
+    def _apply_torch(self, tensor: torch.Tensor) -> torch.Tensor:
+        channel_axis = self._resolve_axis(tensor.shape)
+        reshape_shape = [1] * tensor.ndim
+        reshape_shape[channel_axis] = self._num_channels
+        min_value = torch.as_tensor(self._min, dtype=tensor.dtype, device=tensor.device).view(*reshape_shape)
+        div_value = torch.as_tensor(self._div, dtype=tensor.dtype, device=tensor.device).view(*reshape_shape)
+        return (tensor - min_value) / div_value
+
+    def _resolve_axis(self, shape: tuple[int, ...]) -> int:
+        ndim = len(shape)
+        if self.channel_axis is not None:
+            axis = self.channel_axis
+            if axis < 0:
+                axis += ndim
+            if axis < 0 or axis >= ndim:
+                msg = f"channel_axis {self.channel_axis} is out of bounds for input with {ndim} dims."
+                raise ValueError(msg)
+            if shape[axis] != self._num_channels:
+                msg = (
+                    f"Channel axis {axis} has size {shape[axis]}, expected {self._num_channels}."
+                )
+                raise ValueError(msg)
+            return axis
+        matches = [idx for idx, dim in enumerate(shape) if dim == self._num_channels]
+        if len(matches) == 1:
+            return matches[0]
+        if len(matches) == 0:
+            msg = (
+                "Unable to infer channel axis automatically. Set channel_axis explicitly when none "
+                "of the dimensions matches the number of channels."
+            )
+            raise ValueError(msg)
+        msg = (
+            "Multiple dimensions match the number of channels. Set channel_axis explicitly to disambiguate."
+        )
+        raise ValueError(msg)
+
+    def get_transform_init_args_names(self):
+        return ("means", "stds", "scale", "channel_axis")
 
 
 def default_non_image_transform(array):
