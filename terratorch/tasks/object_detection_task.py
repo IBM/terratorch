@@ -182,7 +182,7 @@ class ObjectDetectionTask(BaseTask):
         Returns:
             Reformated batch
         """
-
+        
         if (('masks' in batch.keys()) | ('mask' in batch.keys()) | (self.masks_field in batch.keys())):
             y = [
                 {'boxes': batch[self.boxes_field][i], 'labels': batch[self.labels_field][i], 'masks': torch.cat([x[None].to(torch.uint8) for x in batch[self.masks_field][i]])}
@@ -198,9 +198,6 @@ class ObjectDetectionTask(BaseTask):
         return y
 
     def apply_ignore_index(self, batch, ignore_index):
-        
-        # import pdb
-        # pdb.set_trace()
         
         if ignore_index != -1:
             
