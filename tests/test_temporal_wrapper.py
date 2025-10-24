@@ -16,8 +16,6 @@ class DummyEncoder(nn.Module):
         super().__init__()
         self.out_channels = out_channels
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
-    
-        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
 
         def forward(self, x):
             return self.conv(x)
