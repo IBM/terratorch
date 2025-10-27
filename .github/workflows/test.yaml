@@ -44,10 +44,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
-      - name: updating submodules
-        run : | 
-          git submodule init
-          git submodule update
       - name: Install dependencies
         run: |
           #python -m pip install --upgrade pip

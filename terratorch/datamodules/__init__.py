@@ -72,7 +72,7 @@ from terratorch.datamodules.sen4map import Sen4MapLucasDataModule
 from terratorch.datamodules.substation import SubstationDataModule
 
 try:
-    from terratorch.datamodules.helio import ArDSDataModule, HelioNetCDFDataModule
+    from terratorch.datamodules.helio import HelioNetCDFDataModule
 except ImportError:
     pass
 
@@ -111,7 +111,6 @@ __all__ = (
     "mVHR10DataModule",
     "SubstationDataModule",
     "HelioNetCDFDataModule",
-    "ArDSDataModule",
 )
 
 if wxc_present:

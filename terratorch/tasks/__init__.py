@@ -1,6 +1,5 @@
 import logging
 
-from terratorch.tasks.ar_segmentation_task import ArSegmentationTask
 from terratorch.tasks.base_task import TerraTorchTask
 from terratorch.tasks.classification_tasks import ClassificationTask
 from terratorch.tasks.embedding_generation import EmbeddingGenerationTask

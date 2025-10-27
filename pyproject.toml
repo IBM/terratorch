@@ -64,6 +64,8 @@ dependencies = [
   "tqdm",
   "wandb",
   "tensorboard",
+  # It will be added when the package is released
+  #"terratorch_surya" 
 ]
 
 
