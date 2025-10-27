@@ -10,7 +10,7 @@ from huggingface_hub import hf_hub_download
 from terratorch.cli_tools import build_lightning_cli
 
 try:
-    from benchmark.main import main as iterate_main
+    from terratorch_iterate.main import main as iterate_main
 
     TERRATORCH_ITERATE_INSTALLED = True
 

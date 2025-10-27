@@ -51,13 +51,9 @@ dependencies = [
   "lightly",
   "jsonargparse<=4.35.0",
   "h5py",
-  "hdf5plugin",
-  "numba",
-  "mlflow",
   "lightning",
   "segmentation-models-pytorch<=0.4",
   "jsonargparse",
-  "pytest",
   "torchgeo>=0.7.0",
   "einops",
   "timm>=1.0.15",
@@ -65,12 +61,9 @@ dependencies = [
   "huggingface_hub",
   "tifffile",
   "python-box",
+  "tqdm",
   "wandb",
-  "termcolor",
-  "numba",
-  "hdf5plugin",
-  "h5netcdf",
-  "pytest-sugar",
+  "tensorboard",
 ]
 
 
@@ -96,6 +89,19 @@ test = [
   "tokenizers",
   "dask",
   "wandb",
+  "pytest-sugar",
+  "vllm>=0.10.2",
+  "pillow",
+  "imagehash",
+  "numba",
+  "hdf5plugin",
+  "h5netcdf",
+]
+
+surya = [
+  "numba",
+  "hdf5plugin",
+  "h5netcdf"
 ]
 
 mmseg = [
@@ -117,6 +123,11 @@ visualize = [
 
 peft = [
   "peft>=0.15.0"
+]
+
+geobenchv2 = [
+  "geobench_v2",
+  "mlflow",
 ]
 
 [project.urls]

@@ -26,6 +26,14 @@ class PluginConfig(BaseModel):
                 
         return self
 
+class TiledInferenceParameters(BaseModel):
+    # Used in vLLM plugin
+    h_crop: int = 512
+    h_stride: int = None
+    w_crop: int = 512
+    w_stride: int = None
+    average_patches: bool = None
+
 class RequestData(BaseModel):
 
     data_format: Literal["b64_json", "path", "url"]
@@ -37,7 +45,7 @@ class RequestData(BaseModel):
     out_data_format: Literal["b64_json", "path"]
     """
     Data type for the output image.
-    Allowed values are: [`b64_json`, `url`]
+    Allowed values are: [`b64_json`, `path`]
     """
 
     data: Any
@@ -46,6 +54,9 @@ class RequestData(BaseModel):
     """
 
     indices: Optional[list[int]] = None
+    """
+    Indices for bands to be processed in the input file
+    """
 
 
 MultiModalPromptType = Union[RequestData]
@@ -66,5 +77,5 @@ class RequestOutput(BaseModel):
 
     request_id: Optional[str] = None
     """
-    The vlLM request ID if applicable
+    The vLLM request ID if applicable
     """

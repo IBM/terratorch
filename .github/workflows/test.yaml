@@ -13,6 +13,7 @@ on:
       - '**/*.png'
       - '**/*.txt'
       - '**/*.ipynb'
+      - 'integrationtests/**/*'
   pull_request:
     branches:
       - main
@@ -25,6 +26,7 @@ on:
       - '**/*.png'
       - '**/*.txt'
       - '**/*.ipynb'
+      - 'integrationtests/**/*'
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -61,5 +63,3 @@ jobs:
       - name: Test with pytest
         run: |
           pytest -s --cov=terratorch -v --cov-report term-missing tests
-
-

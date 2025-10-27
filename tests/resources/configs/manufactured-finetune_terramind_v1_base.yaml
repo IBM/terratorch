@@ -110,7 +110,9 @@ model:
         - name: LearnedInterpolateToPyramidal  # Upscale outputs to UNet input size
       decoder: UNetDecoder
       decoder_channels: [ 512, 256, 128, 64 ]
-    loss: rmse
+    loss:
+      rmse: 0.5
+      mse: 0.5
 #    ignore_index: -1
     freeze_backbone: true
     freeze_decoder: false
