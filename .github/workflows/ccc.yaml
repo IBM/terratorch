@@ -86,8 +86,9 @@ jobs:
             echo "Error: coverage_main.xml not found."
             exit 2
           fi
-          PR_COV=$(grep 'line-rate' coverage_pr.xml | sed 's/.*line-rate="\(.*\)".*/\1/')
-          MAIN_COV=$(grep 'line-rate' coverage_main.xml | sed 's/.*line-rate="\(.*\)".*/\1/')
+          PR_COV=$(grep -m1 '<coverage ' coverage_pr.xml | sed -E 's/.*line-rate="([0-9.]+)".*/\1/')
+          MAIN_COV=$(grep -m1 '<coverage ' coverage_main.xml | sed -E 's/.*line-rate="([0-9.]+)".*/\1/')
+
           # Check that coverage values were extracted and are valid numbers
           if ! [[ "$PR_COV" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
             echo "Error: Failed to extract valid PR coverage value from coverage_pr.xml."
