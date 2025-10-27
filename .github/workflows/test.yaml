@@ -63,7 +63,5 @@ jobs:
       - name: Cleaning cache
         run: pip cache purge
       - name: Test with pytest
-        run: | 
+        run: |
           pytest -s --cov=terratorch -v --cov-report term-missing tests
-
-

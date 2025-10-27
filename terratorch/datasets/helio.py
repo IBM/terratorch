@@ -4,6 +4,9 @@ import random
 from functools import cache
 from logging import Logger
 
+from terratorch.models.backbones.Surya.surya.utils.distributed import get_rank
+from terratorch.models.backbones.Surya.surya.utils.log import create_logger
+
 import hdf5plugin  # Enables LZ4 decompression via h5py - does not interfere with gzip
 import numpy as np
 import pandas as pd
