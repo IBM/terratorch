@@ -4,7 +4,7 @@ import os
 import typing
 
 import torch
-from surya.downstream_examples.ar_segmentation.models import HelioSpectformer2D
+from terratorch_surya.downstream_examples.ar_segmentation.models import HelioSpectformer2D
 from torch import nn
 
 from terratorch.models.backbones.unet import UNet
