@@ -700,8 +700,8 @@ class ScalarRegressionTask(TerraTorchTask):
             dataloader_idx: Index of the current dataloader.
         """
         x = batch["image"]
-        y = batch["mask"]
-        other_keys = batch.keys() - {"image", "mask", "filename"}
+        y = batch["label"]
+        other_keys = batch.keys() - {"image", "label", "filename"}
         rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
         
@@ -722,8 +722,8 @@ class ScalarRegressionTask(TerraTorchTask):
             dataloader_idx: Index of the current dataloader.
         """
         x = batch["image"]
-        y = batch["mask"]
-        other_keys = batch.keys() - {"image", "mask", "filename"}
+        y = batch["label"]
+        other_keys = batch.keys() - {"image", "label", "filename"}
         rest = {k: batch[k] for k in other_keys}
         #model_output: ModelOutput = self(x, **rest)
         model_output = self.handle_full_or_tiled_inference(x, self.tiled_inference_on_validation, **rest)
@@ -740,7 +740,7 @@ class ScalarRegressionTask(TerraTorchTask):
                 if isinstance(batch["image"], dict):
                     rgb_modality = getattr(datamodule, 'rgb_modality', None) or list(batch["image"].keys())[0]
                     batch["image"] = batch["image"][rgb_modality]
-                for key in ["image", "mask", "prediction"]:
+                for key in ["image", "label", "prediction"]:
                     batch[key] = batch[key].cpu()
                 sample = unbind_samples(batch)[0]
                 fig = datamodule.val_dataset.plot(sample)
@@ -766,8 +766,8 @@ class ScalarRegressionTask(TerraTorchTask):
             dataloader_idx: Index of the current dataloader.
         """
         x = batch["image"]
-        y = batch["mask"]
-        other_keys = batch.keys() - {"image", "mask", "filename"}
+        y = batch["label"]
+        other_keys = batch.keys() - {"image", "label", "filename"}
         rest = {k: batch[k] for k in other_keys}
 
         model_output = self.handle_full_or_tiled_inference(x, self.tiled_inference_on_testing, **rest)
@@ -799,7 +799,7 @@ class ScalarRegressionTask(TerraTorchTask):
         """
         x = batch["image"]
         file_names = batch["filename"] if "filename" in batch else None
-        other_keys = batch.keys() - {"image", "mask", "filename"}
+        other_keys = batch.keys() - {"image", "label", "filename"}
         rest = {k: batch[k] for k in other_keys}
         y_hat: Tensor = self(x, **rest).output
         return y_hat, file_names

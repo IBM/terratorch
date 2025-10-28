@@ -44,14 +44,14 @@ def test_create_scalar_regression_task_encoder_decoder(backbone, decoder, loss, 
     
     batch = {
         "image": torch.ones((BATCH_SIZE, 6, 224, 224)),
-        "mask": torch.randn((BATCH_SIZE, num_outputs))
+        "label": torch.randn((BATCH_SIZE, num_outputs))
     }
     
     model_output : ModelOutput = task(batch["image"])
     y_hat = model_output.output
-    y = batch["mask"]
+    y = batch["label"]
     assert y_hat.shape[1] == num_outputs, f"Expected {num_outputs} predicted variables, got {y_hat.shape[1]}"
-    assert y_hat.shape == y.shape, "Model output shape and mask shape don't match."
+    assert y_hat.shape == y.shape, "Model output shape and label shape don't match."
     
     loss = task.training_step(batch, batch_idx=0)
     assert loss.ndim == 0, "Expected loss to be a scalar for backprop."

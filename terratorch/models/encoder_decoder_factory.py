@@ -35,6 +35,10 @@ def _get_decoder_and_head_kwargs(
     num_outputs: int | None = None,
     num_classes: int | None = None,
 ) -> tuple[nn.Module, dict, bool]:
+    
+    if num_outputs is not None and num_classes is not None:
+        raise ValueError("Only one of `num_outputs` or `num_classes` should be provided.")
+    
     # if its already an nn Module, check if it includes a head. if it doesnt, pass num classes/num outputs to head kwargs
     if isinstance(decoder, nn.Module):
         includes_head = getattr(decoder, "includes_head", False)
@@ -53,28 +57,22 @@ def _get_decoder_and_head_kwargs(
 
     # if its not an nn module, check if the class includes a head
     # depending on that, pass num classes/num outputs to either head kwrags or decoder
-    try:
-        decoder_includes_head = DECODER_REGISTRY.find_class(decoder).includes_head
-    except AttributeError as _:
-        msg = (
-            f"Decoder {decoder} does not have an `includes_head` attribute. Falling back to the value of the registry."
-        )
+    if hasattr(DECODER_REGISTRY.find_class(decoder), "includes_head"):
+        msg = (f"Decoder {decoder} does not have an `includes_head` attribute. Falling back to the value of the registry.")
         logging.warning(msg)
-        decoder_includes_head = DECODER_REGISTRY.find_registry(decoder).includes_head
     
-    if num_outputs is not None and num_classes is not None:
-        raise ValueError("Only one of `num_outputs` or `num_classes` should be provided.")
+    decoder_includes_head = DECODER_REGISTRY.find_registry(decoder).includes_head
     
-    value = num_outputs if num_outputs is not None else num_classes
+    num_outputs = num_outputs or num_classes
     key = "num_outputs" if num_outputs is not None else "num_classes"
-    if value is not None:
+    if num_outputs is not None:
         if decoder_includes_head:
-            decoder_kwargs[key] = value
+            decoder_kwargs["num_classes"] = num_outputs
             if head_kwargs:
                 msg = "Decoder already includes a head, but `head_` arguments were specified. These should be removed."
                 raise ValueError(msg)
         else:
-            head_kwargs[key] = value
+            head_kwargs[key] = num_outputs
 
     return DECODER_REGISTRY.build(decoder, channel_list, **decoder_kwargs), head_kwargs, decoder_includes_head
 
