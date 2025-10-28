@@ -1,0 +1,109 @@
+name: terratorch tuning toolkit
+
+on: 
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'tests/resources/**'
+      - 'examples/**/*'
+      - '**/*.svg'
+      - '**/*.png'
+      - '**/*.txt'
+      - '**/*.ipynb'
+      - 'integrationtests/**/*'
+  pull_request:
+    types: [opened]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'tests/resources/**'
+      - 'examples/**/*'
+      - '**/*.svg'
+      - '**/*.png'
+      - '**/*.txt'
+      - '**/*.ipynb'
+      - 'integrationtests/**/*'
+
+jobs:
+  build:
+    runs-on: self-hosted
+    timeout-minutes: 300
+    env:
+      R_TESTS_VERBOSE: 2
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # Needed for comparing with main
+
+
+      - name: Updating submodules
+        run: |
+          git submodule init
+          git submodule update
+
+      - name: Upgrade pip and install deps
+        run: |
+          python3.12 -m pip install --upgrade pip==24.2
+          python3.12 -m pip install -e .[wxc,test]
+          python3.12 -m pip install pytest-cov
+
+
+      - name: Clean pip cache
+        run: pip cache purge
+
+      - name: List pip dependencies
+        run: pip list
+
+      - name: Cleaning cache
+        run: pip cache purge
+
+      - name: Run tests and collect coverage
+        run: |
+          pytest -s --cov=terratorch -v --cov-report xml:coverage_pr.xml --cov-report term-missing tests
+
+      # Compare coverage only on pull requests
+      - name: Compare coverage with main
+        if: github.event_name == 'pull_request'
+        run: |
+          # Generate coverage for main branch
+          git fetch origin main
+          git checkout origin/main
+          pytest --cov=terratorch -v --cov-report xml:coverage_main.xml --cov-report term-missing tests
+
+          # Return to PR branch
+          git checkout -
+
+          # Extract coverage values
+          if [ ! -f coverage_pr.xml ]; then
+            echo "Error: coverage_pr.xml not found."
+            exit 2
+          fi
+          if [ ! -f coverage_main.xml ]; then
+            echo "Error: coverage_main.xml not found."
+            exit 2
+          fi
+          PR_COV=$(grep -m1 '<coverage ' coverage_pr.xml | sed -E 's/.*line-rate="([0-9.]+)".*/\1/')
+          MAIN_COV=$(grep -m1 '<coverage ' coverage_main.xml | sed -E 's/.*line-rate="([0-9.]+)".*/\1/')
+
+          # Check that coverage values were extracted and are valid numbers
+          if ! [[ "$PR_COV" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+            echo "Error: Failed to extract valid PR coverage value from coverage_pr.xml."
+            exit 2
+          fi
+          if ! [[ "$MAIN_COV" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+            echo "Error: Failed to extract valid Main coverage value from coverage_main.xml."
+            exit 2
+          fi
+
+          echo "PR coverage:   ${PR_COV}"
+          echo "Main coverage: ${MAIN_COV}"
+
+          # Use a small epsilon (1e-6) to account for floating-point comparison precision issues
+          awk "BEGIN {exit !(${PR_COV} + 1e-6 >= ${MAIN_COV})}" || {
+            echo "Coverage decreased (PR: ${PR_COV}, Main: ${MAIN_COV})"
+            exit 1
+          }
