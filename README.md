@@ -24,6 +24,9 @@
 -->
 [![PyPI Downloads](https://img.shields.io/pypi/dm/terratorch.svg?label=PyPI%20downloads)](https://pypi.org/project/terratorch/)
 [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/terratorch.svg?label=Conda%20downloads)](https://anaconda.org/conda-forge/terratorch)
+Please, read the contribution guidelines (see `Contribution` below) if you want to contribute to
+TerraTorch.
+
 ## Overview
 TerraTorch is a PyTorch domain library based on [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/) and the [TorchGeo](https://github.com/microsoft/torchgeo) domain library
 for geospatial data. 
