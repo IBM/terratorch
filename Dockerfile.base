@@ -5,3 +5,11 @@ RUN echo "Preparing environment for Python $version"
 RUN apt update
 RUN apt install -y python3-pip bash 
 
+COPY pyproject.toml .
+COPY terratorch terratorch
+COPY tests tests
+COPY run_install.sh .
+#RUN bash run_install.sh 
+
+#RUN pytest -s --cov=terratorch -v --cov-report term-missing tests
+
