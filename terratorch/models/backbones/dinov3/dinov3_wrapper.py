@@ -26,8 +26,11 @@ class DinoV3Wrapper(nn.Module):
         """
 
         super().__init__()
-
-        self.dinov3 = torch.hub.load("facebookresearch/dinov3", model, weights= ckpt_path)
+        if ckpt_path is None:
+            self.dinov3 = torch.hub.load("facebookresearch/dinov3", model, pretrained= False)
+        else:
+            self.dinov3 = torch.hub.load("facebookresearch/dinov3", model, weights= ckpt_path)
+            
         self.out_channels = [self.dinov3.embed_dim]*len(self.dinov3.blocks) if hasattr(self.dinov3, 'blocks') else self.dinov3.embed_dims
         self.output_indexes = list(np.arange(len(self.dinov3.blocks))) if hasattr(self.dinov3, 'blocks') else 4
         self.return_cls_token = return_cls_token
