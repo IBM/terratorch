@@ -2,9 +2,9 @@ import logging
 
 import huggingface_hub
 import torch
+from terratorch_surya.models.helio_spectformer import HelioSpectFormer
 from torch import nn
 
-from terratorch.models.backbones.Surya.terratorch_surya.models.helio_spectformer import HelioSpectFormer
 from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
 
 
