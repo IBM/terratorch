@@ -28,6 +28,8 @@
 TerraTorch is a PyTorch domain library based on [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/) and the [TorchGeo](https://github.com/microsoft/torchgeo) domain library
 for geospatial data. 
 
+Please also try our HPO/NAS tool: [Iterate](https://github.com/IBM/terratorch-iterate)
+
 ## Disclaimer
 TerraTorch provides tools for fine-tuning and using pretrained models.
 No models are hosted by TerraTorch. TerraTorch only provides the training and inference framework.  
