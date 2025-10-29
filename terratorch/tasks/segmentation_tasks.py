@@ -304,7 +304,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         """
         # Testing because of failures.
         x = batch["image"]
-        y = batch["mask"]
+        y = self.squeeze_ground_truth(batch["mask"])
         other_keys = batch.keys() - {"image", "mask", "filename"}
 
         rest = {k: batch[k] for k in other_keys}
@@ -325,7 +325,7 @@ class SemanticSegmentationTask(TerraTorchTask):
             dataloader_idx: Index of the current dataloader.
         """
         x = batch["image"]
-        y = batch["mask"]
+        y = self.squeeze_ground_truth(batch["mask"])
         other_keys = batch.keys() - {"image", "mask", "filename"}
         
         rest = {k: batch[k] for k in other_keys}
@@ -354,7 +354,7 @@ class SemanticSegmentationTask(TerraTorchTask):
             dataloader_idx: Index of the current dataloader.
         """
         x = batch["image"]
-        y = batch["mask"]
+        y = self.squeeze_ground_truth(batch["mask"])
 
         other_keys = batch.keys() - {"image", "mask", "filename"}
         rest = {k: batch[k] for k in other_keys}
