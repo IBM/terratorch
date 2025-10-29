@@ -126,11 +126,19 @@ class IgnoreIndexMetricWrapper(WrapperMetric):
         self.metric.reset()
 
 
+def get_module_and_class(path):
+    class_name = path.split(".")[-1]
+    path_ = path.replace("." + class_name, "")
+    return path_, class_name
+
+
 def init_loss(loss: str, ignore_index: int = None, custom_loss: bool = False, custom_loss_kwargs: dict = None):
     if custom_loss:
         assert custom_loss_kwargs, "If you are using a custom loss, the `custom_loss_kwargs` are required."
-        loss_module = importlib.import_module(loss)
-        return loss_module(**custom_loss_kwargs)
+        module, class_name = get_module_and_class(loss)
+        loss_module = importlib.import_module(module)
+        loss_class = getattr(loss_module, class_name)
+        return loss_class(**custom_loss_kwargs)
     elif loss == "mse":
         return IgnoreIndexLossWrapper(nn.MSELoss(reduction="none"), ignore_index)
     elif loss == "mae":
