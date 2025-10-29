@@ -14,8 +14,8 @@ import yaml
 from numba import njit, prange
 from torch.utils.data import Dataset
 
-from terratorch.models.backbones.Surya.surya.utils.distributed import get_rank
-from terratorch.models.backbones.Surya.surya.utils.log import create_logger
+from terratorch.models.backbones.Surya.terratorch_surya.utils.distributed import get_rank
+from terratorch.models.backbones.Surya.terratorch_surya.utils.log import create_logger
 
 
 @njit(parallel=True)
