@@ -502,5 +502,5 @@ def tiled_embeddings(
 
             for batch_input, predicted in zip(batch, output, strict=True):
                 tiles.append(to_tile_embedding(batch_input, predicted))
-            
-            return tiles      
+
+    return tiles      

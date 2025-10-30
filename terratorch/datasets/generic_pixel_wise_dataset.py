@@ -3,7 +3,10 @@
 
 """Module containing generic dataset classes"""
 
+import concurrent.futures
 import glob
+import json
+import logging
 import os
 import re
 from abc import ABC
@@ -517,7 +520,7 @@ class GenericNonGeoPixelwiseRegressionDataset(GenericPixelWiseDataset):
         return fig
 
 class GenericNonGeoPixelwiseDataset_Custom(GenericPixelWiseDataset):
-    """GenericNonGeoPixelwiseRegressionDataset"""
+    """GenericNonGeoPixelwiseRegressionDataset with JSON file support"""
 
     def __init__(
         self,
@@ -537,6 +540,9 @@ class GenericNonGeoPixelwiseDataset_Custom(GenericPixelWiseDataset):
         no_label_replace: int | None = None,
         expand_temporal_dimension: bool = False,
         reduce_zero_label: bool = False,
+        json_file: Path | None = None,
+        output_dir: Path | None = None,
+        layers: list[int] | None = None,
     ) -> None:
         """Constructor
 
@@ -572,6 +578,31 @@ class GenericNonGeoPixelwiseDataset_Custom(GenericPixelWiseDataset):
                 Defaults to False.
             reduce_zero_label (bool): Subtract 1 from all labels. Useful when labels start from 1 instead of the
                 expected 0. Defaults to False.
+            json_file (Path | None): Path to JSON file defining sample names and band file paths.
+                If provided, overrides directory-based file discovery.
+                Expected JSON format:
+                {
+                    "sample_name_1": {
+                        "B01": "path/to/sample1_B01_60m.jp2",
+                        "B02": "path/to/sample1_B02_10m.jp2",
+                        ...
+                        "B12": "path/to/sample1_B12_20m.jp2"
+                    },
+                    "sample_name_2": {
+                        "B01": "path/to/sample2_B01_60m.jp2",
+                        ...
+                    }
+                }
+                Notes:
+                - Sample names are used as identifiers and will be included in output filenames
+                - Band names must match Sentinel-2 bands: B01-B12 (B8A instead of B08A)
+                - File paths can be relative (to working directory) or absolute
+                - Resolution suffix (10m/20m/60m) is automatically extracted from filenames
+                - Missing or invalid file paths will cause that sample to be skipped with a warning
+            output_dir (Path | None): Directory where embeddings are saved. If provided along with layers,
+                already-processed scenes will be filtered out from the dataset. Defaults to None.
+            layers (list[int] | None): List of layer indices for which embeddings are generated.
+                Used with output_dir to determine which scenes are already processed. Defaults to None.
         """
         super().__init__(
             data_root,
@@ -591,41 +622,159 @@ class GenericNonGeoPixelwiseDataset_Custom(GenericPixelWiseDataset):
             expand_temporal_dimension=expand_temporal_dimension,
             reduce_zero_label=reduce_zero_label,
         )
+
+        # Load JSON file if provided
+        self.json_file = json_file
+        self.band_mapping = None
+        if json_file is not None:
+            logger = logging.getLogger("terratorch")
+
+            with open(json_file, 'r') as f:
+                raw_mapping = json.load(f)
+
+            # Validate file paths and filter out samples with missing files
+            self.band_mapping = {}
+            skipped_samples = []
+
+            for sample_name, band_dict in raw_mapping.items():
+                missing_files = []
+                for band, file_path in band_dict.items():
+                    if not os.path.exists(file_path):
+                        missing_files.append(f"{band}: {file_path}")
+
+                if missing_files:
+                    skipped_samples.append(sample_name)
+                    logger.warning(
+                        f"Skipping sample '{sample_name}' - missing {len(missing_files)} file(s):\n  " +
+                        "\n  ".join(missing_files[:3]) +  # Show first 3 missing files
+                        (f"\n  ... and {len(missing_files) - 3} more" if len(missing_files) > 3 else "")
+                    )
+                else:
+                    # All files exist, include this sample
+                    self.band_mapping[sample_name] = band_dict
+
+            if skipped_samples:
+                logger.info(f"Skipped {len(skipped_samples)} sample(s) due to missing files. Valid samples: {len(self.band_mapping)}")
+
+            # Override image_files with validated sample names from JSON
+            self.image_files = sorted(list(self.band_mapping.keys()))
+            # For JSON-based loading, we don't use mask files
+            self.segmentation_mask_files = self.image_files
+
+        # Filter out already-processed scenes if output_dir and layers are provided
+        if output_dir is not None and layers is not None:
+            output_path = Path(output_dir)
+
+            unprocessed_scenes = []
+            skipped_count = 0
+
+            # Check if we have negative layer indices (can't resolve without model)
+            # In this case, check if ANY layer_* folder contains the scene
+            has_negative_indices = any(l < 0 for l in layers)
+
+            for scene_name in self.image_files:
+                # Extract scene name (handle both file paths and JSON keys)
+                stem = Path(scene_name).stem if not self.band_mapping else scene_name
+                scene_key = stem.split("__")[0] if "__" in stem else stem
+
+                # Check if scene is already processed
+                if has_negative_indices:
+                    # For negative indices, check if ANY layer_* folder contains this scene
+                    # This works because negative indices get resolved at runtime
+                    if output_path.exists():
+                        layer_dirs = list(output_path.glob("layer_*"))
+                        is_processed = any(
+                            (layer_dir / scene_key).exists() and (layer_dir / scene_key).is_dir()
+                            for layer_dir in layer_dirs
+                        )
+                    else:
+                        is_processed = False
+                else:
+                    # For positive indices, check specific layer folders
+                    is_processed = all(
+                        (output_path / f"layer_{layer}" / scene_key).exists() and
+                        (output_path / f"layer_{layer}" / scene_key).is_dir()
+                        for layer in layers
+                    )
+
+                if not is_processed:
+                    unprocessed_scenes.append(scene_name)
+                else:
+                    skipped_count += 1
+
+            self.image_files = unprocessed_scenes
+            self.segmentation_mask_files = unprocessed_scenes
+
+            # Validate that dataset is not empty after filtering
+            if len(self.image_files) == 0:
+                logger = logging.getLogger("terratorch")
+                logger.warning(
+                    f"All {skipped_count} scene(s) have already been processed and filtered out. "
+                    f"Dataset is empty. To reprocess scenes, remove output_dir and layers parameters "
+                    f"or delete the output directory: {output_dir}"
+                )
+
     def _load_file(self, path, nan_replace: int | float | None = None) -> xr.DataArray:
         # Target order of Sentinel-2 bands expected by the model
         BAND_ORDER = ["B01","B02","B03","B04","B05","B06","B07","B08","B8A","B09","B11","B12"]
 
-        # Collect candidate files for 10m, 20m, 60m (e.g., Txx_yyy_B02_10m.jp2)
-        patterns = [
-            os.path.join(path, "*_B??_10m.jp2"),
-            os.path.join(path, "*_B??_20m.jp2"),
-            os.path.join(path, "*_B??_60m.jp2"),
-            os.path.join(path, "*_B8A_10m.jp2"),
-            os.path.join(path, "*_B8A_20m.jp2"),
-            os.path.join(path, "*_B8A_60m.jp2"),
-        ]
-        all_paths: list[str] = []
-        for pat in patterns:
-            all_paths.extend(glob.glob(pat))
+        # If using JSON mapping, path is the sample name
+        if self.band_mapping is not None:
+            logger = logging.getLogger("terratorch")
 
-        # Parse band and resolution from filename
-        def parse(p: str) -> tuple[str, int] | None:
-            m = re.search(r"_B(\d{2}|8A)_(10|20|60)m\.jp2$", os.path.basename(p))
-            if not m:
-                return None
-            band = f"B{m.group(1)}"
-            res = int(m.group(2))
-            return band, res
+            sample_name = path
+            if sample_name not in self.band_mapping:
+                raise KeyError(f"Sample '{sample_name}' not found in JSON mapping")
 
-        # Keep best available resolution per band: prefer 10m > 20m > 60m
-        # Candidates: {"B02": {"10": "xyz.jp2"}, {"B09": {"60": "xyz.jp2"}, ...}
-        candidates: dict[str, dict[int, str]] = {}
-        for p in all_paths:
-            parsed = parse(p)
-            if not parsed:
-                continue
-            band, res = parsed
-            candidates.setdefault(band, {})[res] = p
+            # Build candidates dict from JSON mapping
+            candidates: dict[str, dict[int, str]] = {}
+            for band, file_path in self.band_mapping[sample_name].items():
+                # Verify file still exists (in case it was deleted after validation)
+                if not os.path.exists(file_path):
+                    logger.warning(f"File missing for sample '{sample_name}', band {band}: {file_path}")
+                    continue
+
+                # Extract resolution from filename
+                m = re.search(r"_(10|20|60)m\.jp2$", file_path)
+                if m:
+                    res = int(m.group(1))
+                    candidates.setdefault(band, {})[res] = file_path
+                else:
+                    # Default to 10m if resolution not in filename
+                    candidates.setdefault(band, {})[10] = file_path
+        else:
+            # Original directory-based logic
+            # Collect candidate files for 10m, 20m, 60m (e.g., Txx_yyy_B02_10m.jp2)
+            patterns = [
+                os.path.join(path, "*_B??_10m.jp2"),
+                os.path.join(path, "*_B??_20m.jp2"),
+                os.path.join(path, "*_B??_60m.jp2"),
+                os.path.join(path, "*_B8A_10m.jp2"),
+                os.path.join(path, "*_B8A_20m.jp2"),
+                os.path.join(path, "*_B8A_60m.jp2"),
+            ]
+            all_paths: list[str] = []
+            for pat in patterns:
+                all_paths.extend(glob.glob(pat))
+
+            # Parse band and resolution from filename
+            def parse(p: str) -> tuple[str, int] | None:
+                m = re.search(r"_B(\d{2}|8A)_(10|20|60)m\.jp2$", os.path.basename(p))
+                if not m:
+                    return None
+                band = f"B{m.group(1)}"
+                res = int(m.group(2))
+                return band, res
+
+            # Keep best available resolution per band: prefer 10m > 20m > 60m
+            # Candidates: {"B02": {"10": "xyz.jp2"}, {"B09": {"60": "xyz.jp2"}, ...}
+            candidates: dict[str, dict[int, str]] = {}
+            for p in all_paths:
+                parsed = parse(p)
+                if not parsed:
+                    continue
+                band, res = parsed
+                candidates.setdefault(band, {})[res] = p
 
         # Choose a 10m reference grid if available (prefer true 10m bands)
         ref_path: str | None = None
@@ -652,16 +801,16 @@ class GenericNonGeoPixelwiseDataset_Custom(GenericPixelWiseDataset):
                 resampling=Resampling.bilinear,
             )
 
-        das: list[xr.DataArray] = []
         template = ref_da
         if template is None:
             raise RuntimeError("Reference grid not initialized; cannot build band stack")
 
-        # Build stack in strict BAND_ORDER; fill missing with zeros
-        for b in BAND_ORDER:
-            if b in candidates:
+        # Parallel band loading and resampling
+        def load_and_resample_band(band: str) -> xr.DataArray:
+            """Load and resample a single band (for parallel execution)."""
+            if band in candidates:
                 # Prefer 10m, else 20m, else 60m
-                path_b = candidates[b].get(10) or candidates[b].get(20) or candidates[b].get(60)
+                path_b = candidates[band].get(10) or candidates[band].get(20) or candidates[band].get(60)
                 da = rioxarray.open_rasterio(path_b, masked=True)
                 # If resolution differs, upsample to match 10m reference
                 try:
@@ -676,8 +825,21 @@ class GenericNonGeoPixelwiseDataset_Custom(GenericPixelWiseDataset):
             else:
                 # Missing band on disk; use zeros
                 da = xr.zeros_like(template, dtype="float32")
+            return da
 
-            das.append(da)
+        # Load all bands in parallel using ThreadPoolExecutor
+        das: list[xr.DataArray] = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+            # Submit all tasks and maintain order
+            futures = {band: executor.submit(load_and_resample_band, band) for band in BAND_ORDER}
+
+            # Collect results in correct order
+            for band in BAND_ORDER:
+                try:
+                    das.append(futures[band].result())
+                except Exception as e:
+                    logger.error(f"Failed to load band {band}: {e}")
+                    das.append(xr.zeros_like(template, dtype="float32"))
 
         cube = xr.concat(das, dim="band")
         data = cube.astype("float32")
