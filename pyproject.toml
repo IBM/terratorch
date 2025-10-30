@@ -64,8 +64,6 @@ dependencies = [
   "tqdm",
   "wandb",
   "tensorboard",
-  # It will be added when the package is released
-  #"terratorch_surya" 
 ]
 
 
@@ -100,10 +98,13 @@ test = [
   "h5netcdf",
 ]
 
+# It will be replaced when the package is released
+#"terratorch_surya" 
 surya = [
   "numba",
   "hdf5plugin",
-  "h5netcdf"
+  "h5netcdf",
+  "terratorch_surya@git+https://github.com/Joao-L-S-Almeida/terratorch-Surya.git"
 ]
 
 mmseg = [

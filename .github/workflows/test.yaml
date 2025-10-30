@@ -49,9 +49,7 @@ jobs:
           #python -m pip install --upgrade pip
           pip install pip==24.2
           pip --version
-          # Temporary workaround to install Surya
-          pip install git+https://github.com/Joao-L-S-Almeida/terratorch-Surya.git
-          pip install -e .[wxc,test]
+          pip install -e .[wxc,test,surya]
       - name: Clean pip cache
         run: pip cache purge
       - name: List pip dependencies
