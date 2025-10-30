@@ -189,7 +189,7 @@ class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
         if batch_size is not None:
             kwargs["batch_size"] = batch_size
         if eval_batch_size is not None:
-            kwargs["eval_batch_size"] = batch_size
+            kwargs["eval_batch_size"] = eval_batch_size
         if not train_augmentations in [None, "default", "multi_temporal_default"]:
             train_augmentations = kornia_augmentations_to_callable_with_dict(train_augmentations)
         kwargs["train_augmentations"] = train_augmentations
@@ -198,13 +198,14 @@ class GeoBenchV2ObjectDetectionDataModule(GeoBenchObjectDetectionDataModule):
             eval_augmentations = kornia_augmentations_to_callable_with_dict(eval_augmentations)
         kwargs["eval_augmentations"] = eval_augmentations
         
-        if len(band_order) > 0:
-            if isinstance(band_order[0], dict):
-                band_order_dict = {}
-                for modality in band_order:
-                    band_order_dict.update(modality)
-                band_order = band_order_dict
-                kwargs["band_order"] = band_order
+        if isinstance(band_order, list): 
+            if len(band_order) > 0:
+                if isinstance(band_order[0], dict):
+                    band_order_dict = {}
+                    for modality in band_order:
+                        band_order_dict.update(modality)
+                    band_order = band_order_dict
+                    kwargs["band_order"] = band_order
 
         self._proxy = cls(num_workers=num_workers, **kwargs)
         super().__init__(
