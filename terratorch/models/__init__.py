@@ -4,18 +4,17 @@
 import logging
 
 import terratorch.models.necks  # register necks  # noqa: F401
-from terratorch.models.encoder_decoder_factory import EncoderDecoderFactory
-from terratorch.models.generic_unet_model_factory import GenericUnetModelFactory
-from terratorch.models.generic_model_factory import GenericModelFactory
-from terratorch.models.prithvi_model_factory import PrithviModelFactory
+from terratorch.models.clay1_5_model_factory import Clay1_5ModelFactory
 from terratorch.models.clay_model_factory import ClayModelFactory
+from terratorch.models.encoder_decoder_factory import EncoderDecoderFactory
+from terratorch.models.full_model_factory import FullModelFactory
+from terratorch.models.generic_model_factory import GenericModelFactory
+from terratorch.models.generic_unet_model_factory import GenericUnetModelFactory
+from terratorch.models.object_detection_model_factory import ObjectDetectionModelFactory
+from terratorch.models.prithvi_model_factory import PrithviModelFactory
 from terratorch.models.satmae_model_factory import SatMAEModelFactory
 from terratorch.models.smp_model_factory import SMPModelFactory
 from terratorch.models.timm_model_factory import TimmModelFactory
-from terratorch.models.object_detection_model_factory import ObjectDetectionModelFactory
-from terratorch.models.full_model_factory import FullModelFactory
-from terratorch.models.clay1_5_model_factory import Clay1_5ModelFactory
-
 
 try:
     granitewcx = True
@@ -25,18 +24,18 @@ except ImportError:
     granitewcx = False
 
 __all__ = (
-    "PrithviModelFactory",
+    "Clay1_5ModelFactory",
     "ClayModelFactory",
-    "SatMAEModelFactory",
-    "SMPModelFactory",
-    "GenericUnetModelFactory",
-    "GenericModelFactory",
-    "TimmModelFactory",
-    "WxCModelFactory",
     "EncoderDecoderFactory",
     "FullModelFactory",
+    "GenericModelFactory",
+    "GenericUnetModelFactory",
     "ObjectDetectionModelFactory",
-    "Clay1_5ModelFactory",
+    "PrithviModelFactory",
+    "SMPModelFactory",
+    "SatMAEModelFactory",
+    "TimmModelFactory",
+    "WxCModelFactory",
 )
 
 if granitewcx:

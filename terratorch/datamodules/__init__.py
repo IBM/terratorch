@@ -1,5 +1,7 @@
 # Copyright contributors to the Terratorch project
 
+import logging
+
 from terratorch.datamodules.era5 import ERA5DataModule
 from terratorch.datamodules.fire_scars import FireScarsNonGeoDataModule
 from terratorch.datamodules.generic_pixel_wise_data_module import (
@@ -28,7 +30,6 @@ from terratorch.datamodules.m_so2sat import MSo2SatNonGeoDataModule
 from terratorch.datamodules.multi_temporal_crop_classification import MultiTemporalCropClassificationDataModule
 from terratorch.datamodules.open_sentinel_map import OpenSentinelMapDataModule
 from terratorch.datamodules.pastis import PASTISDataModule
-import logging
 
 try:
     wxc_present = True

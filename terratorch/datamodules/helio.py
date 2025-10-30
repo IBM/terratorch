@@ -1,21 +1,21 @@
-from collections.abc import Sequence, Callable
+from collections.abc import Callable, Sequence
 from typing import Any
 
 import albumentations as A
+from kornia.augmentation import AugmentationSequential
+from torchgeo.datamodules import NonGeoDataModule
 
-#from terratorch.datamodules.generic_multimodal_data_module import MultimodalNormalize
 from terratorch.datamodules.generic_multimodal_data_module import wrap_in_compose_is_list
 from terratorch.datasets import HelioNetCDFDataset
-from torchgeo.datamodules import NonGeoDataModule
-from kornia.augmentation import AugmentationSequential
+
 
 class ByPassNormalize(Callable):
     def __init__(self):
         super().__init__()
 
     def __call__(self, batch):
-
         return batch
+
 
 class HelioNetCDFDataModule(NonGeoDataModule):
     """NonGeo LightningDataModule implementation for the Heliophysics datamodule."""
@@ -31,7 +31,6 @@ class HelioNetCDFDataModule(NonGeoDataModule):
         aug: AugmentationSequential = None,
         **kwargs: Any,
     ) -> None:
-
         super().__init__(HelioNetCDFDataset, batch_size, num_workers, **kwargs)
 
         self.train_index_path = train_index_path
@@ -52,21 +51,15 @@ class HelioNetCDFDataModule(NonGeoDataModule):
             self.train_dataset = self.dataset_class(
                 phase="train",
                 index_path=self.train_index_path,
-                    **self.extra_arguments, 
+                **self.extra_arguments,
             )
 
         if stage in ["fit", "validate"]:
-            self.val_dataset = self.dataset_class(
-                phase="test",
-                index_path=self.val_index_path,
-                **self.extra_arguments
-            )
+            self.val_dataset = self.dataset_class(phase="test", index_path=self.val_index_path, **self.extra_arguments)
 
         if stage in ["test"]:
             self.test_dataset = self.dataset_class(
-                phase="test",
-                index_path=self.test_index_path,
-                **self.extra_arguments
+                phase="test", index_path=self.test_index_path, **self.extra_arguments
             )
 
         if stage in ["predict"]:

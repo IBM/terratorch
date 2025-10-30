@@ -20,6 +20,16 @@ NUM_FRAMES = 4
 IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "false") == "true"
 
 
+def try_import_surya():
+    try:
+        import terratorch_surya
+
+        success = 1
+    except ImportError:
+        success = 0
+    return success
+
+
 @pytest.fixture
 def input_224():
     return torch.ones((1, NUM_CHANNELS, 224, 224))
@@ -205,7 +215,17 @@ def test_terramind_tim(model_name):
     gc.collect()
 
 
-@pytest.mark.parametrize("model_name", ["heliofm_backbone_surya"])
+@pytest.mark.skipif(try_import_surya() == 0, reason="The package`terratorch_surya` isn't installed.")
+@pytest.mark.parametrize(
+    "model_name",
+    [
+        "heliofm_backbone_surya",
+        "heliofm_backbone_surya_ar_segmentation",
+        "heliofm_backbone_surya_euv_spectra_prediction",
+        "heliofm_backbone_surya_solar_flare_forecasting",
+        "heliofm_backbone_surya_solar_wind_forecasting",
+    ],
+)
 def test_heliofm(model_name):
     B = 8
     C = 6
@@ -230,4 +250,7 @@ def test_heliofm(model_name):
     with torch.no_grad():
         x_hat = backbone(data)
 
-    assert x_hat.shape == (B, C, H, W)
+    if model_name == "heliofm_backbone_surya":
+        assert x_hat.shape == (B, C, H, W)
+    else:
+        assert x_hat.shape == (B, 1, H, W)
