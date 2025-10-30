@@ -14,6 +14,6 @@ from terratorch.models.backbones.unet import UNet
 
 try:
     import terratorch.models.backbones.heliofm_register
-    import terratorch.models.backbones.Surya
+    # import terratorch.models.backbones.Surya
 except ImportError:
     pass
