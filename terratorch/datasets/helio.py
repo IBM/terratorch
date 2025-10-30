@@ -12,8 +12,12 @@ import torch
 import xarray as xr
 import yaml
 from numba import njit, prange
-from terratorch_surya.utils.distributed import get_rank
-from terratorch_surya.utils.log import create_logger
+
+try:
+    from terratorch_surya.utils.distributed import get_rank
+    from terratorch_surya.utils.log import create_logger
+except ImportError:
+    raise ImportError("It is necessary to install the package `terratorch_surya` to use this module.")
 from torch.utils.data import Dataset
 
 

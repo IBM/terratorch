@@ -20,7 +20,6 @@ from xarray import DataArray
 
 from terratorch.datasets import (
     FireScarsNonGeo,
-    HelioNetCDFDataset,
     MBeninSmallHolderCashewsNonGeo,
     MBigEarthNonGeo,
     MBrickKilnNonGeo,
@@ -37,6 +36,16 @@ from terratorch.datasets import (
 )
 from terratorch.datasets.sen1floods11 import Sen1Floods11NonGeo
 from terratorch.datasets.transforms import FlattenTemporalIntoChannels, UnflattenTemporalFromChannels
+
+
+def try_import_surya():
+    try:
+        from terratorch.datasets import HelioNetCDFDataset
+
+        success = 1
+    except ImportError:
+        success = 0
+    return success
 
 
 def create_dummy_tiff(path, width=100, height=100, count=6, dtype="uint8"):
@@ -1243,7 +1252,10 @@ class TestHelioFMDataset:
 
         return "/tmp/index.csv"
 
+    @pytest.mark.skipif(try_import_surya() == 0, reason="The package`terratorch_surya` isn't installed.")
     def test_dataset_load(self):
+        from terratorch.datasets import HelioNetCDFDataset
+
         # Downloading sample data
         index_path = self.create_sample_files()
         n_input_timestamps = 2

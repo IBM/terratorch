@@ -14,7 +14,6 @@ from terratorch.models.object_detection_model_factory import ObjectDetectionMode
 from terratorch.models.prithvi_model_factory import PrithviModelFactory
 from terratorch.models.satmae_model_factory import SatMAEModelFactory
 from terratorch.models.smp_model_factory import SMPModelFactory
-from terratorch.models.surya_model_factory import SuryaModelFactory
 from terratorch.models.timm_model_factory import TimmModelFactory
 
 try:
@@ -35,7 +34,6 @@ __all__ = (
     "PrithviModelFactory",
     "SMPModelFactory",
     "SatMAEModelFactory",
-    "SuryaModelFactory",
     "TimmModelFactory",
     "WxCModelFactory",
 )

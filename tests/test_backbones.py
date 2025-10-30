@@ -20,6 +20,16 @@ NUM_FRAMES = 4
 IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "false") == "true"
 
 
+def try_import_surya():
+    try:
+        import terratorch_surya
+
+        success = 1
+    except ImportError:
+        success = 0
+    return success
+
+
 @pytest.fixture
 def input_224():
     return torch.ones((1, NUM_CHANNELS, 224, 224))
@@ -205,6 +215,7 @@ def test_terramind_tim(model_name):
     gc.collect()
 
 
+@pytest.mark.skipif(try_import_surya() == 0, reason="The package`terratorch_surya` isn't installed.")
 @pytest.mark.parametrize(
     "model_name",
     [
