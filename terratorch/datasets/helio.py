@@ -4,6 +4,9 @@ import random
 from functools import cache
 from logging import Logger
 
+from terratorch.models.backbones.Surya.surya.utils.distributed import get_rank
+from terratorch.models.backbones.Surya.surya.utils.log import create_logger
+
 import hdf5plugin  # Enables LZ4 decompression via h5py - does not interfere with gzip
 import numpy as np
 import pandas as pd
@@ -13,9 +16,6 @@ import xarray as xr
 import yaml
 from numba import njit, prange
 from torch.utils.data import Dataset
-
-from terratorch.models.backbones.Surya.terratorch_surya.utils.distributed import get_rank
-from terratorch.models.backbones.Surya.terratorch_surya.utils.log import create_logger
 
 
 @njit(parallel=True)

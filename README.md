@@ -19,12 +19,19 @@
 [![pypi](https://badge.fury.io/py/terratorch.svg)](https://pypi.org/project/terratorch)
 [![tests](https://github.com/IBM/terratorch/actions/workflows/test.yaml/badge.svg)](https://github.com/ibm/terratorch/actions/workflows/test.yaml)
 [![MkDocs](https://img.shields.io/badge/MkDocs-526CFE?logo=materialformkdocs&logoColor=fff)](https://ibm.github.io/terratorch/)
+<!--
 ![cov](https://github.com/IBM/terratorch/raw/main/assets/coverage-badge.svg)
+-->
 [![PyPI Downloads](https://img.shields.io/pypi/dm/terratorch.svg?label=PyPI%20downloads)](https://pypi.org/project/terratorch/)
 [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/terratorch.svg?label=Conda%20downloads)](https://anaconda.org/conda-forge/terratorch)
+Please, read the contribution guidelines (see `Contribution` below) if you want to contribute to
+TerraTorch.
+
 ## Overview
 TerraTorch is a PyTorch domain library based on [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/) and the [TorchGeo](https://github.com/microsoft/torchgeo) domain library
 for geospatial data. 
+
+Please also try our HPO/NAS tool: [Iterate](https://github.com/IBM/terratorch-iterate)
 
 ## Disclaimer
 TerraTorch provides tools for fine-tuning and using pretrained models.
@@ -65,19 +72,29 @@ TerraTorch’s main purpose is to provide a flexible fine-tuning framework for G
     - All GEO-Bench datasets and datamodules
     - All [TorchGeo](https://github.com/microsoft/torchgeo) datasets and datamodules 
 
-## Install
+## Installation
+
 ### Pip
 In order to use the file `pyproject.toml` it is necessary to guarantee `pip>=21.8`. If necessary upgrade `pip` using `python -m pip install --upgrade pip`. 
 
 For a stable point-release, use `pip install terratorch==<version>`.
 
 [comment]: <If you prefer to get the most recent version of the main branch, install the library with `pip install git+https://github.com/IBM/terratorch.git`.>
-To get the most recent version of the main branch, install the library with `pip install git+https://github.com/IBM/terratorch.git`.
+To get the most recent version of the branch `main`, install the library with `pip install git+https://github.com/IBM/terratorch.git`.
 
-[comment]: <Another alternative is to install using [pipx](https://github.com/pypa/pipx) via `pipx install terratorch`, which creates an isolated environment and allows the user to run the application as a common CLI tool, with no need of installing dependencies or activating environments.>
+### Conda
+TerraTorch is also available on `conda-forge`, to install from there do `conda install -c conda-forge terratorch`. 
 
-TerraTorch requires gdal to be installed, which can be quite a complex process. If you don't have GDAL set up on your system, we recommend using a conda environment and installing it with `conda install -c conda-forge gdal`.
+### Pipx
+Alternatively, it is possible to install using [pipx](https://github.com/pypa/pipx) via `pipx install terratorch`, which creates an isolated environment and allows the user to run the application as a common CLI tool, with no need of installing dependencies or activating environments.
 
+### Gdal
+TerraTorch requires gdal to be installed, which can be quite a complex process.
+If you don't have GDAL set up on your system, we recommend using a conda
+environment and installing it with `conda install -c conda-forge gdal`. If you
+are installing from `conda-forge` it probably won't be a problem. 
+
+### Install as a developer
 To install as a developer (e.g. to extend the library):
 ```
 git clone https://github.com/IBM/terratorch.git
@@ -100,7 +117,7 @@ Developers, check out the [architecture overview](https://ibm.github.io/terrator
 
 This project welcomes contributions and suggestions. Ways to contribute or get involved:
 
-- Join our [Slack](https://join.slack.com/t/terratorch/shared_invite/zt-3e84x0aw2-cMojjUP~2WBXbao9pipWfg)
+- Join our [Slack](https://join.slack.com/t/terratorch/shared_invite/zt-3gu6toz7b-0zHzcudMWTeZ1LtEwSgIkg)
 - Create an [Issue](https://github.com/IBM/terratorch/issues) (for bugs or feature requests)
 - Contribute via [PR](https://github.com/IBM/terratorch/pulls)
 - Join our [duoweekly](https://romeokienzler.medium.com/the-duoweekly-manifesto-eaa6c1f542c8) community calls taking place [Tuesdays 4:30 PM - 5 PM CEST](https://teams.microsoft.com/l/meetup-join/19%3ameeting_MWJhMThhMTMtMjc3MS00YjAyLWI3NTMtYTI0NDQ3NWY3ZGU2%40thread.v2/0?context=%7b%22Tid%22%3a%22fcf67057-50c9-4ad4-98f3-ffca64add9e9%22%2c%22Oid%22%3a%227f7ab87a-680c-4c93-acc5-fbd7ec80823a%22%7d) and [Thursdays 2:30 PM - 3 PM CEST](https://teams.microsoft.com/l/meetup-join/19%3ameeting_MWJhMThhMTMtMjc3MS00YjAyLWI3NTMtYTI0NDQ3NWY3ZGU2%40thread.v2/0?context=%7b%22Tid%22%3a%22fcf67057-50c9-4ad4-98f3-ffca64add9e9%22%2c%22Oid%22%3a%227f7ab87a-680c-4c93-acc5-fbd7ec80823a%22%7d).

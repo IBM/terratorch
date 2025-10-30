@@ -28,13 +28,12 @@ from terratorch.datamodules.m_so2sat import MSo2SatNonGeoDataModule
 from terratorch.datamodules.multi_temporal_crop_classification import MultiTemporalCropClassificationDataModule
 from terratorch.datamodules.open_sentinel_map import OpenSentinelMapDataModule
 from terratorch.datamodules.pastis import PASTISDataModule
+import logging
 
 try:
     wxc_present = True
     from terratorch.datamodules.merra2_downscale import Merra2DownscaleNonGeoDataModule
 except ImportError:
-    import logging
-
     logging.getLogger("terratorch").debug("wxc_downscaling not installed")
     wxc_present = False
 
@@ -61,8 +60,6 @@ try:
 
     geobench_v2_present = True
 except ImportError:
-    import logging
-
     logging.getLogger("terratorch").debug("geobench_v2 not installed")
     geobench_v2_present = False
 
