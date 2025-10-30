@@ -24,6 +24,7 @@
 -->
 [![PyPI Downloads](https://img.shields.io/pypi/dm/terratorch.svg?label=PyPI%20downloads)](https://pypi.org/project/terratorch/)
 [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/terratorch.svg?label=Conda%20downloads)](https://anaconda.org/conda-forge/terratorch)
+
 Please, read the contribution guidelines (see `Contribution` below) if you want to contribute to
 TerraTorch.
 
@@ -124,7 +125,7 @@ This project welcomes contributions and suggestions. Ways to contribute or get i
 
 You can find more detailed contribution guidelines [here](https://ibm.github.io/terratorch/stable/contributing/). 
 
-A simple hint for any contributor. If you want to meet the GitHub DCO checks, just do your commits as below:
+If you want to meet the GitHub DCO checks, you **need** to do your commits as below:
 ```
 git commit -s -m <message>
 ```
