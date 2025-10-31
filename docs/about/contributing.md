@@ -41,7 +41,24 @@ modification be merged to `main`. In this way, when an user wants to modify
 * The PR will pass through the tests in GitHub Actions and if the reviewer approve it, it will soon be merged. 
 * It is recommended to add a label to your PR. For example `bug`, when it solves some issue or `enhancement`
     when it adds new features. 
-
+* It is recommended to periodically rebase commit history of your
+    branch by squashing incremental commits. It will help to keep the PR clean and better organized.
+    To do it, run:
+    ```
+    git log
+    ```
+    And check the number of commits you want to aggregate.
+    So:
+    ```
+    git rebase -i HEAD~<number of commits you want to rebase>
+    ```
+    In the editor, replace the `pick` with `squash` in front of each commit you
+    want to hide. Just do it for the line `2` onwards. The first commit will
+    became the umbrella commit and the other will became sub-commits. 
+    Save and push it to remote using:
+    ```
+    git push -f origin <branch>
+    ```
 !!! caution
     The PR will not be merged if the automatic tests are failing and the user which has sent the PR is responsible for fixing it. 
 
