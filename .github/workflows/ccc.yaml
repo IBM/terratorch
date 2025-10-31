@@ -63,7 +63,6 @@ jobs:
 
       - name: Run tests and collect coverage
         run: |
-          source .venv/bin/activate
           coverage erase
           coverage run -m pytest -s tests/test_generic_dataset.py --cov=terratorch -v
           coverage combine || echo "No data to combine (likely single run)"
