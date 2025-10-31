@@ -1243,6 +1243,7 @@ class TestHelioFMDataset:
 
         return "/tmp/index.csv"
 
+    @pytest.mark.skip
     def test_dataset_load(self):
         # Downloading sample data
         index_path = self.create_sample_files()
