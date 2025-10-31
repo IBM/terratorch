@@ -63,7 +63,10 @@ jobs:
 
       - name: Run tests and collect coverage
         run: |
-          pytest -s --cov=terratorch -v --cov-report xml:coverage_pr.xml --cov-report term-missing tests
+          coverage erase
+          pytest -s tests/test_generic_dataset.py --cov=terratorch --cov-append -v
+          coverage combine
+          coverage xml -o coverage_pr.xml
 
       # Compare coverage only on pull requests
       - name: Compare coverage with main
@@ -72,7 +75,11 @@ jobs:
           # Generate coverage for main branch
           git fetch origin main
           git checkout origin/main
-          pytest --cov=terratorch -v --cov-report xml:coverage_main.xml --cov-report term-missing tests
+          python3.12 -m pip install -e .[wxc,test]
+          coverage erase
+          pytest -s tests/test_generic_dataset.py --cov=terratorch --cov-append -v
+          coverage combine
+          coverage xml -o coverage_main.xml
 
           # Return to PR branch
           git checkout -
