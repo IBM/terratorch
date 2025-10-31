@@ -65,7 +65,7 @@ jobs:
         run: |
           coverage erase
           #coverage run -m pytest -s tests/test_generic_dataset.py --cov=terratorch --cov-append -v
-          coverage run -m pytest -s tests/test_generic_dataset.py --cov=terratorch -v
+          coverage run -m pytest -s tests --cov=terratorch -v
           #coverage combine || echo "No data to combine (likely single run)"
           coverage xml -o coverage_pr.xml
 
@@ -79,7 +79,7 @@ jobs:
           git checkout origin/main
           python3.12 -m pip install -e .[wxc,test]
           coverage erase
-          pytest -s tests/test_generic_dataset.py --cov=terratorch -v
+          coverage run -m pytest -s tests --cov=terratorch -v
           #pytest -s tests/test_generic_dataset.py --cov=terratorch --cov-append -v
           #coverage combine
           coverage xml -o coverage_main.xml
