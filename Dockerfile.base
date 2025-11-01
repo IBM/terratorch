@@ -1,0 +1,8 @@
+ARG version
+FROM python:$version-trixie
+
+RUN echo "Preparing environment for Python $version"
+RUN apt update
+RUN apt install -y python3-pip bash 
+RUN pip install uv
+
