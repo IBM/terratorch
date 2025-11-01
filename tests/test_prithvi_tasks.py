@@ -4,7 +4,7 @@ import pytest
 import torch
 
 from terratorch.models.backbones.prithvi_vit import PRETRAINED_BANDS
-from terratorch.tasks import ClassificationTask, PixelwiseRegressionTask, SemanticSegmentationTask, ReconstructionTask
+from terratorch.tasks import ClassificationTask, PixelwiseRegressionTask, SemanticSegmentationTask, ReconstructionTask, ScalarRegressionTask
 
 import gc
 
