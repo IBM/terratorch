@@ -23,6 +23,7 @@ from terratorch.tasks.base_task import TerraTorchTask
 from terratorch.tasks.loss_handler import CombinedLoss, LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
 from terratorch.tasks.tiled_inference import TiledInferenceParameters, tiled_inference
+from terratorch.tasks.utils import _instantiate_from_path
 
 BATCH_IDX_FOR_VALIDATION_PLOTTING = 10
 
@@ -135,10 +136,7 @@ def get_module_and_class(path):
 def init_loss(loss: str, ignore_index: int = None, custom_loss: bool = False, custom_loss_kwargs: dict = None):
     if custom_loss:
         assert custom_loss_kwargs, "If you are using a custom loss, the `custom_loss_kwargs` are required."
-        module, class_name = get_module_and_class(loss)
-        loss_module = importlib.import_module(module)
-        loss_class = getattr(loss_module, class_name)
-        return loss_class(**custom_loss_kwargs)
+        return _instantiate_from_path(loss, **custom_loss_kwargs)
     elif loss == "mse":
         return IgnoreIndexLossWrapper(nn.MSELoss(reduction="none"), ignore_index)
     elif loss == "mae":
@@ -168,7 +166,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
         model_args: dict,
         model_factory: str | None = None,
         model: torch.nn.Module | None = None,
-        loss: str | list[str] | dict[str, float] = "mse",
+        loss: str | list[str] | dict[str, float] | torch.nn.Module = "mse",
         aux_heads: list[AuxiliaryHead] | None = None,
         aux_loss: dict[str, float] | None = None,
         class_weights: list[float] | None = None,
