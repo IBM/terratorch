@@ -15,7 +15,7 @@ from terratorch.datasets.utils import (
     default_transform,
     validate_bands,
 )
-
+import pdb
 
 class MSACropTypeNonGeo(NonGeoDataset):
     """NonGeo dataset implementation for [M-SA-Crop-Type](https://github.com/ServiceNow/geo-bench?tab=readme-ov-file)."""
@@ -108,7 +108,6 @@ class MSACropTypeNonGeo(NonGeoDataset):
         if self.transform:
             output = self.transform(**output)
         output["mask"] = output["mask"].long()
-
         return output
 
     def plot(self, sample: dict[str, torch.Tensor], suptitle: str | None = None) -> plt.Figure:
@@ -121,6 +120,7 @@ class MSACropTypeNonGeo(NonGeoDataset):
         Returns:
             matplotlib.figure.Figure: A matplotlib Figure with the rendered sample.
         """
+
         rgb_indices = [self.bands.index(band) for band in self.rgb_bands if band in self.bands]
 
         if len(rgb_indices) != 3:
@@ -129,6 +129,7 @@ class MSACropTypeNonGeo(NonGeoDataset):
 
         image = sample["image"]
         mask = sample["mask"].numpy()
+        if (len(mask.shape) == 3) & (mask.shape[0] == 1): mask = mask[0] 
 
         if torch.is_tensor(image):
             image = image.permute(1, 2, 0).numpy()

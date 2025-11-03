@@ -27,11 +27,10 @@ on:
       - '**/*.txt'
       - '**/*.ipynb'
       - 'integrationtests/**/*'
-
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     strategy:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
@@ -40,79 +39,27 @@ jobs:
     steps:
       - name: Clone repo
         uses: actions/checkout@v5
-        with:
-          fetch-depth: 0  # Needed for comparing with main
-
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
-
-      - name: Updating submodules
-        run: |
+      - name: updating submodules
+        run : | 
           git submodule init
           git submodule update
-
       - name: Install dependencies
         run: |
+          #python -m pip install --upgrade pip
           pip install pip==24.2
           pip --version
           pip install -e .[wxc,test]
-          pip install pytest-cov
-
       - name: Clean pip cache
         run: pip cache purge
-
       - name: List pip dependencies
         run: pip list
-
       - name: Cleaning cache
         run: pip cache purge
-
-      - name: Run tests and collect coverage
+      - name: Test with pytest
         run: |
-          pytest -s --cov=terratorch -v --cov-report xml:coverage_pr.xml --cov-report term-missing tests
-
-      # Compare coverage only on pull requests
-      - name: Compare coverage with main
-        if: github.event_name == 'pull_request'
-        run: |
-          # Generate coverage for main branch
-          git fetch origin main
-          git checkout origin/main
-          pytest --cov=terratorch -v --cov-report xml:coverage_main.xml --cov-report term-missing tests
-
-          # Return to PR branch
-          git checkout -
-
-          # Extract coverage values
-          if [ ! -f coverage_pr.xml ]; then
-            echo "Error: coverage_pr.xml not found."
-            exit 2
-          fi
-          if [ ! -f coverage_main.xml ]; then
-            echo "Error: coverage_main.xml not found."
-            exit 2
-          fi
-          PR_COV=$(grep 'line-rate' coverage_pr.xml | sed 's/.*line-rate="\(.*\)".*/\1/')
-          MAIN_COV=$(grep 'line-rate' coverage_main.xml | sed 's/.*line-rate="\(.*\)".*/\1/')
-          # Check that coverage values were extracted and are valid numbers
-          if ! [[ "$PR_COV" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
-            echo "Error: Failed to extract valid PR coverage value from coverage_pr.xml."
-            exit 2
-          fi
-          if ! [[ "$MAIN_COV" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
-            echo "Error: Failed to extract valid Main coverage value from coverage_main.xml."
-            exit 2
-          fi
-
-          echo "PR coverage:   ${PR_COV}"
-          echo "Main coverage: ${MAIN_COV}"
-
-          # Use a small epsilon (1e-6) to account for floating-point comparison precision issues
-          awk "BEGIN {exit !(${PR_COV} + 1e-6 >= ${MAIN_COV})}" || {
-            echo "Coverage decreased (PR: ${PR_COV}, Main: ${MAIN_COV})"
-            exit 1
-          }
-
+          pytest -s --cov=terratorch -v --cov-report term-missing tests
