@@ -118,7 +118,7 @@ Developers, check out the [architecture overview](https://ibm.github.io/terrator
 
 This project welcomes contributions and suggestions. Ways to contribute or get involved:
 
-- Join our [Slack](https://join.slack.com/t/terratorch/shared_invite/zt-3gu6toz7b-0zHzcudMWTeZ1LtEwSgIkg)
+- Join our [Discord](https://discord.gg/x8AWY8QQ)
 - Create an [Issue](https://github.com/IBM/terratorch/issues) (for bugs or feature requests)
 - Contribute via [PR](https://github.com/IBM/terratorch/pulls)
 - Join our [duoweekly](https://romeokienzler.medium.com/the-duoweekly-manifesto-eaa6c1f542c8) community calls taking place [Tuesdays 4:30 PM - 5 PM CEST](https://teams.microsoft.com/l/meetup-join/19%3ameeting_MWJhMThhMTMtMjc3MS00YjAyLWI3NTMtYTI0NDQ3NWY3ZGU2%40thread.v2/0?context=%7b%22Tid%22%3a%22fcf67057-50c9-4ad4-98f3-ffca64add9e9%22%2c%22Oid%22%3a%227f7ab87a-680c-4c93-acc5-fbd7ec80823a%22%7d) and [Thursdays 2:30 PM - 3 PM CEST](https://teams.microsoft.com/l/meetup-join/19%3ameeting_MWJhMThhMTMtMjc3MS00YjAyLWI3NTMtYTI0NDQ3NWY3ZGU2%40thread.v2/0?context=%7b%22Tid%22%3a%22fcf67057-50c9-4ad4-98f3-ffca64add9e9%22%2c%22Oid%22%3a%227f7ab87a-680c-4c93-acc5-fbd7ec80823a%22%7d).
