@@ -131,9 +131,9 @@ geobenchv2 = [
 ]
 
 [project.urls]
-Documentation = "https://ibm.github.io/terratorch/"
-Issues = "https://github.com/IBM/terratorch/issues"
-Source = "https://github.com/IBM/terratorch"
+Documentation = "https://terrastackai.github.io/terratorch/"
+Issues = "https://github.com/terrastackai/terratorch/issues"
+Source = "https://github.com/terrastackai/terratorch"
 
 [project.scripts]
 terratorch = "terratorch.__main__:main"
