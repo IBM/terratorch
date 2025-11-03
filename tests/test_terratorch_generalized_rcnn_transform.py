@@ -1,18 +1,19 @@
-# -*- coding: utf-8 -*-
 import copy
-import torch
+import gc
+
 import pytest
+import torch
+from torchvision.models.detection.image_list import ImageList
 
 # Adjust the import below to match where your utils.py lives in your repo.
 # If utils.py sits at terratorch/datamodules/utils.py, this import is correct:
 from terratorch.models.utils import TerratorchGeneralizedRCNNTransform
-from torchvision.models.detection.image_list import ImageList
 
 
 @pytest.fixture
 def dummy_images():
     # Two images with different spatial sizes but same channels
-     # C, H, W
+    # C, H, W
 
     return [torch.randn(3, 32, 48), torch.randn(3, 32, 48)]
 
@@ -63,12 +64,14 @@ def test_forward_returns_imagelist_and_targets(dummy_images, dummy_targets):
     assert image_list.image_sizes == [(32, 48), (32, 48)]
 
     # Targets are shallow-copied dicts: new dict objects, same tensor objects
-    for t_in, t_out in zip(dummy_targets, targets_out):
-        assert t_in is not t_out                  # dict was copied
+    for t_in, t_out in zip(dummy_targets, targets_out, strict=False):
+        assert t_in is not t_out  # dict was copied
         for k in t_in:
             # tensors are same objects (shallow copy), not deep-copied
             assert t_in[k] is t_out[k]
             assert torch.equal(t_in[k], t_out[k])
+
+    gc.collect()
 
 
 def test_forward_without_targets(dummy_images):
@@ -80,6 +83,7 @@ def test_forward_without_targets(dummy_images):
     assert image_list.image_sizes == [(32, 48), (32, 48)]
     # Check batched tensor first dimension equals number of images
     assert image_list.tensors.shape[0] == len(dummy_images)
+    gc.collect()
 
 
 def test_images_are_copied_not_referenced(dummy_images, dummy_targets):
@@ -99,6 +103,7 @@ def test_images_are_copied_not_referenced(dummy_images, dummy_targets):
 
     # ImageList should be unchanged
     assert torch.equal(image_list.tensors, old_batched)
+    gc.collect()
 
 
 def test_invalid_image_rank_raises():
@@ -108,10 +113,11 @@ def test_invalid_image_rank_raises():
     the len(image_size) check will fail and raise AssertionError.
     """
     tfm = _make_transform()
-    bad_img = torch.randn(3, 32, 32)       # 2D tensor (no channel dim)
+    bad_img = torch.randn(3, 32, 32)  # 2D tensor (no channel dim)
     ok_img = torch.randn(3, 16, 16)
     with pytest.raises((AssertionError, RuntimeError)):
         tfm.forward([bad_img, ok_img], targets=None)
+    gc.collect()
 
 
 def test_targets_are_shallow_copied(dummy_images, dummy_targets):
@@ -123,13 +129,18 @@ def test_targets_are_shallow_copied(dummy_images, dummy_targets):
     image_list, targets_out = tfm.forward(dummy_images, targets=targets_in)
 
     # Different dict objects
-    for t_in, t_out in zip(targets_in, targets_out):
+    for t_in, t_out in zip(targets_in, targets_out, strict=False):
         assert t_in is not t_out
         # Modifying the returned dict doesn't mutate original dict object
         t_out["new_key"] = torch.tensor([1])
         assert "new_key" not in t_in
 
         # But tensors for existing keys are the same objects (shallow copy)
-        assert (t_in["boxes"] is targets_out[0]["boxes"]) or (t_in["labels"] is targets_out[1]["labels"]) or (t_in["boxes"] is targets_out[1]["boxes"]) or (t_in["labels"] is targets_out[0]["labels"])
+        assert (
+            (t_in["boxes"] is targets_out[0]["boxes"])
+            or (t_in["labels"] is targets_out[1]["labels"])
+            or (t_in["boxes"] is targets_out[1]["boxes"])
+            or (t_in["labels"] is targets_out[0]["labels"])
+        )
 
-
+    gc.collect()
