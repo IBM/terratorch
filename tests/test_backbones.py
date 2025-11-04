@@ -20,6 +20,16 @@ NUM_FRAMES = 4
 IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "false") == "true"
 
 
+def try_import_surya():
+    try:
+        import terratorch_surya
+
+        success = 1
+    except ImportError:
+        success = 0
+    return success
+
+
 @pytest.fixture
 def input_224():
     return torch.ones((1, NUM_CHANNELS, 224, 224))
@@ -215,6 +225,16 @@ def test_terrafm_backbones_forward(model_name, input_terrafm_s2):
     backbone = BACKBONE_REGISTRY.build(model_name, pretrained=False)
     features = backbone(input_terrafm_s2)
     assert features.shape[1] == backbone.embed_dim
+    
+@pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Skip this test in GitHub Actions as deformable attn is not supported.")
+@pytest.mark.skipif(try_import_surya() == 0, reason="The package`terratorch_surya` isn't installed.")
+@pytest.mark.parametrize("model_name", ["heliofm_backbone_surya"])
+def test_heliofm(model_name):
+    B = 8
+    C = 6
+    T = 3
+    H = 256
+    W = 256
 
 
 

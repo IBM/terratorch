@@ -26,6 +26,10 @@ class mVHR10(VHR10):
         self,
         second_level_split="train",
         second_level_split_proportions = (0.90, 0.05, 0.05),
+        boxes_output_tag='boxes',
+        labels_output_tag='labels',
+        masks_output_tag='masks',
+        scores_output_tag='scores',
         *args,
         **kwargs) -> None:
         """Initialize a new m-VHR-10 dataset instance. On the original VHR10 splits (positive or negative) it creates train/val/test splits.
@@ -53,7 +57,11 @@ class mVHR10(VHR10):
         index_train_end = int(df.shape[0]*second_level_split_proportions[0])
         index_val_end = int(df.shape[0]*(second_level_split_proportions[0] + second_level_split_proportions[1]))
 
-        
+        self.boxes_output_tag = boxes_output_tag
+        self.labels_output_tag = labels_output_tag
+        self.masks_output_tag = masks_output_tag
+        self.scores_output_tag = scores_output_tag
+
         if self.second_level_split == 'train':
             self.ids = list(df['ids'].values[:index_train_end])
         elif self.second_level_split == 'val':
@@ -80,10 +88,11 @@ class mVHR10(VHR10):
 
         if sample['label']['annotations']:
             sample = self.coco_convert(sample)
-            sample['labels'] = sample['label']['labels']
-            sample['boxes'] = sample['label']['boxes']
-            sample['masks'] = sample['label']['masks']
-            del sample['label']
+            sample[self.boxes_output_tag] = sample['label']['boxes']
+            sample[self.masks_output_tag] = sample['label']['masks']
+            sample[self.labels_output_tag] = sample['label']['labels']
+            if self.labels_output_tag != 'label':
+                del sample['label']
         
         if self.transforms is not None:
             sample = self.transforms(sample)
@@ -120,7 +129,6 @@ class mVHR10(VHR10):
         .. versionadded:: 0.4
         """
         assert show_feats in {'boxes', 'masks', 'both'}
-
         image = percentile_normalization(sample['image'].permute(1, 2, 0).numpy())
 
         if self.split == 'negative':
@@ -135,27 +143,27 @@ class mVHR10(VHR10):
         if show_feats != 'boxes':
             skimage = lazy_import('skimage')
 
-        boxes = sample['boxes'].cpu().numpy()
-        labels = sample['labels'].cpu().numpy()
+        boxes = sample[self.boxes_output_tag].cpu().numpy()
+        labels = sample[self.labels_output_tag].cpu().numpy()
 
-        if 'masks' in sample:
-            masks = [mask.squeeze().cpu().numpy() for mask in sample['masks']]
+        if self.masks_output_tag in sample:
+            masks = [mask.squeeze().cpu().numpy() for mask in sample[self.masks_output_tag]]
 
         n_gt = len(boxes)
 
         ncols = 1
-        show_predictions = 'prediction_labels' in sample
+        show_predictions = 'prediction_' + self.labels_output_tag in sample
 
         if show_predictions:
             show_pred_boxes = False
             show_pred_masks = False
-            prediction_labels = sample['prediction_labels'].numpy()
-            prediction_scores = sample['prediction_scores'].numpy()
-            if 'prediction_boxes' in sample:
-                prediction_boxes = sample['prediction_boxes'].numpy()
+            prediction_labels = sample['prediction_' + self.labels_output_tag].numpy()
+            prediction_scores = sample['prediction_' + self.scores_output_tag].numpy()
+            if 'prediction_' + self.boxes_output_tag in sample:
+                prediction_boxes = sample['prediction_' + self.boxes_output_tag].numpy()
                 show_pred_boxes = True
-            if 'prediction_masks' in sample:
-                prediction_masks = sample['prediction_masks'].numpy()
+            if 'prediction_' + self.masks_output_tag in sample:
+                prediction_masks = sample['prediction_' + self.masks_output_tag].numpy()
                 show_pred_masks = True
 
             n_pred = len(prediction_labels)
@@ -194,7 +202,7 @@ class mVHR10(VHR10):
             )
 
             # Add masks
-            if show_feats in {'masks', 'both'} and 'masks' in sample:
+            if show_feats in {'masks', 'both'} and self.masks_output_tag in sample:
                 mask = masks[i]
                 contours = skimage.measure.find_contours(mask, 0.5)
                 for verts in contours:
