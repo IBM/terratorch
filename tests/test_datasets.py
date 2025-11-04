@@ -37,6 +37,11 @@ from terratorch.datasets import (
 from terratorch.datasets.sen1floods11 import Sen1Floods11NonGeo
 from terratorch.datasets.transforms import FlattenTemporalIntoChannels, UnflattenTemporalFromChannels
 
+try:
+    from terratorch.datasets import HelioNetCDFDataset
+except:
+    pass
+
 
 def try_import_surya():
     try:
