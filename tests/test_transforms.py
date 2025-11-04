@@ -24,9 +24,10 @@ def test_minmax_normalize_torch_channel_first():
     transform = MinMaxNormalize(means=means, stds=stds, scale=2.0, channel_axis=0)
     tensor = torch.tensor(means, dtype=torch.float32).view(3, 1, 1).expand(3, 224, 224)
     normalized = transform.apply(tensor)
-    assert torch.allclose(normalized[0], torch.full((2, 2), 0.5))
-    assert torch.allclose(normalized[1], torch.full((2, 2), 0.5))
-    assert torch.allclose(normalized[2], torch.full((2, 2), 0.5))
+    expected = torch.full_like(normalized[0], 0.5)
+    assert torch.allclose(normalized[0], expected)
+    assert torch.allclose(normalized[1], expected)
+    assert torch.allclose(normalized[2], expected)
 
 if __name__ == "__main__":
     test_minmax_normalize_numpy_channel_last()
