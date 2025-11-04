@@ -104,7 +104,7 @@ surya = [
   "numba",
   "hdf5plugin",
   "h5netcdf",
-  "terratorch_surya@git+https://github.com/Joao-L-S-Almeida/terratorch-Surya.git"
+  "terratorch_surya"
 ]
 
 mmseg = [
