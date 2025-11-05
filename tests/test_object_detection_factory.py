@@ -24,7 +24,7 @@ class TestObjectDetectionModelFactory(unittest.TestCase):
                       {'name': 'LearnedInterpolateToPyramidal'},
                       {'name': 'FeaturePyramidNetworkNeck'}]
         
-        self.kwargs = {'backbone_pretrained': True,'backbone_bands': ['RED', 'GREEN', 'BLUE']}
+        self.kwargs = {'backbone_pretrained': False,'backbone_bands': ['RED', 'GREEN', 'BLUE']}
 
     def test_build_model_faster_rcnn(self):
         # Test building a model with 'faster-rcnn' framework
