@@ -54,7 +54,7 @@ dependencies = [
   "lightning",
   "segmentation-models-pytorch<=0.5.0",
   "jsonargparse",
-  "torchgeo>=0.7.0",
+  "torchgeo>=0.7.0,<0.7.2",
   "einops",
   "timm>=0.0.15",
   "pycocotools",
