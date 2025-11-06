@@ -71,8 +71,8 @@ extra:
     canonical_version: stable
     version_selector: true
 
-site_url: https://ibm.github.io/terratorch/
-repo_url: https://github.com/IBM/terratorch
+site_url: https://terrastackai.github.io/terratorch/
+repo_url: https://github.com/terrastackai/terratorch
 edit_uri: edit/update-docs/docs
 nav:
   - Welcome: index.md

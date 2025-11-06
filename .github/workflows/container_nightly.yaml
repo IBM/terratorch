@@ -30,4 +30,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/ibm/terratorch:nightly
+          tags: ghcr.io/terrastackai/terratorch:nightly

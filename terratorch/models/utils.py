@@ -3,6 +3,11 @@ import torch
 from terratorch.registry import BACKBONE_REGISTRY
 import pdb
 import warnings
+from terratorch.registry import BACKBONE_REGISTRY
+import pdb
+from torchvision.models.detection.transform import GeneralizedRCNNTransform
+from torchvision.models.detection.image_list import ImageList
+from typing import Any, Optional
 
 class DecoderNotFoundError(Exception):
     pass
@@ -74,7 +79,6 @@ def _get_backbone(backbone: str | nn.Module, **backbone_kwargs) -> nn.Module:
                                 features_permute_op=features_permute_op, subset_lengths=subset_lengths)
 
     return model
-
 
 class TemporalWrapper(nn.Module):
     def __init__(self, encoder: nn.Module, pooling: str = 'mean', concat: bool = None, n_timestamps: int | None = None,
@@ -298,3 +302,57 @@ class TemporalWrapper(nn.Module):
             outputs.append(pooled)
 
         return outputs
+
+class TerratorchGeneralizedRCNNTransform(GeneralizedRCNNTransform):
+    
+    def init(min_size: int,
+             max_size: int,
+             image_mean: list[float],
+             image_std: list[float],
+             size_divisible: int = 32,
+             fixed_size: Optional[tuple[int, int]] = None,
+             **kwargs: Any):
+        
+        super().__init__(min_size,
+                         max_size,
+                         image_mean,
+                         image_std,
+                         size_divisible,
+                         fixed_size,
+                         **kwargs)
+        
+    def forward(
+        self, images: list[Tensor], targets: Optional[list[dict[str, Tensor]]] = None
+    ) -> tuple[ImageList, Optional[list[dict[str, Tensor]]]]:
+        images = [img for img in images]
+        if targets is not None:
+            # make a copy of targets to avoid modifying it in-place
+            # once torchscript supports dict comprehension
+            # this can be simplified as follows
+            # targets = [{k: v for k,v in t.items()} for t in targets]
+            targets_copy: list[dict[str, Tensor]] = []
+            for t in targets:
+                data: dict[str, Tensor] = {}
+                for k, v in t.items():
+                    data[k] = v
+                targets_copy.append(data)
+            targets = targets_copy
+        for i in range(len(images)):
+            image = images[i]
+            target_index = targets[i] if targets is not None else None
+            images[i] = image
+            if targets is not None and target_index is not None:
+                targets[i] = target_index
+        image_sizes = [img.shape[-2:] for img in images]
+        images = [x[None] for x in images]
+        images = torch.cat(images, 0)
+        image_sizes_list: list[tuple[int, int]] = []
+        for image_size in image_sizes:
+            torch._assert(
+                len(image_size) == 2,
+                f"Input tensors expected to have in the last two elements H and W, instead got {image_size}",
+            )
+            image_sizes_list.append((image_size[0], image_size[1]))
+
+        image_list = ImageList(images, image_sizes_list)
+        return image_list, targets
