@@ -63,8 +63,8 @@ def _get_decoder_and_head_kwargs(
     
     decoder_includes_head = DECODER_REGISTRY.find_registry(decoder).includes_head
     
-    num_outputs = num_outputs or num_classes
     key = "num_outputs" if num_outputs is not None else "num_classes"
+    num_outputs = num_outputs or num_classes
     if num_outputs is not None:
         if decoder_includes_head:
             decoder_kwargs["num_classes"] = num_outputs

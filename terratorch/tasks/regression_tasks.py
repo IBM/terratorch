@@ -45,7 +45,9 @@ class RootLossWrapper(nn.Module):
         msg = "Only 'mean' and None reduction supported"
         raise Exception(msg)
     
-class WeightedLossWrapper(nn.Module):
+class WeightedMultivariateLossWrapper(nn.Module):
+    """Wrapper to weight the individual losses of each variable predicted in the multivariate regression scenario."""
+    
     def __init__(self, loss_function: nn.Module, weights: torch.Tensor, reduction: None | str = "mean") -> None:
         super().__init__()
         if weights.ndim != 1:
@@ -524,7 +526,7 @@ class ScalarRegressionTask(TerraTorchTask):
         class_weights: list[float] | None = None,
         ignore_index: int | None = None,
         lr: float = 0.001,
-        num_outputs: int = 1, #out_channels/num_outputs
+        num_outputs: int = 1,
         # the following are optional so CLI doesnt need to pass them
         optimizer: str | None = None,
         optimizer_hparams: dict | None = None,
@@ -637,7 +639,7 @@ class ScalarRegressionTask(TerraTorchTask):
         
         if self.class_weights is not None:
             check_weights_classes(self.class_weights, self.num_outputs)
-            base_criterion = WeightedLossWrapper(base_criterion, self.class_weights, reduction="mean")
+            base_criterion = WeightedMultivariateLossWrapper(base_criterion, self.class_weights, reduction="mean")
          
         base_criterion = IgnoreIndexLossWrapper(base_criterion, self.hparams["ignore_index"]) 
         

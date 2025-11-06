@@ -6,7 +6,7 @@ import pytest
 import torch
 
 from terratorch.models.backbones.prithvi_vit import PRETRAINED_BANDS
-from terratorch.tasks import ScalarRegressionTask
+from terratorch.tasks import ScalarRegressionTask, PixelwiseRegressionTask, ClassificationTask
 from terratorch.models.model import ModelOutput
 
 import gc
@@ -52,6 +52,92 @@ def test_create_scalar_regression_task_encoder_decoder(backbone, decoder, loss, 
     y = batch["label"]
     assert y_hat.shape[1] == num_outputs, f"Expected {num_outputs} predicted variables, got {y_hat.shape[1]}"
     assert y_hat.shape == y.shape, "Model output shape and label shape don't match."
+    
+    loss = task.training_step(batch, batch_idx=0)
+    assert loss.ndim == 0, "Expected loss to be a scalar for backprop."
+    assert isinstance(loss, torch.Tensor), "Loss is not a Tensor"
+    
+    # Metrics sanity check
+    task.train_metrics.update(y_hat, y)
+    computed_metrics = task.train_metrics.compute()
+    assert isinstance(computed_metrics, dict), "Metrics did not return a dict"
+      
+    gc.collect()
+    
+    
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100"])
+@pytest.mark.parametrize("decoder", ["IdentityDecoder"])
+@pytest.mark.parametrize("loss", ["mse"])
+@pytest.mark.parametrize("lr_overrides", [{"encoder": 0.01}, None])
+def test_create_pixel_wise_regression_task_encoder_decoder(backbone, decoder, loss, model_factory: str, lr_overrides):
+    model_args = {
+        "backbone": backbone,
+        "decoder": decoder,
+        "backbone_bands": PRETRAINED_BANDS,
+        "backbone_pretrained": False,
+    }
+
+    task = PixelwiseRegressionTask(
+        model_args,
+        model_factory,
+        loss=loss,
+        lr_overrides=lr_overrides,
+    )
+    
+    batch = {
+        "image": torch.ones((BATCH_SIZE, 6, 224, 224)),
+        "mask": torch.randn((BATCH_SIZE, 224, 224))
+    }
+    
+    model_output : ModelOutput = task(batch["image"])
+    y_hat = model_output.output
+    y = batch["mask"]
+    assert y_hat.shape == y.shape, "Model output shape and label shape don't match."
+    
+    loss = task.training_step(batch, batch_idx=0)
+    assert loss.ndim == 0, "Expected loss to be a scalar for backprop."
+    assert isinstance(loss, torch.Tensor), "Loss is not a Tensor"
+    
+    # Metrics sanity check
+    task.train_metrics.update(y_hat, y)
+    computed_metrics = task.train_metrics.compute()
+    assert isinstance(computed_metrics, dict), "Metrics did not return a dict"
+      
+    gc.collect()
+    
+
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100"])
+@pytest.mark.parametrize("decoder", ["IdentityDecoder"])
+@pytest.mark.parametrize("loss", ["ce"])
+@pytest.mark.parametrize("lr_overrides", [{"encoder": 0.01}, None])
+@pytest.mark.parametrize("num_classes", [2, 4, 10])
+def test_create_classification_task_encoder_decoder(backbone, decoder, loss, model_factory: str, lr_overrides, num_classes):
+    model_args = {
+        "backbone": backbone,
+        "decoder": decoder,
+        "backbone_bands": PRETRAINED_BANDS,
+        "backbone_pretrained": False,
+        "num_classes": num_classes,
+    }
+
+    task = ClassificationTask(
+        model_args,
+        model_factory,
+        loss=loss,
+        lr_overrides=lr_overrides,
+    )
+    
+    batch = {
+        "image": torch.ones((BATCH_SIZE, 6, 224, 224)),
+        "label": torch.randint(0, num_classes, (BATCH_SIZE,))
+    }
+    
+    model_output : ModelOutput = task(batch["image"])
+    y_hat = model_output.output
+    y = batch["label"]
+  
+    assert y_hat.ndim == 2, "Model output should have shape (batch_size, num_classes)"
+    assert y_hat.shape[0] == y.shape[0], "Batch size mismatch between model output and labels"
     
     loss = task.training_step(batch, batch_idx=0)
     assert loss.ndim == 0, "Expected loss to be a scalar for backprop."
