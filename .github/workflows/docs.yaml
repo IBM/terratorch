@@ -16,7 +16,7 @@ jobs:
       contents: write
     environment:
       name: github-pages
-      url: ibm.github.io/terratorch/
+      url: terrastackai.github.io/terratorch/
     steps:
       - name: Install dependencies
         run: |

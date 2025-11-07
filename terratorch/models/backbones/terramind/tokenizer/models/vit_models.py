@@ -28,17 +28,6 @@ from functools import partial
 from torch.amp import autocast
 from einops import rearrange
 
-# xFormers imports
-try:
-    if torch.cuda.is_available(): # Only use xformers if GPUs are available
-        from xformers.ops import memory_efficient_attention, unbind
-        XFORMERS_AVAILABLE = True
-    else:
-        XFORMERS_AVAILABLE = False
-except ImportError:
-    logging.getLogger('terramind').debug("xFormers not available")
-    XFORMERS_AVAILABLE = False
-
 
 def pair(t):
     return t if isinstance(t, tuple) else (t, t)
@@ -187,19 +176,14 @@ class Attention(nn.Module):
         B, N, C = x.shape
         qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads)
 
-        if XFORMERS_AVAILABLE:
-            q, k, v = unbind(qkv, 2) # Each is of shape B x N x num_heads x C // num_heads
-            x = memory_efficient_attention(q, k, v)
-            x = x.reshape([B, N, C])
-        else:
-            qkv = qkv.permute(2, 0, 3, 1, 4)
-            q, k, v = qkv.unbind(0)   # make torchscript happy (cannot use tensor as tuple)
+        qkv = qkv.permute(2, 0, 3, 1, 4)
+        q, k, v = qkv.unbind(0)   # make torchscript happy (cannot use tensor as tuple)
 
-            attn = (q @ k.transpose(-2, -1)) * self.scale
-            attn = attn.softmax(dim=-1)
-            attn = self.attn_drop(attn)
+        attn = (q @ k.transpose(-2, -1)) * self.scale
+        attn = attn.softmax(dim=-1)
+        attn = self.attn_drop(attn)
 
-            x = (attn @ v).transpose(1, 2).reshape(B, N, C)
+        x = (attn @ v).transpose(1, 2).reshape(B, N, C)
 
         x = self.proj(x)
         x = self.proj_drop(x)

@@ -207,7 +207,7 @@ def test_create_task_with_vpt(
         "backbone": backbone,
         "decoder": decoder,
         "backbone_bands": PRETRAINED_BANDS,
-        "backbone_pretrained": True,
+        "backbone_pretrained": False,
         "backbone_vpt": True,
         "backbone_vpt_n_tokens": vpt_n_tokens,
         "backbone_vpt_dropout": vpt_dropout,
