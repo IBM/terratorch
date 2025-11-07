@@ -58,15 +58,17 @@ def _get_decoder_and_head_kwargs(
     # if its not an nn module, check if the class includes a head
     # depending on that, pass num classes/num outputs to either head kwrags or decoder
     if hasattr(DECODER_REGISTRY.find_class(decoder), "includes_head"):
+        includes_head = DECODER_REGISTRY.find_registry(decoder).includes_head
+        
+    else:
+        includes_head = False
         msg = (f"Decoder {decoder} does not have an `includes_head` attribute. Falling back to the value of the registry.")
-        logging.warning(msg)
-    
-    decoder_includes_head = DECODER_REGISTRY.find_registry(decoder).includes_head
+        logging.debug(msg)
     
     key = "num_outputs" if num_outputs is not None else "num_classes"
     num_outputs = num_outputs or num_classes
     if num_outputs is not None:
-        if decoder_includes_head:
+        if includes_head:
             decoder_kwargs["num_classes"] = num_outputs
             if head_kwargs:
                 msg = "Decoder already includes a head, but `head_` arguments were specified. These should be removed."
@@ -74,7 +76,7 @@ def _get_decoder_and_head_kwargs(
         else:
             head_kwargs[key] = num_outputs
 
-    return DECODER_REGISTRY.build(decoder, channel_list, **decoder_kwargs), head_kwargs, decoder_includes_head
+    return DECODER_REGISTRY.build(decoder, channel_list, **decoder_kwargs), head_kwargs, includes_head
 
 
 def _check_all_args_used(kwargs):

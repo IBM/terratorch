@@ -1,6 +1,7 @@
 # Copyright contributors to the Terratorch project
 
 from torch import Tensor, nn
+import warnings
 
 
 class ScalarHead(nn.Module):
@@ -30,6 +31,11 @@ class ScalarHead(nn.Module):
         super().__init__()
         if num_outputs is None and num_classes is None:
             raise ValueError("`num_outputs` or `num_classes` should be provided.")
+        if num_outputs is not None and num_classes is not None:
+            msg = "Both `num_outputs` and `num_classes` were provided, using `num_outputs`."
+            warnings.warn(msg)
+        
+        self.num_classes = num_classes
         self.num_outputs = num_outputs or num_classes
         self.linear_after_pool = linear_after_pool
         if dim_list is None:
