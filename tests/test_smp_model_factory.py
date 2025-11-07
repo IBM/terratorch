@@ -45,6 +45,9 @@ def test_create_segmentation_model(backbone, model, model_factory: SMPModelFacto
     gc.collect()
 
 
+@pytest.mark.skip(
+    reason="It looks these models are no more supported by `smp`, maybe it's better to remove them in the future."
+)
 @pytest.mark.parametrize("backbone", ["timm-regnetx_002"])
 @pytest.mark.parametrize("model", ["Unet"])
 def test_create_segmentation_model_no_in_channels(backbone, model, model_factory: SMPModelFactory, model_input):
@@ -67,6 +70,9 @@ def test_create_segmentation_model_no_in_channels(backbone, model, model_factory
     gc.collect()
 
 
+@pytest.mark.skip(
+    reason="It looks these models are no more supported by `smp`, maybe it's better to remove them in the future."
+)
 @pytest.mark.parametrize("backbone", ["timm-regnetx_002"])
 @pytest.mark.parametrize("model", ["Unet"])
 def test_create_model_with_extra_bands(backbone, model, model_factory: SMPModelFactory):
