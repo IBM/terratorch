@@ -90,9 +90,6 @@ test = [
   "dask",
   "wandb",
   "pytest-sugar",
-  "vllm>=0.10.2",
-  "pillow",
-  "imagehash",
   "numba",
   "hdf5plugin",
   "h5netcdf",
@@ -128,6 +125,16 @@ peft = [
 geobenchv2 = [
   "geobench_v2",
   "mlflow",
+]
+
+vllm = [
+  "geobenchv2",
+  "vllm==0.11.0",
+]
+
+vllm_test = [
+  "pillow",
+  "imagehash",
 ]
 
 [project.urls]
