@@ -44,10 +44,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
-      - name: updating submodules
-        run : | 
-          git submodule init
-          git submodule update
       - name: Install dependencies
         run: |
           #python -m pip install --upgrade pip
@@ -55,7 +51,7 @@ jobs:
           pip --version
           # Temporary workaround to allow the installation of `geobench_v2`
           pip install git+https://github.com/The-AI-Alliance/GEO-Bench-2.git@main
-          pip install -e .[wxc,test]
+          pip install -e .[wxc,test,surya]
       - name: Clean pip cache
         run: pip cache purge
       - name: List pip dependencies

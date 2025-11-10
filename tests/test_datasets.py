@@ -43,6 +43,16 @@ except:
     pass
 
 
+def try_import_surya():
+    try:
+        from terratorch.datasets import HelioNetCDFDataset
+
+        success = 1
+    except ImportError:
+        success = 0
+    return success
+
+
 def create_dummy_tiff(path, width=100, height=100, count=6, dtype="uint8"):
     data = np.random.randint(0, 255, (count, height, width), dtype=dtype)
     transform = from_origin(0, 0, 1, 1)
@@ -1247,8 +1257,10 @@ class TestHelioFMDataset:
 
         return "/tmp/index.csv"
 
-    @pytest.mark.skip
+    @pytest.mark.skipif(try_import_surya() == 0, reason="The package`terratorch_surya` isn't installed.")
     def test_dataset_load(self):
+        from terratorch.datasets import HelioNetCDFDataset
+
         # Downloading sample data
         index_path = self.create_sample_files()
         n_input_timestamps = 2
