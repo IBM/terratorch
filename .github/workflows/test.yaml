@@ -30,7 +30,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     strategy:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
@@ -52,9 +52,9 @@ jobs:
         run: |
           #python -m pip install --upgrade pip
           pip install pip==24.2
+          pip --version
           # Temporary workaround to allow the installation of `geobench_v2`
           pip install git+https://github.com/The-AI-Alliance/GEO-Bench-2.git@main
-          pip --version
           pip install -e .[wxc,test]
       - name: Clean pip cache
         run: pip cache purge
@@ -65,5 +65,3 @@ jobs:
       - name: Test with pytest
         run: |
           pytest -s --cov=terratorch -v --cov-report term-missing tests
-
-
