@@ -52,9 +52,9 @@ dependencies = [
   "jsonargparse<=4.35.0",
   "h5py",
   "lightning",
-  "segmentation-models-pytorch<=0.4",
+  "segmentation-models-pytorch<=0.5.0",
   "jsonargparse",
-  "torchgeo>=0.7.0",
+  "torchgeo>=0.7.0,<0.7.2",
   "einops",
   "timm>=1.0.15",
   "pycocotools",
@@ -90,9 +90,6 @@ test = [
   "dask",
   "wandb",
   "pytest-sugar",
-  "vllm>=0.10.2",
-  "pillow",
-  "imagehash",
   "numba",
   "hdf5plugin",
   "h5netcdf",
@@ -126,14 +123,24 @@ peft = [
 ]
 
 geobenchv2 = [
-  "geobench_v2",
+  "geobenchv2@git+https://github.com/The-AI-Alliance/GEO-Bench-2.git@main",
   "mlflow",
 ]
 
+vllm = [
+  "geobenchv2",
+  "vllm==0.11.0",
+]
+
+vllm_test = [
+  "pillow",
+  "imagehash",
+]
+
 [project.urls]
-Documentation = "https://ibm.github.io/terratorch/"
-Issues = "https://github.com/IBM/terratorch/issues"
-Source = "https://github.com/IBM/terratorch"
+Documentation = "https://terrastackai.github.io/terratorch/"
+Issues = "https://github.com/terrastackai/terratorch/issues"
+Source = "https://github.com/terrastackai/terratorch"
 
 [project.scripts]
 terratorch = "terratorch.__main__:main"

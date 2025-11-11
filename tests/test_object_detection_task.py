@@ -14,7 +14,7 @@ def task1():
             "framework": "faster-rcnn",
             "backbone": "prithvi_eo_v2_300",
             "num_classes": 12,
-            "backbone_pretrained": True,
+            "backbone_pretrained": False,
             "backbone_bands": ["RED", "GREEN", "BLUE"],
             "necks": [
                 {"name": "SelectIndices", "indices": [5, 11, 17, 23]},
@@ -45,7 +45,7 @@ def task2():
         model_args={
             "framework": "faster-rcnn",
             "backbone": "timm_resnet50",
-            "backbone_pretrained": True,
+            "backbone_pretrained": False,
             "num_classes": 12,
             "in_channels": 3,
             "necks": [{"name": "FeaturePyramidNetworkNeck"}],

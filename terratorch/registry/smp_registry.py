@@ -37,7 +37,7 @@ class SMPDecoderWrapper(nn.Module):
         self.out_channels = out_channels
 
     def forward(self, x):
-        return self._smp_decoder(*x)
+        return self._smp_decoder(x)
 
 
 class SMPRegistry(Set):
@@ -52,7 +52,9 @@ class SMPRegistry(Set):
     In addition, for some decoders, the final 2 features have the same spatial resolution.
     Adding the AddBottleneckLayer neck will make this compatible.
     """
+
     includes_head: bool = False
+
     def __init__(self):
         if not importlib.util.find_spec("segmentation_models_pytorch"):
             msg = "segmentation_models_pytorch must be installed to instantiate an SMPRegistry"
