@@ -13,7 +13,7 @@ source ${VENV_NAME}/bin/activate
 
 cd terratorch
 
-uv pip install --no-cache-dir -e .[test]
+uv pip install --no-cache-dir -e .[test,vllm,vllm_test]
 
 pytest -s -v integrationtests/vLLM/ 2>&1
 pytest_ret=$?
