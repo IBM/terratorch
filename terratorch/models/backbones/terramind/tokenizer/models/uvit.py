@@ -40,17 +40,6 @@ from diffusers.models.resnet import Downsample2D, Upsample2D
 from diffusers.configuration_utils import ConfigMixin
 from diffusers.models.modeling_utils import ModelMixin
 
-# xFormers imports
-try:
-    if torch.cuda.is_available(): # Only use xformers if GPUs are available
-        from xformers.ops import memory_efficient_attention, unbind
-        XFORMERS_AVAILABLE = True
-    else:
-        XFORMERS_AVAILABLE = False
-except ImportError:
-    logging.getLogger('terramind').debug("xFormers not available")
-    XFORMERS_AVAILABLE = False
-
 
 def modulate(x, shift, scale):
     return x * (1.0 + scale.unsqueeze(1)) + shift.unsqueeze(1)
@@ -151,31 +140,19 @@ class Attention(nn.Module):
     def forward(self, x, mask=None):
         B, N, C = x.shape
         qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads)
+        qkv = qkv.permute(2, 0, 3, 1, 4)
+        q, k, v = qkv.unbind(0)   # make torchscript happy (cannot use tensor as tuple)
 
-        if XFORMERS_AVAILABLE:
-            q, k, v = unbind(qkv, 2)
+        attn = (q @ k.transpose(-2, -1)) * self.scale
 
-            if mask is not None:
-                # Wherever mask is True it becomes -infinity, otherwise 0
-                mask = mask.to(q.dtype) * -torch.finfo(q.dtype).max
+        if mask is not None:
+            mask = mask.unsqueeze(1)
+            attn = attn.masked_fill(mask, -torch.finfo(attn.dtype).max)
 
-            x = memory_efficient_attention(q, k, v, attn_bias=mask)
-            x = x.reshape([B, N, C])
+        attn = attn.softmax(dim=-1)
+        attn = self.attn_drop(attn)
 
-        else:
-            qkv = qkv.permute(2, 0, 3, 1, 4)
-            q, k, v = qkv.unbind(0)   # make torchscript happy (cannot use tensor as tuple)
-
-            attn = (q @ k.transpose(-2, -1)) * self.scale
-
-            if mask is not None:
-                mask = mask.unsqueeze(1)
-                attn = attn.masked_fill(mask, -torch.finfo(attn.dtype).max)
-
-            attn = attn.softmax(dim=-1)
-            attn = self.attn_drop(attn)
-
-            x = (attn @ v).transpose(1, 2).reshape(B, N, C)
+        x = (attn @ v).transpose(1, 2).reshape(B, N, C)
         
         x = self.proj(x)
         x = self.proj_drop(x)
@@ -204,29 +181,18 @@ class CrossAttention(nn.Module):
         q = self.q(x).reshape(B, N, self.num_heads, C // self.num_heads)
         kv = self.kv(context).reshape(B, M, 2, self.num_heads, C // self.num_heads)
 
-        if XFORMERS_AVAILABLE:
-            k, v = unbind(kv, 2)
+        q = q.permute(0, 2, 1, 3)
+        kv = kv.permute(2, 0, 3, 1, 4)
+        k, v = kv[0], kv[1]
 
-            if mask is not None:
-                # Wherever mask is True it becomes -infinity, otherwise 0
-                mask = mask.to(q.dtype) * -torch.finfo(q.dtype).max
+        attn = (q @ k.transpose(-2, -1)) * self.scale
+        if mask is not None:
+            mask = rearrange(mask, "b n m -> b 1 n m")
+            attn = attn.masked_fill(mask, -torch.finfo(attn.dtype).max)
+        attn = attn.softmax(dim=-1)
+        attn = self.attn_drop(attn)
 
-            x = memory_efficient_attention(q, k, v, attn_bias=mask)
-            x = x.reshape([B, N, C])
-
-        else:
-            q = q.permute(0, 2, 1, 3)
-            kv = kv.permute(2, 0, 3, 1, 4)
-            k, v = kv[0], kv[1]
-
-            attn = (q @ k.transpose(-2, -1)) * self.scale
-            if mask is not None:
-                mask = rearrange(mask, "b n m -> b 1 n m")
-                attn = attn.masked_fill(mask, -torch.finfo(attn.dtype).max)
-            attn = attn.softmax(dim=-1)
-            attn = self.attn_drop(attn)
-
-            x = (attn @ v).transpose(1, 2).reshape(B, N, -1)
+        x = (attn @ v).transpose(1, 2).reshape(B, N, -1)
 
         x = self.proj(x)
         x = self.proj_drop(x)

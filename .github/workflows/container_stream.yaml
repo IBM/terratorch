@@ -29,4 +29,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/ibm/terratorch:stream
+          tags: ghcr.io/terrastackai/terratorch:stream
