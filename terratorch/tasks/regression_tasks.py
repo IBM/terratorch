@@ -171,38 +171,37 @@ class WeightedMetricWrapper(WrapperMetric):
         values = self.wrapped_metric.compute()
         weighted_values =  values * self.weights   
         return weighted_values.sum() / self.weights.sum()    
-    
-def init_loss(loss: str, ignore_index: int = None):
-    if loss == "mse":
-        return IgnoreIndexLossWrapper(nn.MSELoss(reduction="none"), ignore_index)
-    elif loss == "mae":
-        return  IgnoreIndexLossWrapper(nn.L1Loss(reduction="none"), ignore_index)
-    elif loss == "rmse":
-        # IMPORTANT! Root is done only after ignore index! Otherwise, the mean taken is incorrect
-        return  RootLossWrapper(IgnoreIndexLossWrapper(nn.MSELoss(reduction="none"), ignore_index), reduction=None)
-    elif loss == "huber":
-        return  IgnoreIndexLossWrapper(nn.HuberLoss(reduction="none"), ignore_index)
-    else:
-        raise ValueError(f"Loss type '{loss}' is not valid. Currently, supports 'mse', 'rmse', 'mae', or 'huber' loss.")
 
-def check_weights_classes(class_weights: Tensor, num_outputs: int):
-    if len(class_weights) != num_outputs:
-        exception_message = f"Number of weights must correspond to number of variables. Got {len(class_weights)} weights for {num_outputs} variables."
+def check_weights_classes(var_weights: Tensor, num_outputs: int):
+    if len(var_weights) != num_outputs:
+        exception_message = f"Number of weights must correspond to number of variables. Got {len(var_weights)} weights for {num_outputs} variables."
         raise ValueError(exception_message)
 
-def init_loss(loss: str, ignore_index: int = None):
-    if loss == "mse":
-        return IgnoreIndexLossWrapper(nn.MSELoss(reduction="none"), ignore_index)
-    elif loss == "mae":
-        return  IgnoreIndexLossWrapper(nn.L1Loss(reduction="none"), ignore_index)
-    elif loss == "rmse":
-        # IMPORTANT! Root is done only after ignore index! Otherwise, the mean taken is incorrect
-        return  RootLossWrapper(IgnoreIndexLossWrapper(nn.MSELoss(reduction="none"), ignore_index), reduction=None)
-    elif loss == "huber":
-        return  IgnoreIndexLossWrapper(nn.HuberLoss(reduction="none"), ignore_index)
-    else:
-        raise ValueError(f"Loss type '{loss}' is not valid. Currently, supports 'mse', 'rmse', 'mae', or 'huber' loss.")
-
+def init_loss(loss: str, ignore_index: int = None, var_weights: list[float] = None, num_outputs: int = 1):
+        if loss == "mse":
+            base_criterion = nn.MSELoss(reduction="none")
+        elif loss == "mae":
+            base_criterion = nn.L1Loss(reduction="none")
+        elif loss == "rmse":
+            base_criterion = nn.MSELoss(reduction="none")     
+        elif loss == "huber":
+            base_criterion = nn.HuberLoss(reduction="none")
+        else:
+            exception_message = f"Loss type '{loss}' is not valid. Currently, supports 'mse', 'rmse', 'mae', and 'huber' loss."
+            raise ValueError(exception_message)
+        
+        if var_weights is not None:
+            check_weights_classes(var_weights, num_outputs)
+            base_criterion = WeightedMultivariateLossWrapper(base_criterion, var_weights, reduction="mean")
+            
+        base_criterion = IgnoreIndexLossWrapper(base_criterion, ignore_index) 
+        
+        if loss == "rmse":
+            # Root after IgnoreIndex
+            base_criterion = RootLossWrapper(base_criterion, reduction=None)
+        
+        # Either weighted mean of the losses or a simple mean
+        return base_criterion
 
 class PixelwiseRegressionTask(TerraTorchTask):
     """Pixelwise Regression Task that accepts models from a range of sources.
@@ -223,7 +222,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
         loss: str | list[str] | dict[str, float] = "mse",
         aux_heads: list[AuxiliaryHead] | None = None,
         aux_loss: dict[str, float] | None = None,
-        class_weights: list[float] | None = None,
+        var_weights: list[float] | None = None,
         ignore_index: int | None = None,
         lr: float = 0.001,
         # TODO: customize for multivariate regression as well
@@ -259,7 +258,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
                 and the value is the weight to be applied to that loss.
                 The name of the loss should match the key in the dictionary output by the model's forward
                 method containing that output. Defaults to None.
-            class_weights (list[float] | None, optional): List of class weights to be applied to the loss.
+            var_weights (list[float] | None, optional): List of class weights to be applied to the loss.
                 Defaults to None.
             ignore_index (int | None, optional): Label to ignore in the loss computation. Defaults to None.
             lr (float, optional): Learning rate to be used. Defaults to 0.001.
@@ -348,7 +347,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
                       for loss in loss}
             self.criterion = CombinedLoss(losses=losses, weight=weight)
         else:
-            raise ValueError(f"The loss type {loss} isn't supported. Provide loss as string, list, or "
+            raise ValueError(f"The loss type {loss} isn't supported. Provide loss as string, nn.Module, list, or "
                              f"dict[name, weights].")
 
 
@@ -523,7 +522,7 @@ class ScalarRegressionTask(TerraTorchTask):
         loss: str = "mse",
         aux_heads: list[AuxiliaryHead] | None = None,
         aux_loss: dict[str, float] | None = None,
-        class_weights: list[float] | None = None,
+        var_weights: list[float] | None = None,
         ignore_index: int | None = None,
         lr: float = 0.001,
         num_outputs: int = 1,
@@ -536,6 +535,7 @@ class ScalarRegressionTask(TerraTorchTask):
         freeze_backbone: bool = False,  # noqa: FBT001, FBT002
         freeze_decoder: bool = False,  # noqa: FBT001, FBT002
         freeze_head: bool = False,  # noqa: FBT001, FBT002
+        var_names: list[str] | None = None,
         test_dataloaders_names: list[str] | None = None,
         lr_overrides: dict[str, float] | None = None,
         path_to_record_metrics: str = None,
@@ -554,7 +554,7 @@ class ScalarRegressionTask(TerraTorchTask):
                 and the value is the weight to be applied to that loss.
                 The name of the loss should match the key in the dictionary output by the model's forward
                 method containing that output. Defaults to None.
-            class_weights (list[float] | None, optional): List of class weights to be applied to the loss.
+            var_weights (list[float] | None, optional): List of variable weights to be applied to the loss.
                 Defaults to None.
             ignore_index (int | None, optional): Label to ignore in the loss computation. Defaults to None.
             lr (float, optional): Learning rate to be used. Defaults to 0.001.
@@ -571,6 +571,7 @@ class ScalarRegressionTask(TerraTorchTask):
             freeze_backbone (bool, optional): Whether to freeze the backbone. Defaults to False.
             freeze_decoder (bool, optional): Whether to freeze the decoder. Defaults to False.
             freeze_head (bool, optional): Whether to freeze the segmentation head. Defaults to False.
+            var_names (list[str] | None, optional): List of variable names passed to metrics for better naming. 
             test_dataloaders_names (list[str] | None, optional): Names used to differentiate metrics when
                 multiple dataloaders are returned by test_dataloader in the datamodule. Defaults to None,
                 which assumes only one test dataloader is used.
@@ -584,8 +585,8 @@ class ScalarRegressionTask(TerraTorchTask):
         if num_outputs < 1:
             raise ValueError("num_outputs can't be less than 1.") 
         self.num_outputs = num_outputs
-        self.class_weights = (
-            torch.Tensor(class_weights) if class_weights is not None else None
+        self.var_weights = (
+            torch.Tensor(var_weights) if var_weights is not None else None
         ) 
 
         if model is not None and model_factory is not None:
@@ -618,41 +619,36 @@ class ScalarRegressionTask(TerraTorchTask):
         Raises:
             ValueError: If *loss* is invalid.
         """
-        loss: str = self.hparams["loss"].lower()
+        loss = self.hparams["loss"]
+        ignore_index = self.hparams["ignore_index"]
         
-        # Base criterions:
-        if loss == "mse":
-            base_criterion = nn.MSELoss(reduction="none")
+        if isinstance(loss, str):
+            # Single loss
+            self.criterion = init_loss(loss, ignore_index=ignore_index) 
             
-        elif loss == "mae":
-            base_criterion = nn.L1Loss(reduction="none")
-            
-        elif loss == "rmse":
-            base_criterion = nn.MSELoss(reduction="none")
-            
-        elif loss == "huber":
-            base_criterion = nn.HuberLoss(reduction="none")
-            
+        elif isinstance(loss, nn.Module):
+            # Custom loss
+            self.criterion = loss
+        
+        elif isinstance(loss, list):
+            # List of losses with equal weights
+            losses = {loss: init_loss(loss, ignore_index=ignore_index)
+                      for loss in loss}
+            self.criterion = CombinedLoss(losses=losses)
+        elif isinstance(loss, dict):
+            # Equal weighting of losses
+            loss, weight = list(loss.keys()), list(loss.values())
+            losses = {loss: init_loss(loss, ignore_index=ignore_index)
+                      for loss in loss}
+            self.criterion = CombinedLoss(losses=losses, weight=weight)
         else:
-            exception_message = f"Loss type '{loss}' is not valid. Currently, supports 'mse', 'rmse', 'mae', and 'huber' loss."
-            raise ValueError(exception_message)
+            raise ValueError(f"The loss type {loss} isn't supported. Provide loss as string, nn.Module, list, or "
+                             f"dict[name, weights].")
         
-        if self.class_weights is not None:
-            check_weights_classes(self.class_weights, self.num_outputs)
-            base_criterion = WeightedMultivariateLossWrapper(base_criterion, self.class_weights, reduction="mean")
-         
-        base_criterion = IgnoreIndexLossWrapper(base_criterion, self.hparams["ignore_index"]) 
-        
-        if loss == "rmse":
-            # Root after IgnoreIndex
-            base_criterion = RootLossWrapper(base_criterion, reduction=None)
-        
-        # either weighted mean of the losses or a simple mean
-        self.criterion = base_criterion
 
     def configure_metrics(self) -> None:
         """Initialize the performance metrics."""
-
+        var_names = self.hparams["var_names"]
         def instantiate_metrics():
             metrics = {
                 "RMSE": MeanSquaredError(num_outputs=self.num_outputs, squared=False),
@@ -662,12 +658,12 @@ class ScalarRegressionTask(TerraTorchTask):
             }
             
             if self.num_outputs > 1:
-                per_class_metrics = {name: ClasswiseWrapper(metric, prefix="_") for name, metric in metrics.items()}
+                per_class_metrics = {name: ClasswiseWrapper(metric, labels=var_names, postfix=" ") for name, metric in metrics.items()}
                 
-                if self.class_weights is not None:
-                    check_weights_classes(self.class_weights, self.num_outputs)
+                if self.var_weights is not None:
+                    check_weights_classes(self.var_weights, self.num_outputs)
                     for name, metric in metrics.items():
-                        per_class_metrics[f"{name}_weighted"] =  WeightedMetricWrapper(metric, self.class_weights)
+                        per_class_metrics[f"{name}_weighted"] =  WeightedMetricWrapper(metric, self.var_weights)
                                             
                 return per_class_metrics
 
