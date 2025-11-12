@@ -4,11 +4,11 @@ import importlib
 from collections.abc import Callable
 
 import segmentation_models_pytorch as smp
+import timm
 import torch
 import torch.nn.functional as F  # noqa: N812
 from segmentation_models_pytorch.encoders import encoders as smp_encoders
 from torch import nn
-import timm
 
 from terratorch.datasets import HLSBands
 from terratorch.models.model import Model, ModelFactory, ModelOutput
@@ -138,9 +138,11 @@ class SMPModelFactory(ModelFactory):
             msg = f"Decoder {model} is not supported in SMP."
             raise ValueError(msg)
 
-        backbone_kwargs, kwargs = extract_prefix_keys(kwargs, "backbone_")  # Encoder params should be prefixed backbone_
-        smp_kwargs, kwargs = extract_prefix_keys(backbone_kwargs, "smp_")  # Smp model params should be prefixed smp_
-        aux_params, kwargs = extract_prefix_keys(backbone_kwargs, "aux_")  # Auxiliary head params should be prefixed aux_
+        backbone_kwargs, kwargs = extract_prefix_keys(
+            kwargs, "backbone_"
+        )  # Encoder params should be prefixed backbone_
+        smp_kwargs, kwargs = extract_prefix_keys(kwargs, "smp_")  # Smp model params should be prefixed smp_
+        aux_params, kwargs = extract_prefix_keys(kwargs, "aux_")  # Auxiliary head params should be prefixed aux_
         aux_params = None if aux_params == {} else aux_params
 
         if isinstance(pretrained, bool):
@@ -152,7 +154,7 @@ class SMPModelFactory(ModelFactory):
         # If encoder not currently supported by SMP (custom encoder).
         if backbone not in smp_encoders:
             if backbone.startswith("tu-"):
-                #for timm encoders
+                # for timm encoders
                 timm_encoder = backbone[3:]
                 if timm_encoder not in timm.list_models(pretrained=True):
                     raise ValueError(f"Backbone {timm_encoder} is not a valid pretrained timm model.")

@@ -1,3 +1,5 @@
+from typing import Any
+
 import torch
 from segmentation_models_pytorch.base.initialization import initialize_decoder
 from segmentation_models_pytorch.decoders.unet.decoder import UnetDecoder
@@ -11,7 +13,11 @@ class UNetDecoder(nn.Module):
     """UNetDecoder. Wrapper around UNetDecoder from segmentation_models_pytorch to avoid ignoring the first layer."""
 
     def __init__(
-        self, embed_dim: list[int], channels: list[int], use_batchnorm: bool = True, attention_type: str | None = None
+        self,
+        embed_dim: list[int],
+        channels: list[int],
+        use_batchnorm: bool | str | dict[str, Any] = "batchnorm",
+        attention_type: str | None = None,
     ):
         """Constructor
 
@@ -25,12 +31,13 @@ class UNetDecoder(nn.Module):
             msg = "channels should have the same length as embed_dim"
             raise ValueError(msg)
         super().__init__()
+        print(channels)
         self.decoder = UnetDecoder(
             encoder_channels=[embed_dim[0], *embed_dim],
             decoder_channels=channels,
             n_blocks=len(channels),
-            use_batchnorm=use_batchnorm,
-            center=False,
+            use_norm=use_batchnorm,
+            add_center_block=False,
             attention_type=attention_type,
         )
         initialize_decoder(self.decoder)
@@ -39,4 +46,4 @@ class UNetDecoder(nn.Module):
     def forward(self, x: list[torch.Tensor]) -> torch.Tensor:
         # The first layer is ignored in the original UnetDecoder, so we need to duplicate the first layer
         x = [x[0].clone(), *x]
-        return self.decoder(*x)
+        return self.decoder(x)
