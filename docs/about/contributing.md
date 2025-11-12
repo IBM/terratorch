@@ -35,6 +35,18 @@ modification be merged to `main`. In this way, when an user wants to modify
     ```
     pytest -s -v tests/
     ```
+* To run the tests for all the versions:
+1. install `tox` (via `pip` or `uv`)
+2. Run `tox`:
+```
+tox run
+```
+3. For a specific version:
+```
+tox run run -e 3.13
+```
+
+In case you don't have some Python versions installed, `tox` will skip them. 
 * If all the tests are passing, you can open a PR to `terratorch:main` describing what you are adding and why
     that is important to be merged. You
     do not need to choose a reviewer, since the maintainers will check the new open PR and request review for it by themselves.  
