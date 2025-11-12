@@ -4,7 +4,7 @@ PYTHON_VERSIONS=("3.11" "3.12" "3.13")
 
 for v in ${PYTHON_VERSIONS[@]};
 do
-  echo "Testing for Python $v"
+  echo "Creating base image for Python $v"
   podman build --build-arg version=$v -f Dockerfile.base -t terratorch_python_$v
 done
 
