@@ -30,17 +30,13 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from torchgeo.datasets.utils import percentile_normalization, lazy_import
 from matplotlib import patches
-try:
-    from geobench_v2.datamodules import (
-        GeoBenchClassificationDataModule, 
-        GeoBenchSegmentationDataModule, 
-        GeoBenchObjectDetectionDataModule,
-        MultiTemporalSegmentationAugmentation,
-        MultiModalSegmentationAugmentation,
-        )
-except ImportError as e:
-    import logging
-    logging.getLogger("terratorch").debug("geobench_v2 not installed")
+from geobench_v2.datamodules import (
+    GeoBenchClassificationDataModule,
+    GeoBenchSegmentationDataModule,
+    GeoBenchObjectDetectionDataModule,
+    MultiTemporalSegmentationAugmentation,
+    MultiModalSegmentationAugmentation,
+    )
 
 
 class GeoBenchV2ClassificationDataModule(GeoBenchClassificationDataModule):

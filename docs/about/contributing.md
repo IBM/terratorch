@@ -16,6 +16,12 @@ a pipeline with hundreds of unit and integration tests to verify that the packag
 modification be merged to `main`. In this way, when an user wants to modify
 `terratorch` for adding new features or bufixes, this are the best practices. 
 
+* Clone the repository and guarantee the submodules were also intialized:
+    ```
+        git clone git@github.com:IBM/terratorch.git
+        git submodule init
+        git submodule update
+    ```
 * This repository uses `pre-commit`, a tool which automatically runs basic
     steps before sending modifications to the remote (as linting, for example).
     See how to configure it [here](https://pre-commit.com/#installation). 
@@ -29,13 +35,42 @@ modification be merged to `main`. In this way, when an user wants to modify
     ```
     pytest -s -v tests/
     ```
+* To run the tests for all the versions:
+1. install `tox` (via `pip` or `uv`)
+2. Run `tox`:
+```
+tox run
+```
+3. For a specific version:
+```
+tox run run -e 3.13
+```
+
+In case you don't have some Python versions installed, `tox` will skip them. 
 * If all the tests are passing, you can open a PR to `terratorch:main` describing what you are adding and why
     that is important to be merged. You
     do not need to choose a reviewer, since the maintainers will check the new open PR and request review for it by themselves.  
 * The PR will pass through the tests in GitHub Actions and if the reviewer approve it, it will soon be merged. 
 * It is recommended to add a label to your PR. For example `bug`, when it solves some issue or `enhancement`
     when it adds new features. 
-
+* It is recommended to periodically rebase commit history of your
+    branch by squashing incremental commits. It will help to keep the PR clean and better organized.
+    To do it, run:
+    ```
+    git log
+    ```
+    And check the number of commits you want to aggregate.
+    So:
+    ```
+    git rebase -i HEAD~<number of commits you want to rebase>
+    ```
+    In the editor, replace the `pick` with `squash` in front of each commit you
+    want to hide. Just do it for the line `2` onwards. The first commit will
+    became the umbrella commit and the other will became sub-commits. 
+    Save and push it to remote using:
+    ```
+    git push -f origin <branch>
+    ```
 !!! caution
     The PR will not be merged if the automatic tests are failing and the user which has sent the PR is responsible for fixing it. 
 
@@ -44,17 +79,18 @@ modification be merged to `main`. In this way, when an user wants to modify
 Documentation is core for any project, however, most part of the time, the developers do not have the time (or
 patience) to carefully document all the codebase, in this way, contributions from interested users are always
 welcome. 
-To add documentation to TerraTorch, you need to be familiar with Markdown, a clean markup language, and
-MkDocs, a framework which relies on Markdown in order to create webpages as this you are reading. 
+To add documentation to TerraTorch, you need to be familiar with Markdown, a clean markup language, and the pages are built with
+MkDocs, a framework which relies on Markdown in order to create webpages as this you are reading. The documentation is automatically
+deployed by a bot just after the push or merge to the branch dedicated to store the latest documentation.
 These are the steps to configure your environment to work with documentation.
-* Install the MkDocs dependencies. Install as a developer `pip install terratorch[dev]` to include them or manually using [this list](https://github.com/IBM/terratorch/blob/cdb130dd0be3db053c8858d69e8f02197d42c567/pyproject.toml#L66).
-* Clone the branch dedicated to documentation to a local branch:
+
+* Clone the documentation branch to your machine:
 ```
-    git fetch origin update-docs
-    git checkout update-docs
-    git pull origin update-docs
+    git fetch origin docs
+    git checkout docs
+    git pull origin docs
 ```
-* If you already have access to the IBM org on GitHub, add your modifications and open a PR to `update-docs`. It is recommended to add the label `documentation` to your PR. 
+* Add your modifications and open a PR to the branch `docs`. It is recommended to add the label `documentation` to your PR.
 * The PR will be reviewed and approved if it is considered relevant by the maintainers. 
 
 ## Contributing by reporting issues
@@ -62,4 +98,4 @@ These are the steps to configure your environment to work with documentation.
 The users also can contribute by reporting issues they observed during their experiments. When reporting an issue, provide the more details as possible about the problem, as the configuration of your system,
 the terminal output and even the files required to reproduce it. To
 illustrate it, take a
-look on an example of [a good issue](https://github.com/IBM/terratorch/issues/506). 
+look on an example of [a very well-written issue](https://github.com/IBM/terratorch/issues/506). 

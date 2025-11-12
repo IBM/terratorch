@@ -316,7 +316,7 @@ class MultimodalTransforms:
         """
         self.transforms = transforms
         self.shared = shared
-        self.non_image_modalities = non_image_modalities
+        self.non_image_modalities = non_image_modalities if non_image_modalities is not None else []
         self.non_image_transform = non_image_transform or default_non_image_transform
 
     def __call__(self, data: dict):

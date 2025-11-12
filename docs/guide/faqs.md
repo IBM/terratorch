@@ -106,3 +106,17 @@ If you don't find your question in the FAQs or the user guide, feel free to open
 ??? faq "Why is my dataset length 0?"
     Please check all paths and image/label grep patterns in your config. Likely, TerraTorch does not find the data.
     If the paths are correct, you can either debug the generic dataset class constructor or open an issue to get support from the developers. 
+
+??? faq "I get an error 'Could not instantiate model <model name> from any source'. What can I do?"
+    Please first check if the model name is correct. If that is the case, check if the model is in the correctly registered, e.g.:  
+    ```python
+    from terratorch.registry import BACKBONE_REGISTRY
+    
+    'terramind_v1_base' in BACKBONE_REGISTRY
+    >>> True
+    ```
+    If this is the case, run your code with with `pretrained=False` to check if the code is working. 
+    If the code works without pretrained backbones it is like an error from the model weights download. 
+    This can happens when the HF cache directory has no space left (default `~/.cache/huggingface`). 
+    You can change the cache dir by setting the `HF_HOME` env variable.
+    Please open an GitHub issue if this does not solve your problem.

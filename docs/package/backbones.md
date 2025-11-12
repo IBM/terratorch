@@ -15,6 +15,8 @@
         toc_label: "Swin"
 
 :::terratorch.models.backbones.unet.UNet
+    options:
+        toc_label: "U-Net"
 
 :::terratorch.models.backbones.mmearth_convnextv2.ConvNeXtV2
     options:
@@ -27,7 +29,6 @@
 :::terratorch.models.backbones.clay_v1.embedder
     options:
         toc_label: "Clay v1"
-
 
 ## APIs for External Models
 
@@ -45,6 +46,10 @@
 :::terratorch.models.backbones.torchgeo_swin_satlas
     options:
         toc_label: "TorchGeo Swin Satlas"
+
+:::terratorch.models.backbones.heliofm_register.heliofm_backbone_surya
+    options:
+        toc_label: "Surya"
 
 <!--
 ### Timm
