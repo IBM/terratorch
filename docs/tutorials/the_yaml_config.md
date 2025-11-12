@@ -100,7 +100,7 @@ data:
 ```
 It means that we have chosen the generic regression datamodule and we will pass all its required arguments below
 `init_args` and with one new level of identation. The best practice here is to check the documentation of the
-datamodule class you are using (in our case, [here][terratorch.datamodules.generic_pixel_wise_data_module])
+datamodule class you are using (in our case, [here][terratorch.datamodules.generic_pixel_wise_data_module.GenericNonGeoPixelwiseRegressionDataModule])
 and verify all the arguments it expects to receive ant then to fill the lines
 with `<argument_name>: <argument_value>`. 
 As the TerraTorch and Lightning modules were already imported in the CLI script (`terratorch/cli_tools.py`),
@@ -150,8 +150,8 @@ instantiate the model itself, that means, the structure `backbone + decoder + he
 is possible do define which arguments will be sent to each component by including a prefix to the argument
 names, as `backbone_<argument>` or `decoder_<other_argument>`. Alternatively, it is possible to pass the
 arguments using dictionaries `backbone_kwargs`, `decoder_kwargs` and `head_kwargs`. The same recommendation
-made for the `data` field is repeated here, check the documentation of the [task](../tasks.md) and
-model classes ([backbones](../package/backbones.md), [decoders](../decoders.md) and [heads](../package/heads.md)) you are using in
+made for the `data` field is repeated here, check the documentation of the [task](../package/tasks.md) and
+model classes ([backbones](../package/backbones.md), [decoders](../package/decoders.md) and [heads](../package/heads.md)) you are using in
 order to define which arguments to write for each subfield of `model`. 
 
 ## Optimizer and Learning Rate Scheduler

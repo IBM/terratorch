@@ -10,6 +10,8 @@ Available model names:
 
 ```text
 prithvi_eo_v1_100
+prithvi_eo_v2_tiny_tl
+prithvi_eo_v2_100_tl
 prithvi_eo_v2_300
 prithvi_eo_v2_600
 prithvi_eo_v2_300_tl
@@ -31,7 +33,7 @@ For multi-temporal task, specify the number of input frames.
 from terratorch.registry import BACKBONE_REGISTRY
 
 model = BACKBONE_REGISTRY.build(
-    "prithvi_eo_v2_300", pretrained=True,
+    "prithvi_eo_v2_100_tl", pretrained=True,
     bands=["RED", "GREEN", "BLUE", "NEW"],  # Optional, specify bands
     num_frames=1,  # Optional, number of time steps (default: 1)
 )
@@ -47,7 +49,7 @@ Use Prithvi EO as a backbone in TerraTorch's EncoderDecoderFactory:
       init_args:
         model_factory: EncoderDecoderFactory
         model_args:
-          backbone: prithvi_eo_v2_300_tl
+          backbone: prithvi_eo_v2_100_tl
           backbone_pretrained: True
           backbone_bands: [RED, GREEN, BLUE, NEW]  # Optional
           backbone_num_frames: 1  # Optional
@@ -59,7 +61,7 @@ Use Prithvi EO as a backbone in TerraTorch's EncoderDecoderFactory:
     task = terratorch.tasks.SemanticSegmentationTask(
         model_factory="EncoderDecoderFactory", 
         model_args={
-            "backbone": "prithvi_eo_v2_300_tl",
+            "backbone": "prithvi_eo_v2_100_tl",
             "backbone_pretrained": True,
             "backbone_bands": ["RED", "GREEN", "BLUE", "NEW"],  # Optional
             "backbone_num_frames": 1,  # Optional
@@ -81,7 +83,7 @@ For hierarchical decoders such as UNet, use the following necks:
       necks:
         - name: ReshapeTokensToImage  # Reshape 1D tokens to 2D grid
         - name: SelectIndices  # Select three intermediate layer outputs and the final one
-          # indices: [2, 5, 8, 11]  # 100M model
+          # indices: [2, 5, 8, 11]  # tiny and 100M models
           indices: [5, 11, 17, 23]  # 300M model
           # indices: [7, 15, 23, 31]  # 600M model
         - name: LearnedInterpolateToPyramidal  # Upscale outputs for hierarchical decoders
@@ -93,10 +95,9 @@ For hierarchical decoders such as UNet, use the following necks:
     model_args={
         ...        
         "necks": [
-            {"name": "ReshapeTokensToImage", 
-             "remove_cls_token": False}
+            {"name": "ReshapeTokensToImage"}
             {"name": "SelectIndices", 
-            #  "indices": [2, 5, 8, 11]}, # 100M model
+            #  "indices": [2, 5, 8, 11]}, # tiny and 100M models
             "indices": [5, 11, 17, 23]}, # 300M model
             # "indices": [7, 15, 23, 31]}, # 600M model
             {"name": "LearnedInterpolateToPyramidal"}
@@ -136,7 +137,7 @@ Specify metadata usage with:
 
 === "Backbone registry"
     ```python
-    model = BACKBONE_REGISTRY.build("prithvi_eo_v2_300", pretrained=True, 
+    model = BACKBONE_REGISTRY.build("prithvi_eo_v2_100_tl", pretrained=True, 
                                     coords_encoding=[
                                         "time", 
                                         "location", 
