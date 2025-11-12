@@ -55,6 +55,11 @@ def input_386():
     return torch.ones((1, NUM_CHANNELS, 386, 386))
 
 
+@pytest.fixture
+def input_terrafm_s2():
+    return torch.ones((1, 12, 224, 224))
+
+
 def torchgeo_vit_backbones():
     return [i for i in dir(torchgeo_vit) if "_vit_small" in i]
 
@@ -215,6 +220,12 @@ def test_terramind_tim(model_name):
     gc.collect()
 
 
+@pytest.mark.parametrize("model_name", ["terrafm_base"])
+def test_terrafm_backbones_forward(model_name, input_terrafm_s2):
+    backbone = BACKBONE_REGISTRY.build(model_name, pretrained=False)
+    features = backbone(input_terrafm_s2)
+    assert features.shape[1] == backbone.embed_dim
+    
 @pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Skip this test in GitHub Actions as deformable attn is not supported.")
 @pytest.mark.skipif(try_import_surya() == 0, reason="The package`terratorch_surya` isn't installed.")
 @pytest.mark.parametrize("model_name", ["heliofm_backbone_surya"])
@@ -225,21 +236,26 @@ def test_heliofm(model_name):
     H = 256
     W = 256
 
-    backbone = BACKBONE_REGISTRY.build(
-        model_name,
-        img_size=256,
-        in_chans=C,
-        embed_dim=64,
-        num_heads=8,
-        time_embedding={"type": "linear", "n_queries": None, "time_dim": 3},
-        depth=2,
-        n_spectral_blocks=0,
-        dp_rank=2,
-    )
 
-    data = {"ts": torch.rand(B, C, T, H, W), "time_delta_input": torch.rand(B, T)}
 
-    with torch.no_grad():
-        x_hat = backbone(data)
+@pytest.mark.parametrize("out_indices", [(0,), (2, 4, 6)])
+def test_terrafm_out_indices(out_indices, input_terrafm_s2):
+    backbone = BACKBONE_REGISTRY.build("terrafm_base", pretrained=False, out_indices=out_indices)
 
-    assert x_hat.shape == (B, C, H, W)
+    assert backbone.out_indices == out_indices
+    features = backbone(input_terrafm_s2)
+    assert len(features) == len(out_indices)
+    for feature in features:
+        expected_hw = input_terrafm_s2.shape[-1] // backbone.model.patch_embed.patch_size
+        assert feature.shape[-2] == expected_hw
+        assert feature.shape[-1] == expected_hw
+
+def test_terrafm_l1c_patch_embed(input_terrafm_s2):
+    backbone = BACKBONE_REGISTRY.build("terrafm_base", pretrained=False, is_l2a=False)
+
+    assert backbone.default_is_l2a is False
+    assert backbone.model.use_l2a_patch_embed is False
+
+    features = backbone(input_terrafm_s2)
+    features_override = backbone(input_terrafm_s2, is_l2a=True)
+    assert len(features) == len(features_override)

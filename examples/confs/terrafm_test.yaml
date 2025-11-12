@@ -1,0 +1,122 @@
+# Example configuration for fine-tuning TerraFM on Sentinel-2 (L1C) imagery.
+seed_everything: 42
+
+data:
+  class_path: terratorch.datamodules.GenericNonGeoSegmentationDataModule
+  init_args:
+    batch_size: 4
+    num_workers: 8
+    train_data_root: <path_to_train_images>
+    train_label_data_root: <path_to_train_labels>
+    val_data_root: <path_to_val_images>
+    val_label_data_root: <path_to_val_labels>
+    test_data_root: <path_to_test_images>
+    test_label_data_root: <path_to_test_labels>
+    predict_data_root: <path_to_predict_images>
+    img_grep: "*.tif"
+    label_grep: "*.tif"
+    dataset_bands:
+      - B01
+      - B02
+      - B03
+      - B04
+      - B05
+      - B06
+      - B07
+      - B08
+      - B8A
+      - B09
+      - B11
+      - B12
+    means: &terrafm_means
+      - 1033.9414
+      - 1135.3391
+      - 1382.2553
+      - 1526.9789
+      - 1883.3911
+      - 2516.2726
+      - 2782.7811
+      - 2829.3833
+      - 2977.2936
+      - 3004.2905
+      - 2832.1983
+      - 2186.6507
+    stds: &terrafm_stds
+      - 2761.4226
+      - 807.365
+      - 919.6919
+      - 1221.4198
+      - 1265.8146
+      - 1323.0764
+      - 1428.7845
+      - 1459.0343
+      - 1497.9797
+      - 1577.071
+      - 1738.6128
+      - 1620.8854
+    train_transform:
+      - class_path: terratorch.datasets.transforms.MinMaxNormalize
+        init_args:
+          means: *terrafm_means
+          stds: *terrafm_stds
+          scale: 2.0
+          channel_axis: -1
+      - class_path: albumentations.pytorch.transforms.ToTensorV2
+    val_transform:
+      - class_path: terratorch.datasets.transforms.MinMaxNormalize
+        init_args:
+          means: *terrafm_means
+          stds: *terrafm_stds
+          scale: 2.0
+          channel_axis: -1
+      - class_path: albumentations.pytorch.transforms.ToTensorV2
+    test_transform:
+      - class_path: terratorch.datasets.transforms.MinMaxNormalize
+        init_args:
+          means: *terrafm_means
+          stds: *terrafm_stds
+          scale: 2.0
+          channel_axis: -1
+      - class_path: albumentations.pytorch.transforms.ToTensorV2
+    predict_transform:
+      - class_path: terratorch.datasets.transforms.MinMaxNormalize
+        init_args:
+          means: *terrafm_means
+          stds: *terrafm_stds
+          scale: 2.0
+          channel_axis: -1
+      - class_path: albumentations.pytorch.transforms.ToTensorV2
+    drop_last: false
+    pin_memory: true
+    num_classes: 2
+
+
+model:
+  class_path: terratorch.tasks.SemanticSegmentationTask
+  init_args:
+    model_factory: EncoderDecoderFactory
+    model_args:
+      backbone: terrafm_base
+      backbone_is_l2a: false
+      backbone_pretrained: false
+      backbone_bands:
+        - B01
+        - B02
+        - B03
+        - B04
+        - B05
+        - B06
+        - B07
+        - B08
+        - B8A
+        - B09
+        - B11
+        - B12
+      decoder: UNetDecoder
+      decoder_channels: [256, 128, 64, 32]
+      head_channel_list: [32]
+      num_classes: 2
+    loss: cross_entropy
+    ignore_index: 255
+    freeze_backbone: false
+    freeze_decoder: false
