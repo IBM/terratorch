@@ -1,12 +1,13 @@
 # Copyright contributors to the Terratorch project
 
+import gc
+
 import pytest
 import torch
 
 from terratorch.models.backbones.prithvi_vit import PRETRAINED_BANDS
-from terratorch.tasks import ClassificationTask, PixelwiseRegressionTask, SemanticSegmentationTask, ReconstructionTask
-
-import gc
+from terratorch.models.moe_utils import MoELayer
+from terratorch.tasks import ClassificationTask, PixelwiseRegressionTask, ReconstructionTask, SemanticSegmentationTask
 
 NUM_CHANNELS = 6
 NUM_CLASSES = 2
@@ -27,13 +28,20 @@ def model_factory() -> str:
 def model_input() -> torch.Tensor:
     return torch.ones((1, NUM_CHANNELS, 224, 224))
 
+
+@pytest.fixture(scope="session")
+def model_input_batch() -> torch.Tensor:
+    return torch.ones((4, NUM_CHANNELS, 224, 224))
+
+
 # In tthe following tests, we avoid the "dense" tests by dividing the tasks in
 # two parts.
 
 # First we focus on the combinations between backbones and decoders. As the
 # decoders outputs are roughly the same, we don't need to repeat the tests for
 # losses and lr for all the backbones. After it, we combine multiple decoders
-# and different losses and lr levels using the same backbone. 
+# and different losses and lr levels using the same backbone.
+
 
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v2_300", "prithvi_swin_B"])
 @pytest.mark.parametrize("decoder", ["UNetDecoder"])
@@ -60,6 +68,7 @@ def test_create_segmentation_task_encoder_decoder(backbone, decoder, loss, model
     )
 
     gc.collect()
+
 
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v2_300"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder"])
@@ -113,6 +122,7 @@ def test_create_regression_task_encoder_decoder(backbone, decoder, loss, model_f
     )
 
     gc.collect()
+
 
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v2_300"])
 @pytest.mark.parametrize("decoder", ["UNetDecoder"])
@@ -168,6 +178,163 @@ def test_create_classification_task_encoder_decoder(backbone, decoder, loss, mod
 
     gc.collect()
 
+
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "prithvi_swin_B"])
+@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
+@pytest.mark.parametrize("loss", ["mae"])
+@pytest.mark.parametrize("load_balancing", [False, True])
+@pytest.mark.parametrize("lr_overrides", [{"encoder": 0.01}, None])
+def test_create_regression_task_encoder_decoder_moe_layer(
+    backbone, decoder, loss, model_factory: str, load_balancing, lr_overrides, model_input_batch
+):
+    if decoder == "IdentityDecoder":
+        if backbone == "prithvi_eo_v1_100":
+            input_size = 768
+        else:
+            input_size = 1024
+    else:
+        input_size = 256
+
+    model_args = {
+        "backbone": backbone,
+        "decoder": decoder,
+        "backbone_bands": PRETRAINED_BANDS,
+        "backbone_pretrained": False,
+        "head_kwargs": {
+            "moe_kwargs": {
+                "n_experts": 4,
+                "n_vars": 1,
+                "input_size": input_size,
+                "use_reshaping": True,
+                "is_pixelwise": True,
+                "load_balancing": load_balancing,
+            },
+        },
+    }
+
+    if decoder in ["UperNetDecoder", "UNetDecoder"] and backbone.startswith("prithvi_eo"):
+        model_args["necks"] = VIT_UPERNET_NECK
+    if decoder == "UNetDecoder":
+        model_args["decoder_channels"] = [256, 128, 64, 32]
+
+    task = PixelwiseRegressionTask(
+        model_args,
+        model_factory,
+        loss=loss,
+        lr_overrides=lr_overrides,
+    )
+
+    output = task.model(model_input_batch)
+
+    assert output.output.shape == (4, 224, 224)
+
+    gc.collect()
+
+
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "prithvi_swin_B"])
+@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
+@pytest.mark.parametrize("loss", ["ce"])
+@pytest.mark.parametrize("load_balancing", [False, True])
+@pytest.mark.parametrize("lr_overrides", [{"encoder": 0.01}, None])
+def test_create_segmentation_task_encoder_decoder_moe_layer(
+    backbone, decoder, loss, model_factory: str, load_balancing, lr_overrides, model_input_batch
+):
+    if decoder == "IdentityDecoder":
+        if backbone == "prithvi_eo_v1_100":
+            input_size = 768
+        else:
+            input_size = 1024
+    else:
+        input_size = 256
+
+    model_args = {
+        "backbone": backbone,
+        "decoder": decoder,
+        "backbone_bands": PRETRAINED_BANDS,
+        "backbone_pretrained": False,
+        "num_classes": NUM_CLASSES,
+        "head_kwargs": {
+            "moe_kwargs": {
+                "n_experts": 4,
+                "n_vars": 1,
+                "input_size": input_size,
+                "use_reshaping": True,
+                "is_pixelwise": True,
+                "load_balancing": load_balancing,
+            },
+        },
+    }
+
+    if decoder in ["UperNetDecoder", "UNetDecoder"] and backbone.startswith("prithvi_eo"):
+        model_args["necks"] = VIT_UPERNET_NECK
+    if decoder == "UNetDecoder":
+        model_args["decoder_channels"] = [256, 128, 64, 32]
+
+    task = SemanticSegmentationTask(
+        model_args,
+        model_factory,
+        loss=loss,
+        lr_overrides=lr_overrides,
+    )
+    output = task.model(model_input_batch)
+
+    assert output.output.shape == (4, NUM_CLASSES, 224, 224)
+
+    gc.collect()
+
+
+@pytest.mark.parametrize("backbone", ["prithvi_eo_v1_100", "prithvi_swin_B"])
+@pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder"])
+@pytest.mark.parametrize("loss", ["ce"])
+@pytest.mark.parametrize("load_balancing", [False, True])
+@pytest.mark.parametrize("lr_overrides", [{"encoder": 0.01}, None])
+def test_create_classification_task_encoder_decoder_moe_layer(
+    backbone, decoder, loss, model_factory: str, load_balancing, lr_overrides, model_input_batch
+):
+    if decoder == "IdentityDecoder":
+        if backbone == "prithvi_eo_v1_100":
+            input_size = 768
+        else:
+            input_size = 1024
+    else:
+        input_size = 256
+
+    model_args = {
+        "backbone": backbone,
+        "decoder": decoder,
+        "backbone_bands": PRETRAINED_BANDS,
+        "backbone_pretrained": False,
+        "num_classes": NUM_CLASSES,
+        "head_kwargs": {
+            "moe_kwargs": {
+                "n_experts": 4,
+                "n_vars": 1,
+                "input_size": input_size,
+                "use_reshaping": True,
+                "is_pixelwise": False,
+                "load_balancing": load_balancing,
+            },
+        },
+    }
+
+    if decoder in ["UperNetDecoder", "UNetDecoder"] and backbone.startswith("prithvi_eo"):
+        model_args["necks"] = VIT_UPERNET_NECK
+    if decoder == "UNetDecoder":
+        model_args["decoder_channels"] = [256, 128, 64, 32]
+
+    task = ClassificationTask(
+        model_args,
+        model_factory,
+        loss=loss,
+        lr_overrides=lr_overrides,
+    )
+    output = task.model(model_input_batch)
+
+    assert output.output.shape == (4, NUM_CLASSES)
+
+    gc.collect()
+
+
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v2_300"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder"])
 @pytest.mark.parametrize("loss", ["ce", "bce", "jaccard", "focal"])
@@ -200,9 +367,7 @@ def test_create_classification_task_decoder_to_optim(backbone, decoder, loss, mo
 @pytest.mark.parametrize("decoder", ["FCNDecoder"])
 @pytest.mark.parametrize("vpt_n_tokens", [100, 500])
 @pytest.mark.parametrize("vpt_dropout", [0.1, 0.5])
-def test_create_task_with_vpt(
-    backbone, decoder, vpt_n_tokens, vpt_dropout, model_factory: str, model_input
-):
+def test_create_task_with_vpt(backbone, decoder, vpt_n_tokens, vpt_dropout, model_factory: str, model_input):
     model_args = {
         "backbone": backbone,
         "decoder": decoder,
@@ -221,7 +386,6 @@ def test_create_task_with_vpt(
         model_factory,
         freeze_backbone=True,
     )
-
 
     with torch.no_grad():
         assert task.model(model_input).output.shape == EXPECTED_SEGMENTATION_OUTPUT_SHAPE
