@@ -2380,7 +2380,7 @@ In TerraTorch, single modality data modules such as the <code>GenericNonGeoSegme
 </div>
 <details class="into">
 <summary>List of pre-trained bands</summary>
-<p>The name of the pre-trained bands are <a href="https://github.com/IBM/terratorch/blob/53768e684a50e3f7e37d654f499dcccb4373940b/terratorch/models/backbones/terramind/model/terramind_register.py#L77">here</a> specified:
+<p>The name of the pre-trained bands are <a href="https://github.com/terrastackai/terratorch/blob/53768e684a50e3f7e37d654f499dcccb4373940b/terratorch/models/backbones/terramind/model/terramind_register.py#L77">here</a> specified:
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nt">S2L1C / S2L2A</span><span class="p">:</span>
 </span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">COASTAL_AEROSOL</span>
 </span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">BLUE</span>
@@ -2595,7 +2595,7 @@ If this is the case for you, you cannot use the TiM models.</p>
 </span><span id="__span-27-7"><a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a><span class="p">)</span>
 </span></code></pre></div>
 <p>Use <code>standardize=True</code> to automatically apply correct scaling to the inputs and generations.
-Alternatively, you can find the standardization values from pre-training <a href="https://github.com/IBM/terratorch/blob/53768e684a50e3f7e37d654f499dcccb4373940b/terratorch/models/backbones/terramind/model/terramind_register.py#L130">here</a>.
+Alternatively, you can find the standardization values from pre-training <a href="https://github.com/terrastackai/terratorch/blob/53768e684a50e3f7e37d654f499dcccb4373940b/terratorch/models/backbones/terramind/model/terramind_register.py#L130">here</a>.
 The model requires all pre-trained bands for the inputs.</p>
 <p>Demos are provided in <a href="https://github.com/IBM/terramind/blob/main/notebooks/terramind_generation.ipynb">terramind_generation.ipynb</a> and <a href="https://github.com/IBM/terramind/blob/main/notebooks/terramind_any_to_any_generation.ipynb">any_to_any_generation.ipynb</a>.
 You can use TerraTorch's large-tile-inference to generate images of larger scenes, which is demonstrated in <a href="https://github.com/IBM/terramind/blob/main/notebooks/large_tile_generation.ipynb">large_tile_generation.ipynb</a>.</p>

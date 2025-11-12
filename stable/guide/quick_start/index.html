@@ -2113,8 +2113,8 @@
 we recommend using a conda environment and installing it with <code>conda install -c conda-forge gdal</code>. </p>
 <h3 id="installing-terratorch">Installing TerraTorch<a class="headerlink" href="#installing-terratorch" title="Permanent link">#</a></h3>
 <p>For a stable point-release, use <code>pip install terratorch</code>.
-If you prefer to get the most recent version of the main branch, install the library with <code>pip install git+https://github.com/IBM/terratorch.git</code>.</p>
-<p>To install as a developer (e.g., to extend the library), fork the <a href="https://github.com/IBM/terratorch">repo</a> and clone your repo with <code>git clone https://github.com/&lt;your_username&gt;/terratorch.git</code>. Then run <code>pip install -e .</code>.
+If you prefer to get the most recent version of the main branch, install the library with <code>pip install git+https://github.com/terrastackai/terratorch.git</code>.</p>
+<p>To install as a developer (e.g., to extend the library), fork the <a href="https://github.com/terrastackai/terratorch">repo</a> and clone your repo with <code>git clone https://github.com/&lt;your_username&gt;/terratorch.git</code>. Then run <code>pip install -e .</code>.
 We welcome contributions from the community and provide some <a href="../../about/contributing/">guidelines</a> for you.</p>
 <h2 id="creating-backbones">Creating Backbones<a class="headerlink" href="#creating-backbones" title="Permanent link">#</a></h2>
 <p>You can interact with the library at several levels of abstraction. Each deeper level of abstraction trades off some amount of flexibility for ease of use and configuration.
@@ -2319,7 +2319,7 @@ Passed to a Lightning Trainer, the task executes the training, validation, and t
 <p><strong>Experimental feature</strong>: Users that want to optimize hyperparameters or repeat best experiment might be interested in the plugin <code>terratorch-iterate</code>. For instance, to run TerraTorch Iterate to optimize hyperparameters, one can run: 
 <div class="language-sh highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>terratorch<span class="w"> </span>iterate<span class="w"> </span>--hpo<span class="w"> </span>--config<span class="w"> </span>&lt;path_to_config_file&gt;<span class="w"> </span>
 </span></code></pre></div>
-You can install the package with <code>pip install terratorch-iterate</code> and check the <a href="https://github.com/IBM/terratorch-iterate?tab=readme-ov-file#usage">usage description</a> for more information.</p>
+You can install the package with <code>pip install terratorch-iterate</code> and check the <a href="https://github.com/terrastackai/terratorch-iterate?tab=readme-ov-file#usage">usage description</a> for more information.</p>
 
 
 

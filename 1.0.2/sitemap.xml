@@ -1,131 +1,131 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/architecture/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/architecture/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/backbones/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/backbones/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/changelog/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/changelog/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/contributing/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/contributing/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/data/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/data/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/datamodules/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/datamodules/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/datasets/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/datasets/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/decoders/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/decoders/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/encoder_decoder_factory/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/encoder_decoder_factory/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/extra_model_structures/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/extra_model_structures/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/generic_datamodules/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/generic_datamodules/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/generic_datasets/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/generic_datasets/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/glossary/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/glossary/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/heads/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/heads/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/inference/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/inference/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/license/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/license/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/loss/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/loss/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/meta_models/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/meta_models/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/model_factories/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/model_factories/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/models/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/models/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/necks/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/necks/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/quick_start/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/quick_start/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/registry/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/registry/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/tasks/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/tasks/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/transforms/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/transforms/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/tutorials/adding_custom_modules/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/tutorials/adding_custom_modules/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/tutorials/basic_inference_burn_scars/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/tutorials/basic_inference_burn_scars/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/tutorials/burn_scars_finetuning/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/tutorials/burn_scars_finetuning/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/tutorials/burn_scars_inference_simplified/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/tutorials/burn_scars_inference_simplified/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/tutorials/the_yaml_config/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/tutorials/the_yaml_config/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
     <url>
-         <loc>https://ibm.github.io/terratorch/1.0.2/tutorials/using_datamodule_multitemporalclassificationModule/</loc>
+         <loc>https://terrastackai.github.io/terratorch/1.0.2/tutorials/using_datamodule_multitemporalclassificationModule/</loc>
          <lastmod>2025-05-15</lastmod>
     </url>
 </urlset>
