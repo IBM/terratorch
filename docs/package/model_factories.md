@@ -25,5 +25,8 @@ Other commonly used factories are the `ObjectDetectionModelFactory` for object d
 
 :::terratorch.models.satmae_model_factory.SatMAEModelFactory
 
-[//]: # (::: terratorch.models.model.ModelFactory)
+Base factory: 
+
+::: terratorch.models.model.ModelFactory
+
 [//]: # (:::terratorch.models.prithvi_model_factory.PrithviModelFactory)
