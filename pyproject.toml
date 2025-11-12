@@ -123,12 +123,12 @@ peft = [
 ]
 
 geobenchv2 = [
-  "geobenchv2",
+  "geobenchv2==0.9",
   "mlflow",
 ]
 
 vllm = [
-  "geobenchv2",
+  "geobenchv2==0.9",
   "vllm==0.11.0",
 ]
 
