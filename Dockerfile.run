@@ -6,6 +6,5 @@ RUN echo "Preparing environment for Python $version"
 COPY pyproject.toml .
 COPY terratorch terratorch
 COPY tests tests
-COPY run_install.sh .
 
-
+CMD ["pytest", "-s", "--cov=terratorch", "-v", "--cov-report", "term-missing", "tests"]

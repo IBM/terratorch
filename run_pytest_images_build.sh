@@ -6,6 +6,5 @@ for v in ${PYTHON_VERSIONS[@]};
 do
   echo "Testing for Python $v"
   podman build --build-arg version=$v -f Dockerfile.run -t "pytest_terratorch_$v"
-  podman run -t "pytest_terratorch_$v" bash run_install.sh 
 done
 

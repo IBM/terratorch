@@ -112,11 +112,15 @@ To run the tests inside a container environment, proceed in the following way:
 * Install `podman` in your system.
 * Building the base images:
 ```
-bash run_images_build.sh 
+./run_base_images_build.sh 
+```
+* Building the pytest images:
+```
+./run_pytest_images_build.sh
 ```
 * Running the tests inside each environment:
 ```
-bash run_pytest_container.sh 
+./run_tests_container.sh 
 ```
 
 ## Documentation
