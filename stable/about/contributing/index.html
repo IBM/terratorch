@@ -2480,7 +2480,7 @@ modification be merged to <code>main</code>. In this way, when an user wants to 
 <li>After finishing your modifications, we recommend you to test locally using <code>pytest</code>, for example:
     <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pytest -s -v tests/
 </span></code></pre></div></li>
-<li>To run the tests for all the versions:</li>
+<li>To run the tests for all the versions:<ol>
 <li>install <code>tox</code> (via <code>pip</code> or <code>uv</code>)</li>
 <li>Run <code>tox</code>:
 <div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>tox run
@@ -2488,6 +2488,8 @@ modification be merged to <code>main</code>. In this way, when an user wants to 
 <li>For a specific version:
 <div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>tox run run -e 3.13
 </span></code></pre></div></li>
+</ol>
+</li>
 </ul>
 <p>In case you don't have some Python versions installed, <code>tox</code> will skip them. 
 * If all the tests are passing, you can open a PR to <code>terratorch:main</code> describing what you are adding and why
@@ -2557,7 +2559,7 @@ look on an example of <a href="https://github.com/IBM/terratorch/issues/506">a v
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 12, 2025 16:10:41 UTC">November 12, 2025</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 12, 2025 16:29:33 UTC">November 12, 2025</span>
   </span>
 
     
