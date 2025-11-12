@@ -123,7 +123,7 @@ peft = [
 ]
 
 geobenchv2 = [
-  "geobenchv2@git+https://github.com/The-AI-Alliance/GEO-Bench-2.git@main",
+  "geobenchv2",
   "mlflow",
 ]
 
