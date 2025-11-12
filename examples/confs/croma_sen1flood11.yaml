@@ -1,0 +1,159 @@
+# lightning.pytorch==2.1.1
+seed_everything: 0
+trainer:
+  accelerator: mps
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: 16-mixed
+  logger: true
+  callbacks:
+    - class_path: RichProgressBar
+    - class_path: LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+    - class_path: EarlyStopping
+      init_args:
+        monitor: val/loss
+        patience: 20
+
+  max_epochs: 1
+  check_val_every_n_epoch: 1
+  log_every_n_steps: 1
+  enable_checkpointing: true
+  default_root_dir: training_outputs
+data:
+  class_path: GenericMultiModalDataModule
+  init_args:
+    task: 'segmentation'
+    batch_size: 4
+    num_workers: 0
+    modalities: # optical or SAR 
+      - optical
+      - SAR
+    rgb_modality: optical # If not provided, uses first modality
+    rgb_indices:
+      - 3
+      - 2
+      - 1
+    dataset_bands: 
+      optical: [coast, BLUE, GREEN, RED, RED_EDGE_1, RED_EDGE_2, RED_EDGE_3, NIR, NIR_NARROW, water_vap , SWIR_1, SWIR_2,cloud]
+      SAR: [VV, VH, angle]
+    output_bands: #Specify the bands which are used from the input data.
+      optical: [coast, BLUE, GREEN, RED, RED_EDGE_1, RED_EDGE_2, RED_EDGE_3, NIR, NIR_NARROW, water_vap , SWIR_1, SWIR_2]
+      SAR: [VV, VH]
+    # # Adjust data roots according to your dataset
+    train_data_root:
+      optical: data/flood_events/HandLabeled/S2Hand
+      SAR:  data/flood_events/HandLabeled/S1Hand
+    train_label_data_root: data/flood_events/HandLabeled/LabelHand
+    val_data_root:
+      optical: data/flood_events/HandLabeled/S2Hand
+      SAR:  data/flood_events/HandLabeled/S1Hand
+    val_label_data_root:  data/flood_events/HandLabeled/LabelHand
+    test_data_root:
+      optical: data/flood_events/HandLabeled/S2Hand
+      SAR: data/flood_events/HandLabeled/S1Hand
+    test_label_data_root: data/flood_events/HandLabeled/LabelHand
+    
+    # Adjust split files according to your dataset (or remove if data is split in folders)
+    train_split: data/flood_events/flood_train_data.txt
+    val_split:  data/flood_events/flood_valid_data.txt
+    test_split:  data/flood_events/flood_test_data.txt
+
+    # Adjust file suffixes if required or delete them
+    image_grep:
+      optical: "*_S2Hand.tif"
+      SAR: "*_S1Hand.tif"
+    label_grep: "*_LabelHand.tif"
+
+    allow_substring_file_names: True
+    no_label_replace: -1
+    no_data_replace: -1
+    num_classes: 2
+
+    # TerraMind standardization values (S2 offset of 0, S1 in db scale)
+    # Define standardization values as dicts (no scaling if modality is not included)
+    means:
+      optical:
+        - 1793.243
+        - 1924.863
+        - 2184.553
+        - 2340.936
+        - 2671.402
+        - 3240.082
+        - 3468.412
+        - 3563.244
+        - 3627.704
+        - 3711.071
+        - 3416.714
+        - 2849.625
+      SAR:
+        - -12.577
+        - -20.265
+    stds:
+      optical:
+        - 1160.144
+        - 1201.092
+        - 1219.943
+        - 1397.225
+        - 1400.035
+        - 1373.136
+        - 1429.17
+        - 1485.025
+        - 1447.836
+        - 1652.703
+        - 1471.002
+        - 1365.30
+      SAR:
+        - 5.179
+        - 5.872
+    train_transform:
+      # - class_path: albumentations.D4  # Random flip and rotations
+      - class_path: ToTensorV2
+      # - class_path: albumentations.RandomCrop
+      #   init_args:
+      #     height: 120
+      #     width: 120
+
+model:
+  class_path: terratorch.tasks.SemanticSegmentationTask
+  init_args:
+    model_factory: EncoderDecoderFactory
+    model_args:
+      backbone: CROMA_base
+      backbone_pretrained: True  # Requires env variable HF_TOKEN
+      backbone_img_size: 120
+      backbone_modality: 'both'  # optical, SAR or both
+      decoder: UperNetDecoder
+      decoder_channels: 256
+      necks:
+        - name: ReshapeTokensToImage
+          remove_cls_token: true
+      head_dropout: 0.1
+      num_classes: 2
+    loss: ce  # from: dice, ce, mse etc.
+    ignore_index: -1
+    class_names:
+      - no_water
+      - water
+    freeze_backbone: false
+    freeze_decoder: false
+    tiled_inference_parameters:
+       h_crop: 224
+       h_stride: 192
+       w_crop: 224
+       w_stride: 192
+       average_patches: true
+out_dtype: float32
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 1e-5
+lr_scheduler:
+  class_path: ReduceLROnPlateau
+  init_args:
+    factor: 0.5
+    patience: 5
+    monitor: val/loss
+
