@@ -8,8 +8,10 @@ RUN apt install -y python3-pip bash
 COPY pyproject.toml .
 COPY terratorch terratorch
 COPY tests tests
-COPY run_install.sh .
-#RUN bash run_install.sh 
 
-#RUN pytest -s --cov=terratorch -v --cov-report term-missing tests
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install torch==2.4.0  # or whatever you need
+RUN pip install -e .[wxc,test,geobenchv2]
+
+CMD ["pytest", "-s", "--cov=terratorch", "-v", "--cov-report", "term-missing", "tests"]
 
