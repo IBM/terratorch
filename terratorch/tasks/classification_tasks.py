@@ -1,11 +1,11 @@
-
 import logging
+from functools import partial
+
 import lightning
 import matplotlib.pyplot as plt
 import torch
 from lightning.pytorch.callbacks import Callback
 from segmentation_models_pytorch.losses import FocalLoss, JaccardLoss
-from functools import partial
 from torch import Tensor, nn
 from torchgeo.datasets.utils import unbind_samples
 from torchmetrics import ClasswiseWrapper, MetricCollection
@@ -13,9 +13,10 @@ from torchmetrics.classification import MulticlassAccuracy, MulticlassF1Score, M
 
 from terratorch.models.model import AuxiliaryHead, Model, ModelOutput
 from terratorch.registry.registry import MODEL_FACTORY_REGISTRY
-from terratorch.tasks.loss_handler import LossHandler, CombinedLoss
-from terratorch.tasks.optimizer_factory import optimizer_factory
 from terratorch.tasks.base_task import TerraTorchTask
+from terratorch.tasks.loss_handler import CombinedLoss, LossHandler
+from terratorch.tasks.optimizer_factory import optimizer_factory
+from terratorch.tasks.utils import _instantiate_from_path
 
 logger = logging.getLogger("terratorch")
 
@@ -25,15 +26,24 @@ def to_class_prediction(y: ModelOutput) -> Tensor:
     return y_hat.argmax(dim=1)
 
 
-def init_loss(loss: str, ignore_index: int = None, class_weights: list = None) -> nn.Module:
+def init_loss(
+    loss: str,
+    ignore_index: int = None,
+    custom_loss: bool = False,
+    custom_loss_kwargs: dict = None,
+    class_weights: list = None,
+) -> nn.Module:
+    if custom_loss:
+        assert custom_loss_kwargs, "If you are using a custom loss, the `custom_loss_kwargs` are required."
+        return _instantiate_from_path(loss, **custom_loss_kwargs)
     if loss == "ce":
         return nn.CrossEntropyLoss(ignore_index=ignore_index, weight=class_weights)
     elif loss == "bce":
-        return  nn.BCEWithLogitsLoss()
+        return nn.BCEWithLogitsLoss()
     elif loss == "jaccard":
-        return  JaccardLoss(mode="multiclass")
+        return JaccardLoss(mode="multiclass")
     elif loss == "focal":
-        return  FocalLoss(mode="multiclass", normalized=True)
+        return FocalLoss(mode="multiclass", normalized=True)
     else:
         raise ValueError(f"Loss type '{loss}' is not valid. Only 'ce', 'bce', 'jaccard', or 'focal' supported.")
 
@@ -62,19 +72,19 @@ class ClassificationTask(TerraTorchTask):
         model_args: dict,
         model_factory: str | None = None,
         model: torch.nn.Module | None = None,
-        loss: str | list[str] | dict[str, float] = "ce",
+        loss: str | list[str] | dict[str, float] | torch.nn.Module = "ce",
         aux_heads: list[AuxiliaryHead] | None = None,
         aux_loss: dict[str, float] | None = None,
         class_weights: list[float] | None = None,
         ignore_index: int | None = None,
+        custom_loss: bool = False,
+        custom_loss_kwargs: dict = None,
         lr: float = 0.001,
         # the following are optional so CLI doesnt need to pass them
         optimizer: str | None = None,
         optimizer_hparams: dict | None = None,
         scheduler: str | None = None,
         scheduler_hparams: dict | None = None,
-        #
-        #
         freeze_backbone: bool = False,  # noqa: FBT001, FBT002
         freeze_decoder: bool = False,  # noqa: FBT002, FBT001
         freeze_head: bool = False,  # noqa: FBT002, FBT001
@@ -123,7 +133,7 @@ class ClassificationTask(TerraTorchTask):
             lr_overrides (dict[str, float] | None, optional): Dictionary to override the default lr in specific
                 parameters. The key should be a substring of the parameter names (it will check the substring is
                 contained in the parameter name)and the value should be the new lr. Defaults to None.
-            path_to_record_metrics (str): A path to save the file containing the metrics log. 
+            path_to_record_metrics (str): A path to save the file containing the metrics log.
         """
 
         self.aux_loss = aux_loss
@@ -158,6 +168,8 @@ class ClassificationTask(TerraTorchTask):
         """
         loss = self.hparams["loss"]
         ignore_index = self.hparams["ignore_index"]
+        custom_loss = self.hparams["custom_loss"]
+        custom_loss_kwargs = self.hparams["custom_loss_kwargs"]
 
         class_weights = (
             torch.Tensor(self.hparams["class_weights"]) if self.hparams["class_weights"] is not None else None
@@ -165,25 +177,47 @@ class ClassificationTask(TerraTorchTask):
 
         if isinstance(loss, str):
             # Single loss
-            self.criterion = init_loss(loss, ignore_index=ignore_index, class_weights=class_weights)
+            self.criterion = init_loss(
+                loss,
+                ignore_index=ignore_index,
+                custom_loss=custom_loss,
+                custom_loss_kwargs=custom_loss_kwargs,
+                class_weights=class_weights,
+            )
         elif isinstance(loss, nn.Module):
             # Custom loss
             self.criterion = loss
         elif isinstance(loss, list):
             # List of losses with equal weights
-            losses = {loss: init_loss(loss, ignore_index=ignore_index, class_weights=class_weights)
-                      for loss in loss}
+            losses = {
+                loss: init_loss(
+                    loss,
+                    ignore_index=ignore_index,
+                    custom_loss=custom_loss,
+                    custom_loss_kwargs=custom_loss_kwargs,
+                    class_weights=class_weights,
+                )
+                for loss in loss
+            }
             self.criterion = CombinedLoss(losses=losses)
         elif isinstance(loss, dict):
             # Equal weighting of losses
             loss, weight = list(loss.keys()), list(loss.values())
-            losses = {loss: init_loss(loss, ignore_index=ignore_index, class_weights=class_weights)
-                      for loss in loss}
+            losses = {
+                loss: init_loss(
+                    loss,
+                    ignore_index=ignore_index,
+                    custom_loss=custom_loss,
+                    custom_loss_kwargs=custom_loss_kwargs,
+                    class_weights=class_weights,
+                )
+                for loss in loss
+            }
             self.criterion = CombinedLoss(losses=losses, weight=weight)
         else:
-            raise ValueError(f"The loss type {loss} isn't supported. Provide loss as string, list, or "
-                             f"dict[name, weights].")
-
+            raise ValueError(
+                f"The loss type {loss} isn't supported. Provide loss as string, list, or dict[name, weights]."
+            )
 
     def configure_metrics(self) -> None:
         """Initialize the performance metrics."""
@@ -224,7 +258,7 @@ class ClassificationTask(TerraTorchTask):
                         average=None,
                     ),
                     labels=class_names,
-                    prefix='Class_Accuracy_'
+                    prefix="Class_Accuracy_",
                 ),
                 "Class_F1": ClasswiseWrapper(
                     MulticlassF1Score(
@@ -233,7 +267,7 @@ class ClassificationTask(TerraTorchTask):
                         average=None,
                     ),
                     labels=class_names,
-                    prefix='Class_F1_'
+                    prefix="Class_F1_",
                 ),
             }
         )
@@ -255,7 +289,7 @@ class ClassificationTask(TerraTorchTask):
             dataloader_idx: Index of the current dataloader.
         """
         x = batch["image"]
-        y = batch["label"] 
+        y = batch["label"]
         other_keys = batch.keys() - {"image", "label", "filename"}
         rest = {k: batch[k] for k in other_keys}
         model_output: ModelOutput = self(x, **rest)
@@ -312,7 +346,6 @@ class ClassificationTask(TerraTorchTask):
         self.record_metrics(dataloader_idx, y_hat_hard, y)
 
     def predict_step(self, batch: object, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
-
         """Compute the predicted class probabilities.
 
         Args:
