@@ -64,8 +64,6 @@ from terratorch.tasks import (
 from terratorch.utils import compute_mask_statistics, compute_statistics
 
 logger = logging.getLogger("terratorch")
-# Mute albumentations version info
-logging.getLogger("albumentations.check_version").setLevel(logging.WARNING)
 
 from terratorch.utils import remove_unexpected_prefix
 

@@ -31,7 +31,6 @@ class UNetDecoder(nn.Module):
             msg = "channels should have the same length as embed_dim"
             raise ValueError(msg)
         super().__init__()
-        print(channels)
         self.decoder = UnetDecoder(
             encoder_channels=[embed_dim[0], *embed_dim],
             decoder_channels=channels,
