@@ -1,10 +1,19 @@
 ARG version
-FROM terratorch_python_$version:latest
+FROM python:$version-trixie
 
 RUN echo "Preparing environment for Python $version"
+RUN apt update
+RUN apt install -y python3-pip bash
+
+RUN mkdir workdir
+WORKDIR workdir
 
 COPY pyproject.toml .
+RUN pip install .[wxc,test,geobenchv2]
+
 COPY terratorch terratorch
 COPY tests tests
+COPY examples examples
 
+ENV PYTHONPATH=.
 CMD ["pytest", "-s", "--cov=terratorch", "-v", "--cov-report", "term-missing", "tests"]
