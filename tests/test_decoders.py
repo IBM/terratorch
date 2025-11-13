@@ -44,8 +44,8 @@ def test_unetdecoder():
     assert decoder(image).shape == (
         2,
         32,
-        448,
-        448,
+        224,
+        224,
     )  # it doubles the size of the first input as it assumes it is already downsampled from the original image
 
     gc.collect()
