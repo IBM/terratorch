@@ -4,7 +4,7 @@ import torch
 from segmentation_models_pytorch.base import SegmentationModel
 from torch import nn
 import torchvision.transforms as transforms
-from terratorch.models.heads import ClassificationHead
+from terratorch.models.heads import ScalarHead 
 from terratorch.models.model import AuxiliaryHeadWithDecoderWithoutInstantiatedHead, Model, ModelOutput
 from terratorch.models.utils import pad_images
 import pdb
@@ -36,7 +36,7 @@ class ScalarOutputModel(Model, SegmentationModel):
         """Constructor
 
         Args:
-            task (str): Task to be performed. Must be "classification".
+            task (str): Task to be performed. Must be "classification" or "scalar_regression".
             encoder (nn.Module): Encoder to be used
             decoder (nn.Module): Decoder to be used
             head_kwargs (dict): Arguments to be passed at instantiation of the head.
@@ -109,7 +109,7 @@ class ScalarOutputModel(Model, SegmentationModel):
         features = self.neck(features, image_size=input_size)
 
         decoder_output = self.decoder([f.clone() for f in features])
-        mask = self.head(decoder_output)
+        mask = self.head(decoder_output)  # in case of regression mask --> label
 
         aux_outputs = {}
         for name, decoder in self.aux_heads.items():
@@ -119,10 +119,15 @@ class ScalarOutputModel(Model, SegmentationModel):
         return ModelOutput(output=mask, auxiliary_heads=aux_outputs)
 
     def _get_head(self, task: str, input_embed_dim: int, head_kwargs: dict):
-        if task == "classification":
-            if "num_classes" not in head_kwargs:
-                msg = "num_classes must be defined for classification task"
-                raise Exception(msg)
-            return ClassificationHead(input_embed_dim, **head_kwargs)
-        msg = "Task must be classification."
-        raise Exception(msg)
+        if task not in ["classification", 'scalar_regression']:
+            msg = "Task must be `classification` or `scalar_regression`."
+            raise Exception(msg)
+        
+        if task == "classification" and "num_classes" not in head_kwargs:
+            msg = f"`num_classes` must be defined for classification task."
+            raise Exception(msg)
+            
+        return ScalarHead(input_embed_dim, **head_kwargs)
+        
+       
+            

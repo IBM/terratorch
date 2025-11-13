@@ -66,7 +66,7 @@ class ClassificationTask(TerraTorchTask):
         aux_heads: list[AuxiliaryHead] | None = None,
         aux_loss: dict[str, float] | None = None,
         class_weights: list[float] | None = None,
-        ignore_index: int | None = None,
+        ignore_index: int | None = -100,
         lr: float = 0.001,
         # the following are optional so CLI doesnt need to pass them
         optimizer: str | None = None,
@@ -158,7 +158,7 @@ class ClassificationTask(TerraTorchTask):
         """
         loss = self.hparams["loss"]
         ignore_index = self.hparams["ignore_index"]
-
+    
         class_weights = (
             torch.Tensor(self.hparams["class_weights"]) if self.hparams["class_weights"] is not None else None
         )

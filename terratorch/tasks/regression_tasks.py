@@ -7,12 +7,13 @@ from typing import Any
 import logging
 import lightning
 import matplotlib.pyplot as plt
+from importlib import import_module
 import torch
 import torch.nn.functional as F
 from lightning.pytorch.callbacks import Callback
 from torch import Tensor, nn
 from torchgeo.datasets.utils import unbind_samples
-from torchmetrics import MeanAbsoluteError, MeanSquaredError, MetricCollection, R2Score
+from torchmetrics import MeanAbsoluteError, MeanSquaredError, MetricCollection, R2Score, ClasswiseWrapper
 from torchmetrics.metric import Metric
 from torchmetrics.wrappers.abstract import WrapperMetric
 
@@ -42,6 +43,32 @@ class RootLossWrapper(nn.Module):
         if self.reduction == "mean":
             return loss.mean()
 
+        msg = "Only 'mean' and None reduction supported"
+        raise Exception(msg)
+    
+class WeightedMultivariateLossWrapper(nn.Module):
+    """Wrapper to weight the individual losses of each variable predicted in the multivariate regression scenario."""
+    
+    def __init__(self, loss_function: nn.Module, weights: torch.Tensor, reduction: None | str = "mean") -> None:
+        super().__init__()
+        if weights.ndim != 1:
+            raise ValueError("Expected 1D class weights of shape [num_outputs]")
+        self.loss_function = loss_function
+        self.register_buffer("weights", weights)
+        self.reduction = reduction
+    
+    def forward(self, output: Tensor, target: Tensor,) -> Tensor:
+        loss = self.loss_function(output, target)
+        weights = self.weights.view(1, -1, * ([1] * (loss.ndim - 2))) # [1, num_vars, 1, 1] for pixel-wise (TODO: Pixel-wise multivariate)
+                
+        weighted_loss = weights * loss
+        
+        if self.reduction is None:
+            return weighted_loss # [B, num_vars, H, W] or [B, num_vars]
+        
+        if self.reduction == "mean": 
+            return weighted_loss.sum() / weights.sum()  # weighted scalar mean for backprop
+        
         msg = "Only 'mean' and None reduction supported"
         raise Exception(msg)
 
@@ -80,7 +107,7 @@ class IgnoreIndexLossWrapper(nn.Module):
         raise Exception(msg)
 
 
-class IgnoreIndexMetricWrapper(WrapperMetric):
+class IgnoreIndexMetricWrapper(WrapperMetric): # to be fixed for multiple variable outputs 
     """Wrapper over other metric that will ignore certain values.
 
     This class implements ignore_index by removing values where the target matches the ignored value.
@@ -91,21 +118,28 @@ class IgnoreIndexMetricWrapper(WrapperMetric):
     The wrapper needs to change the inputs on the forward directly, so that it affects the update of the wrapped metric
     """
 
-    def __init__(self, wrapped_metric: Metric, ignore_index: int) -> None:
+    def __init__(self, wrapped_metric: Metric, ignore_index: int, num_outputs: int = 1) -> None:
         super().__init__()
         self.metric = wrapped_metric
         self.ignore_index = ignore_index
+        self.num_outputs = num_outputs # now only for scalar regression - needs to be rethinked for pixel-wise
 
     def update(self, preds: Tensor, target: Tensor) -> None:
-        if self.ignore_index is not None:
-            items_to_take = target != self.ignore_index
-            items_to_take[torch.isnan(target)] = False  # Filter NaN values as well
-            target = target[items_to_take]
-            preds = preds[items_to_take]
-        else:
-            preds = preds.flatten()
-            target = target.flatten()
-        return self.metric.update(preds, target)
+        if self.num_outputs == 1:
+            if self.ignore_index is not None:
+                items_to_take = target != self.ignore_index
+                items_to_take[torch.isnan(target)] = False  # Filter NaN values as well
+                target = target[items_to_take]
+                preds = preds[items_to_take]
+            else:
+                preds = preds.flatten()
+                target = target.flatten()
+            return self.metric.update(preds, target)
+        
+        elif self.num_outputs > 1:
+            if self.ignore_index is not None:
+                return NotImplementedError #TODO: expand to multivariate case both for pixel and scalar regression
+            return self.metric.update(preds, target)
 
     def forward(self, preds: Tensor, target: Tensor, *args, **kwargs) -> Any:
         if self.ignore_index is not None:
@@ -124,20 +158,51 @@ class IgnoreIndexMetricWrapper(WrapperMetric):
     def reset(self) -> None:
         self.metric.reset()
 
+class WeightedMetricWrapper(WrapperMetric):
+    def __init__(self, wrapped_metric: Metric, weights: list[float]) -> None:
+        super().__init__()
+        self.wrapped_metric = wrapped_metric
+        self.weights = torch.Tensor(weights)
+    
+    def update(self, preds: Tensor, target: Tensor) -> None:
+        check_weights_classes(self.weights, preds.shape[1])
+        return self.wrapped_metric.update(preds, target)
+    
+    def compute(self) -> Tensor:
+        values = self.wrapped_metric.compute()
+        weighted_values =  values * self.weights   
+        return weighted_values.sum() / self.weights.sum()    
 
-def init_loss(loss: str, ignore_index: int = None):
-    if loss == "mse":
-        return IgnoreIndexLossWrapper(nn.MSELoss(reduction="none"), ignore_index)
-    elif loss == "mae":
-        return  IgnoreIndexLossWrapper(nn.L1Loss(reduction="none"), ignore_index)
-    elif loss == "rmse":
-        # IMPORTANT! Root is done only after ignore index! Otherwise, the mean taken is incorrect
-        return  RootLossWrapper(IgnoreIndexLossWrapper(nn.MSELoss(reduction="none"), ignore_index), reduction=None)
-    elif loss == "huber":
-        return  IgnoreIndexLossWrapper(nn.HuberLoss(reduction="none"), ignore_index)
-    else:
-        raise ValueError(f"Loss type '{loss}' is not valid. Currently, supports 'mse', 'rmse', 'mae', or 'huber' loss.")
+def check_weights_classes(var_weights: Tensor, num_outputs: int):
+    if len(var_weights) != num_outputs:
+        exception_message = f"Number of weights must correspond to number of variables. Got {len(var_weights)} weights for {num_outputs} variables."
+        raise ValueError(exception_message)
 
+def init_loss(loss: str, ignore_index: int = None, var_weights: list[float] = None, num_outputs: int = 1):
+        if loss == "mse":
+            base_criterion = nn.MSELoss(reduction="none")
+        elif loss == "mae":
+            base_criterion = nn.L1Loss(reduction="none")
+        elif loss == "rmse":
+            base_criterion = nn.MSELoss(reduction="none")     
+        elif loss == "huber":
+            base_criterion = nn.HuberLoss(reduction="none")
+        else:
+            exception_message = f"Loss type '{loss}' is not valid. Currently, supports 'mse', 'rmse', 'mae', and 'huber' loss."
+            raise ValueError(exception_message)
+        
+        if var_weights is not None:
+            check_weights_classes(var_weights, num_outputs)
+            base_criterion = WeightedMultivariateLossWrapper(base_criterion, var_weights, reduction="mean")
+            
+        base_criterion = IgnoreIndexLossWrapper(base_criterion, ignore_index) 
+        
+        if loss == "rmse":
+            # Root after IgnoreIndex
+            base_criterion = RootLossWrapper(base_criterion, reduction=None)
+        
+        # Either weighted mean of the losses or a simple mean
+        return base_criterion
 
 class PixelwiseRegressionTask(TerraTorchTask):
     """Pixelwise Regression Task that accepts models from a range of sources.
@@ -158,9 +223,10 @@ class PixelwiseRegressionTask(TerraTorchTask):
         loss: str | list[str] | dict[str, float] = "mse",
         aux_heads: list[AuxiliaryHead] | None = None,
         aux_loss: dict[str, float] | None = None,
-        class_weights: list[float] | None = None,
+        var_weights: list[float] | None = None,
         ignore_index: int | None = None,
         lr: float = 0.001,
+        # TODO: customize for multivariate regression as well
         # the following are optional so CLI doesnt need to pass them
         optimizer: str | None = None,
         optimizer_hparams: dict | None = None,
@@ -193,7 +259,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
                 and the value is the weight to be applied to that loss.
                 The name of the loss should match the key in the dictionary output by the model's forward
                 method containing that output. Defaults to None.
-            class_weights (list[float] | None, optional): List of class weights to be applied to the loss.
+            var_weights (list[float] | None, optional): List of class weights to be applied to the loss.
                 Defaults to None.
             ignore_index (int | None, optional): Label to ignore in the loss computation. Defaults to None.
             lr (float, optional): Learning rate to be used. Defaults to 0.001.
@@ -435,4 +501,315 @@ class PixelwiseRegressionTask(TerraTorchTask):
             y_hat: Tensor = tiled_inference(model_forward, x, **self.tiled_inference_parameters, **rest)
         else:
             y_hat: Tensor = self(x, **rest).output
+        return y_hat, file_names
+
+
+class ScalarRegressionTask(TerraTorchTask):
+    """Scalar Regression Task that accepts models from a range of sources.
+
+    This class is analog in functionality to RegressionTask defined by torchgeo.
+    However, it has some important differences:
+        - Accepts the specification of a model factory
+        - Logs metrics per class
+        - Does not have any callbacks by default (TorchGeo tasks do early stopping by default)
+        - Allows the setting of optimizers in the constructor
+        - Allows to evaluate on multiple test dataloaders"""
+
+    def __init__(
+        self,
+        model_args: dict,
+        model_factory: str | None = None,
+        model: torch.nn.Module | None = None,
+        loss: str | list[str] | dict[str, float] = "mse",
+        aux_heads: list[AuxiliaryHead] | None = None,
+        aux_loss: dict[str, float] | None = None,
+        var_weights: list[float] | None = None,
+        ignore_index: int | None = None,
+        lr: float = 0.001,
+        num_outputs: int = 1,
+        # the following are optional so CLI doesnt need to pass them
+        optimizer: str | None = None,
+        optimizer_hparams: dict | None = None,
+        scheduler: str | None = None,
+        scheduler_hparams: dict | None = None,
+        #
+        freeze_backbone: bool = False,  # noqa: FBT001, FBT002
+        freeze_decoder: bool = False,  # noqa: FBT001, FBT002
+        plot_on_val: bool | int = False,
+        freeze_head: bool = False,  # noqa: FBT001, FBT002
+        var_names: list[str] | None = None,
+        test_dataloaders_names: list[str] | None = None,
+        lr_overrides: dict[str, float] | None = None,
+        path_to_record_metrics: str = None,
+    ) -> None:
+        """Constructor
+
+        Args:
+            model_args (Dict): Arguments passed to the model factory.
+            model_factory (str, optional): Name of ModelFactory class to be used to instantiate the model.
+                Is ignored when model is provided.
+            model (torch.nn.Module, optional): Custom model.
+            loss (str, optional): Loss to be used. Currently, supports 'mse', 'rmse', 'mae' or 'huber' loss.
+                Defaults to "mse".
+            aux_loss (dict[str, float] | None, optional): Auxiliary loss weights.
+                Should be a dictionary where the key is the name given to the loss
+                and the value is the weight to be applied to that loss.
+                The name of the loss should match the key in the dictionary output by the model's forward
+                method containing that output. Defaults to None.
+            var_weights (list[float] | None, optional): List of variable weights to be applied to the loss.
+                Defaults to None.
+            ignore_index (int | None, optional): Label to ignore in the loss computation. Defaults to None.
+            lr (float, optional): Learning rate to be used. Defaults to 0.001.
+            num_outputs (int): Number of predicted regression variables. Defaults to single regression. 
+            optimizer (str | None, optional): Name of optimizer class from torch.optim to be used.
+                If None, will use Adam. Defaults to None. Overriden by config / cli specification through LightningCLI.
+            optimizer_hparams (dict | None): Parameters to be passed for instantiation of the optimizer.
+                Overriden by config / cli specification through LightningCLI.
+            scheduler (str, optional): Name of Torch scheduler class from torch.optim.lr_scheduler
+                to be used (e.g. ReduceLROnPlateau). Defaults to None.
+                Overriden by config / cli specification through LightningCLI.
+            scheduler_hparams (dict | None): Parameters to be passed for instantiation of the scheduler.
+                Overriden by config / cli specification through LightningCLI.
+            freeze_backbone (bool, optional): Whether to freeze the backbone. Defaults to False.
+            freeze_decoder (bool, optional): Whether to freeze the decoder. Defaults to False.
+            freeze_head (bool, optional): Whether to freeze the segmentation head. Defaults to False.
+            plot_on_val (bool | int, optional): Whether to plot visualizations on validation.
+                If true, log every epoch. Defaults to 10. If int, will plot every plot_on_val epochs.
+            var_names (list[str] | None, optional): List of variable names passed to metrics for better naming. 
+            test_dataloaders_names (list[str] | None, optional): Names used to differentiate metrics when
+                multiple dataloaders are returned by test_dataloader in the datamodule. Defaults to None,
+                which assumes only one test dataloader is used.
+            lr_overrides (dict[str, float] | None, optional): Dictionary to override the default lr in specific
+                parameters. The key should be a substring of the parameter names (it will check the substring is
+                contained in the parameter name)and the value should be the new lr. Defaults to None.
+            path_to_record_metrics (str): A path to save the file containing the metrics log.
+        """
+        self.aux_loss = aux_loss
+        self.aux_heads = aux_heads
+        if num_outputs < 1:
+            raise ValueError("num_outputs can't be less than 1.") 
+        self.num_outputs = num_outputs
+        self.var_weights = (
+            torch.Tensor(var_weights) if var_weights is not None else None
+        ) 
+
+        if model is not None and model_factory is not None:
+            logger.warning("A model_factory and a model was provided. The model_factory is ignored.")
+        if model is None and model_factory is None:
+            raise ValueError("A model_factory or a model (torch.nn.Module) must be provided.")
+
+        if model_factory and model is None:
+            self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
+
+        super().__init__(
+            task="scalar_regression", 
+            path_to_record_metrics=path_to_record_metrics
+            )
+
+        if model:
+            # Custom_model
+            self.model = model
+
+        self.train_loss_handler = LossHandler(self.train_metrics.prefix)
+        self.test_loss_handler: list[LossHandler] = []
+        for metrics in self.test_metrics:
+            self.test_loss_handler.append(LossHandler(metrics.prefix))
+        self.val_loss_handler = LossHandler(self.val_metrics.prefix)
+        self.monitor = f"{self.val_metrics.prefix}loss"
+        self.plot_on_val = int(plot_on_val)
+
+    def configure_losses(self) -> None:
+        """Initialize the loss criterion.
+
+        Raises:
+            ValueError: If *loss* is invalid.
+        """
+        loss = self.hparams["loss"]
+        ignore_index = self.hparams["ignore_index"]
+        
+        if isinstance(loss, str):
+            # custom nn.Module type loss
+            if "." in loss:
+                module_name, class_name = loss.rsplit(".", 1)
+                module = import_module(module_name)
+                loss_cls = getattr(module, class_name)
+                self.criterion = loss_cls()
+            # Single loss
+            else:
+                self.criterion = init_loss(loss, ignore_index=ignore_index) 
+            
+        elif isinstance(loss, nn.Module):
+            # Custom loss
+            self.criterion = loss
+        
+        elif isinstance(loss, list):
+            # List of losses with equal weights
+            losses = {loss: init_loss(loss, ignore_index=ignore_index)
+                      for loss in loss}
+            self.criterion = CombinedLoss(losses=losses)
+        elif isinstance(loss, dict):
+            # Equal weighting of losses
+            loss, weight = list(loss.keys()), list(loss.values())
+            losses = {loss: init_loss(loss, ignore_index=ignore_index)
+                      for loss in loss}
+            self.criterion = CombinedLoss(losses=losses, weight=weight)
+        else:
+            raise ValueError(f"The loss type {loss} isn't supported. Provide loss as string, nn.Module, list, or "
+                             f"dict[name, weights].")
+        
+
+    def configure_metrics(self) -> None:
+        """Initialize the performance metrics."""
+        var_names = self.hparams["var_names"]
+        def instantiate_metrics():
+            metrics = {
+                "RMSE": MeanSquaredError(num_outputs=self.num_outputs, squared=False),
+                "MSE": MeanSquaredError(num_outputs=self.num_outputs, squared=True),
+                "MAE": MeanAbsoluteError(num_outputs=self.num_outputs),
+                "R2_Score": R2Score(multioutput="raw_values"),
+            }
+            
+            if self.num_outputs > 1:
+                per_class_metrics = {name: ClasswiseWrapper(metric, labels=var_names, postfix=" ") for name, metric in metrics.items()}
+                
+                if self.var_weights is not None:
+                    check_weights_classes(self.var_weights, self.num_outputs)
+                    for name, metric in metrics.items():
+                        per_class_metrics[f"{name}_weighted"] =  WeightedMetricWrapper(metric, self.var_weights)
+                                            
+                return per_class_metrics
+
+            return metrics
+
+        def wrap_metrics_with_ignore_index(metrics):
+            return {
+                name: IgnoreIndexMetricWrapper(metric, ignore_index=self.hparams["ignore_index"], num_outputs=self.num_outputs)
+                for name, metric in metrics.items()
+            }
+
+        self.train_metrics = MetricCollection(wrap_metrics_with_ignore_index(instantiate_metrics()), prefix="train/")
+        self.val_metrics = MetricCollection(wrap_metrics_with_ignore_index(instantiate_metrics()), prefix="val/")
+        if self.hparams["test_dataloaders_names"] is not None:
+            self.test_metrics = nn.ModuleList(
+                [
+                    MetricCollection(wrap_metrics_with_ignore_index(instantiate_metrics()), prefix=f"test/{dl_name}/")
+                    for dl_name in self.hparams["test_dataloaders_names"]
+                ]
+            )
+        else:
+            self.test_metrics = nn.ModuleList(
+                [MetricCollection(wrap_metrics_with_ignore_index(instantiate_metrics()), prefix="test/")]
+            )
+
+    def training_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
+        """Compute the train loss and additional metrics.
+
+        Args:
+            batch: The output of your DataLoader.
+            batch_idx: Integer displaying index of this batch.
+            dataloader_idx: Index of the current dataloader.
+        """
+        x = batch["image"]
+        y = batch["label"]
+        other_keys = batch.keys() - {"image", "label", "filename"}
+        rest = {k: batch[k] for k in other_keys}
+        model_output: ModelOutput = self(x, **rest)
+        
+        # loss = {"loss": tensor as weighted mean of the outputs}
+        loss = self.train_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss) 
+        self.train_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
+        y_hat = model_output.output
+        self.train_metrics.update(y_hat, y)
+
+        return loss["loss"] # scalar
+
+    def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
+        """Compute the validation loss and additional metrics.
+
+        Args:
+            batch: The output of your DataLoader.
+            batch_idx: Integer displaying index of this batch.
+            dataloader_idx: Index of the current dataloader.
+        """
+        x = batch["image"]
+        y = batch["label"]
+        other_keys = batch.keys() - {"image", "label", "filename"}
+        rest = {k: batch[k] for k in other_keys}
+        #model_output: ModelOutput = self(x, **rest)
+        model_output = self.handle_full_or_tiled_inference(x, self.tiled_inference_on_validation, **rest)
+
+        loss = self.val_loss_handler.compute_loss(model_output, y, self.criterion, self.aux_loss)
+        self.val_loss_handler.log_loss(self.log, loss_dict=loss, batch_size=y.shape[0])
+        y_hat = model_output.output
+        self.val_metrics.update(y_hat, y)
+
+        if self._do_plot_samples(batch_idx):
+            try:
+                datamodule = self.trainer.datamodule
+                batch["prediction"] = y_hat
+                if isinstance(batch["image"], dict):
+                    rgb_modality = getattr(datamodule, 'rgb_modality', None) or list(batch["image"].keys())[0]
+                    batch["image"] = batch["image"][rgb_modality]
+                for key in ["image", "label", "prediction"]:
+                    batch[key] = batch[key].cpu()
+                sample = unbind_samples(batch)[0]
+                fig = datamodule.val_dataset.plot(sample)
+                if fig:
+                    summary_writer = self.logger.experiment
+                    if hasattr(summary_writer, "add_figure"):
+                        summary_writer.add_figure(f"image/{batch_idx}", fig, global_step=self.global_step)
+                    elif hasattr(summary_writer, "log_figure"):
+                        summary_writer.log_figure(
+                            self.logger.run_id, fig, f"epoch_{self.current_epoch}_{batch_idx}.png"
+                        )
+            except ValueError:
+                pass
+            finally:
+                plt.close()
+
+    def test_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
+        """Compute the test loss and additional metrics.
+
+        Args:
+            batch: The output of your DataLoader.
+            batch_idx: Integer displaying index of this batch.
+            dataloader_idx: Index of the current dataloader.
+        """
+        x = batch["image"]
+        y = batch["label"]
+        other_keys = batch.keys() - {"image", "label", "filename"}
+        rest = {k: batch[k] for k in other_keys}
+
+        model_output = self.handle_full_or_tiled_inference(x, self.tiled_inference_on_testing, **rest)
+
+        if dataloader_idx >= len(self.test_loss_handler):
+            msg = "You are returning more than one test dataloader but not defining enough test_dataloaders_names."
+            raise ValueError(msg)
+        loss = self.test_loss_handler[dataloader_idx].compute_loss(model_output, y, self.criterion, self.aux_loss)
+        self.test_loss_handler[dataloader_idx].log_loss(
+            partial(self.log, add_dataloader_idx=False),  # We don't need the dataloader idx as prefixes are different
+            loss_dict=loss,
+            batch_size=y.shape[0],
+        )
+        y_hat = model_output.output
+        self.test_metrics[dataloader_idx].update(y_hat, y)
+
+        self.record_metrics(dataloader_idx, y_hat, y)
+
+    def predict_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> Tensor:
+        """Compute the predicted variables probabilities.
+
+        Args:
+            batch: The output of your DataLoader.
+            batch_idx: Integer displaying index of this batch.
+            dataloader_idx: Index of the current dataloader.
+
+        Returns:
+            Output predicted probabilities.
+        """
+        x = batch["image"]
+        file_names = batch["filename"] if "filename" in batch else None
+        other_keys = batch.keys() - {"image", "label", "filename"}
+        rest = {k: batch[k] for k in other_keys}
+        y_hat: Tensor = self(x, **rest).output
         return y_hat, file_names
