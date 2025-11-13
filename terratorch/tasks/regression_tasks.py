@@ -7,6 +7,7 @@ from typing import Any
 import logging
 import lightning
 import matplotlib.pyplot as plt
+from importlib import import_module
 import torch
 import torch.nn.functional as F
 from lightning.pytorch.callbacks import Callback
@@ -347,7 +348,7 @@ class PixelwiseRegressionTask(TerraTorchTask):
                       for loss in loss}
             self.criterion = CombinedLoss(losses=losses, weight=weight)
         else:
-            raise ValueError(f"The loss type {loss} isn't supported. Provide loss as string, nn.Module, list, or "
+            raise ValueError(f"The loss type {loss} isn't supported. Provide loss as string, list, or "
                              f"dict[name, weights].")
 
 
@@ -519,7 +520,7 @@ class ScalarRegressionTask(TerraTorchTask):
         model_args: dict,
         model_factory: str | None = None,
         model: torch.nn.Module | None = None,
-        loss: str = "mse",
+        loss: str | list[str] | dict[str, float] = "mse",
         aux_heads: list[AuxiliaryHead] | None = None,
         aux_loss: dict[str, float] | None = None,
         var_weights: list[float] | None = None,
@@ -534,6 +535,7 @@ class ScalarRegressionTask(TerraTorchTask):
         #
         freeze_backbone: bool = False,  # noqa: FBT001, FBT002
         freeze_decoder: bool = False,  # noqa: FBT001, FBT002
+        plot_on_val: bool | int = False,
         freeze_head: bool = False,  # noqa: FBT001, FBT002
         var_names: list[str] | None = None,
         test_dataloaders_names: list[str] | None = None,
@@ -571,6 +573,8 @@ class ScalarRegressionTask(TerraTorchTask):
             freeze_backbone (bool, optional): Whether to freeze the backbone. Defaults to False.
             freeze_decoder (bool, optional): Whether to freeze the decoder. Defaults to False.
             freeze_head (bool, optional): Whether to freeze the segmentation head. Defaults to False.
+            plot_on_val (bool | int, optional): Whether to plot visualizations on validation.
+                If true, log every epoch. Defaults to 10. If int, will plot every plot_on_val epochs.
             var_names (list[str] | None, optional): List of variable names passed to metrics for better naming. 
             test_dataloaders_names (list[str] | None, optional): Names used to differentiate metrics when
                 multiple dataloaders are returned by test_dataloader in the datamodule. Defaults to None,
@@ -612,6 +616,7 @@ class ScalarRegressionTask(TerraTorchTask):
             self.test_loss_handler.append(LossHandler(metrics.prefix))
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
         self.monitor = f"{self.val_metrics.prefix}loss"
+        self.plot_on_val = int(plot_on_val)
 
     def configure_losses(self) -> None:
         """Initialize the loss criterion.
@@ -623,8 +628,15 @@ class ScalarRegressionTask(TerraTorchTask):
         ignore_index = self.hparams["ignore_index"]
         
         if isinstance(loss, str):
+            # custom nn.Module type loss
+            if "." in loss:
+                module_name, class_name = loss.rsplit(".", 1)
+                module = import_module(module_name)
+                loss_cls = getattr(module, class_name)
+                self.criterion = loss_cls()
             # Single loss
-            self.criterion = init_loss(loss, ignore_index=ignore_index) 
+            else:
+                self.criterion = init_loss(loss, ignore_index=ignore_index) 
             
         elif isinstance(loss, nn.Module):
             # Custom loss
