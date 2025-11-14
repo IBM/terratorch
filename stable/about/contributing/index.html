@@ -2218,6 +2218,50 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#general-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        General steps
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-using-tox" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing using tox
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-with-podman-containers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing with podman containers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#other-recommended-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Other recommended practices
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#contributing-with-documentation" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2462,12 +2506,12 @@ automatically execute
 a pipeline with hundreds of unit and integration tests to verify that the package have not broken after the
 modification be merged to <code>main</code>. In this way, when an user wants to modify
 <code>terratorch</code> for adding new features or bufixes, this are the best practices. </p>
+<h2 id="general-steps">General steps<a class="headerlink" href="#general-steps" title="Permanent link">#</a></h2>
 <ul>
-<li>Clone the repository and guarantee the submodules were also intialized:
+<li>Clone the repository, if you were granted with direct writing access:
     <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>    git clone git@github.com:IBM/terratorch.git
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    git submodule init
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    git submodule update
-</span></code></pre></div></li>
+</span></code></pre></div>
+    otherwise, clone it from your personal fork.</li>
 <li>This repository uses <code>pre-commit</code>, a tool which automatically runs basic
     steps before sending modifications to the remote (as linting, for example).
     See how to configure it <a href="https://pre-commit.com/#installation">here</a>. </li>
@@ -2480,7 +2524,10 @@ modification be merged to <code>main</code>. In this way, when an user wants to 
 <li>After finishing your modifications, we recommend you to test locally using <code>pytest</code>, for example:
     <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pytest -s -v tests/
 </span></code></pre></div></li>
-<li>To run the tests for all the versions:<ol>
+</ul>
+<h2 id="testing-using-tox">Testing using <code>tox</code><a class="headerlink" href="#testing-using-tox" title="Permanent link">#</a></h2>
+<ul>
+<li>If you want to run tests for more than one Python version, you can use <code>tox</code>:<ol>
 <li>install <code>tox</code> (via <code>pip</code> or <code>uv</code>)</li>
 <li>Run <code>tox</code>:
     <div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>tox run
@@ -2491,6 +2538,9 @@ modification be merged to <code>main</code>. In this way, when an user wants to 
 <li>In case you don't have some Python versions installed, <code>tox</code> will skip them. </li>
 </ol>
 </li>
+</ul>
+<h2 id="testing-with-podman-containers">Testing with <code>podman</code> containers<a class="headerlink" href="#testing-with-podman-containers" title="Permanent link">#</a></h2>
+<ul>
 <li>
 <p>Alternatively, for the users wanting to run the tests inside a container environment using <code>podman</code>, it is possible to proceed in the following way:</p>
 <ol>
@@ -2505,11 +2555,12 @@ modification be merged to <code>main</code>. In this way, when an user wants to 
    when some major change is done in the source code. </li>
 </ol>
 </li>
-<li>
-<p>If all the tests are passing, you can open a PR to <code>terratorch:main</code> describing what you are adding and why
+</ul>
+<h2 id="other-recommended-practices">Other recommended practices<a class="headerlink" href="#other-recommended-practices" title="Permanent link">#</a></h2>
+<ul>
+<li>If all the tests are passing, you can open a PR to <code>terratorch:main</code> describing what you are adding and why
     that is important to be merged. You
-    do not need to choose a reviewer, since the maintainers will check the new open PR and request review for it by themselves.  </p>
-</li>
+    do not need to choose a reviewer, since the maintainers will check the new open PR and request review for it by themselves.  </li>
 <li>The PR will pass through the tests in GitHub Actions and if the reviewer approve it, it will soon be merged. </li>
 <li>It is recommended to add a label to your PR. For example <code>bug</code>, when it solves some issue or <code>enhancement</code>
     when it adds new features. </li>
@@ -2531,7 +2582,7 @@ modification be merged to <code>main</code>. In this way, when an user wants to 
 </ul>
 <div class="admonition caution">
 <p class="admonition-title">Caution</p>
-<p>The PR will not be merged if the automatic tests are failing and the user which has sent the PR is responsible for fixing it. </p>
+<p>Your PR will not be merged if the automatic tests are failing and the user which has sent the PR is responsible for fixing it. </p>
 </div>
 <h2 id="contributing-with-documentation">Contributing with documentation<a class="headerlink" href="#contributing-with-documentation" title="Permanent link">#</a></h2>
 <p>Documentation is core for any project, however, most part of the time, the developers do not have the time (or
@@ -2575,7 +2626,7 @@ look on an example of <a href="https://github.com/IBM/terratorch/issues/506">a v
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 14, 2025 12:24:58 UTC">November 14, 2025</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 14, 2025 12:42:56 UTC">November 14, 2025</span>
   </span>
 
     
