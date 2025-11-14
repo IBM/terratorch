@@ -42,9 +42,9 @@ User responsibility: It is the sole responsibility of the user to verify that th
 The TerraTorch maintainers do not provide legal advice and are not liable for any misuse of third-party models.
 
 <hr>
-<a href="https://www.youtube.com/watch?v=CB3FKtmuPI8">
+<a href="https://youtu.be/LNKovSef5lU">
   <img src="https://upload.wikimedia.org/wikipedia/commons/4/42/YouTube_icon_%282013-2017%29.png" alt="YouTube" width="20">
-  Watch the latest recording on YouTube: Earth observation foundation models with Prithvi-EO-2.0 and TerraTorch
+  Video: Introduction to TerraTorch
   <img src="https://upload.wikimedia.org/wikipedia/commons/4/42/YouTube_icon_%282013-2017%29.png" alt="YouTube" width="20">
 </a>
 <hr>
