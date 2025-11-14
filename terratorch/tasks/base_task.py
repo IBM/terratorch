@@ -145,16 +145,16 @@ class TerraTorchTask(BaseTask):
         )
 
     def on_train_epoch_end(self) -> None:
-        self.log_dict(self.train_metrics.compute(), sync_dist=True)
+        self.log_dict(self.train_metrics.compute())
         self.train_metrics.reset()
 
     def on_validation_epoch_end(self) -> None:
-        self.log_dict(self.val_metrics.compute(), sync_dist=True)
+        self.log_dict(self.val_metrics.compute())
         self.val_metrics.reset()
 
     def on_test_epoch_end(self) -> None:
         for metrics in self.test_metrics:
-            self.log_dict(metrics.compute(), sync_dist=True)
+            self.log_dict(metrics.compute())
             metrics.reset()
 
     def _do_plot_samples(self, batch_index):
