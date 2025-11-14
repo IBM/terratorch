@@ -98,7 +98,8 @@ test = [
 surya = [
   "numba",
   "hdf5plugin",
-  "h5netcdf"
+  "h5netcdf",
+  "terratorch-surya==0.1.0"
 ]
 
 mmseg = [

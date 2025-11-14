@@ -1,8 +1,8 @@
+import logging
 from collections.abc import Sequence
 from functools import partial
 from typing import Any
 
-import logging
 import lightning
 import matplotlib.pyplot as plt
 import torch
@@ -16,13 +16,14 @@ from torchmetrics.wrappers.abstract import WrapperMetric
 
 from terratorch.models.model import AuxiliaryHead, Model, ModelOutput
 from terratorch.registry.registry import MODEL_FACTORY_REGISTRY
+from terratorch.tasks.base_task import TerraTorchTask
 from terratorch.tasks.loss_handler import LossHandler
 from terratorch.tasks.optimizer_factory import optimizer_factory
 from terratorch.tasks.tiled_inference import TiledInferenceParameters, tiled_inference
-from terratorch.tasks.base_task import TerraTorchTask
+
 
 class InferenceTask(TerraTorchTask):
-    """Pixelwise Regression Task that accepts models from a range of sources.
+    """Pixelwise Inference task for the the heliophysics model Surya.
 
     This class is analog in functionality to PixelwiseRegressionTask defined by torchgeo.
     However, it has some important differences:
@@ -41,7 +42,6 @@ class InferenceTask(TerraTorchTask):
         freeze_decoder: bool = True,
         tiled_inference_parameters: dict | None = None,
     ) -> None:
-
         """Constructor
 
         Args:
@@ -64,8 +64,8 @@ class InferenceTask(TerraTorchTask):
             self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
 
         super().__init__(
-            task="inference", 
-            )
+            task="inference",
+        )
 
         if model:
             # Custom_model
