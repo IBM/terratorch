@@ -372,6 +372,45 @@ class SemanticSegmentationTask(TerraTorchTask):
 
         self.record_metrics(dataloader_idx, y_hat_hard, y)
 
+        if self._do_plot_samples(batch_idx):
+            try:
+                datamodule = self.trainer.datamodule
+                batch["prediction"] = y_hat_hard
+
+                if isinstance(batch["image"], dict):
+                    if hasattr(datamodule, "rgb_modality"):
+                        # Select RGB modality for multimodal inputs
+                        batch["image"] = batch["image"][datamodule.rgb_modality]
+                    else:
+                        # Move modalities to main dict for unbind
+                        for k, v in batch["image"].items():
+                            batch[k] = v
+                        _ = batch.pop("image")
+
+                for key, value in batch.items():
+                    if isinstance(value, torch.Tensor):
+                        batch[key] = value.cpu()
+
+                sample = unbind_samples(batch)[0]
+                fig = datamodule.test_dataset.plot(sample) if hasattr(datamodule.test_dataset, "plot") else datamodule.plot(sample, "test")
+                if fig:
+                    summary_writer = self.logger.experiment
+                    caption = batch.get("filename", [None])[0] or str(batch_idx)
+                    if hasattr(summary_writer, "add_figure"):
+                        summary_writer.add_figure(f"image/test_{caption}", fig)
+                    elif hasattr(summary_writer, "log_figure"):
+                        summary_writer.log_figure(
+                            self.logger.run_id, fig, f"test_{caption}.png"
+                        )
+                    elif hasattr(self.logger, "log_image"):
+                        # Log image to WandB
+                        self.logger.log_image(key="samples", images=[fig],
+                                              caption=[f"test_{caption}"])
+            except ValueError:
+                pass
+            finally:
+                plt.close()
+
     def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         """Compute the validation loss and additional metrics.
         Args:
@@ -397,23 +436,34 @@ class SemanticSegmentationTask(TerraTorchTask):
                 batch["prediction"] = y_hat_hard
 
                 if isinstance(batch["image"], dict):
-                    rgb_modality = getattr(datamodule, "rgb_modality", None) or list(batch["image"].keys())[0]
-                    batch["image"] = batch["image"][rgb_modality]
+                    if hasattr(datamodule, "rgb_modality"):
+                        # Select RGB modality for multimodal inputs
+                        batch["image"] = batch["image"][datamodule.rgb_modality]
+                    else:
+                        # Move modalities to main dict for unbind
+                        for k, v in batch["image"].items():
+                            batch[k] = v
+                        _ = batch.pop("image")
 
-                for key in ["image", "mask", "prediction"]:
-                    batch[key] = batch[key].cpu()
+                for key, value in batch.items():
+                    if isinstance(value, torch.Tensor):
+                        batch[key] = value.cpu()
+
                 sample = unbind_samples(batch)[0]
                 fig = datamodule.val_dataset.plot(sample) if hasattr(datamodule.val_dataset, "plot") else datamodule.plot(sample, "val") 
                 if fig:
                     summary_writer = self.logger.experiment
+                    caption = batch.get("filename", [None])[0] or str(batch_idx)
                     if hasattr(summary_writer, "add_figure"):
-                        summary_writer.add_figure(f"image/{batch_idx}", fig, global_step=self.global_step)
+                        summary_writer.add_figure(f"image/{caption}", fig, global_step=self.global_step)
                     elif hasattr(summary_writer, "log_figure"):
                         summary_writer.log_figure(
                             self.logger.run_id, fig, f"epoch_{self.current_epoch}_{batch_idx}.png"
                         )
-                    else:
-                        plt.savefig("/mnt/geobench/data/geobench_experiments/final_again/test_plots")
+                    elif hasattr(self.logger, "log_image"):
+                        # Log image to WandB
+                        self.logger.log_image(key="samples", images=[fig],
+                            caption=[f"step{self.global_step}_{caption}"])
             except ValueError:
                 pass
             finally:

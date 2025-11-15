@@ -334,7 +334,11 @@ class MultimodalTransforms:
         else:
             # Applies transformations for each modality separate
             for key, value in data.items():
-                data[key] = self.transforms[key](image=value)['image']  # Only works with image modalities
+                if key in self.transforms:
+                    if key in self.non_image_modalities:
+                        raise NotImplementedError("Non image modalities not implemented.")
+                    else:
+                        data[key] = self.transforms[key](image=value)['image']
 
         return data
 
