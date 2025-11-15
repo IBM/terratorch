@@ -392,7 +392,7 @@ class SemanticSegmentationTask(TerraTorchTask):
                         batch[key] = value.cpu()
 
                 sample = unbind_samples(batch)[0]
-                fig = datamodule.val_dataset.plot(sample) if hasattr(datamodule.val_dataset, "plot") else datamodule.plot(sample, "val")
+                fig = datamodule.test_dataset.plot(sample) if hasattr(datamodule.test_dataset, "plot") else datamodule.plot(sample, "test")
                 if fig:
                     summary_writer = self.logger.experiment
                     caption = batch.get("filename", [None])[0] or str(batch_idx)
