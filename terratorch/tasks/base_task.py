@@ -167,7 +167,9 @@ class TerraTorchTask(BaseTask):
             and self.logger
             and not self.current_epoch % self.plot_on_val  # will be True every self.plot_on_val epochs
             and hasattr(self.logger, "experiment")
-            and (hasattr(self.logger.experiment, "add_figure") or hasattr(self.logger.experiment, "log_figure"))
+            and (hasattr(self.logger.experiment, "add_figure") or
+                 hasattr(self.logger.experiment, "log_figure") or
+                 hasattr(self.logger.experiment, "log"))
         )
 
     def record_metrics(self, dataloader_idx, y_hat_hard, y):

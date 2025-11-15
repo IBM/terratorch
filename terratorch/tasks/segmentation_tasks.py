@@ -397,11 +397,19 @@ class SemanticSegmentationTask(TerraTorchTask):
                 batch["prediction"] = y_hat_hard
 
                 if isinstance(batch["image"], dict):
-                    rgb_modality = getattr(datamodule, "rgb_modality", None) or list(batch["image"].keys())[0]
-                    batch["image"] = batch["image"][rgb_modality]
+                    if hasattr(datamodule, "rgb_modality"):
+                        # Select RGB modality for multimodal inputs
+                        batch["image"] = batch["image"][datamodule.rgb_modality]
+                    else:
+                        # Move modalities to main dict for unbind
+                        for k, v in batch["image"].items():
+                            batch[k] = v
+                        _ = batch.pop("image")
 
-                for key in ["image", "mask", "prediction"]:
-                    batch[key] = batch[key].cpu()
+                for key, value in batch.items():
+                    if isinstance(value, torch.Tensor):
+                        batch[key] = value.cpu()
+
                 sample = unbind_samples(batch)[0]
                 fig = datamodule.val_dataset.plot(sample) if hasattr(datamodule.val_dataset, "plot") else datamodule.plot(sample, "val") 
                 if fig:
@@ -412,8 +420,9 @@ class SemanticSegmentationTask(TerraTorchTask):
                         summary_writer.log_figure(
                             self.logger.run_id, fig, f"epoch_{self.current_epoch}_{batch_idx}.png"
                         )
-                    else:
-                        plt.savefig("/mnt/geobench/data/geobench_experiments/final_again/test_plots")
+                    elif hasattr(self.logger, "log_image"):
+                        # Log image to WandB
+                        self.logger.log_image(key="samples", images=[fig], caption=[batch.get("filename", None)[0]])
             except ValueError:
                 pass
             finally:
