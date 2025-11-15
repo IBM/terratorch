@@ -404,7 +404,7 @@ class SemanticSegmentationTask(TerraTorchTask):
                     elif hasattr(self.logger, "log_image"):
                         # Log image to WandB
                         self.logger.log_image(key="samples", images=[fig],
-                                              caption=[batch.get("filename", str(batch_idx))[0]])
+                                              caption=["test_" + batch.get("filename", str(batch_idx))[0]])
             except ValueError:
                 pass
             finally:
