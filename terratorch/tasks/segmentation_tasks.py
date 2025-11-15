@@ -395,16 +395,17 @@ class SemanticSegmentationTask(TerraTorchTask):
                 fig = datamodule.val_dataset.plot(sample) if hasattr(datamodule.val_dataset, "plot") else datamodule.plot(sample, "val")
                 if fig:
                     summary_writer = self.logger.experiment
+                    caption = batch.get("filename", [None])[0] or str(batch_idx)
                     if hasattr(summary_writer, "add_figure"):
-                        summary_writer.add_figure(f"image/{batch_idx}", fig, global_step=self.global_step)
+                        summary_writer.add_figure(f"image/test_{caption}", fig)
                     elif hasattr(summary_writer, "log_figure"):
                         summary_writer.log_figure(
-                            self.logger.run_id, fig, f"epoch_{self.current_epoch}_{batch_idx}.png"
+                            self.logger.run_id, fig, f"test_{caption}.png"
                         )
                     elif hasattr(self.logger, "log_image"):
                         # Log image to WandB
                         self.logger.log_image(key="samples", images=[fig],
-                                              caption=["test_" + batch.get("filename", str(batch_idx))[0]])
+                                              caption=[f"test_{caption}"])
             except ValueError:
                 pass
             finally:
@@ -452,8 +453,9 @@ class SemanticSegmentationTask(TerraTorchTask):
                 fig = datamodule.val_dataset.plot(sample) if hasattr(datamodule.val_dataset, "plot") else datamodule.plot(sample, "val") 
                 if fig:
                     summary_writer = self.logger.experiment
+                    caption = batch.get("filename", [None])[0] or str(batch_idx)
                     if hasattr(summary_writer, "add_figure"):
-                        summary_writer.add_figure(f"image/{batch_idx}", fig, global_step=self.global_step)
+                        summary_writer.add_figure(f"image/{caption}", fig, global_step=self.global_step)
                     elif hasattr(summary_writer, "log_figure"):
                         summary_writer.log_figure(
                             self.logger.run_id, fig, f"epoch_{self.current_epoch}_{batch_idx}.png"
@@ -461,7 +463,7 @@ class SemanticSegmentationTask(TerraTorchTask):
                     elif hasattr(self.logger, "log_image"):
                         # Log image to WandB
                         self.logger.log_image(key="samples", images=[fig],
-                            caption=[f"step{self.global_step}_" + batch.get("filename", str(batch_idx))[0]])
+                            caption=[f"step{self.global_step}_{caption}"])
             except ValueError:
                 pass
             finally:
