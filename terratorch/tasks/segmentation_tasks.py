@@ -372,6 +372,44 @@ class SemanticSegmentationTask(TerraTorchTask):
 
         self.record_metrics(dataloader_idx, y_hat_hard, y)
 
+        if self._do_plot_samples(batch_idx):
+            try:
+                datamodule = self.trainer.datamodule
+                batch["prediction"] = y_hat_hard
+
+                if isinstance(batch["image"], dict):
+                    if hasattr(datamodule, "rgb_modality"):
+                        # Select RGB modality for multimodal inputs
+                        batch["image"] = batch["image"][datamodule.rgb_modality]
+                    else:
+                        # Move modalities to main dict for unbind
+                        for k, v in batch["image"].items():
+                            batch[k] = v
+                        _ = batch.pop("image")
+
+                for key, value in batch.items():
+                    if isinstance(value, torch.Tensor):
+                        batch[key] = value.cpu()
+
+                sample = unbind_samples(batch)[0]
+                fig = datamodule.val_dataset.plot(sample) if hasattr(datamodule.val_dataset, "plot") else datamodule.plot(sample, "val")
+                if fig:
+                    summary_writer = self.logger.experiment
+                    if hasattr(summary_writer, "add_figure"):
+                        summary_writer.add_figure(f"image/{batch_idx}", fig, global_step=self.global_step)
+                    elif hasattr(summary_writer, "log_figure"):
+                        summary_writer.log_figure(
+                            self.logger.run_id, fig, f"epoch_{self.current_epoch}_{batch_idx}.png"
+                        )
+                    elif hasattr(self.logger, "log_image"):
+                        # Log image to WandB
+                        self.logger.log_image(key="samples", images=[fig],
+                                              caption=[batch.get("filename", str(batch_idx))[0]])
+            except ValueError:
+                pass
+            finally:
+                plt.close()
+
     def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         """Compute the validation loss and additional metrics.
         Args:
@@ -422,7 +460,8 @@ class SemanticSegmentationTask(TerraTorchTask):
                         )
                     elif hasattr(self.logger, "log_image"):
                         # Log image to WandB
-                        self.logger.log_image(key="samples", images=[fig], caption=[batch.get("filename", None)[0]])
+                        self.logger.log_image(key="samples", images=[fig],
+                            caption=[f"step{self.global_step}_" + batch.get("filename", str(batch_idx))[0]])
             except ValueError:
                 pass
             finally:
