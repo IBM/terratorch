@@ -42,13 +42,6 @@ from diffusers.models.modeling_utils import ModelMixin
 
 
 def modulate(x, shift, scale):
-    """Apply adaptive LayerNorm style modulation.
-    Accepts scalar (float) or tensor shift/scale; converts scalars to tensors on x.device.
-    """
-    if not torch.is_tensor(shift):
-        shift = torch.tensor(shift, dtype=x.dtype, device=x.device)
-    if not torch.is_tensor(scale):
-        scale = torch.tensor(scale, dtype=x.dtype, device=x.device)
     return x * (1.0 + scale.unsqueeze(1)) + shift.unsqueeze(1)
 
 def pair(t):
@@ -229,15 +222,6 @@ class Block(nn.Module):
     def forward(self, x, temb=None, mask=None, skip_connection=None):
         gate_msa, gate_mlp = self.adaLN_gate(F.silu(temb)).unsqueeze(1).chunk(2, dim=-1) if hasattr(self, 'adaLN_gate') else (1.0, 1.0)
         shift_msa, scale_msa, shift_mlp, scale_mlp = self.adaLN_modulation(F.silu(temb)).chunk(4, dim=-1) if hasattr(self, 'adaLN_modulation') else 4*[0.0]
-        # Handle scalar shift/scale when no temb modulation is present
-        if isinstance(shift_msa, float):
-            B, N, C = x.shape
-            shift_msa = torch.zeros(B, C, device=x.device, dtype=x.dtype)
-            scale_msa = torch.zeros_like(shift_msa)
-            shift_mlp = torch.zeros_like(shift_msa)
-            scale_mlp = torch.zeros_like(shift_msa)
-            gate_msa = 1.0
-            gate_mlp = 1.0
         if self.skip_linear is not None:
             x = self.skip_linear(torch.cat([x, skip_connection], dim=-1))
         x = x + gate_msa * self.drop_path(self.attn(modulate(self.norm1(x), shift_msa, scale_msa), mask))
@@ -272,18 +256,6 @@ class DecoderBlock(nn.Module):
     def forward(self, x, context, temb=None, sa_mask=None, xa_mask=None, skip_connection=None):
         gate_msa, gate_mxa, gate_mlp = self.adaLN_gate(F.silu(temb)).unsqueeze(1).chunk(3, dim=-1) if hasattr(self, 'adaLN_gate') else (1.0, 1.0, 1.0)
         shift_msa, scale_msa, shift_mxa, scale_mxa, shift_mlp, scale_mlp = self.adaLN_modulation(F.silu(temb)).chunk(6, dim=-1) if hasattr(self, 'adaLN_modulation') else 6*[0.0]
-        # Handle scalar modulation values when temb not provided
-        if isinstance(shift_msa, float):
-            B, N, C = x.shape
-            shift_msa = torch.zeros(B, C, device=x.device, dtype=x.dtype)
-            scale_msa = torch.zeros_like(shift_msa)
-            shift_mxa = torch.zeros_like(shift_msa)
-            scale_mxa = torch.zeros_like(shift_msa)
-            shift_mlp = torch.zeros_like(shift_msa)
-            scale_mlp = torch.zeros_like(shift_msa)
-            gate_msa = 1.0
-            gate_mxa = 1.0
-            gate_mlp = 1.0
         if self.skip_linear is not None:
             x = self.skip_linear(torch.cat([x, skip_connection], dim=-1))
         x = x + gate_msa * self.drop_path(self.self_attn(modulate(self.norm1(x), shift_msa, scale_msa), sa_mask))
@@ -627,8 +599,6 @@ class UViT(ModelMixin, ConfigMixin):
         self.out_channels = out_channels
         self.mid_dim = block_out_channels[-1]
         self.res_embedding = res_embedding
-        # Init std used for embedding initialization (MAE style). Missing definition caused AttributeError.
-        self.init_std = 0.02
 
         # input patching
         self.conv_in = nn.Conv2d(
@@ -1106,4 +1076,3 @@ def uvit_l_p4_f16_extraconv(**kwargs):
         mid_qkv_bias=True,
         **kwargs
     )
-

@@ -160,7 +160,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         self.modalities = list(data_root.keys())
         assert "mask" not in self.modalities, "Modality cannot be called 'mask'."
         self.image_modalities = image_modalities or self.modalities
-        self.non_image_modalities = list(set(self.modalities) - set(self.image_modalities))
+        self.non_image_modalities = list(set(self.modalities) - set(image_modalities))
         self.modalities = self.image_modalities + self.non_image_modalities  # Ensure image modalities to be first
 
         # Order by modalities and convert path strings to lists as the code expects a list of paths per modality
@@ -321,7 +321,7 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
         if output_bands is not None:
             self.output_bands = {m: generate_bands_intervals(m_bands) for m, m_bands in output_bands.items()}
             for modality in self.modalities:
-                if modality in self.output_bands and (self.dataset_bands is None or modality not in self.dataset_bands):
+                if modality in self.output_bands and modality not in self.dataset_bands:
                     msg = f"If output bands are provided, dataset_bands must also be provided (modality: {modality})"
                     raise Exception(msg)  # noqa: PLE0101
         else:
@@ -539,7 +539,7 @@ class GenericMultimodalSegmentationDataset(GenericMultimodalDataset):
         dataset_bands: dict[list] | None = None,
         output_bands: dict[list] | None = None,
         class_names: list[str] | None = None,
-        constant_scale: dict[float] | None = None,
+        constant_scale: dict[float] = 1.0,
         transform: A.Compose | None = None,
         no_data_replace: float | None = None,
         no_label_replace: int | None = -1,
@@ -746,7 +746,7 @@ class GenericMultimodalPixelwiseRegressionDataset(GenericMultimodalDataset):
         allow_substring_file_names: bool = False,
         dataset_bands: dict[list] | None = None,
         output_bands: dict[list] | None = None,
-        constant_scale: dict[float] | None = None,
+        constant_scale: dict[float] = 1.0,
         transform: A.Compose | dict | None = None,
         no_data_replace: float | None = None,
         no_label_replace: float | None = None,
@@ -937,7 +937,7 @@ class GenericMultimodalScalarDataset(GenericMultimodalDataset):
         dataset_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         output_bands: list[HLSBands | int | tuple[int, int] | str] | None = None,
         class_names: list[str] | None = None,
-        constant_scale: dict[float] | None = None,
+        constant_scale: dict[float] = 1.0,
         transform: A.Compose | None = None,
         no_data_replace: float | None = None,
         no_label_replace: int | None = None,
