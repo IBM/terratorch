@@ -11,6 +11,7 @@ import terratorch.models.backbones.terramind
 import terratorch.models.backbones.torchgeo_resnet
 import terratorch.models.backbones.torchgeo_swin_satlas
 import terratorch.models.backbones.torchgeo_vit
+import terratorch.models.backbones.mmearth_convnextv2
 from terratorch.models.backbones.unet import UNet
 
 try:
