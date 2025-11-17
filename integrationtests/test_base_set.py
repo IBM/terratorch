@@ -39,6 +39,7 @@ from terratorch.tasks import InferenceTask
         "encoderdecoder_timm_convnext_large-fb-in22k_model_factory",
         "encoderdecoder_timm_convnext_xlarge-fb-in22k_model_factory",
         "terramind_base",
+        "terramind_large"
     ],
 )
 def test_models_fit(model_name):
@@ -324,7 +325,7 @@ def test_current_terratorch_version_buildings_predict(config_name, buildings_ima
 
     gc.collect()
 
-@pytest.mark.parametrize("config_name", [ "terramind_base"])
+@pytest.mark.parametrize("config_name", [ "terramind_base","terramind_large"])
 def test_current_terratorch_version_floods_predict(config_name, floods_image):
     # Models trained with current terratorch version
     config_path = f"/dccstor/terratorch/tmp/{config_name}/lightning_logs/version_0/config_deploy.yaml"
