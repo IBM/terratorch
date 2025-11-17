@@ -28,14 +28,6 @@ from functools import partial
 from torch.amp import autocast
 from einops import rearrange
 
-# xFormers imports
-try:
-    from xformers.ops import memory_efficient_attention, unbind
-    XFORMERS_AVAILABLE = True
-except ImportError:
-    logging.getLogger('terramind').debug("xFormers not available")
-    XFORMERS_AVAILABLE = False
-
 
 def pair(t):
     return t if isinstance(t, tuple) else (t, t)
@@ -44,12 +36,12 @@ def pair(t):
 def build_2d_sincos_posemb(h, w, embed_dim=1024, temperature=10000.):
     """Sine-cosine positional embeddings as used in MoCo-v3
     """
-    grid_w = torch.arange(w, dtype=torch.float32)
-    grid_h = torch.arange(h, dtype=torch.float32)
+    grid_w = torch.arange(w, dtype=torch.float)
+    grid_h = torch.arange(h, dtype=torch.float)
     grid_w, grid_h = torch.meshgrid(grid_w, grid_h, indexing='ij')
     assert embed_dim % 4 == 0, 'Embed dimension must be divisible by 4 for 2D sin-cos position embedding'
     pos_dim = embed_dim // 4
-    omega = torch.arange(pos_dim, dtype=torch.float32) / pos_dim
+    omega = torch.arange(pos_dim, dtype=torch.float) / pos_dim
     omega = 1. / (temperature ** omega)
     out_w = torch.einsum('m,d->md', [grid_w.flatten(), omega])
     out_h = torch.einsum('m,d->md', [grid_h.flatten(), omega])
@@ -184,19 +176,14 @@ class Attention(nn.Module):
         B, N, C = x.shape
         qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads)
 
-        if XFORMERS_AVAILABLE:
-            q, k, v = unbind(qkv, 2) # Each is of shape B x N x num_heads x C // num_heads
-            x = memory_efficient_attention(q, k, v)
-            x = x.reshape([B, N, C])
-        else:
-            qkv = qkv.permute(2, 0, 3, 1, 4)
-            q, k, v = qkv.unbind(0)   # make torchscript happy (cannot use tensor as tuple)
+        qkv = qkv.permute(2, 0, 3, 1, 4)
+        q, k, v = qkv.unbind(0)   # make torchscript happy (cannot use tensor as tuple)
 
-            attn = (q @ k.transpose(-2, -1)) * self.scale
-            attn = attn.softmax(dim=-1)
-            attn = self.attn_drop(attn)
+        attn = (q @ k.transpose(-2, -1)) * self.scale
+        attn = attn.softmax(dim=-1)
+        attn = self.attn_drop(attn)
 
-            x = (attn @ v).transpose(1, 2).reshape(B, N, C)
+        x = (attn @ v).transpose(1, 2).reshape(B, N, C)
 
         x = self.proj(x)
         x = self.proj_drop(x)
@@ -468,7 +455,7 @@ class ViTEncoder(nn.Module):
         """Get number of transformer layers."""
         return len(self.blocks)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, return_intermediates: bool = False) -> torch.Tensor | list[torch.Tensor]:
         """ViT encoder forward pass.
         
         Args:
@@ -481,10 +468,10 @@ class ViTEncoder(nn.Module):
         if x.shape[1] != self.in_channels:
             # Apply one hot encoding for segmentation inputs
             if len(x.shape) == 3:
-                x = F.one_hot(x.to(torch.long), num_classes=self.in_channels).permute(0, 3, 1, 2).to(torch.float32)
+                x = F.one_hot(x.to(torch.long), num_classes=self.in_channels).permute(0, 3, 1, 2).to(torch.float)
             elif len(x.shape) == 4 and x.shape[1] == 1:
                 x = F.one_hot(x.to(torch.long).squeeze(1),
-                              num_classes=self.in_channels).permute(0, 3, 1, 2).to(torch.float32)
+                              num_classes=self.in_channels).permute(0, 3, 1, 2).to(torch.float)
             else:
                 raise ValueError(f'Expect input data with {self.in_channels} classes, found {x.shape}. '
                                  f'Either with class indexes and shape [B, H, W] or one hot encoded [B, C, H, W].')
@@ -506,16 +493,20 @@ class ViTEncoder(nn.Module):
             x = x + x_pos_emb
 
         # Transformer forward pass
-        x = self.blocks(x)
+        out = []
+        for block in self.blocks:
+            x = block(x)
+            out.append(x)
 
         if hasattr(self, 'post_mlp'):
             with autocast('cuda', enabled=False):
                 x = x.float() + self.post_mlp(self.norm_mlp(x.float()))
+            out[-1] = x
 
         # Reshape into 2D grid
-        x = rearrange(x, 'b (nh nw) d -> b d nh nw', nh=N_H, nw=N_W)
+        out = [rearrange(x, 'b (nh nw) d -> b d nh nw', nh=N_H, nw=N_W) for x in out]
 
-        return x
+        return out if return_intermediates else out[-1]
 
 
 class ViTDecoder(nn.Module):

@@ -3,19 +3,18 @@ import warnings
 
 import numpy as np
 import torch
-from torch import nn, Tensor
-import torch
 from timm.models import FeatureInfo
 from timm.models._builder import build_model_with_cfg
 from timm.models._registry import generate_default_cfgs, register_model
+from torch import Tensor, nn
 
-from terratorch.models.backbones.clay_v1.modules import EmbeddingEncoder, Datacuber
-
+from terratorch.models.backbones.clay_v1.modules import Datacuber, EmbeddingEncoder
+from terratorch.registry import TERRATORCH_BACKBONE_REGISTRY
 
 default_cfgs = generate_default_cfgs(
     {
         "clay_v1_base": {
-            "hf_hub_id": "made-with-clay/Clay",
+            "hf_hub_id": "made-with-clay/Clay-legacy",
             "hf_hub_filename": "v1/clay-v1-base.ckpt",
         }
     }
@@ -47,19 +46,17 @@ class Embedder(nn.Module):
         self.datacuber = Datacuber(bands=bands)
 
         # TODO: add support for various clay versions
-        self.clay_encoder = (
-            EmbeddingEncoder(  # Default parameters for the Clay base model
-                img_size=img_size,
-                patch_size=8,
-                dim=768,
-                depth=12,
-                heads=12,
-                dim_head=64,
-                mlp_ratio=4.0,
-                vpt=vpt,
-                vpt_n_tokens=vpt_n_tokens,
-                vpt_dropout=vpt_dropout,
-            )
+        self.clay_encoder = EmbeddingEncoder(  # Default parameters for the Clay base model
+            img_size=img_size,
+            patch_size=8,
+            dim=768,
+            depth=12,
+            heads=12,
+            dim_head=64,
+            mlp_ratio=4.0,
+            vpt=vpt,
+            vpt_n_tokens=vpt_n_tokens,
+            vpt_dropout=vpt_dropout,
         )
 
         # for use in features list.
@@ -86,8 +83,7 @@ class Embedder(nn.Module):
                 if name in state_dict and param.size() == state_dict[name].size():
                     param.data.copy_(state_dict[name])  # Copy the weights
                 else:
-                    print(
-                        f"No matching parameter for {name} with size {param.size()}")
+                    print(f"No matching parameter for {name} with size {param.size()}")
 
         for param in self.clay_encoder.parameters():
             param.requires_grad = False
@@ -129,8 +125,7 @@ class Embedder(nn.Module):
             "waves": torch.randn(3),
             "gsd": torch.randn(1),
         }
-        dummy_datacube = {k: v
-                          for k, v in dummy_datacube.items()}
+        dummy_datacube = {k: v for k, v in dummy_datacube.items()}
         return dummy_datacube
 
     def prepare_features_for_image_model(self, features: list[Tensor]) -> list[Tensor]:
@@ -141,7 +136,7 @@ class Embedder(nn.Module):
             int(np.sqrt(x_no_token.shape[1] // self.num_frames)),
             int(np.sqrt(x_no_token.shape[1] // self.num_frames)),
         )
-        
+
         # return as list for features list compatibility
         return [encoded]
 
@@ -151,11 +146,7 @@ class Embedder(nn.Module):
                 param.requires_grad_(False)
 
 
-def _make_clay(
-    variant: str,
-    pretrained: bool,
-    **kwargs
-):
+def _make_clay(variant: str, pretrained: bool, **kwargs):
     encoder_only = kwargs.pop("features_only", False)
     model = build_model_with_cfg(
         model_cls=Embedder,
@@ -181,8 +172,4 @@ def clay_v1_base(
     pretrained: bool = False,
     **kwargs,
 ) -> Embedder:
-    return _make_clay(
-        "clay_v1_base",
-        pretrained=pretrained,
-        **kwargs
-    )
+    return _make_clay("clay_v1_base", pretrained=pretrained, **kwargs)

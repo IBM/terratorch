@@ -3,9 +3,13 @@ import gc
 import os
 import warnings
 
+import numpy as np
+import pandas as pd
 import pytest
 import timm
 import torch
+import xarray as xr
+from huggingface_hub import hf_hub_download
 
 from terratorch.models.backbones import scalemae, torchgeo_vit
 from terratorch.registry import BACKBONE_REGISTRY, DECODER_REGISTRY
@@ -16,24 +20,19 @@ NUM_FRAMES = 4
 IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS", "false") == "true"
 
 
+def try_import_surya():
+    try:
+        import terratorch_surya
+
+        success = 1
+    except ImportError:
+        success = 0
+    return success
+
+
 @pytest.fixture
 def input_224():
     return torch.ones((1, NUM_CHANNELS, 224, 224))
-
-
-@pytest.fixture
-def input_galileo_s1():
-    return torch.ones((5, 224, 224, 1, 2))
-
-
-@pytest.fixture
-def input_galileo_s2():
-    return torch.ones((5, 224, 224, 1, 13))
-
-
-@pytest.fixture
-def input_galileo_s2_less_bands():
-    return torch.ones((5, 224, 224, 1, 6))
 
 
 @pytest.fixture
@@ -104,42 +103,6 @@ def test_can_create_backbones_from_registry_torchgeo_vit(model_name, input_224):
 def test_vit_models_accept_multitemporal(model_name, input_224_multitemporal):
     backbone = BACKBONE_REGISTRY.build(model_name, pretrained=False, num_frames=NUM_FRAMES)
     backbone(input_224_multitemporal)
-    gc.collect()
-
-
-@pytest.mark.parametrize("do_pool", [False, True])
-@pytest.mark.parametrize("model_name", ["tiny"])
-def test_galileo_encoders_s1(do_pool, model_name, input_galileo_s1):
-    backbone = BACKBONE_REGISTRY.build(f"galileo_{model_name}_encoder", pretrained=False, kind="s1", do_pool=do_pool)
-
-    output = backbone(input_galileo_s1)
-
-    gc.collect()
-
-
-@pytest.mark.parametrize("do_pool", [False, True])
-@pytest.mark.parametrize("model_name", ["base"])
-def test_galileo_encoders_s2(do_pool, model_name, input_galileo_s2):
-    backbone = BACKBONE_REGISTRY.build(f"galileo_{model_name}_encoder", pretrained=False, kind="s2", do_pool=do_pool)
-
-    output = backbone(input_galileo_s2)
-
-    gc.collect()
-
-
-@pytest.mark.parametrize("do_pool", [False, True])
-@pytest.mark.parametrize("model_name", ["nano"])
-def test_galileo_encoders_s2_less_bands(do_pool, model_name, input_galileo_s2_less_bands):
-    backbone = BACKBONE_REGISTRY.build(
-        f"galileo_{model_name}_encoder",
-        pretrained=False,
-        kind="s2",
-        model_bands=["B2", "B3", "B4", "B5", "B6", "B7"],
-        do_pool=do_pool,
-    )
-
-    output = backbone(input_galileo_s2_less_bands)
-
     gc.collect()
 
 
@@ -250,3 +213,44 @@ def test_terramind_tim(model_name):
     output = backbone({"S2L2A": torch.ones((1, 12, 224, 224))}, LULC=torch.ones((1, 1, 224, 224)))
 
     gc.collect()
+
+
+@pytest.mark.skipif(try_import_surya() == 0, reason="The package`terratorch_surya` isn't installed.")
+@pytest.mark.parametrize(
+    "model_name",
+    [
+        "heliofm_backbone_surya",
+        "heliofm_backbone_surya_ar_segmentation",
+        "heliofm_backbone_surya_euv_spectra_prediction",
+        "heliofm_backbone_surya_solar_flare_forecasting",
+        "heliofm_backbone_surya_solar_wind_forecasting",
+    ],
+)
+def test_heliofm(model_name):
+    B = 8
+    C = 6
+    T = 3
+    H = 256
+    W = 256
+
+    backbone = BACKBONE_REGISTRY.build(
+        model_name,
+        img_size=256,
+        in_chans=C,
+        embed_dim=64,
+        num_heads=8,
+        time_embedding={"type": "linear", "n_queries": None, "time_dim": 3},
+        depth=2,
+        n_spectral_blocks=0,
+        dp_rank=2,
+    )
+
+    data = {"ts": torch.rand(B, C, T, H, W), "time_delta_input": torch.rand(B, T)}
+
+    with torch.no_grad():
+        x_hat = backbone(data)
+
+    if model_name == "heliofm_backbone_surya":
+        assert x_hat.shape == (B, C, H, W)
+    else:
+        assert x_hat.shape == (B, 1, H, W)

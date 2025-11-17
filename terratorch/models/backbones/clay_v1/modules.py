@@ -24,6 +24,8 @@ WAVELENGTHS = {
     "nir08": 0.865,
     "swir16": 1.61,
     "swir22": 2.19,
+    "vv": 3.5, #TODO: choose one vv
+    "vh": 4.0, #TODO: choose one vh
     "COASTAL_AEROSOL": 0.44,
     "BLUE": 0.49,
     "GREEN": 0.56,
@@ -569,9 +571,4 @@ class Datacuber(nn.Module):
 
     def _parse_wavelengths(self, bands, channels):
         waves = torch.tensor([WAVELENGTHS[band] if band in WAVELENGTHS.keys() else 0.0 for band in bands])
-        print(waves)
         return waves
-        # if bands is not None and all([_ in WAVELENGTHS for _ in bands]):
-        #     return torch.tensor([WAVELENGTHS[_] for _ in bands])
-        # else:
-        #     return torch.zeros(channels)

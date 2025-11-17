@@ -17,16 +17,22 @@
 
 [![huggingface](https://img.shields.io/badge/Hugging_Face-join-FFD21E?logo=huggingface)](https://huggingface.co/ibm-nasa-geospatial)
 [![pypi](https://badge.fury.io/py/terratorch.svg)](https://pypi.org/project/terratorch)
-[![tests](https://github.com/IBM/terratorch/actions/workflows/test.yaml/badge.svg)](https://github.com/ibm/terratorch/actions/workflows/test.yaml)
-[![MkDocs](https://img.shields.io/badge/MkDocs-526CFE?logo=materialformkdocs&logoColor=fff)](https://ibm.github.io/terratorch/)
-![cov](https://github.com/IBM/terratorch/raw/main/assets/coverage-badge.svg)
+[![tests](https://github.com/terrastackai/terratorch/actions/workflows/test.yaml/badge.svg)](https://github.com/terrastackai/terratorch/actions/workflows/test.yaml)
+[![MkDocs](https://img.shields.io/badge/MkDocs-526CFE?logo=materialformkdocs&logoColor=fff)](https://terrastackai.github.io/terratorch/)
 <!--
-[![PyPI Downloads](https://img.shields.io/pypi/dm/terratorch.svg?label=PyPI%20downloads)](https://pypi.org/project/terratorch/)
+![cov](https://github.com/terrastackai/terratorch/raw/main/assets/coverage-badge.svg)
 -->
+[![PyPI Downloads](https://img.shields.io/pypi/dm/terratorch.svg?label=PyPI%20downloads)](https://pypi.org/project/terratorch/)
+[![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/terratorch.svg?label=Conda%20downloads)](https://anaconda.org/conda-forge/terratorch)
+
+Please, read the contribution guidelines (see `Contribution` below) if you want to contribute to
+TerraTorch.
 
 ## Overview
 TerraTorch is a PyTorch domain library based on [PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/) and the [TorchGeo](https://github.com/microsoft/torchgeo) domain library
 for geospatial data. 
+
+Please also try our HPO/NAS tool: [Iterate](https://github.com/terrastackai/iterate)
 
 ## Disclaimer
 TerraTorch provides tools for fine-tuning and using pretrained models.
@@ -36,9 +42,9 @@ User responsibility: It is the sole responsibility of the user to verify that th
 The TerraTorch maintainers do not provide legal advice and are not liable for any misuse of third-party models.
 
 <hr>
-<a href="https://www.youtube.com/watch?v=CB3FKtmuPI8">
+<a href="https://youtu.be/LNKovSef5lU">
   <img src="https://upload.wikimedia.org/wikipedia/commons/4/42/YouTube_icon_%282013-2017%29.png" alt="YouTube" width="20">
-  Watch the latest recording on YouTube: Earth observation foundation models with Prithvi-EO-2.0 and TerraTorch
+  Video: Introduction to TerraTorch
   <img src="https://upload.wikimedia.org/wikipedia/commons/4/42/YouTube_icon_%282013-2017%29.png" alt="YouTube" width="20">
 </a>
 <hr>
@@ -67,49 +73,75 @@ TerraTorch’s main purpose is to provide a flexible fine-tuning framework for G
     - All GEO-Bench datasets and datamodules
     - All [TorchGeo](https://github.com/microsoft/torchgeo) datasets and datamodules 
 
-## Install
+## Installation
+
 ### Pip
 In order to use the file `pyproject.toml` it is necessary to guarantee `pip>=21.8`. If necessary upgrade `pip` using `python -m pip install --upgrade pip`. 
 
 For a stable point-release, use `pip install terratorch==<version>`.
 
-[comment]: <If you prefer to get the most recent version of the main branch, install the library with `pip install git+https://github.com/IBM/terratorch.git`.>
-To get the most recent version of the main branch, install the library with `pip install git+https://github.com/IBM/terratorch.git`.
+[comment]: <If you prefer to get the most recent version of the main branch, install the library with `pip install git+https://github.com/terrastackai/terratorch.git`.>
+To get the most recent version of the branch `main`, install the library with `pip install git+https://github.com/terrastackai/terratorch.git`.
 
-[comment]: <Another alternative is to install using [pipx](https://github.com/pypa/pipx) via `pipx install terratorch`, which creates an isolated environment and allows the user to run the application as a common CLI tool, with no need of installing dependencies or activating environments.>
+### Conda
+TerraTorch is also available on `conda-forge`, to install from there do `conda install -c conda-forge terratorch`. 
 
-TerraTorch requires gdal to be installed, which can be quite a complex process. If you don't have GDAL set up on your system, we recommend using a conda environment and installing it with `conda install -c conda-forge gdal`.
+### Pipx
+Alternatively, it is possible to install using [pipx](https://github.com/pypa/pipx) via `pipx install terratorch`, which creates an isolated environment and allows the user to run the application as a common CLI tool, with no need of installing dependencies or activating environments.
 
+### Gdal
+TerraTorch requires gdal to be installed, which can be quite a complex process.
+If you don't have GDAL set up on your system, we recommend using a conda
+environment and installing it with `conda install -c conda-forge gdal`. If you
+are installing from `conda-forge` it probably won't be a problem. 
+
+### Install as a developer
 To install as a developer (e.g. to extend the library):
 ```
-git clone https://github.com/IBM/terratorch.git
+git clone https://github.com/terrastackai/terratorch.git
 cd terratorch
 pip install -r requirements_test.txt
 conda install -c conda-forge gdal
 pip install -e .
 ```
-
 To install terratorch with partial (work in development) support for Weather Foundation Models, `pip install -e .[wxc]`, which currently works just for `Python >= 3.11`. 
+
+### Podman
+To run the tests inside a container environment, proceed in the following way:
+
+* Install `podman` in your system.
+* Building the base images:
+```
+./run_base_images_build.sh 
+```
+* Building the pytest images:
+```
+./run_pytest_images_build.sh
+```
+* Running the tests inside each environment:
+```
+./run_tests_container.sh 
+```
 
 ## Documentation
 
-To get started, check out the [quick start guide](https://ibm.github.io/terratorch/quick_start).
+To get started, check out the [quick start guide](https://terrastackai.github.io/terratorch/quick_start).
 
-Developers, check out the [architecture overview](https://ibm.github.io/terratorch/architecture).
+Developers, check out the [architecture overview](https://terrastackai.github.io/terratorch/architecture).
 
 [TerraTorch: The Geospatial Foundation Models Toolkit on arXiv](https://arxiv.org/abs/2503.20563)
 ## Contributing
 
 This project welcomes contributions and suggestions. Ways to contribute or get involved:
 
-- Join our [Slack](https://join.slack.com/t/terratorch/shared_invite/zt-3c6s4j369-acqJQ38vyFB17kJhLVecJA)
-- Create an [Issue](https://github.com/IBM/terratorch/issues) (for bugs or feature requests)
-- Contribute via [PR](https://github.com/IBM/terratorch/pulls)
+- Join our [Discord](https://discord.gg/x8AWY8QQ)
+- Create an [Issue](https://github.com/terrastackai/terratorch/issues) (for bugs or feature requests)
+- Contribute via [PR](https://github.com/terrastackai/terratorch/pulls)
 - Join our [duoweekly](https://romeokienzler.medium.com/the-duoweekly-manifesto-eaa6c1f542c8) community calls taking place [Tuesdays 4:30 PM - 5 PM CEST](https://teams.microsoft.com/l/meetup-join/19%3ameeting_MWJhMThhMTMtMjc3MS00YjAyLWI3NTMtYTI0NDQ3NWY3ZGU2%40thread.v2/0?context=%7b%22Tid%22%3a%22fcf67057-50c9-4ad4-98f3-ffca64add9e9%22%2c%22Oid%22%3a%227f7ab87a-680c-4c93-acc5-fbd7ec80823a%22%7d) and [Thursdays 2:30 PM - 3 PM CEST](https://teams.microsoft.com/l/meetup-join/19%3ameeting_MWJhMThhMTMtMjc3MS00YjAyLWI3NTMtYTI0NDQ3NWY3ZGU2%40thread.v2/0?context=%7b%22Tid%22%3a%22fcf67057-50c9-4ad4-98f3-ffca64add9e9%22%2c%22Oid%22%3a%227f7ab87a-680c-4c93-acc5-fbd7ec80823a%22%7d).
 
-You can find more detailed contribution guidelines [here](https://ibm.github.io/terratorch/stable/contributing/). 
+You can find more detailed contribution guidelines [here](https://terrastackai.github.io/terratorch/stable/contributing/). 
 
-A simple hint for any contributor. If you want to meet the GitHub DCO checks, just do your commits as below:
+If you want to meet the GitHub DCO checks, you **need** to do your commits as below:
 ```
 git commit -s -m <message>
 ```

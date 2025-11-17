@@ -7,21 +7,36 @@ from einops import rearrange
 import albumentations as A
 import kornia.augmentation as K
 from kornia.augmentation._2d.geometric.base import GeometricAugmentationBase2D
+from torch import nn
+from typing import Union, Dict
 
 N_DIMS_FOR_TEMPORAL = 4
 N_DIMS_FLATTENED_TEMPORAL = 3
 
-def kornia_augmentations_to_callable_with_dict(augmentations: list[GeometricAugmentationBase2D] | None = None):
+def kornia_augmentations_to_callable_with_dict(augmentations: list[Union[GeometricAugmentationBase2D, K.VideoSequential]]  | None = None):
     if augmentations is None:
         return lambda x: x
-    augmentations = K.AugmentationSequential(
-                *augmentations,
+    #if first augmentiaion is VideoSequential (multi-temporal), add the rest to video sequence 
+    if isinstance(augmentations[0], K.VideoSequential):
+        augmentations = K.AugmentationSequential(
+            K.VideoSequential(
+                *augmentations[1:],
+                data_format="BCTHW",
+                same_on_frame=True
+                ),
                 data_keys=None,
                 keepdim=True,
             )
+    else:
+        augmentations = K.AugmentationSequential(
+            *augmentations,
+            data_keys=None,
+            keepdim=True,
+            )
     def fn(data):
         return augmentations(data)
-    return augmentations
+    return fn
+
 
 def albumentations_to_callable_with_dict(albumentation: list[BasicTransform] | None = None):
     if albumentation is None:
@@ -301,7 +316,7 @@ class MultimodalTransforms:
         """
         self.transforms = transforms
         self.shared = shared
-        self.non_image_modalities = non_image_modalities
+        self.non_image_modalities = non_image_modalities if non_image_modalities is not None else []
         self.non_image_transform = non_image_transform or default_non_image_transform
 
     def __call__(self, data: dict):
@@ -322,3 +337,17 @@ class MultimodalTransforms:
                 data[key] = self.transforms[key](image=value)['image']  # Only works with image modalities
 
         return data
+
+    
+class AddConstantToLabels(nn.Module):
+    def __init__(self, label_key = 'label', constant=1):
+        super().__init__()
+        self.label_key = label_key
+        self.constant = constant
+
+    def forward(self, sample):
+        # Assumes sample is a dict with a 'label' key
+        # and that sample['label'] is a torch.Tensor
+        sample = sample.copy()  # To avoid modifying the original sample
+        sample[self.label_key] = sample[self.label_key] + self.constant 
+        return sample

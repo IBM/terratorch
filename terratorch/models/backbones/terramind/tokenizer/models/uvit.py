@@ -31,18 +31,14 @@ from diffusers.models.embeddings import (
     TimestepEmbedding,
     Timesteps,
 )
-from diffusers.models.unets.unet_2d_blocks import DownBlock2D, UpBlock2D
+try:
+    from diffusers.models.unets.unet_2d_blocks import DownBlock2D, UpBlock2D
+except:
+    # Fall back for diffusers ~0.20.0
+    from diffusers.models.unet_2d_blocks import DownBlock2D, UpBlock2D
 from diffusers.models.resnet import Downsample2D, Upsample2D
 from diffusers.configuration_utils import ConfigMixin
 from diffusers.models.modeling_utils import ModelMixin
-
-# xFormers imports
-try:
-    from xformers.ops import memory_efficient_attention, unbind
-    XFORMERS_AVAILABLE = True
-except ImportError:
-    logging.getLogger('terramind').debug("xFormers not available")
-    XFORMERS_AVAILABLE = False
 
 
 def modulate(x, shift, scale):
@@ -56,12 +52,12 @@ def build_2d_sincos_posemb(h, w, embed_dim=1024, temperature=10000.):
 
     Returns positional embedding of shape [B, H, W, D]
     """
-    grid_w = torch.arange(w, dtype=torch.float32)
-    grid_h = torch.arange(h, dtype=torch.float32)
+    grid_w = torch.arange(w, dtype=torch.float)
+    grid_h = torch.arange(h, dtype=torch.float)
     grid_w, grid_h = torch.meshgrid(grid_w, grid_h, indexing='ij')
     assert embed_dim % 4 == 0, 'Embed dimension must be divisible by 4 for 2D sin-cos position embedding'
     pos_dim = embed_dim // 4
-    omega = torch.arange(pos_dim, dtype=torch.float32) / pos_dim
+    omega = torch.arange(pos_dim, dtype=torch.float) / pos_dim
     omega = 1. / (temperature ** omega)
     out_w = torch.einsum('m,d->md', [grid_w.flatten(), omega])
     out_h = torch.einsum('m,d->md', [grid_h.flatten(), omega])
@@ -144,31 +140,19 @@ class Attention(nn.Module):
     def forward(self, x, mask=None):
         B, N, C = x.shape
         qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads)
+        qkv = qkv.permute(2, 0, 3, 1, 4)
+        q, k, v = qkv.unbind(0)   # make torchscript happy (cannot use tensor as tuple)
 
-        if XFORMERS_AVAILABLE:
-            q, k, v = unbind(qkv, 2)
+        attn = (q @ k.transpose(-2, -1)) * self.scale
 
-            if mask is not None:
-                # Wherever mask is True it becomes -infinity, otherwise 0
-                mask = mask.to(q.dtype) * -torch.finfo(q.dtype).max
+        if mask is not None:
+            mask = mask.unsqueeze(1)
+            attn = attn.masked_fill(mask, -torch.finfo(attn.dtype).max)
 
-            x = memory_efficient_attention(q, k, v, attn_bias=mask)
-            x = x.reshape([B, N, C])
+        attn = attn.softmax(dim=-1)
+        attn = self.attn_drop(attn)
 
-        else:
-            qkv = qkv.permute(2, 0, 3, 1, 4)
-            q, k, v = qkv.unbind(0)   # make torchscript happy (cannot use tensor as tuple)
-
-            attn = (q @ k.transpose(-2, -1)) * self.scale
-
-            if mask is not None:
-                mask = mask.unsqueeze(1)
-                attn = attn.masked_fill(mask, -torch.finfo(attn.dtype).max)
-
-            attn = attn.softmax(dim=-1)
-            attn = self.attn_drop(attn)
-
-            x = (attn @ v).transpose(1, 2).reshape(B, N, C)
+        x = (attn @ v).transpose(1, 2).reshape(B, N, C)
         
         x = self.proj(x)
         x = self.proj_drop(x)
@@ -197,29 +181,18 @@ class CrossAttention(nn.Module):
         q = self.q(x).reshape(B, N, self.num_heads, C // self.num_heads)
         kv = self.kv(context).reshape(B, M, 2, self.num_heads, C // self.num_heads)
 
-        if XFORMERS_AVAILABLE:
-            k, v = unbind(kv, 2)
+        q = q.permute(0, 2, 1, 3)
+        kv = kv.permute(2, 0, 3, 1, 4)
+        k, v = kv[0], kv[1]
 
-            if mask is not None:
-                # Wherever mask is True it becomes -infinity, otherwise 0
-                mask = mask.to(q.dtype) * -torch.finfo(q.dtype).max
+        attn = (q @ k.transpose(-2, -1)) * self.scale
+        if mask is not None:
+            mask = rearrange(mask, "b n m -> b 1 n m")
+            attn = attn.masked_fill(mask, -torch.finfo(attn.dtype).max)
+        attn = attn.softmax(dim=-1)
+        attn = self.attn_drop(attn)
 
-            x = memory_efficient_attention(q, k, v, attn_bias=mask)
-            x = x.reshape([B, N, C])
-
-        else:
-            q = q.permute(0, 2, 1, 3)
-            kv = kv.permute(2, 0, 3, 1, 4)
-            k, v = kv[0], kv[1]
-
-            attn = (q @ k.transpose(-2, -1)) * self.scale
-            if mask is not None:
-                mask = rearrange(mask, "b n m -> b 1 n m")
-                attn = attn.masked_fill(mask, -torch.finfo(attn.dtype).max)
-            attn = attn.softmax(dim=-1)
-            attn = self.attn_drop(attn)
-
-            x = (attn @ v).transpose(1, 2).reshape(B, N, -1)
+        x = (attn @ v).transpose(1, 2).reshape(B, N, -1)
 
         x = self.proj(x)
         x = self.proj_drop(x)
@@ -896,9 +869,9 @@ class UViT(ModelMixin, ConfigMixin):
         if not torch.is_tensor(timesteps):
             # This requires sync between CPU and GPU. So try to pass timesteps as tensors if you can
             if isinstance(timestep, float):
-                dtype = torch.float32 if is_mps else torch.float64
+                dtype = torch.float if is_mps else torch.float64
             else:
-                dtype = torch.int32 if is_mps else torch.int64
+                dtype = torch.int if is_mps else torch.int64
             timesteps = torch.tensor([timesteps], dtype=dtype, device=sample.device)
         elif len(timesteps.shape) == 0:
             timesteps = timesteps[None].to(sample.device)
@@ -919,7 +892,7 @@ class UViT(ModelMixin, ConfigMixin):
         if orig_res is not None and self.res_embedding:
             if not torch.is_tensor(orig_res):
                 h_orig, w_orig = orig_res
-                dtype = torch.int32 if is_mps else torch.int64
+                dtype = torch.int if is_mps else torch.int64
                 h_orig = torch.tensor([h_orig], dtype=dtype, device=sample.device).expand(sample.shape[0])
                 w_orig = torch.tensor([w_orig], dtype=dtype, device=sample.device).expand(sample.shape[0])
             else:

@@ -8,6 +8,15 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 
+# Special Exception to handle cases in which the model is missing from the
+# registries
+class InvalidModelError(Exception):
+    def __init__(self, message, model_name=None):
+        if not message:
+            message = f"InvalidModelError: The model {model_name} isn't in the register"
+        super().__init__(message)
+
+
 def compute_statistics(dataloader: DataLoader) -> dict[str, list[float]]:
     n_bands = dataloader.dataset[0]["image"].shape[0]
     n_data = torch.zeros([n_bands], dtype=torch.int64)
@@ -18,15 +27,15 @@ def compute_statistics(dataloader: DataLoader) -> dict[str, list[float]]:
         imgs: torch.Tensor = batch["image"]
         # switch batch and band dimensions and flatten
         samples = imgs.transpose(0, 1).reshape(n_bands, -1).double()
-        sum_data += samples.sum(dim=1)
-        n_data += samples.shape[1]
+        sum_data += samples.nansum(dim=1)
+        n_data += samples.shape[1] - samples.isnan().sum(dim=1)
     mean = sum_data / n_data
 
     sum_squared = torch.zeros(n_bands, dtype=torch.float64)
     for batch in tqdm(dataloader, desc="Compute variance"):
         imgs = batch["image"]
         samples = imgs.transpose(0, 1).reshape(n_bands, -1).double()
-        sum_squared += ((samples - mean.unsqueeze(1)) ** 2).sum(dim=1)
+        sum_squared += ((samples - mean.unsqueeze(1)) ** 2).nansum(dim=1)
 
     variance = sum_squared / n_data
     std = torch.sqrt(variance)

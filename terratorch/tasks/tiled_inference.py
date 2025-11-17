@@ -5,14 +5,12 @@ e.g. cropping out areas around model prediction to reduce artifacts
 It additionally rebatches after the fold operation to gain speed up.
 """
 
+import torch
+import tqdm
 import math
 import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
-
-import torch
-import tqdm
-
 from terratorch.models.utils import pad_images
 
 
@@ -129,7 +127,7 @@ def get_input_chips(
             InferenceInput(
                 b,
                 (slice(i + delta, i + h_crop - delta), slice(w_img - w_crop + delta, w_img - delta))
-                if padding
+                if padding 
                 else (slice(i, i + h_crop), slice(w_img - w_crop, w_img)),
                 patch[b],
                 border_blend_mask,
@@ -144,8 +142,8 @@ def get_input_chips(
         coordinates_and_inputs += [
             InferenceInput(
                 b,
-                (slice(h_img - h_crop + delta, h_img - delta), slice(i + delta, i + w_crop - delta))
-                if padding
+                (slice(h_img - h_crop + delta, h_img - delta), slice(i + delta, i + w_crop - delta)) 
+                if padding 
                 else (slice(h_img - h_crop, h_img), slice(i, i + w_crop)),
                 patch[b],
                 border_blend_mask,
@@ -159,8 +157,8 @@ def get_input_chips(
     coordinates_and_inputs += [
         InferenceInput(
             b,
-            (slice(h_img - h_crop + delta, h_img - delta), slice(w_img - w_crop + delta, w_img - delta))
-            if padding
+            (slice(h_img - h_crop + delta, h_img - delta), slice(w_img - w_crop + delta, w_img - delta)) 
+            if padding 
             else (slice(h_img - h_crop, h_img), slice(w_img - w_crop, w_img)),
             patch[b],
             border_blend_mask,
@@ -178,7 +176,7 @@ def get_input_chips(
                     InferenceInput(
                         b,
                         (slice(row + delta, row + h_crop - delta), slice(col + delta, col + w_crop - delta))
-                        if padding
+                        if padding 
                         else (slice(row, row + h_crop), slice(col, col + w_crop)),
                         patch[b],
                         border_blend_mask,
@@ -275,7 +273,7 @@ def tiled_inference(
         if len(set(img_shapes)) != 1:
             raise ValueError(
                 f"Tensors in input dict must have the same height and width for tiled inference, "
-                f"found {dict(zip(modalities, img_shapes, strict=False))}"
+                f"found {dict(zip(modalities, img_shapes))}"
             )
         t_dims = [len(t.shape) for t in tensors]
         if len(set(t_dims)) != 1:
@@ -286,14 +284,26 @@ def tiled_inference(
 
         # Tiled inference is implemented for single tensors.
         # We concatenate all tensors and reshape them before the model forward
-        channel_length = [t.shape[-3] for t in tensors]
-        channel_start = torch.tensor([0] + channel_length).cumsum(0)
-        input_batch = torch.concat(tensors, dim=-3)
+        t_dims = t_dims[0]
+        if t_dims == 4: # B, C, H, W
+            channel_length = [t.shape[-3] for t in tensors]
+            channel_start = torch.tensor([0] + channel_length).cumsum(0)
+            input_batch = torch.concat(tensors, dim=-3)
+        elif t_dims == 5:# B, C, T, H, W
+            channel_length = [t.shape[-4] for t in tensors]
+            channel_start = torch.tensor([0] + channel_length).cumsum(0)
+            input_batch = torch.concat(tensors, dim=-4)
+        else:
+            raise ValueError(f"Tensors must have 4 or 5 dimensions")
+
 
         def tensor_reshape(t):
             # Convert tensor back to dict of tensors
-            t = {m: t[..., s : s + l, :, :] for m, s, l in zip(modalities, channel_start, channel_length, strict=False)}
-            return t
+            if t_dims == 4: # B, C, H, W
+                out = {m: t[..., s:s+l, :, :] for m, s, l in zip(modalities, channel_start, channel_length)}
+            elif t_dims == 5:# B, C, T, H, W
+                out = {m: t[..., s:s+l, :, :, :] for m, s, l in zip(modalities, channel_start, channel_length)}
+            return out
 
     elif isinstance(input_batch, torch.Tensor):
         # Dummy function if input is a tensor

@@ -80,7 +80,7 @@ def betas_for_alpha_bar(num_diffusion_timesteps: int, max_beta: float = 0.999) -
         t1 = i / num_diffusion_timesteps
         t2 = (i + 1) / num_diffusion_timesteps
         betas.append(min(1 - alpha_bar(t2) / alpha_bar(t1), max_beta))
-    return torch.tensor(betas, dtype=torch.float32)
+    return torch.tensor(betas, dtype=torch.float)
 
 
 def scaled_cosine_alphas(num_diffusion_timesteps: int, noise_shift: float = 1.0) -> torch.Tensor:

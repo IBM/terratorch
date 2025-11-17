@@ -32,13 +32,9 @@ class Neck(ABC, nn.Module):
     def forward(self, channel_list: list[torch.Tensor], **kwargs) -> list[torch.Tensor]: ...
 
 
-class NeckSequential(nn.Module):
-    def __init__(self, necks: list[Neck]):
-        super().__init__()
-        self.layers = nn.ModuleList(necks)
-
+class NeckSequential(nn.Sequential):
     def forward(self, x, **kwargs):
-        for layer in self.layers:
+        for layer in self:
             try:
                 x = layer(x, **kwargs)
             except TypeError:
@@ -64,6 +60,47 @@ class SelectIndices(Neck):
 
     def process_channel_list(self, channel_list: list[int]) -> list[int]:
         channel_list = [channel_list[i] for i in self.indices]
+        return channel_list
+
+
+@TERRATORCH_NECK_REGISTRY.register
+class AggregateTokens(Neck):
+    def __init__(self, channel_list: list[int], pooling: str | int = "mean", index: int  = -1):
+        """Aggregate tokens/patch embeddings to a single embedding. Mainly used for classification models.
+
+        Args:
+            pooling (str, int): Pooling method. Options: 'mean', 'max', 'min', 'CLS', or token index (int).
+            index (int): Select the layer index if mulitple outputs are provided. Defaults to -1.
+        """
+        super().__init__(channel_list)
+        self.pooling = pooling
+        self.index = index
+        self.latent_dim = channel_list[index]
+
+    def forward(self, features: list[torch.Tensor], **kwargs) -> list[torch.Tensor]:
+        features = features[self.index] if len(features) > 1 else features[0]
+
+        if features.dim() != 3:
+            # Assuming token grid, flattening token dimension
+            B  = features.shape[0]
+            features = features.reshape(B, -1, self.latent_dim)
+
+        if isinstance(self.pooling, int):
+            # Select token index
+            return [features[..., pooling, :]]
+        elif self.pooling == "CLS":
+            # Assuming CLS token is on first position
+            return [features[..., 0, :]]
+        elif self.pooling == "mean":
+            return [features.mean(dim=1)]
+        elif self.pooling == "max":
+            return [features.max(dim=1)[0]]
+        elif self.pooling == "min":
+            return [features.min(dim=1)[0]]
+        else:
+            raise ValueError(f"Pooling method {self.pooling} not recognized.")
+
+    def process_channel_list(self, channel_list: list[int]) -> list[int]:
         return channel_list
 
 

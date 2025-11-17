@@ -1,12 +1,12 @@
 # Copyright contributors to the Terratorch project
 
+import gc
+
 import pytest
 import torch
 
 from terratorch.models.backbones.prithvi_vit import PRETRAINED_BANDS
-from terratorch.tasks import ClassificationTask, PixelwiseRegressionTask, SemanticSegmentationTask, ReconstructionTask
-
-import gc
+from terratorch.tasks import ClassificationTask, PixelwiseRegressionTask, ReconstructionTask, SemanticSegmentationTask
 
 NUM_CHANNELS = 6
 NUM_CLASSES = 2
@@ -27,13 +27,15 @@ def model_factory() -> str:
 def model_input() -> torch.Tensor:
     return torch.ones((1, NUM_CHANNELS, 224, 224))
 
+
 # In tthe following tests, we avoid the "dense" tests by dividing the tasks in
 # two parts.
 
 # First we focus on the combinations between backbones and decoders. As the
 # decoders outputs are roughly the same, we don't need to repeat the tests for
 # losses and lr for all the backbones. After it, we combine multiple decoders
-# and different losses and lr levels using the same backbone. 
+# and different losses and lr levels using the same backbone.
+
 
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v2_300", "prithvi_swin_B"])
 @pytest.mark.parametrize("decoder", ["UNetDecoder"])
@@ -60,6 +62,7 @@ def test_create_segmentation_task_encoder_decoder(backbone, decoder, loss, model
     )
 
     gc.collect()
+
 
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v2_300"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder"])
@@ -113,6 +116,7 @@ def test_create_regression_task_encoder_decoder(backbone, decoder, loss, model_f
     )
 
     gc.collect()
+
 
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v2_300"])
 @pytest.mark.parametrize("decoder", ["UNetDecoder"])
@@ -168,6 +172,7 @@ def test_create_classification_task_encoder_decoder(backbone, decoder, loss, mod
 
     gc.collect()
 
+
 @pytest.mark.parametrize("backbone", ["prithvi_eo_v2_300"])
 @pytest.mark.parametrize("decoder", ["FCNDecoder", "UperNetDecoder", "IdentityDecoder", "UNetDecoder"])
 @pytest.mark.parametrize("loss", ["ce", "bce", "jaccard", "focal"])
@@ -200,14 +205,12 @@ def test_create_classification_task_decoder_to_optim(backbone, decoder, loss, mo
 @pytest.mark.parametrize("decoder", ["FCNDecoder"])
 @pytest.mark.parametrize("vpt_n_tokens", [100, 500])
 @pytest.mark.parametrize("vpt_dropout", [0.1, 0.5])
-def test_create_task_with_vpt(
-    backbone, decoder, vpt_n_tokens, vpt_dropout, model_factory: str, model_input
-):
+def test_create_task_with_vpt(backbone, decoder, vpt_n_tokens, vpt_dropout, model_factory: str, model_input):
     model_args = {
         "backbone": backbone,
         "decoder": decoder,
         "backbone_bands": PRETRAINED_BANDS,
-        "backbone_pretrained": True,
+        "backbone_pretrained": False,
         "backbone_vpt": True,
         "backbone_vpt_n_tokens": vpt_n_tokens,
         "backbone_vpt_dropout": vpt_dropout,
@@ -221,7 +224,6 @@ def test_create_task_with_vpt(
         model_factory,
         freeze_backbone=True,
     )
-
 
     with torch.no_grad():
         assert task.model(model_input).output.shape == EXPECTED_SEGMENTATION_OUTPUT_SHAPE

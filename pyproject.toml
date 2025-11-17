@@ -7,8 +7,8 @@ include = ["terratorch*"]
 
 [project]
 name = "terratorch"
-version = "1.0.2"
-description = "TerraTorch - The geospatial foundatoin model fine-tuning toolkit"
+version = "v1.1.1"
+description = "TerraTorch - The geospatial foundation model fine-tuning toolkit"
 license = { "text" = "Apache License, Version 2.0" }
 readme = "README.md"
 requires-python = ">=3.10"
@@ -51,20 +51,24 @@ dependencies = [
   "lightly",
   "jsonargparse<=4.35.0",
   "h5py",
-  "mlflow",
   "lightning",
-  "segmentation-models-pytorch<=0.4",
+  "segmentation-models-pytorch==0.5.0",
   "jsonargparse",
-  "pytest",
-  "torchgeo",
+  "torchgeo>=0.7.0,<0.7.2",
   "einops",
   "timm>=1.0.15",
   "pycocotools",
   "huggingface_hub",
   "tifffile",
   "python-box",
+  "tqdm",
+  "wandb",
+  "tensorboard",
 ]
 
+
+[project.entry-points."vllm.io_processor_plugins"]
+terratorch_segmentation = "terratorch.vllm.plugins.segmentation:register_segmentation_plugin"
 
 [project.optional-dependencies]
 dev = [
@@ -81,9 +85,21 @@ test = [
   "pytest-coverage",
   "coverage-badge",
   "peft>=0.15.0",
-  "diffusers>=0.30.0",
+  "diffusers<=0.34.0",
+  "tokenizers",
   "dask",
   "wandb",
+  "pytest-sugar",
+  "numba",
+  "hdf5plugin",
+  "h5netcdf",
+]
+
+surya = [
+  "numba",
+  "hdf5plugin",
+  "h5netcdf",
+  "terratorch-surya==0.1.0"
 ]
 
 mmseg = [
@@ -107,10 +123,25 @@ peft = [
   "peft>=0.15.0"
 ]
 
+geobenchv2 = [
+  "geobenchv2==0.9",
+  "mlflow",
+]
+
+vllm = [
+  "geobenchv2==0.9",
+  "vllm==0.11.0",
+]
+
+vllm_test = [
+  "pillow",
+  "imagehash",
+]
+
 [project.urls]
-Documentation = "https://ibm.github.io/terratorch/"
-Issues = "https://github.com/IBM/terratorch/issues"
-Source = "https://github.com/IBM/terratorch"
+Documentation = "https://terrastackai.github.io/terratorch/"
+Issues = "https://github.com/terrastackai/terratorch/issues"
+Source = "https://github.com/terrastackai/terratorch"
 
 [project.scripts]
 terratorch = "terratorch.__main__:main"
