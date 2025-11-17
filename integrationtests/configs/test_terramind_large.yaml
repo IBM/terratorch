@@ -105,9 +105,9 @@ trainer:
       S1GRD: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S1GRDHand
       
     test_label_data_root: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/LabelHand
-    train_split: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/split_files/flood_train_data.txt
-    test_split: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/split_files/flood_test_data.txt
-    val_split: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/split_files/flood_valid_data.txt
+    train_split: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/splits/flood_train_data.txt
+    test_split: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/splits/flood_test_data.txt
+    val_split: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/splits/flood_valid_data.txt
 
     label_grep: "*_LabelHand.tif"
     num_classes: 2
