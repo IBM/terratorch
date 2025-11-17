@@ -86,7 +86,7 @@ class MultimodalNormalize(Callable):
         for m in self.means.keys():
             if m in batch:
                 image = batch[m]
-            elif m in batch["image"]:
+            elif "image" in batch and m in batch["image"]:
                 image = batch["image"][m]
             else:
                 continue
