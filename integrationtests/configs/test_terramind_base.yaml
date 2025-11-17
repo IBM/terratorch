@@ -1,0 +1,218 @@
+data:
+  class_path: terratorch.datamodules.GenericMultiModalDataModule
+  init_args:
+    allow_substring_file_names: true
+    batch_size: 2
+    channel_position: -3
+    check_stackability: true
+    concat_bands: false
+    data_with_sample_dim: false
+    dataset_bands:
+      S1GRD:
+      - 0
+      - 1
+      S2L1C:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+    drop_last: true
+    expand_temporal_dimension: false
+    image_grep:
+      S1GRD: '*_S1Hand.tif'
+      S2L1C: '*_S2Hand.tif'
+    label_grep: '*tif*'
+    means:
+      S1GRD:
+      - -10.460905370701017
+      - -17.282830968557377
+      S2L1C:
+      - 1631.6034834643874
+      - 1403.8452849941755
+      - 1371.128605346108
+      - 1231.792959020379
+      - 1470.983747460869
+      - 2369.465409053845
+      - 2819.0537792020077
+      - 2600.4827047198005
+      - 3047.1583356107217
+      - 487.3778121891093
+      - 56.15511154860593
+      - 2038.4853162158295
+      - 1194.377945603503
+    modalities:
+    - S2L1C
+    - S1GRD
+    no_data_replace: 0.0
+    no_label_replace: -1.0
+    num_classes: 2
+    num_workers: 2
+    output_bands:
+      S1GRD:
+      - 0
+      - 1
+      S2L1C:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+    pin_memory: false
+    reduce_zero_label: false
+    rgb_indices:
+    - 1
+    - 2
+    - 3
+    rgb_modality: S2L1C
+    sample_replace: false
+    shared_transforms: true
+    stds:
+      S1GRD:
+      - 4.101034633366757
+      - 4.722285411803805
+      S2L1C:
+      - 734.8107858964038
+      - 774.2868972707029
+      - 769.851693906735
+      - 900.669073198754
+      - 808.678115027031
+      - 947.3229938600546
+      - 1109.3888106244283
+      - 1048.0428984884372
+      - 1223.8882340352152
+      - 342.09449984732294
+      - 114.63427028894267
+      - 1019.2143218819128
+      - 795.1038917277533
+    task: segmentation
+    test_data_root:
+      S1GRD: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S1GRDHand
+      S2L1C: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S2L1CHand
+    test_label_data_root: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/LabelHand
+    test_split: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/split_files/flood_test_data.txt
+    train_data_root:
+      S1GRD: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S1GRDHand
+      S2L1C: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S2L1CHand
+    train_label_data_root: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/LabelHand
+    train_split: /dccstor/geofm-datasets/datasets/senfloods_multimodal/splits/flood_train_data.txt
+    train_transform:
+    - class_path: albumentations.D4
+      init_args:
+        always_apply: false
+        p: 1.0
+    - class_path: albumentations.pytorch.ToTensorV2
+      init_args:
+        always_apply: true
+        p: 1.0
+        transpose_mask: false
+    val_data_root:
+      S1GRD: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S1GRDHand
+      S2L1C: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S2L1CHand
+    val_label_data_root: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/LabelHand
+    val_split: /dccstor/geofm-datasets/datasets/senfloods_multimodal/splits/flood_valid_data.txt
+deploy_config_file: true
+model:
+  class_path: terratorch.tasks.SemanticSegmentationTask
+  init_args:
+    freeze_backbone: false
+    freeze_decoder: false
+    freeze_head: false
+    ignore_index: -1
+    loss: ce
+    lr: 0.001
+    model_args:
+      backbone: terramind_v1_base
+      backbone_bands:
+        S1GRD:
+        - 0
+        - 1
+        S2L1C:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
+      backbone_merge_method: mean
+      backbone_modalities:
+      - S2L1C
+      - S1GRD
+      backbone_pretrained: false
+      decoder: UNetDecoder
+      decoder_channels:
+      - 512
+      - 256
+      - 128
+      - 64
+      head_dropout: 0.1
+      necks:
+      - indices:
+        - 2
+        - 5
+        - 8
+        - 11
+        name: SelectIndices
+      - name: ReshapeTokensToImage
+        remove_cls_token: false
+      - name: LearnedInterpolateToPyramidal
+      num_classes: 2
+    model_factory: EncoderDecoderFactory
+    output_most_probable: true
+    output_on_inference: prediction
+    plot_on_val: 2
+    tiled_inference_on_testing: false
+    tiled_inference_parameters:
+      average_patches: true
+      batch_size: 16
+      h_crop: 224
+      h_stride: 208
+      verbose: false
+      w_crop: 224
+      w_stride: 208
+out_dtype: int16
+seed_everything: 42
+trainer:
+  accelerator: auto
+  accumulate_grad_batches: 1
+  barebones: false
+  check_val_every_n_epoch: 1
+  detect_anomaly: false
+  devices: auto
+  enable_checkpointing: true
+  fast_dev_run: false
+  inference_mode: true
+  log_every_n_steps: 50
+  logger: false
+  max_epochs: 2
+  max_steps: -1
+  num_nodes: 1
+  overfit_batches: 0.0
+  precision: 16-mixed
+  reload_dataloaders_every_n_epochs: 0
+  strategy: auto
+  sync_batchnorm: false
+  use_distributed_sampler: true
