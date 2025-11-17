@@ -6,16 +6,7 @@ trainer:
   devices: auto
   num_nodes: 1
   precision: 16-mixed
-  logger:
-    class_path: lightning.pytorch.loggers.mlflow.MLFlowLogger
-    init_args:
-      experiment_name: geotune-uftmkwydc7atoqttdvhssb 
-      run_name: "Train"    
-      tracking_uri: https://geofm-mlflow-geospatial.apps.fmaas-devstage-backend.fmaas.res.ibm.com/
-      save_dir: /geotunes/tune-tasks/geotune-uftmkwydc7atoqttdvhssb/mlflow
-      tags:
-        email: Catherine.Wanjiru@ibm.com
-        name: Catherine.Wanjiru
+  logger: true
                
   callbacks:
     - class_path: RichProgressBar
@@ -30,7 +21,7 @@ trainer:
      # ---- Early stop endif ----
     - class_path: ModelCheckpoint
       init_args:
-        dirpath: /geotunes/tune-tasks/geotune-uftmkwydc7atoqttdvhssb/
+        dirpath: /dccstor/terratorch/tmp/terramind_large/
         mode: min
         monitor: val/loss
         filename: best-state_dict-{epoch:02d}
@@ -39,8 +30,7 @@ trainer:
   check_val_every_n_epoch: 1
   log_every_n_steps: 50
   enable_checkpointing: true
-  default_root_dir: /geotunes/tune-tasks/geotune-uftmkwydc7atoqttdvhssb
-data:
+  default_root_dir: /dccstor/terratorch/tmp/terramind_large/
   
   class_path: terratorch.datamodules.GenericMultiModalDataModule
   init_args:
@@ -101,18 +91,18 @@ data:
       - 3
 
     train_data_root:
-      S2L1C: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S1GRDHand
-      S1GRD: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S2L1CHand
+      S2L1C: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S2L1CHand
+      S1GRD: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S1GRDHand
       
     train_label_data_root:  /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/LabelHand
     val_data_root:
-      S2L1C: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S1GRDHand
-      S1GRD: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S2L1CHand
+      S2L1C: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S2L1CHand
+      S1GRD: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S1GRDHand
       
     val_label_data_root: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/LabelHand
     test_data_root:
-      S2L1C: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S1GRDHand
-      S1GRD: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S2L1CHand
+      S2L1C: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S2L1CHand
+      S1GRD: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S1GRDHand
       
     test_label_data_root: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/LabelHand
     train_split: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/split_files/flood_train_data.txt

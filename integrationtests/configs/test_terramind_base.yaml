@@ -1,12 +1,47 @@
+# lightning.pytorch==2.1.1
+seed_everything: 42
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: 16-mixed
+  logger: true
+  callbacks:
+    - class_path: RichProgressBar
+    - class_path: LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+    # ---- Early stop if ----
+    - class_path: EarlyStopping
+      init_args:
+        monitor: val/loss
+        patience: 20
+     # ---- Early stop endif ----
+    - class_path: ModelCheckpoint
+      init_args:
+        dirpath: /dccstor/terratorch/tmp/terramind_base/
+        mode: min
+        monitor: val/loss
+        filename: best-state_dict-{epoch:02d}
+        save_weights_only: True
+  max_epochs: 2
+  check_val_every_n_epoch: 1
+  log_every_n_steps: 50
+  enable_checkpointing: true
+  default_root_dir: /dccstor/terratorch/tmp/terramind_base/
 data:
+  
   class_path: terratorch.datamodules.GenericMultiModalDataModule
   init_args:
-    allow_substring_file_names: true
+    # Config for only segmentation. No need to automate this. 
+    task: 'segmentation'
+    # Out of cuda error for anything > 2
+    # ToDo: Figure out why batch_size replacement is not working.
     batch_size: 2
-    channel_position: -3
-    check_stackability: true
-    concat_bands: false
-    data_with_sample_dim: false
+    num_workers: 2
+    no_label_replace: -1
+    no_data_replace: 0
     dataset_bands:
       S1GRD:
       - 0
@@ -25,37 +60,7 @@ data:
       - 10
       - 11
       - 12
-    drop_last: true
-    expand_temporal_dimension: false
-    image_grep:
-      S1GRD: '*_S1Hand.tif'
-      S2L1C: '*_S2Hand.tif'
-    label_grep: '*tif*'
-    means:
-      S1GRD:
-      - -10.460905370701017
-      - -17.282830968557377
-      S2L1C:
-      - 1631.6034834643874
-      - 1403.8452849941755
-      - 1371.128605346108
-      - 1231.792959020379
-      - 1470.983747460869
-      - 2369.465409053845
-      - 2819.0537792020077
-      - 2600.4827047198005
-      - 3047.1583356107217
-      - 487.3778121891093
-      - 56.15511154860593
-      - 2038.4853162158295
-      - 1194.377945603503
-    modalities:
-    - S2L1C
-    - S1GRD
-    no_data_replace: 0.0
-    no_label_replace: -1.0
-    num_classes: 2
-    num_workers: 2
+
     output_bands:
       S1GRD:
       - 0
@@ -74,16 +79,61 @@ data:
       - 10
       - 11
       - 12
-    pin_memory: false
-    reduce_zero_label: false
-    rgb_indices:
-    - 1
-    - 2
-    - 3
+
+    modalities:
+      - S2L1C
+      - S1GRD
+
     rgb_modality: S2L1C
-    sample_replace: false
-    shared_transforms: true
-    stds:
+    rgb_indices: 
+      - 1
+      - 2
+      - 3
+
+    train_data_root:
+      S2L1C: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S2L1CHand
+      S1GRD: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S1GRDHand
+      
+    train_label_data_root:  /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/LabelHand
+    val_data_root:
+      S2L1C: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S2L1CHand
+      S1GRD: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S1GRDHand
+      
+    val_label_data_root: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/LabelHand
+    test_data_root:
+      S2L1C: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S2L1CHand
+      S1GRD: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S1GRDHand
+      
+    test_label_data_root: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/LabelHand
+    train_split: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/split_files/flood_train_data.txt
+    test_split: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/split_files/flood_test_data.txt
+    val_split:  /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/split_files/flood_valid_data.txt
+    image_grep: 
+      S1GRD: '*_S1Hand.tif'
+      S2L1C: '*_S2Hand.tif'
+
+    label_grep: "*_LabelHand.tif"
+    num_classes: 2
+    means: 
+      S1GRD:
+      - -10.460905370701017
+      - -17.282830968557377
+      S2L1C:
+      - 1631.6034834643874
+      - 1403.8452849941755
+      - 1371.128605346108
+      - 1231.792959020379
+      - 1470.983747460869
+      - 2369.465409053845
+      - 2819.0537792020077
+      - 2600.4827047198005
+      - 3047.1583356107217
+      - 487.3778121891093
+      - 56.15511154860593
+      - 2038.4853162158295
+      - 1194.377945603503
+
+    stds: 
       S1GRD:
       - 4.101034633366757
       - 4.722285411803805
@@ -101,45 +151,27 @@ data:
       - 114.63427028894267
       - 1019.2143218819128
       - 795.1038917277533
-    task: segmentation
-    test_data_root:
-      S1GRD: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S1GRDHand
-      S2L1C: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S2L1CHand
-    test_label_data_root: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/LabelHand
-    test_split: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/split_files/flood_test_data.txt
-    train_data_root:
-      S1GRD: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S1GRDHand
-      S2L1C: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S2L1CHand
-    train_label_data_root: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/LabelHand
-    train_split: /dccstor/geofm-datasets/datasets/senfloods_multimodal/splits/flood_train_data.txt
+
     train_transform:
-    - class_path: albumentations.D4
-      init_args:
-        always_apply: false
-        p: 1.0
-    - class_path: albumentations.pytorch.ToTensorV2
-      init_args:
-        always_apply: true
-        p: 1.0
-        transpose_mask: false
-    val_data_root:
-      S1GRD: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S1GRDHand
-      S2L1C: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/S2L1CHand
-    val_label_data_root: /dccstor/geofm-datasets/datasets/senfloods_multimodal/data/LabelHand
-    val_split: /dccstor/geofm-datasets/datasets/senfloods_multimodal/splits/flood_valid_data.txt
-deploy_config_file: true
+      - class_path: albumentations.D4  # Random flip and rotations
+      - class_path: ToTensorV2
+  
 model:
   class_path: terratorch.tasks.SemanticSegmentationTask
   init_args:
-    freeze_backbone: false
-    freeze_decoder: false
-    freeze_head: false
-    ignore_index: -1
-    loss: ce
-    lr: 0.001
+    model_factory: EncoderDecoderFactory
     model_args:
       backbone: terramind_v1_base
-      backbone_bands:
+      #  terramind_v1_base  # large version: terramind_v1_large
+      backbone_pretrained: true
+      backbone_modalities:
+        - S2L1C
+        - S1GRD
+
+      
+      backbone_merge_method: mean
+      
+      backbone_bands: 
         S1GRD:
         - 0
         - 1
@@ -157,62 +189,47 @@ model:
         - 10
         - 11
         - 12
-      backbone_merge_method: mean
-      backbone_modalities:
-      - S2L1C
-      - S1GRD
-      backbone_pretrained: false
-      decoder: UNetDecoder
-      decoder_channels:
-      - 512
-      - 256
-      - 128
-      - 64
-      head_dropout: 0.1
+
       necks:
-      - indices:
-        - 2
-        - 5
-        - 8
-        - 11
-        name: SelectIndices
-      - name: ReshapeTokensToImage
-        remove_cls_token: false
-      - name: LearnedInterpolateToPyramidal
+        - name: SelectIndices
+          indices: [2, 5, 8, 11]  # base version
+        - name: ReshapeTokensToImage
+          remove_cls_token: False
+        - name: LearnedInterpolateToPyramidal
+
+      decoder: UNetDecoder
+      # UNetDecoder
+      #TODO user provided channels
+      decoder_channels: [512, 256, 128, 64]
+      head_dropout: 0.1
       num_classes: 2
-    model_factory: EncoderDecoderFactory
-    output_most_probable: true
-    output_on_inference: prediction
+    loss: ce
     plot_on_val: 2
-    tiled_inference_on_testing: false
-    tiled_inference_parameters:
-      average_patches: true
-      batch_size: 16
+    #  dice
+    ignore_index: -1
+    freeze_backbone:  false
+    freeze_decoder: false
+    
+    # ---- optimizer start ----
+    # ---- optimizer end ----
+    
+    tiled_inference_parameters: 
       h_crop: 224
       h_stride: 208
-      verbose: false
       w_crop: 224
       w_stride: 208
-out_dtype: int16
-seed_everything: 42
-trainer:
-  accelerator: auto
-  accumulate_grad_batches: 1
-  barebones: false
-  check_val_every_n_epoch: 1
-  detect_anomaly: false
-  devices: auto
-  enable_checkpointing: true
-  fast_dev_run: false
-  inference_mode: true
-  log_every_n_steps: 50
-  logger: false
-  max_epochs: 2
-  max_steps: -1
-  num_nodes: 1
-  overfit_batches: 0.0
-  precision: 16-mixed
-  reload_dataloaders_every_n_epochs: 0
-  strategy: auto
-  sync_batchnorm: false
-  use_distributed_sampler: true
+      average_patches: True
+    
+
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 6e-05
+    weight_decay: 0.05
+    
+lr_scheduler:
+  class_path: ReduceLROnPlateau
+  init_args:
+    monitor: val/loss
+    factor: 0.5
+    patience: 5
