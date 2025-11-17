@@ -64,6 +64,7 @@ dependencies = [
   "tqdm",
   "wandb",
   "tensorboard",
+  "diffusers<=0.34.0",
 ]
 
 
