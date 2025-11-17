@@ -9,6 +9,7 @@ import kornia.augmentation as K
 from kornia.augmentation._2d.geometric.base import GeometricAugmentationBase2D
 from torch import nn
 from typing import Union, Dict
+import numpy as np
 
 N_DIMS_FOR_TEMPORAL = 4
 N_DIMS_FLATTENED_TEMPORAL = 3
