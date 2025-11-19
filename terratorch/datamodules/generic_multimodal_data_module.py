@@ -75,17 +75,22 @@ def wrap_in_compose_is_list(transform_list, image_modalities=None, non_image_mod
     return A.Compose(transform_list, is_check_shapes=False, additional_targets=additional_targets) \
         if isinstance(transform_list, Iterable) else transform_list
 
+
 class MultimodalNormalize(Callable):
     def __init__(self, means, stds):
         super().__init__()
         self.means = means
         self.stds = stds
 
-    def __call__(self, batch):
+    def __call__(self, batch, denormalize=False):
         for m in self.means.keys():
-            if m not in batch["image"]:
+            if m in batch:
+                image = batch[m]
+            elif "image" in batch and m in batch["image"]:
+                image = batch["image"][m]
+            else:
                 continue
-            image = batch["image"][m]
+
             if len(image.shape) == 5:
                 # B, C, T, H, W
                 means = torch.tensor(self.means[m], device=image.device).view(1, -1, 1, 1, 1)
@@ -102,11 +107,9 @@ class MultimodalNormalize(Callable):
                 # C, H, W
                 means = torch.tensor(self.means[m], device=image.device).view(-1, 1, 1)
                 stds = torch.tensor(self.stds[m], device=image.device).view(-1, 1, 1)
-
             elif len(image.shape) == 2:
                 means = torch.tensor(self.means[m], device=image.device)
                 stds = torch.tensor(self.stds[m], device=image.device)
-
             elif len(image.shape) == 1:
                 means = torch.tensor(self.means[m], device=image.device)
                 stds = torch.tensor(self.stds[m], device=image.device)
@@ -116,7 +119,15 @@ class MultimodalNormalize(Callable):
                        f"or a single channel, but got {len(image.shape)}")
                 raise Exception(msg)
 
-            batch["image"][m] = (image - means) / stds
+            if denormalize:
+                image = image * stds + means
+            else:
+                image = (image - means) / stds
+
+            if m in batch:
+                batch[m] = image
+            else:
+                batch["image"][m] = image
         return batch
 
 

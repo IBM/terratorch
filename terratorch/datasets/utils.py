@@ -159,7 +159,7 @@ def to_tensor(d, transpose=True):
         if not isinstance(v, np.ndarray):
             new_dict[k] = v
         else:
-            if k == "image" and transpose:
+            if k == "image" and v.ndim > 2 and transpose:
                 v = np.moveaxis(v, -1, 0)
             new_dict[k] = torch.from_numpy(v)
     return new_dict
