@@ -410,7 +410,6 @@ class GenericMultimodalDataset(NonGeoDataset, ABC):
             if modality in self.filter_indices:
                 data = data[..., self.filter_indices[modality]]
 
-            print(self.constant_scale)
             if modality in self.constant_scale:
                 data = data.astype(np.float32) * self.constant_scale[modality]
 
