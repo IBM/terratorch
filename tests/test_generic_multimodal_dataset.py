@@ -335,7 +335,7 @@ def test_generic_multimodal_dataset_concat_bands(temp_data_dir):
             "mod1": str(temp_data_dir / "mod1"),
             "mod2": str(temp_data_dir / "mod2"),
         },
-        image_modalities=["mod1"],
+        image_modalities=["mod1", "mod2"],
         label_data_root=str(temp_data_dir / "labels"),
         image_grep={"mod1": "*_mod1.tif", "mod2": "*_mod2.tif"},
         label_grep="*.tif",
@@ -473,7 +473,9 @@ def test_generic_multimodal_dataset_missing_dataset_bands_error(temp_data_dir):
             data_root={"mod1": str(temp_data_dir / "mod1")},
             image_grep={"mod1": "*_mod1.tif"},
             image_modalities=["mod1"],
+            dataset_bands={"mod0": [1, 2, 3]},
             allow_substring_file_names=True,
+            constant_scale={"mod1": 1.0},
             output_bands={"mod1": [0, 1]},
         )
 
@@ -532,6 +534,7 @@ def test_generic_multimodal_segmentation_dataset(temp_data_dir):
         num_classes=3,
         label_data_root=str(temp_data_dir / "labels"),
         image_grep={"mod1": "*_mod1.tif"},
+        constant_scale={"mod1": 1.0},
         image_modalities=["mod1"],
         label_grep="*.tif",
         allow_substring_file_names=True,
@@ -552,6 +555,7 @@ def test_generic_multimodal_segmentation_dataset_plot(temp_data_dir):
         label_data_root=str(temp_data_dir / "labels"),
         image_grep={"mod1": "*_mod1.tif"},
         image_modalities=["mod1"],
+        constant_scale={"mod1": 1.0},
         label_grep="*.tif",
         allow_substring_file_names=True,
         class_names=["class0", "class1", "class2"],
@@ -570,6 +574,7 @@ def test_generic_multimodal_segmentation_dataset_plot_with_prediction(temp_data_
         label_data_root=str(temp_data_dir / "labels"),
         image_grep={"mod1": "*_mod1.tif"},
         image_modalities=["mod1"],
+        constant_scale={"mod1": 1.0},
         label_grep="*.tif",
         allow_substring_file_names=True,
     )
@@ -588,6 +593,7 @@ def test_generic_multimodal_pixelwise_regression_dataset(temp_data_dir):
         label_data_root=str(temp_data_dir / "labels"),
         image_grep={"mod1": "*_mod1.tif"},
         image_modalities=["mod1"],
+        constant_scale={"mod1": 1.0},
         label_grep="*.tif",
         allow_substring_file_names=True,
     )
@@ -605,6 +611,7 @@ def test_generic_multimodal_pixelwise_regression_dataset_plot(temp_data_dir):
         label_data_root=str(temp_data_dir / "labels"),
         image_grep={"mod1": "*_mod1.tif"},
         image_modalities=["mod1"],
+        constant_scale={"mod1": 1.0},
         label_grep="*.tif",
         allow_substring_file_names=True,
     )
@@ -621,6 +628,7 @@ def test_generic_multimodal_pixelwise_regression_dataset_plot_with_prediction(te
         label_data_root=str(temp_data_dir / "labels"),
         image_grep={"mod1": "*_mod1.tif"},
         image_modalities=["mod1"],
+        constant_scale={"mod1": 1.0},
         label_grep="*.tif",
         allow_substring_file_names=True,
     )
@@ -639,6 +647,7 @@ def test_generic_multimodal_scalar_dataset(temp_data_dir):
         num_classes=3,
         label_data_root=str(temp_data_dir / "labels.parquet"),
         image_grep={"mod1": "*_mod1.tif"},
+        constant_scale={"mod1": 1.0},
         allow_substring_file_names=True,
         image_modalities=["mod1"],
         class_names=["class0", "class1", "class2"],
@@ -660,6 +669,7 @@ def test_generic_multimodal_scalar_dataset_no_label_root(temp_data_dir):
         label_data_root=None,
         image_grep={"mod1": "*_mod1.tif"},
         image_modalities=["mod1"],
+        constant_scale={"mod1": 1.0},
         allow_substring_file_names=True,
     )
 
@@ -693,6 +703,8 @@ def test_generic_multimodal_dataset_missing_split_file_error():
         GenericMultimodalDataset(
             data_root={"mod1": "/tmp/nonexistent"},
             split="/tmp/nonexistent_split.txt",
+            image_modalities=["mod1"],
+            constant_scale={"mod1": 1.0},
         )
 
 
