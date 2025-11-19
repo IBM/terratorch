@@ -1,14 +1,16 @@
 """Tests for tiled inference functionality."""
 
+import warnings
+
 import pytest
 import torch
-import warnings
+
 from terratorch.tasks.tiled_inference import (
-    tiled_inference,
-    get_blend_mask,
-    get_input_chips,
     InferenceInput,
     TiledInferenceParameters,
+    get_blend_mask,
+    get_input_chips,
+    tiled_inference,
 )
 
 
@@ -126,21 +128,19 @@ class TestGetInputChips:
         h_crop, w_crop = 200, 200
         h_stride, w_stride = 150, 150
         delta = 8
-        chips = get_input_chips(
-            input_batch, h_crop, h_stride, w_crop, w_stride, delta, True, False
-        )
-        
+        chips = get_input_chips(input_batch, h_crop, h_stride, w_crop, w_stride, delta, True, False)
+
         # Check that coordinates span the full image
         coords = [chip.input_coords for chip in chips]
         h_coords = [c[0] for c in coords]
         w_coords = [c[1] for c in coords]
-        
+
         # Check we cover from start to end (border chips start at 0, not delta when padding=False)
         min_h = min(s.start for s in h_coords)
         max_h = max(s.stop for s in h_coords)
         min_w = min(s.start for s in w_coords)
         max_w = max(s.stop for s in w_coords)
-        
+
         assert min_h == 0  # Border chips start at 0 without padding
         assert max_h == 400  # Should cover to the end
         assert min_w == 0
@@ -153,11 +153,11 @@ class TestTiledInference:
     def test_basic_inference(self):
         """Test basic tiled inference."""
         input_tensor = torch.randn(1, 3, 448, 448)
-        
+
         def dummy_model(x):
             # Simple model that returns same spatial size with 10 output channels
             return torch.randn(x.shape[0], 10, x.shape[-2], x.shape[-1])
-        
+
         output = tiled_inference(
             dummy_model,
             input_tensor,
@@ -167,17 +167,17 @@ class TestTiledInference:
             batch_size=4,
             verbose=False,
         )
-        
+
         assert output.shape == (1, 10, 448, 448)
         assert output.device == input_tensor.device
 
     def test_inference_with_padding(self):
         """Test inference with padding to reduce edge artifacts."""
         input_tensor = torch.randn(2, 3, 400, 400)
-        
+
         def dummy_model(x):
             return torch.ones(x.shape[0], 5, x.shape[-2], x.shape[-1])
-        
+
         output = tiled_inference(
             dummy_model,
             input_tensor,
@@ -187,16 +187,16 @@ class TestTiledInference:
             padding="reflect",
             batch_size=8,
         )
-        
+
         assert output.shape == (2, 5, 400, 400)
 
     def test_inference_no_padding(self):
         """Test inference without padding."""
         input_tensor = torch.randn(1, 3, 300, 300)
-        
+
         def dummy_model(x):
             return torch.zeros(x.shape[0], 3, x.shape[-2], x.shape[-1])
-        
+
         output = tiled_inference(
             dummy_model,
             input_tensor,
@@ -206,16 +206,16 @@ class TestTiledInference:
             padding=False,
             batch_size=4,
         )
-        
+
         assert output.shape == (1, 3, 300, 300)
 
     def test_inference_no_averaging(self):
         """Test inference without averaging overlapping patches."""
         input_tensor = torch.randn(1, 3, 300, 300)
-        
+
         def dummy_model(x):
             return torch.randn(x.shape[0], 2, x.shape[-2], x.shape[-1])
-        
+
         output = tiled_inference(
             dummy_model,
             input_tensor,
@@ -225,16 +225,16 @@ class TestTiledInference:
             average_patches=False,
             batch_size=4,
         )
-        
+
         assert output.shape == (1, 2, 300, 300)
 
     def test_inference_separate_h_w_params(self):
         """Test inference with separate height/width parameters."""
         input_tensor = torch.randn(1, 3, 512, 384)
-        
+
         def dummy_model(x):
             return torch.randn(x.shape[0], 4, x.shape[-2], x.shape[-1])
-        
+
         output = tiled_inference(
             dummy_model,
             input_tensor,
@@ -245,16 +245,16 @@ class TestTiledInference:
             delta=8,
             batch_size=6,
         )
-        
+
         assert output.shape == (1, 4, 512, 384)
 
     def test_inference_with_blend_overlaps(self):
         """Test inference with blended overlaps."""
         input_tensor = torch.randn(1, 3, 400, 400)
-        
+
         def dummy_model(x):
             return torch.ones(x.shape[0], 1, x.shape[-2], x.shape[-1])
-        
+
         output = tiled_inference(
             dummy_model,
             input_tensor,
@@ -264,7 +264,7 @@ class TestTiledInference:
             blend_overlaps=True,
             batch_size=4,
         )
-        
+
         assert output.shape == (1, 1, 400, 400)
         # With blend overlaps, should be close to 1.0 everywhere
         assert torch.allclose(output, torch.ones_like(output), atol=0.1)
@@ -272,10 +272,10 @@ class TestTiledInference:
     def test_inference_without_blend_overlaps(self):
         """Test inference without blended overlaps."""
         input_tensor = torch.randn(1, 3, 300, 300)
-        
+
         def dummy_model(x):
             return torch.randn(x.shape[0], 2, x.shape[-2], x.shape[-1])
-        
+
         output = tiled_inference(
             dummy_model,
             input_tensor,
@@ -286,16 +286,16 @@ class TestTiledInference:
             average_patches=True,
             batch_size=4,
         )
-        
+
         assert output.shape == (1, 2, 300, 300)
 
     def test_inference_small_batch_size(self):
         """Test inference with small batch size."""
         input_tensor = torch.randn(2, 3, 300, 300)
-        
+
         def dummy_model(x):
             return torch.randn(x.shape[0], 3, x.shape[-2], x.shape[-1])
-        
+
         output = tiled_inference(
             dummy_model,
             input_tensor,
@@ -304,7 +304,7 @@ class TestTiledInference:
             delta=4,
             batch_size=1,  # Process one chip at a time
         )
-        
+
         assert output.shape == (2, 3, 300, 300)
 
     def test_inference_dict_input_4d(self):
@@ -313,13 +313,13 @@ class TestTiledInference:
             "rgb": torch.randn(1, 3, 300, 300),
             "infrared": torch.randn(1, 2, 300, 300),
         }
-        
+
         def dummy_model(x_dict):
             assert isinstance(x_dict, dict)
             assert "rgb" in x_dict and "infrared" in x_dict
             total_channels = x_dict["rgb"].shape[1] + x_dict["infrared"].shape[1]
             return torch.randn(x_dict["rgb"].shape[0], 4, x_dict["rgb"].shape[-2], x_dict["rgb"].shape[-1])
-        
+
         output = tiled_inference(
             dummy_model,
             input_dict,
@@ -328,7 +328,7 @@ class TestTiledInference:
             delta=4,
             batch_size=4,
         )
-        
+
         assert output.shape == (1, 4, 300, 300)
 
     def test_inference_dict_input_5d(self):
@@ -337,11 +337,11 @@ class TestTiledInference:
             "optical": torch.randn(1, 3, 5, 200, 200),  # B, C, T, H, W
             "sar": torch.randn(1, 2, 5, 200, 200),
         }
-        
+
         def dummy_model(x_dict):
             assert isinstance(x_dict, dict)
             return torch.randn(x_dict["optical"].shape[0], 10, x_dict["optical"].shape[-2], x_dict["optical"].shape[-1])
-        
+
         output = tiled_inference(
             dummy_model,
             input_dict,
@@ -350,7 +350,7 @@ class TestTiledInference:
             delta=4,
             batch_size=4,
         )
-        
+
         assert output.shape == (1, 10, 200, 200)
 
     def test_inference_dict_mismatched_shapes_raises(self):
@@ -359,10 +359,10 @@ class TestTiledInference:
             "rgb": torch.randn(1, 3, 300, 300),
             "depth": torch.randn(1, 1, 200, 200),  # Different spatial size
         }
-        
+
         def dummy_model(x_dict):
             return torch.randn(1, 1, 300, 300)
-        
+
         with pytest.raises(ValueError, match="same height and width"):
             tiled_inference(
                 dummy_model,
@@ -379,10 +379,10 @@ class TestTiledInference:
             "rgb": torch.randn(1, 3, 300, 300),  # 4D
             "temporal": torch.randn(1, 3, 5, 300, 300),  # 5D
         }
-        
+
         def dummy_model(x_dict):
             return torch.randn(1, 1, 300, 300)
-        
+
         with pytest.raises(ValueError, match="same number of dimensions"):
             tiled_inference(
                 dummy_model,
@@ -398,10 +398,10 @@ class TestTiledInference:
         input_dict = {
             "data": torch.randn(1, 3, 5, 10, 300, 300),  # 6D - not supported
         }
-        
+
         def dummy_model(x_dict):
             return torch.randn(1, 1, 300, 300)
-        
+
         with pytest.raises(ValueError, match="4 or 5 dimensions"):
             tiled_inference(
                 dummy_model,
@@ -415,10 +415,10 @@ class TestTiledInference:
     def test_inference_invalid_input_type_raises(self):
         """Test that invalid input type raises error."""
         input_list = [torch.randn(1, 3, 300, 300)]  # List is not supported
-        
+
         def dummy_model(x):
             return torch.randn(1, 1, 300, 300)
-        
+
         with pytest.raises(ValueError, match="torch.Tensor or a dict"):
             tiled_inference(
                 dummy_model,
@@ -435,10 +435,10 @@ class TestTiledInference:
             "rgb": torch.randn(1, 3, 300, 300),
             "metadata": "some_string",  # Not a tensor
         }
-        
+
         def dummy_model(x_dict):
             return torch.randn(1, 1, 300, 300)
-        
+
         with pytest.raises(ValueError, match="torch.Tensor or a dict of torch.Tensors"):
             tiled_inference(
                 dummy_model,
@@ -452,10 +452,10 @@ class TestTiledInference:
     def test_inference_delta_too_large_warning(self):
         """Test that delta larger than overlap triggers warning."""
         input_tensor = torch.randn(1, 3, 300, 300)
-        
+
         def dummy_model(x):
             return torch.randn(x.shape[0], 1, x.shape[-2], x.shape[-1])
-        
+
         # Delta=50 but overlap=(200-150)//2=25, so delta > overlap
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
@@ -473,10 +473,10 @@ class TestTiledInference:
     def test_inference_deprecated_parameters_warning(self):
         """Test that using deprecated TiledInferenceParameters triggers warning."""
         input_tensor = torch.randn(1, 3, 300, 300)
-        
+
         def dummy_model(x):
             return torch.randn(x.shape[0], 1, x.shape[-2], x.shape[-1])
-        
+
         params = TiledInferenceParameters(
             h_crop=150,
             h_stride=120,
@@ -485,7 +485,7 @@ class TestTiledInference:
             delta=4,
             batch_size=4,
         )
-        
+
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             output = tiled_inference(
@@ -498,10 +498,10 @@ class TestTiledInference:
     def test_inference_deprecated_out_channels_warning(self):
         """Test that using deprecated out_channels parameter triggers warning."""
         input_tensor = torch.randn(1, 3, 300, 300)
-        
+
         def dummy_model(x):
             return torch.randn(x.shape[0], 5, x.shape[-2], x.shape[-1])
-        
+
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             output = tiled_inference(
@@ -518,13 +518,13 @@ class TestTiledInference:
     def test_inference_with_kwargs(self):
         """Test that additional kwargs are passed to model."""
         input_tensor = torch.randn(1, 3, 300, 300)
-        
+
         kwargs_received = {}
-        
+
         def dummy_model(x, test_param=None):
             kwargs_received["test_param"] = test_param
             return torch.randn(x.shape[0], 1, x.shape[-2], x.shape[-1])
-        
+
         output = tiled_inference(
             dummy_model,
             input_tensor,
@@ -534,16 +534,16 @@ class TestTiledInference:
             batch_size=4,
             test_param="test_value",
         )
-        
+
         assert kwargs_received["test_param"] == "test_value"
 
     def test_inference_verbose_mode(self):
         """Test that verbose mode works without errors."""
         input_tensor = torch.randn(1, 3, 300, 300)
-        
+
         def dummy_model(x):
             return torch.randn(x.shape[0], 2, x.shape[-2], x.shape[-1])
-        
+
         # Should not raise any errors
         output = tiled_inference(
             dummy_model,
@@ -554,17 +554,17 @@ class TestTiledInference:
             batch_size=4,
             verbose=True,
         )
-        
+
         assert output.shape == (1, 2, 300, 300)
 
     def test_inference_2d_output(self):
         """Test inference when model returns 2D output (single channel, no channel dim)."""
         input_tensor = torch.randn(1, 3, 300, 300)
-        
+
         def dummy_model(x):
             # Return 2D output (batch, H, W) instead of 3D (batch, C, H, W)
             return torch.randn(x.shape[0], x.shape[-2], x.shape[-1])
-        
+
         output = tiled_inference(
             dummy_model,
             input_tensor,
@@ -573,7 +573,7 @@ class TestTiledInference:
             delta=4,
             batch_size=4,
         )
-        
+
         assert output.shape == (1, 1, 300, 300)  # Should add channel dimension
 
     def test_inference_preserves_device(self):
@@ -582,12 +582,12 @@ class TestTiledInference:
             device = torch.device("cuda")
         else:
             device = torch.device("cpu")
-        
+
         input_tensor = torch.randn(1, 3, 300, 300).to(device)
-        
+
         def dummy_model(x):
-            return torch.randn(x.shape[0], 2, x.shape[-2], x.shape[-1])
-        
+            return torch.randn(x.shape[0], 2, x.shape[-2], x.shape[-1]).to(device)
+
         output = tiled_inference(
             dummy_model,
             input_tensor,
@@ -596,26 +596,26 @@ class TestTiledInference:
             delta=4,
             batch_size=4,
         )
-        
-        assert output.device == device
+
+        assert output.device.type == device.type
 
     def test_inference_uncovered_pixels_raises(self):
         """Test that uncovered pixels raise RuntimeError."""
         input_tensor = torch.randn(1, 3, 100, 100)
-        
+
         # Create a model that only predicts for first call, then returns None or causes issues
         call_count = [0]
-        
+
         def selective_model(x):
             call_count[0] += 1
             # Return valid output
             return torch.randn(x.shape[0], 1, x.shape[-2], x.shape[-1])
-        
+
         # Use parameters that create non-overlapping tiles which may leave gaps
         # Use very small image with specific crop/stride that could create coverage issues
         # Actually, to really test the RuntimeError, we need to simulate the scenario
         # Let's create a custom test that modifies preds_count
-        
+
         # Instead, let's test the actual check by creating a scenario with potential gaps
         # The error check happens at line 398-399
         try:
@@ -634,15 +634,15 @@ class TestTiledInference:
         except RuntimeError as e:
             # This path tests the error handling
             assert "did not receive a classification" in str(e)
-    
+
     def test_inference_exact_tiling_coverage(self):
         """Test inference with exact tiling to ensure full coverage."""
         # This test ensures we hit the coverage check without triggering the error
         input_tensor = torch.randn(2, 3, 224, 224)
-        
+
         def consistent_model(x):
             return torch.ones(x.shape[0], 2, x.shape[-2], x.shape[-1])
-        
+
         # Use parameters that guarantee full coverage
         output = tiled_inference(
             consistent_model,
@@ -654,7 +654,7 @@ class TestTiledInference:
             average_patches=True,
             blend_overlaps=False,
         )
-        
+
         assert output.shape == (2, 2, 224, 224)
         # With all ones and proper coverage, output should be close to 1.0
         assert torch.allclose(output, torch.ones_like(output), atol=0.01)
@@ -676,7 +676,7 @@ class TestTiledInferenceParameters:
             batch_size=8,
             verbose=True,
         )
-        
+
         assert params.h_crop == 256
         assert params.h_stride == 224
         assert params.w_crop == 256
@@ -690,7 +690,7 @@ class TestTiledInferenceParameters:
     def test_parameters_default_values(self):
         """Test default values of TiledInferenceParameters."""
         params = TiledInferenceParameters()
-        
+
         # All attributes should have default values (tuples in this case)
         assert params.h_crop == (224,)
         assert params.h_stride == (200,)
@@ -712,7 +712,7 @@ class TestInferenceInputDataclass:
         mask = torch.ones(208, 208)
         coords = (slice(0, 208), slice(0, 208))
         crop = (slice(8, 216), slice(8, 216))
-        
+
         chip = InferenceInput(
             batch=0,
             input_coords=coords,
@@ -720,7 +720,7 @@ class TestInferenceInputDataclass:
             blend_mask=mask,
             output_crop=crop,
         )
-        
+
         assert chip.batch == 0
         assert chip.input_coords == coords
         assert torch.equal(chip.input_data, data)
@@ -732,7 +732,7 @@ class TestInferenceInputDataclass:
         data = torch.randn(3, 224, 224)
         mask = torch.ones(224, 224)
         coords = (slice(0, 224), slice(0, 224))
-        
+
         chip = InferenceInput(
             batch=1,
             input_coords=coords,
@@ -740,5 +740,5 @@ class TestInferenceInputDataclass:
             blend_mask=mask,
             output_crop=None,
         )
-        
+
         assert chip.output_crop is None
