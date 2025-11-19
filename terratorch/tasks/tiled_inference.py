@@ -217,6 +217,7 @@ def tiled_inference(
     batch_size: int = 16,
     verbose: bool = False,
     padding: str | bool = "reflect",
+    device: str | None = None,
     **kwargs,
 ) -> torch.Tensor:
     """
@@ -311,7 +312,7 @@ def tiled_inference(
     else:
         raise ValueError("input for tiled inference must be either a torch.Tensor or a dict of torch.Tensors")
 
-    device = input_batch.device
+    device = device or input_batch.device
 
     # Move inputs to CPU to avoid out-of-memory errors
     input_batch = input_batch.cpu()
