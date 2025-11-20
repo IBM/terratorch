@@ -225,5 +225,58 @@ def test_global_average_pooling_behavior():
     assert feats.shape == manual.shape
 
 
+def test_forward_features_with_orig_stem():
+    """Test forward_features specifically with use_orig_stem=True to ensure line 163 coverage."""
+    model = ConvNeXtV2(depths=[2, 2, 2, 2], dims=[32, 64, 128, 256], use_orig_stem=True)
+    model.eval()
+
+    x = torch.randn(2, 3, 32, 32)
+
+    with torch.no_grad():
+        features = model.forward_features(x)
+
+    # Should produce features with final dim
+    assert features.shape == (2, 256), f"Expected (2, 256), got {features.shape}"
+    assert not torch.allclose(features, torch.zeros_like(features))
+
+
+def test_dims_none_uses_default():
+    """Test that when dims=None, the default [96, 192, 384, 768] is used."""
+    model = ConvNeXtV2(patch_size=16, img_size=64, in_chans=3, num_classes=10, depths=[2,2,2,2], dims=None)
+    # Default dims should be [96, 192, 384, 768]
+    # Check first stage has 96 channels by looking at first downsample layer input
+    assert model.downsample_layers[0][1].in_channels == 96
+    assert model.downsample_layers[0][1].out_channels == 192
+    assert model.downsample_layers[1][1].in_channels == 192
+    assert model.downsample_layers[1][1].out_channels == 384
+
+
+def test_checkpoints_dict_all_keys():
+    """Test that the checkpoints dictionary contains all expected keys and can access all values."""
+    from terratorch.models.backbones.mmearth_convnextv2 import checkpoints
+
+    expected_keys = [
+        "pt-S2_atto_1M_64_uncertainty_56-8",
+        "pt-all_mod_atto_100k_128_uncertainty_112-16",
+        "pt-all_mod_atto_1M_128_uncertainty_112-16",
+        "pt-all_mod_atto_1M_64_uncertainty_56-8",
+    ]
+
+    assert set(checkpoints.keys()) == set(expected_keys), "Checkpoints dict missing expected keys"
+
+    # Verify all values are valid URLs and explicitly access each one to cover lines
+    assert isinstance(checkpoints["pt-S2_atto_1M_64_uncertainty_56-8"], str)
+    assert checkpoints["pt-S2_atto_1M_64_uncertainty_56-8"].startswith("https://")
+    
+    assert isinstance(checkpoints["pt-all_mod_atto_100k_128_uncertainty_112-16"], str)
+    assert checkpoints["pt-all_mod_atto_100k_128_uncertainty_112-16"].startswith("https://")
+    
+    assert isinstance(checkpoints["pt-all_mod_atto_1M_128_uncertainty_112-16"], str)
+    assert checkpoints["pt-all_mod_atto_1M_128_uncertainty_112-16"].startswith("https://")
+    
+    assert isinstance(checkpoints["pt-all_mod_atto_1M_64_uncertainty_56-8"], str)
+    assert checkpoints["pt-all_mod_atto_1M_64_uncertainty_56-8"].startswith("https://")
+
+
 if __name__ == "__main__":
     pytest.main([__file__, '-v'])
