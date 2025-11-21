@@ -52,7 +52,7 @@ modification be merged to `main`. In this way, when an user wants to modify
 
 ## Testing with `podman` containers
 
-* Alternatively, for the users wanting to run the tests inside a container environment using `podman`, it is possible to proceed in the following way:
+* Alternatively, it is possible to run the tests inside a container environment using `podman`. All the modifications done for the files inside the repository will be copied to the image and the tests will be updated. To do it, proceed in the following way:
 
     1. Install `podman` in your system.
     2. Building the base images:
