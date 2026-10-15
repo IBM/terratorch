@@ -5,6 +5,7 @@
 
 import logging
 from pathlib import Path
+from collections.abc import Iterable
 from typing import Any, Dict, List, Optional
 
 import albumentations as A
@@ -19,6 +20,25 @@ from terratorch.datasets.generic_nongeo_od_dataset import GenericNonGeoObjectDet
 from terratorch.io.file import load_from_file_or_attribute
 
 logger = logging.getLogger("terratorch")
+
+
+def wrap_in_compose_is_list_od(transform_list):
+    """Wrap a transform list in an albumentations Compose, for object detection.
+
+    Differs from the generic helper in one way: a list holding a single Compose is returned as is,
+    rather than being wrapped again.
+
+    Object detection configs have to build their own Compose, because augmenting boxes alongside
+    the image requires bbox_params. Wrapping that Compose inside a second, outer Compose that has
+    no bbox_params means the outer one has no bbox processor, so the boxes never reach the inner
+    Compose that would transform them -- they come back untransformed while the image is flipped
+    or rotated, silently training the model on labels that point at background.
+    """
+    if not isinstance(transform_list, Iterable):
+        return transform_list
+    if len(transform_list) == 1 and isinstance(transform_list[0], A.Compose):
+        return transform_list[0]
+    return A.Compose(transform_list, is_check_shapes=False)
 
 
 class GenericNonGeoObjectDetectionDataModule(NonGeoDataModule):
@@ -129,9 +149,9 @@ class GenericNonGeoObjectDetectionDataModule(NonGeoDataModule):
         self.output_bands = output_bands
         self.rgb_indices = rgb_indices
 
-        self.train_transform = wrap_in_compose_is_list(train_transform)
-        self.val_transform = wrap_in_compose_is_list(val_transform)
-        self.test_transform = wrap_in_compose_is_list(test_transform)
+        self.train_transform = wrap_in_compose_is_list_od(train_transform)
+        self.val_transform = wrap_in_compose_is_list_od(val_transform)
+        self.test_transform = wrap_in_compose_is_list_od(test_transform)
 
         # Normalization
         if means and stds:

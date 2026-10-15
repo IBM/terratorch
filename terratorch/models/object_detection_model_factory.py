@@ -22,10 +22,11 @@ from terratorch.models.utils import extract_prefix_keys
 from terratorch.registry import MODEL_FACTORY_REGISTRY
 
 from .utils import TerratorchGeneralizedRCNNTransform, _get_backbone
+from .per_level_fcos_head import PerLevelFCOSClassificationHead, PerLevelFCOSRegressionHead
 
 SUPPORTED_TASKS = ["object_detection"]
 
-HEAD_NORM_LAYERS = ("groupnorm", "batchnorm", "none")
+HEAD_NORM_LAYERS = ("groupnorm", "batchnorm", "per_level_batchnorm", "none")
 
 
 def _resolve_head_norm(head_norm: str):
@@ -155,7 +156,14 @@ class ObjectDetectionModelFactory(ModelFactory):
 
             num_anchors = anchor_generator.num_anchors_per_location()[0]
             head = FCOSHead(combined_backbone.out_channels, num_anchors, num_classes)
-            if head_norm != "groupnorm":
+            if head_norm == "per_level_batchnorm":
+                head.classification_head = PerLevelFCOSClassificationHead(
+                    combined_backbone.out_channels, num_anchors, num_classes, len(sizes)
+                )
+                head.regression_head = PerLevelFCOSRegressionHead(
+                    combined_backbone.out_channels, num_anchors, len(sizes)
+                )
+            elif head_norm != "groupnorm":
                 # FCOSHead hardcodes GroupNorm by not forwarding norm_layer to its sub-heads,
                 # so rebuild them. box_coder on the outer head is left untouched.
                 norm_layer = _resolve_head_norm(head_norm)

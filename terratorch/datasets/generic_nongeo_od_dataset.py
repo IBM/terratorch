@@ -250,11 +250,18 @@ class GenericNonGeoObjectDetectionDataset(NonGeoDataset):
 
         # Transpose from [C, H, W] to [H, W, C] for albumentations
         image = np.transpose(image, (1, 2, 0))
-        
+
+        # albumentations augments boxes only under the key "bboxes". Supplying them as "boxes"
+        # is silently accepted and handed back *untransformed*, so any geometric transform moves
+        # the image while the labels stay put -- flips and affines then train the model to fire
+        # on background. Use the key the bbox processor actually reads, falling back to "boxes"
+        # when the transform declares no bbox_params (e.g. default_transform, a plain function).
+        bbox_key = "bboxes" if getattr(self.transform, "processors", {}).get("bboxes") else "boxes"
+
         # Prepare for albumentations
         sample = {
             "image": image,
-            "boxes": boxes.numpy() if len(boxes) > 0 else np.array([]),
+            bbox_key: boxes.numpy() if len(boxes) > 0 else np.zeros((0, 4), dtype=np.float32),
             "labels": labels.numpy() if len(labels) > 0 else np.array([]),
         }
 
@@ -264,8 +271,14 @@ class GenericNonGeoObjectDetectionDataset(NonGeoDataset):
 
         # Convert to tensors
         image = sample["image"]  # already torch tensor from transform
-        boxes = sample.get("boxes", [])
+        boxes = sample.get(bbox_key, [])
         labels = sample.get("labels", [])
+
+        # albumentations can return boxes/labels as a list of tuples rather than an array.
+        if not torch.is_tensor(boxes) and not isinstance(boxes, np.ndarray):
+            boxes = np.asarray(boxes, dtype=np.float32).reshape(-1, 4)
+        if not torch.is_tensor(labels) and not isinstance(labels, np.ndarray):
+            labels = np.asarray(labels)
 
         if isinstance(boxes, np.ndarray):
             boxes = torch.from_numpy(boxes) if boxes.size > 0 else torch.zeros((0, 4))
@@ -276,6 +289,10 @@ class GenericNonGeoObjectDetectionDataset(NonGeoDataset):
             boxes = torch.zeros((0, 4), dtype=torch.float32)
         if labels.numel() == 0:
             labels = torch.zeros((0,), dtype=torch.long)
+        # albumentations returns boxes as float64; torchvision's GIoU loss indexes them against
+        # float32 buffers and raises "Index put requires the source and destination dtypes match".
+        boxes = boxes.float()
+        labels = labels.long()
 
         return {
             "image": image,

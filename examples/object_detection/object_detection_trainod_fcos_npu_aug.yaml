@@ -1,0 +1,229 @@
+# FCOS + EfficientNet-Lite0 for the Pixel 9 / Tensor G4 EdgeTPU -- augmented training run.
+#
+# Architecture is byte-for-byte the same as object_detection_trainod_fcos_npu.yaml:
+#   fcos + timm_efficientnet_lite0 + SelectIndices[1,2,3,4] + FeaturePyramidNetworkNeck(128)
+#   + head_norm: batchnorm, 2 classes, 256x256, 5440 anchors.
+# Do not change those: they are what makes the int8 export run on the EdgeTPU at 13 ms.
+#
+# What differs from the baseline config, and why:
+#
+#   1. train_transform gains photometric + geometric augmentation. The baseline had only
+#      HorizontalFlip/VerticalFlip and had fully converged (50/50 epochs, best val_map at
+#      epoch 23, nothing after epoch 30 beat it), so more epochs on the old pipeline cannot
+#      help. Augmentation is the remaining training-side lever.
+#
+#      The measured problem it targets: the baseline's true positives score 0.93-0.95 while a
+#      long tail of background anchors scores 0.05-0.69, so at the app's 0.30 threshold the
+#      model emits ~43 boxes/image on the *test set* for ~2 real objects (precision 0.046,
+#      recall 1.000). mAP hides this entirely -- 0.9793 -- because the TPs rank above the FPs.
+#
+#   2. *** The FromFloat/ToFloat sandwich is load-bearing. Do not remove it. ***
+#      GenericNonGeoObjectDetectionDataset hands albumentations a float32 HWC array in the
+#      0-255 range (constant_scale=1, no mean/std). albumentations 2.x assumes a *float* image
+#      is in [0, 1], so every photometric op silently clamps the tile to [0, 1] -- measured:
+#      MotionBlur on the raw float32 tile returns a solid white image, and
+#      RandomBrightnessContrast collapses it to the 0.133-1.0 band. Training would run on
+#      blank frames while the loss still looked plausible.
+#      FromFloat(dtype=uint8, max_value=1.0) casts 0-255 float -> 0-255 uint8 (albumentations'
+#      native, well-tested domain); ToFloat(max_value=1.0) casts straight back to 0-255
+#      float32. Round-trip error is a single floor(), i.e. below one int8 quantization step.
+#      Net effect: the model still sees raw 0-255 float, so the export, the int8 calibration
+#      recipe and the Android preprocessing all stay valid.
+#
+#   3. rotate_method: ellipse. Both classes are round emoji, so the axis-aligned box of a
+#      rotated object is very close to the original box; the default "largest_box" would
+#      inflate a 50x50 box to ~70x70 at 45 degrees and inject label noise.
+#
+#   4. bbox_params gains min_visibility/min_area/clip, which the baseline did not need because
+#      flips cannot move an object out of frame. Affine can. Without clip=True partly-outside
+#      boxes leave the image bounds; without min_visibility a barely-visible sliver keeps a
+#      full-confidence label. Validated over 400 sampled compositions: dtype float32, range
+#      0-255, every emitted box inside [0,256] with x1<x2, y1<y2.
+#
+#   5. val_transform / test_transform are deliberately UNCHANGED (ToTensorV2 only). Metrics
+#      stay directly comparable to the baseline run and to the deployed int8 numbers, and they
+#      match what the phone actually feeds the model.
+#
+#   6. max_epochs 50 -> 60 with T_max 60. Augmentation enlarges the effective dataset, so the
+#      old epoch-23 plateau should move later. save_top_k 3 -> 5 because val_map is a poor
+#      selector for this goal (it is nearly blind to the FP tail); pick the deployment
+#      checkpoint by sweeping precision/recall over the top-k afterwards, not by val_map alone.
+
+seed_everything: 42
+
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: 1
+  num_nodes: 1
+  precision: 32-true
+  logger:
+    class_path: TensorBoardLogger
+    init_args:
+      save_dir: /home/romeokienzler/Downloads/trainod/output
+      name: fcos_npu_aug_trainod
+  callbacks:
+    - class_path: LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+    - class_path: ModelCheckpoint
+      init_args:
+        dirpath: /home/romeokienzler/Downloads/trainod/output/checkpoints_fcos_npu_aug
+        mode: max
+        monitor: val_map
+        filename: best-{epoch:02d}
+        save_on_train_epoch_end: true
+        every_n_epochs: 1
+        save_top_k: 5
+  max_epochs: 60
+  check_val_every_n_epoch: 1
+  log_every_n_steps: 20
+  enable_checkpointing: true
+  default_root_dir: /home/romeokienzler/Downloads/trainod/output
+
+data:
+  class_path: terratorch.datamodules.GenericNonGeoObjectDetectionDataModule
+  init_args:
+    batch_size: 16
+    num_workers: 0
+    num_classes: 2
+    label_offset: -1
+    train_data_root: /home/romeokienzler/Downloads/trainod/train_images
+    train_label_data_root: /home/romeokienzler/Downloads/trainod/train_labels
+    train_split: /home/romeokienzler/Downloads/trainod/splits/train.txt
+    val_data_root: /home/romeokienzler/Downloads/trainod/val_images
+    val_label_data_root: /home/romeokienzler/Downloads/trainod/val_labels
+    val_split: /home/romeokienzler/Downloads/trainod/splits/val.txt
+    test_data_root: /home/romeokienzler/Downloads/trainod/test_images
+    test_label_data_root: /home/romeokienzler/Downloads/trainod/test_labels
+    test_split: /home/romeokienzler/Downloads/trainod/splits/test.txt
+    img_grep: '*.png'
+    label_grep: '*.json'
+    train_transform:
+      - class_path: albumentations.Compose
+        init_args:
+          transforms:
+            # --- into uint8: see note 2 above, this is not optional ---
+            - class_path: albumentations.FromFloat
+              init_args:
+                dtype: uint8
+                max_value: 1.0
+            # --- geometric ---
+            - class_path: albumentations.HorizontalFlip
+              init_args:
+                p: 0.5
+            - class_path: albumentations.VerticalFlip
+              init_args:
+                p: 0.5
+            - class_path: albumentations.Affine
+              init_args:
+                scale: [0.7, 1.3]
+                translate_percent: [-0.12, 0.12]
+                rotate: [-30, 30]
+                rotate_method: ellipse
+                border_mode: 0
+                fill: 0
+                p: 0.8
+            # --- photometric: lighting, white balance, exposure ---
+            - class_path: albumentations.RandomBrightnessContrast
+              init_args:
+                brightness_limit: 0.25
+                contrast_limit: 0.25
+                p: 0.7
+            - class_path: albumentations.ColorJitter
+              init_args:
+                brightness: 0.2
+                contrast: 0.2
+                saturation: 0.2
+                hue: 0.05
+                p: 0.5
+            - class_path: albumentations.RandomGamma
+              init_args:
+                gamma_limit: [80, 120]
+                p: 0.3
+            # --- sensor / optics: noise, motion blur, jpeg ---
+            - class_path: albumentations.GaussNoise
+              init_args:
+                std_range: [0.02, 0.10]
+                p: 0.3
+            - class_path: albumentations.MotionBlur
+              init_args:
+                blur_limit: 5
+                p: 0.2
+            - class_path: albumentations.ImageCompression
+              init_args:
+                quality_range: [55, 95]
+                p: 0.3
+            # --- occlusion ---
+            - class_path: albumentations.CoarseDropout
+              init_args:
+                num_holes_range: [1, 4]
+                hole_height_range: [8, 24]
+                hole_width_range: [8, 24]
+                fill: 0
+                p: 0.2
+            # --- back to raw 0-255 float32, as the model and the export expect ---
+            - class_path: albumentations.ToFloat
+              init_args:
+                max_value: 1.0
+            - class_path: albumentations.pytorch.transforms.ToTensorV2
+          bbox_params:
+            format: pascal_voc
+            label_fields:
+              - labels
+            min_visibility: 0.35
+            min_area: 36
+            clip: true
+    val_transform:
+      - class_path: albumentations.Compose
+        init_args:
+          transforms:
+            - class_path: albumentations.pytorch.transforms.ToTensorV2
+          bbox_params:
+            format: pascal_voc
+            label_fields:
+              - labels
+    test_transform:
+      - class_path: albumentations.Compose
+        init_args:
+          transforms:
+            - class_path: albumentations.pytorch.transforms.ToTensorV2
+          bbox_params:
+            format: pascal_voc
+            label_fields:
+              - labels
+
+model:
+  class_path: terratorch.tasks.ObjectDetectionTask
+  init_args:
+    model_factory: ObjectDetectionModelFactory
+    model_args:
+      framework: fcos
+      backbone: timm_efficientnet_lite0
+      backbone_pretrained: true
+      backbone_in_chans: 3
+      in_channels: 3
+      num_classes: 2
+      head_norm: batchnorm
+      necks:
+        - name: SelectIndices
+          indices: [1, 2, 3, 4]
+        - name: FeaturePyramidNetworkNeck
+          out_channel: 128
+      framework_min_size: 256
+      framework_max_size: 256
+    freeze_backbone: false
+    freeze_decoder: false
+    iou_threshold: 0.5
+    score_threshold: 0.3
+
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 1e-3
+    weight_decay: 1e-4
+
+lr_scheduler:
+  class_path: torch.optim.lr_scheduler.CosineAnnealingLR
+  init_args:
+    T_max: 60
